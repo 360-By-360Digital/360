@@ -808,211 +808,23 @@
         phoneMsg.textContent = "Phone verified!";
         phoneMsg.className = "ac-msg ok";
       };
-    }'''
+    }
 
     /* ════════════════
-       PROFILE
+       LOGOUT
     ════════════════ */
-    async function showProfile(user) {
-      const { data: profile } = await sb.from("profiles")
-        .select("username,avatar_url,tag")
-        .eq("id", user.id).maybeSingle();
-
-      const username  = profile?.username  || user.user_metadata?.username || user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
-      const avatarUrl = profile?.avatar_url || null;
-      const tag       = profile?.tag        || "";
-
-      const avatarHtml = avatarUrl
-        ? `<img src="${esc(avatarUrl)}" alt="avatar" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';document.getElementById('avatarInitial').style.display='flex';" /><div class="ac-avatar" id="avatarInitial" style="display:none;">${username.charAt(0).toUpperCase()}</div>`
-        : `<div class="ac-avatar" id="avatarInitial">${username.charAt(0).toUpperCase()}</div>`;
-
+    function showLogout() {
       content.innerHTML = `
-        <div class="ac-profile">
-          <div id="avatarWrap" style="position:relative;cursor:pointer;" title="Click to change avatar URL">
-            ${avatarHtml}
-            <div style="position:absolute;bottom:0;right:0;width:20px;height:20px;border-radius:50%;background:var(--a);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;border:2px solid var(--card-bg,#fff);">✎</div>
-          </div>
-          <div>
-            <div class="ac-pname" id="displayName">${esc(username)}</div>
-            <div class="ac-pemail">${esc(user.email||"")}</div>
-            ${tag ? `<div style="font-size:11px;margin-top:3px;color:var(--a);font-weight:700;">${esc(tag)}</div>` : ""}
-          </div>
-        </div>
-
-        <!-- ── EDIT PROFILE SECTION ── -->
-        <div style="margin-top:22px;border-top:1px solid var(--br);padding-top:18px;">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);margin-bottom:14px;">Edit Profile</div>
-
-          <div class="ac-field">
-            <label>Username</label>
-            <input id="editUsername" type="text" placeholder="your_username" maxlength="32" value="${esc(username)}" autocomplete="off" />
-            <span class="ac-hint" id="editUserHint"></span>
-          </div>
-
-          <div class="ac-field">
-            <label>Avatar URL</label>
-            <input id="editAvatarUrl" type="url" placeholder="https://…/photo.jpg" value="${esc(avatarUrl||"")}" autocomplete="off" />
-            <span class="ac-hint">Paste a direct link to your profile photo.</span>
-          </div>
-
-          <p class="ac-msg" id="profMsg"></p>
-          <button class="ac-btn" id="saveProfileBtn">Save Changes</button>
-        </div>
-
-        <!-- ── CHANGE PASSWORD ── -->
-        <div style="margin-top:20px;border-top:1px solid var(--br);padding-top:18px;">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);margin-bottom:14px;">Change Password</div>
-
-          <div class="ac-field">
-            <label>New Password</label>
-            <input id="newPass" type="password" placeholder="Min. 6 characters" autocomplete="new-password" />
-            <div class="pw-strength-wrap" id="pwStrengthWrapEdit">
-              <div class="pw-bar-track"><div class="pw-bar-fill"></div></div>
-              <div class="pw-meta">
-                <span class="pw-strength-label"></span>
-                <span class="pw-strength-hint"></span>
-              </div>
-              <div class="pw-checks">
-                <div class="pw-pill" id="pw-e-len"><span class="pw-pip"></span>8+ chars</div>
-                <div class="pw-pill" id="pw-e-up"><span class="pw-pip"></span>uppercase</div>
-                <div class="pw-pill" id="pw-e-num"><span class="pw-pip"></span>number</div>
-                <div class="pw-pill" id="pw-e-sym"><span class="pw-pip"></span>symbol</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="ac-field">
-            <label>Confirm New Password</label>
-            <input id="newPassConfirm" type="password" placeholder="Repeat new password" autocomplete="new-password" />
-            <span class="ac-hint" id="newPassConfirmHint"></span>
-          </div>
-
-          <p class="ac-msg" id="passMsg"></p>
-          <button class="ac-btn" id="savePassBtn">Update Password</button>
-        </div>
-
-        <!-- ── ACTIONS ── -->
-        <div style="margin-top:20px;border-top:1px solid var(--br);padding-top:18px;display:flex;flex-direction:column;gap:8px;">
-          <button class="ac-sec-btn" onclick="window.location.href='/';">← Back to 360</button>
-          <button class="ac-sec-btn ac-signout-btn" id="pgSignOut">Sign Out</button>
+        <div class="ac-logout">
+          <img src="/favicon-32x32.png" class="ac-logout-icon" alt="Logout icon">
+          <div class="ac-logout-title">You've been signed out</div>
+          <p class="ac-logout-sub">Thanks for using 360. See you next time!</p>
+          <button class="ac-btn" onclick="history.replaceState(null,'','/accounts.html?signin');renderSignIn();">Sign Back In</button>
+          <button class="ac-sec-btn" style="margin-top:6px;" onclick="window.location.href='/';">← Back to 360</button>
         </div>
       `;
-
-      // ── Avatar click → prompt URL
-      document.getElementById("avatarWrap").onclick = () => {
-        const url = prompt("Paste your avatar image URL:", document.getElementById("editAvatarUrl").value);
-        if (url !== null) document.getElementById("editAvatarUrl").value = url;
-      };
-
-      // ── Username validation
-      let usernameOk = true; // starts ok (current name is valid)
-      let usernameTimer = null;
-      const editUsernameInput = document.getElementById("editUsername");
-      const editUserHint      = document.getElementById("editUserHint");
-
-      editUsernameInput.addEventListener("input", () => {
-        const v = editUsernameInput.value.trim();
-        usernameOk = false;
-        clearTimeout(usernameTimer);
-        editUsernameInput.classList.remove("invalid");
-        if (!v) { setHint(editUserHint, "Username can't be empty.", "err"); return; }
-        if (!/^[a-zA-Z0-9_]{3,32}$/.test(v)) {
-          setHint(editUserHint, "3–32 chars, letters/numbers/underscores only.", "err");
-          editUsernameInput.classList.add("invalid"); return;
-        }
-        if (v === username) { usernameOk = true; setHint(editUserHint, "", ""); return; } // unchanged
-        setHint(editUserHint, "Checking…", "");
-        usernameTimer = setTimeout(async () => {
-          const { data } = await sb.from("profiles").select("id").eq("username", v).maybeSingle();
-          if (data) {
-            setHint(editUserHint, "Username already taken.", "err");
-            editUsernameInput.classList.add("invalid");
-          } else {
-            setHint(editUserHint, "✓ Username available", "ok");
-            editUsernameInput.classList.remove("invalid");
-            usernameOk = true;
-          }
-        }, 500);
-      });
-      // Current username is fine by default
-      usernameOk = true;
-
-      // ── Password strength meter
-      initStrengthMeter(document.getElementById("newPass"), "pwStrengthWrapEdit");
-
-      // ── Password confirm validation
-      const newPassConfirmInput = document.getElementById("newPassConfirm");
-      const newPassConfirmHint  = document.getElementById("newPassConfirmHint");
-      newPassConfirmInput.addEventListener("input", () => {
-        const p = document.getElementById("newPass").value;
-        const c = newPassConfirmInput.value;
-        if (!c) { setHint(newPassConfirmHint, "", ""); return; }
-        if (p === c) setHint(newPassConfirmHint, "✓ Passwords match", "ok");
-        else         setHint(newPassConfirmHint, "Passwords do not match.", "err");
-      });
-
-      // ── Save profile
-      document.getElementById("saveProfileBtn").onclick = async () => {
-        const newUsername  = editUsernameInput.value.trim();
-        const newAvatarUrl = document.getElementById("editAvatarUrl").value.trim();
-        const btn = document.getElementById("saveProfileBtn");
-        const msg = document.getElementById("profMsg");
-
-        if (!newUsername) { setMsg(msg, "Username can't be empty.", "err"); return; }
-        if (!usernameOk)  { setMsg(msg, "Please fix the username before saving.", "err"); return; }
-
-        btn.disabled = true; btn.textContent = "Saving…"; setMsg(msg, "", "");
-
-        const { error } = await sb.from("profiles").update({
-          username:   newUsername,
-          avatar_url: newAvatarUrl || null,
-        }).eq("id", user.id);
-
-        if (error) {
-          setMsg(msg, error.message, "err");
-        } else {
-          setMsg(msg, "✓ Profile saved!", "ok");
-          // Update the displayed name live
-          document.getElementById("displayName").textContent = newUsername;
-          document.getElementById("avatarInitial") && (document.getElementById("avatarInitial").textContent = newUsername.charAt(0).toUpperCase());
-        }
-        btn.disabled = false; btn.textContent = "Save Changes";
-      };
-
-      // ── Update password
-      document.getElementById("savePassBtn").onclick = async () => {
-        const np  = document.getElementById("newPass").value;
-        const nc  = document.getElementById("newPassConfirm").value;
-        const btn = document.getElementById("savePassBtn");
-        const msg = document.getElementById("passMsg");
-
-        if (!np)       { setMsg(msg, "Enter a new password.", "err"); return; }
-        if (np.length < 6) { setMsg(msg, "Password must be at least 6 characters.", "err"); return; }
-        if (np !== nc) { setMsg(msg, "Passwords do not match.", "err"); return; }
-
-        btn.disabled = true; btn.textContent = "Updating…"; setMsg(msg, "", "");
-
-        const { error } = await sb.auth.updateUser({ password: np });
-
-        if (error) {
-          setMsg(msg, error.message, "err");
-        } else {
-          setMsg(msg, "✓ Password updated!", "ok");
-          document.getElementById("newPass").value = "";
-          document.getElementById("newPassConfirm").value = "";
-          setHint(newPassConfirmHint, "", "");
-        }
-        btn.disabled = false; btn.textContent = "Update Password";
-      };
-
-      // ── Sign out
-      document.getElementById("pgSignOut").onclick = async () => {
-        const b = document.getElementById("pgSignOut");
-        b.textContent = "Signing out…"; b.disabled = true;
-        await sb.auth.signOut();
-        location.href = "/accounts.html?login&from=logout";
-      };
     }
+
     /* ════════════════
        OAUTH
     ════════════════ */
