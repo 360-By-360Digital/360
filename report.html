@@ -631,7 +631,7 @@
   // 2. Create a new form → set email to report@360-search.com
   // 3. Replace YOUR_FORM_ID below with the ID from your endpoint URL
   // ═══════════════════════════════════════════
-  const FORMSPREE_URL = 'https://formspree.io/f/YOUR_FORM_ID';
+  const FORMSPREE_URL = 'https://formspree.io/f/mzdoajvl';
 
   // ═══════════════════════════════════════════
   // SUPABASE AUTH — read signed-in session
@@ -855,14 +855,16 @@
     ].join('\n');
 
     try {
+      const fd = new FormData();
+      fd.append('_subject', emailSubject);
+      fd.append('email',    reporterEmail);   // Formspree sender field
+      fd.append('title',    emailTitle);
+      fd.append('message',  emailBody);
+
       const res = await fetch(FORMSPREE_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          _subject: emailSubject,
-          title:    emailTitle,
-          message:  emailBody,
-        })
+        headers: { 'Accept': 'application/json' },
+        body: fd,
       });
 
       if (res.ok) {
@@ -930,14 +932,16 @@
     ].join('\n');
 
     try {
+      const fd = new FormData();
+      fd.append('_subject', emailSubject);
+      fd.append('email',    reporterEmail);   // Formspree sender field
+      fd.append('title',    emailTitle);
+      fd.append('message',  emailBody);
+
       const res = await fetch(FORMSPREE_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          _subject: emailSubject,
-          title:    emailTitle,
-          message:  emailBody,
-        })
+        headers: { 'Accept': 'application/json' },
+        body: fd,
       });
 
       if (res.ok) {
