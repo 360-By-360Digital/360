@@ -24,8 +24,6 @@
   <link rel="stylesheet" href="/assets/css/cursor.css" />
   <!-- Supabase (same version as main.js) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- EmailJS for actual email delivery -->
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
   <style>
     /* ── PAGE SHELL ── */
@@ -628,18 +626,12 @@
 
   <script>
   // ═══════════════════════════════════════════
-  // EMAILJS CONFIG
-  // Sign up at emailjs.com, create a service
-  // pointed at report@360-search.com, then fill
-  // in your Public Key, Service ID, and the two
-  // Template IDs below.
+  // FORMSPREE ENDPOINT
+  // 1. Go to formspree.io and create a free account
+  // 2. Create a new form → set email to report@360-search.com
+  // 3. Replace YOUR_FORM_ID below with the ID from your endpoint URL
   // ═══════════════════════════════════════════
-  const EJS_PUBLIC_KEY    = 'YOUR_EMAILJS_PUBLIC_KEY';   // <-- replace
-  const EJS_SERVICE_ID    = 'YOUR_SERVICE_ID';            // <-- replace
-  const EJS_ISSUE_TMPL    = 'template_issue_report';      // <-- replace
-  const EJS_USER_TMPL     = 'template_user_report';       // <-- replace
-
-  emailjs.init({ publicKey: EJS_PUBLIC_KEY });
+  const FORMSPREE_URL = 'https://formspree.io/f/YOUR_FORM_ID';
 
   // ═══════════════════════════════════════════
   // SUPABASE AUTH — read signed-in session
@@ -838,28 +830,50 @@
     const btn = document.getElementById('issueSubmitBtn');
     btn.disabled = true; btn.textContent = 'Sending…';
 
-    const reporterName  = currentUser ? document.getElementById('issue-name').textContent  : 'Anonymous';
+    const reporterName  = currentUser ? document.getElementById('issue-name').textContent : 'Anonymous';
     const reporterEmail = currentUser ? currentUser.email : 'anonymous';
     const reporterID    = currentUser ? currentUser.id    : 'N/A';
 
+    // Email template:
+    // Subject: 360 Issue Report - <SEVERITY>
+    // Title:   <User Title> - <Username>
+    // Body:    category, url, description, reporter info
+    const emailSubject = `360 Issue Report - ${severity.toUpperCase()}`;
+    const emailTitle   = `${title} - ${reporterName}`;
+    const emailBody    = [
+      `Category:    ${category}`,
+      `Page / URL:  ${page || '(not provided)'}`,
+      ``,
+      `Description:`,
+      desc,
+      ``,
+      `--- Reporter Info ---`,
+      `Name:        ${reporterName}`,
+      `Email:       ${reporterEmail}`,
+      `User ID:     ${reporterID}`,
+      `Submitted:   ${new Date().toLocaleString()}`,
+    ].join('\n');
+
     try {
-      await emailjs.send(EJS_SERVICE_ID, EJS_ISSUE_TMPL, {
-        to_email:       'report@360-search.com',
-        reporter_name:  reporterName,
-        reporter_email: reporterEmail,
-        reporter_id:    reporterID,
-        category:       category,
-        severity:       severity.toUpperCase(),
-        issue_title:    title,
-        page_url:       page || '(not provided)',
-        description:    desc,
-        submitted_at:   new Date().toLocaleString(),
+      const res = await fetch(FORMSPREE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          _subject: emailSubject,
+          title:    emailTitle,
+          message:  emailBody,
+        })
       });
 
-      document.getElementById('issue-form').classList.remove('show');
-      document.getElementById('issue-success').classList.add('show');
+      if (res.ok) {
+        document.getElementById('issue-form').classList.remove('show');
+        document.getElementById('issue-success').classList.add('show');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.errors?.[0]?.message || `HTTP ${res.status}`);
+      }
     } catch(err) {
-      console.error('EmailJS error:', err);
+      console.error('Formspree error:', err);
       setMsg('issueMsg', '❌ Failed to send. Please try again or email report@360-search.com directly.', 'err');
     }
 
@@ -893,24 +907,48 @@
     const reporterEmail = currentUser.email || '';
     const reporterID    = currentUser.id;
 
+    // Email template:
+    // Subject: 360 User Report - From: <username + email>
+    // Title:   <Reporter> reported <Reported username>
+    // Body:    reason, location, details, evidence, reporter info
+    const emailSubject = `360 User Report - From: ${reporterName} (${reporterEmail})`;
+    const emailTitle   = `${reporterName} reported ${username}`;
+    const emailBody    = [
+      `Reported User: ${username}`,
+      `Reason:        ${reason}`,
+      `Location:      ${context}`,
+      `Evidence:      ${evidence || '(none)'}`,
+      ``,
+      `Details:`,
+      desc,
+      ``,
+      `--- Reporter Info ---`,
+      `Name:          ${reporterName}`,
+      `Email:         ${reporterEmail}`,
+      `User ID:       ${reporterID}`,
+      `Submitted:     ${new Date().toLocaleString()}`,
+    ].join('\n');
+
     try {
-      await emailjs.send(EJS_SERVICE_ID, EJS_USER_TMPL, {
-        to_email:        'report@360-search.com',
-        reporter_name:   reporterName,
-        reporter_email:  reporterEmail,
-        reporter_id:     reporterID,
-        reported_user:   username,
-        reason:          reason,
-        location:        context,
-        details:         desc,
-        evidence_link:   evidence || '(none)',
-        submitted_at:    new Date().toLocaleString(),
+      const res = await fetch(FORMSPREE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          _subject: emailSubject,
+          title:    emailTitle,
+          message:  emailBody,
+        })
       });
 
-      document.getElementById('user-form').classList.remove('show');
-      document.getElementById('user-success').classList.add('show');
+      if (res.ok) {
+        document.getElementById('user-form').classList.remove('show');
+        document.getElementById('user-success').classList.add('show');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.errors?.[0]?.message || `HTTP ${res.status}`);
+      }
     } catch(err) {
-      console.error('EmailJS error:', err);
+      console.error('Formspree error:', err);
       setMsg('userMsg', '❌ Failed to send. Please try again or email report@360-search.com directly.', 'err');
     }
 
