@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>360 Inline Edition</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050816;
+      --bg-2: #0f172a;
+      --panel: rgba(15, 23, 42, 0.74);
+      --panel-strong: rgba(15, 23, 42, 0.92);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --line: rgba(148, 163, 184, 0.22);
+      --accent: #38bdf8;
+      --accent-2: #a78bfa;
+      --accent-3: #22c55e;
+      --danger: #fb7185;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+      --radius: 26px;
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    [data-theme="light"] {
+      color-scheme: light;
+      --bg: #f8fafc;
+      --bg-2: #e0f2fe;
+      --panel: rgba(255, 255, 255, 0.78);
+      --panel-strong: rgba(255, 255, 255, 0.94);
+      --text: #0f172a;
+      --muted: #475569;
+      --line: rgba(15, 23, 42, 0.14);
+      --accent: #2563eb;
+      --accent-2: #7c3aed;
+      --accent-3: #16a34a;
+      --danger: #e11d48;
+      --shadow: 0 24px 80px rgba(37, 99, 235, 0.16);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(56, 189, 248, 0.22), transparent 34rem),
+        radial-gradient(circle at 84% 12%, rgba(167, 139, 250, 0.24), transparent 32rem),
+        radial-gradient(circle at 70% 82%, rgba(34, 197, 94, 0.12), transparent 28rem),
+        linear-gradient(135deg, var(--bg), var(--bg-2));
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: linear-gradient(to bottom, black, transparent 82%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+
+    .topbar {
+      position: sticky;
+      top: 14px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: conic-gradient(from 180deg, var(--accent), var(--accent-2), var(--accent-3), var(--accent));
+      color: #020617;
+      font-weight: 950;
+      box-shadow: 0 14px 34px rgba(56, 189, 248, 0.3);
+    }
+    .brand strong { display: block; letter-spacing: -0.04em; }
+    .brand span { color: var(--muted); font-size: 12px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+    .nav a, .pill-button {
+      border: 1px solid var(--line);
+      background: rgba(148, 163, 184, 0.08);
+      color: var(--text);
+      padding: 10px 13px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+    .nav a:hover, .pill-button:hover { transform: translateY(-1px); border-color: var(--accent); background: rgba(56, 189, 248, 0.13); }
+
+    .hero { padding: 88px 0 56px; display: grid; grid-template-columns: 1.08fr 0.92fr; gap: 34px; align-items: center; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px; }
+    .pulse { width: 9px; height: 9px; border-radius: 50%; background: var(--accent-3); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 70% { box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+
+    h1 { margin: 16px 0; font-size: clamp(54px, 12vw, 154px); line-height: 0.84; letter-spacing: -0.09em; }
+    .gradient-text { background: linear-gradient(120deg, var(--text), var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero p { color: var(--muted); font-size: clamp(17px, 2vw, 21px); line-height: 1.65; max-width: 680px; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+    .primary {
+      border: 0;
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      color: #020617;
+      font-weight: 900;
+      padding: 14px 18px;
+      border-radius: 999px;
+      box-shadow: 0 18px 42px rgba(56, 189, 248, 0.24);
+    }
+
+    .console {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      backdrop-filter: blur(20px);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transform: rotate(1.5deg);
+    }
+    .console-head { display: flex; gap: 8px; padding: 16px; border-bottom: 1px solid var(--line); }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--danger); }
+    .dot:nth-child(2) { background: #facc15; }
+    .dot:nth-child(3) { background: var(--accent-3); }
+    .console-body { padding: 24px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .stat { padding: 18px; border: 1px solid var(--line); border-radius: 20px; background: rgba(148, 163, 184, 0.08); }
+    .stat b { font-size: 32px; display: block; letter-spacing: -0.05em; }
+    .stat span { color: var(--muted); font-size: 13px; }
+    .terminal { margin-top: 16px; padding: 18px; border-radius: 18px; background: rgba(2, 6, 23, 0.68); color: #bae6fd; min-height: 120px; line-height: 1.8; font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; }
+    [data-theme="light"] .terminal { background: rgba(15, 23, 42, 0.86); color: #e0f2fe; }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      margin: 18px 0 26px;
+    }
+    .search {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel-strong);
+      color: var(--text);
+      padding: 15px 18px;
+      outline: none;
+      box-shadow: var(--shadow);
+    }
+    .search:focus { border-color: var(--accent); }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    .chip { border: 1px solid var(--line); border-radius: 999px; padding: 10px 12px; color: var(--muted); background: var(--panel); cursor: pointer; }
+    .chip.active { color: #020617; background: linear-gradient(120deg, var(--accent), var(--accent-2)); border-color: transparent; font-weight: 900; }
+
+    section { padding: 34px 0; }
+    .section-head { display: flex; justify-content: space-between; gap: 16px; align-items: end; margin-bottom: 18px; }
+    h2 { margin: 0; font-size: clamp(30px, 4vw, 52px); letter-spacing: -0.06em; }
+    .section-head p { margin: 0; color: var(--muted); max-width: 520px; line-height: 1.6; }
+
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .card {
+      grid-column: span 4;
+      min-height: 186px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+    .card::before { content: ""; position: absolute; inset: -40% -20% auto auto; width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle, rgba(56, 189, 248, 0.28), transparent 70%); }
+    .card:hover { transform: translateY(-5px); border-color: var(--accent); background: var(--panel-strong); }
+    .icon { font-size: 34px; }
+    .card h3 { margin: 12px 0 8px; font-size: 22px; letter-spacing: -0.04em; }
+    .card p { margin: 0; color: var(--muted); line-height: 1.55; }
+    .meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 22px; color: var(--muted); font-size: 12px; }
+    .launch { color: var(--accent); font-weight: 900; }
+    .wide-card { grid-column: span 6; }
+
+    .mini-os {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .window-tile { min-height: 92px; padding: 14px; border: 1px solid var(--line); border-radius: 18px; background: rgba(148, 163, 184, 0.09); }
+    .window-tile b { display: block; margin-bottom: 6px; }
+    .window-tile span { color: var(--muted); font-size: 13px; line-height: 1.4; }
+
+    .no-results { display: none; padding: 28px; border: 1px dashed var(--line); border-radius: var(--radius); text-align: center; color: var(--muted); }
+    .no-results.show { display: block; }
+
+    footer { padding: 48px 0 70px; color: var(--muted); text-align: center; }
+    footer a { color: var(--accent); font-weight: 800; }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      max-width: 320px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel-strong);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      transform: translateY(140%);
+      transition: transform 220ms ease;
+      z-index: 20;
+    }
+    .toast.show { transform: translateY(0); }
+
+    @media (max-width: 920px) {
+      .hero { grid-template-columns: 1fr; padding-top: 54px; }
+      .console { transform: none; }
+      .card, .wide-card { grid-column: span 6; }
+      .toolbar { grid-template-columns: 1fr; }
+      .chips { justify-content: flex-start; }
+    }
+
+    @media (max-width: 640px) {
+      .shell { width: min(100% - 22px, 1180px); }
+      .topbar { border-radius: 24px; align-items: flex-start; flex-direction: column; }
+      .nav { justify-content: flex-start; }
+      h1 { font-size: clamp(60px, 28vw, 108px); }
+      .stat-grid, .mini-os { grid-template-columns: 1fr; }
+      .card, .wide-card { grid-column: 1 / -1; }
+      .section-head { display: block; }
+      .section-head p { margin-top: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar" aria-label="360 Inline navigation">
+      <a class="brand" href="#home" aria-label="360 Inline home">
+        <span class="mark">360</span>
+        <span><strong>360 Inline</strong><span>One-folder rebuild · no external CSS or JavaScript</span></span>
+      </a>
+      <nav class="nav" aria-label="Sections">
+        <a href="#launchpad">Launchpad</a>
+        <a href="#apps">Apps</a>
+        <a href="#games">Games</a>
+        <a href="#os">OS</a>
+        <button class="pill-button" id="themeToggle" type="button">Light mode</button>
+      </nav>
+    </header>
+
+    <main id="home">
+      <section class="hero" aria-labelledby="hero-title">
+        <div>
+          <span class="eyebrow"><span class="pulse"></span> Complete 360 remix</span>
+          <h1 id="hero-title"><span class="gradient-text">360</span><br />rebuilt inline.</h1>
+          <p>This standalone remake gathers the 360 homepage, tools, apps, games, OS experiments, account pages, and policy links into one self-contained HTML file. Styling, data, and behavior all live inline so the folder can be dropped anywhere in the GitHub project.</p>
+          <div class="hero-actions">
+            <a class="primary" href="#launchpad">Open the launchpad</a>
+            <a class="pill-button" href="../index.html">Visit original 360</a>
+            <button class="pill-button" id="randomPick" type="button">Surprise me</button>
+          </div>
+        </div>
+        <aside class="console" aria-label="Inline remake summary">
+          <div class="console-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+          <div class="console-body">
+            <div class="stat-grid">
+              <div class="stat"><b id="totalCount">0</b><span>inline launch cards</span></div>
+              <div class="stat"><b>1</b><span>HTML file</span></div>
+              <div class="stat"><b>0</b><span>external scripts</span></div>
+              <div class="stat"><b>∞</b><span>ways to explore</span></div>
+            </div>
+            <div class="terminal" id="terminalText" aria-live="polite">$ boot 360-inline<br />loading launch cards...</div>
+          </div>
+        </aside>
+      </section>
+
+      <section id="launchpad" aria-labelledby="launchpad-title">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Search everything</span>
+            <h2 id="launchpad-title">Launchpad</h2>
+          </div>
+          <p>Filter the entire inline directory by typing, or jump between categories with the chips.</p>
+        </div>
+        <div class="toolbar">
+          <input class="search" id="searchInput" type="search" placeholder="Search AI, music, fish, notes, games, weather..." aria-label="Search launch cards" />
+          <div class="chips" id="chips" aria-label="Category filters"></div>
+        </div>
+        <div class="grid" id="cardGrid"></div>
+        <div class="no-results" id="noResults">No matching 360 cards yet. Try another search.</div>
+      </section>
+
+      <section id="apps" aria-labelledby="apps-title">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">App suite</span>
+            <h2 id="apps-title">Inline app shelf</h2>
+          </div>
+          <p>The core productivity and media apps are summarized here with direct links back to their original pages.</p>
+        </div>
+        <div class="grid" id="appGrid"></div>
+      </section>
+
+      <section id="games" aria-labelledby="games-title">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Games</span>
+            <h2 id="games-title">Arcade wall</h2>
+          </div>
+          <p>All current 360 game entries are exposed in the same inline style so the remake feels like one consistent portal.</p>
+        </div>
+        <div class="grid" id="gameGrid"></div>
+      </section>
+
+      <section id="os" aria-labelledby="os-title">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Desktop mode</span>
+            <h2 id="os-title">360 OS preview</h2>
+          </div>
+          <p>A compact inline recreation of the OS idea: windows, quick actions, and shortcuts without importing external files.</p>
+        </div>
+        <article class="card wide-card" style="grid-column: 1 / -1;">
+          <div>
+            <span class="icon">🖥️</span>
+            <h3>Orbit workspace</h3>
+            <p>Launch the full OS pages or use these inline tiles as a lightweight dashboard.</p>
+            <div class="mini-os">
+              <a class="window-tile" href="../OS/360OS.html"><b>360OS</b><span>Desktop-inspired shell with apps and panels.</span></a>
+              <a class="window-tile" href="../OS/orbitos.html"><b>OrbitOS</b><span>Alternate orbital interface experiment.</span></a>
+              <a class="window-tile" href="../new-tab.html"><b>New Tab</b><span>Fast browser-start page experience.</span></a>
+            </div>
+          </div>
+          <div class="meta"><span>Category · OS</span><span class="launch">Open workspace →</span></div>
+        </article>
+      </section>
+    </main>
+
+    <footer>
+      <p>Made as a separate inline folder for the 360 GitHub project. Original pages remain available from each launch card.</p>
+      <p><a href="../privacypolicy.html">Privacy Policy</a> · <a href="../tos.html">Terms</a> · <a href="../contact.html">Contact</a> · <a href="../sitemap.xml">Sitemap</a></p>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const links = [
+      { title: "Home", icon: "🏠", category: "Core", href: "../index.html", description: "The original 360 landing page with search, settings, and navigation." },
+      { title: "Search", icon: "🔎", category: "Core", href: "../search.html", description: "Main 360 search experience." },
+      { title: "AI", icon: "🤖", category: "Tools", href: "../ai.html", description: "AI assistant entry point for quick help and creative work." },
+      { title: "Chat", icon: "💬", category: "Tools", href: "../chat.html", description: "Community-style chat page." },
+      { title: "Weather", icon: "⛅", category: "Tools", href: "../weather.html", description: "Weather utility page." },
+      { title: "Translator", icon: "🌐", category: "Tools", href: "../translator.html", description: "Translate text and move between languages." },
+      { title: "Stocks", icon: "📈", category: "Tools", href: "../stocks.html", description: "Market and stock lookup page." },
+      { title: "News", icon: "📰", category: "Tools", href: "../news.html", description: "News hub with 360 styling." },
+      { title: "URL Shortener", icon: "🔗", category: "Tools", href: "../url-shortener.html", description: "Shorten and manage links." },
+      { title: "Accounts", icon: "👤", category: "Core", href: "../accounts.html", description: "Sign-in and account management." },
+      { title: "Settings", icon: "⚙️", category: "Core", href: "../settings.html", description: "Customize the 360 experience." },
+      { title: "Apps hub", icon: "🧩", category: "Apps", href: "../apps.html", description: "Original app directory." },
+      { title: "360 Music", icon: "🎵", category: "Apps", href: "../apps/360Music.html", description: "Music player and sound experience." },
+      { title: "360 Do", icon: "✅", category: "Apps", href: "../apps/360Do.html", description: "To-do list and task tracker." },
+      { title: "360 Vids", icon: "🎬", category: "Apps", href: "../apps/360vids.html", description: "Video-focused 360 app." },
+      { title: "360 Notes", icon: "📝", category: "Apps", href: "../apps/360Notes.html", description: "Notes and quick writing." },
+      { title: "360 Zone", icon: "🌀", category: "Apps", href: "../apps/360zone.html", description: "Experimental zone page." },
+      { title: "360 Draw", icon: "🎨", category: "Apps", href: "../apps/360Draw.html", description: "Drawing and sketching app." },
+      { title: "360 Docs", icon: "📄", category: "Apps", href: "../apps/360Docs.html", description: "Document workspace." },
+      { title: "360 Mail", icon: "✉️", category: "Apps", href: "../apps/360mail.html", description: "Mail-inspired app experience." },
+      { title: "Games hub", icon: "🎮", category: "Games", href: "../games.html", description: "Original 360 game directory." },
+      { title: "360 Fish", icon: "🐟", category: "Games", href: "../games/360Fish.html", description: "Fish-themed game experience." },
+      { title: "Blitz Tower Defense", icon: "🏰", category: "Games", href: "../games/BlitzTowerDefense.html", description: "Tower defense action." },
+      { title: "Space Glider", icon: "🚀", category: "Games", href: "../games/spaceGlider.html", description: "Glide through space." },
+      { title: "Monster Fighter", icon: "👾", category: "Games", href: "../games/untitledMonsterFighter.html", description: "Fight monsters in an arcade format." },
+      { title: "Nightfall RNG", icon: "🌙", category: "Games", href: "../games/NightfallRNG.html", description: "RNG-style nightfall game." },
+      { title: "Penguin Knockout", icon: "🐧", category: "Games", href: "../games/PenguinKnockout.html", description: "Penguin action challenge." },
+      { title: "NYC Dream", icon: "🌆", category: "Games", href: "../games/nyc_dream.html", description: "City-themed dream game." },
+      { title: "Star Blasted", icon: "⭐", category: "Games", href: "../games/StarBlasted.html", description: "Starry arcade adventure." },
+      { title: "Minesweeper", icon: "💣", category: "Games", href: "../games/minesweeper.html", description: "Classic minesweeper." },
+      { title: "Starfall Ωjar", icon: "☄️", category: "Games", href: "../games/STARFALL_Ωjar.html", description: "Starfall variant." },
+      { title: "Starfall RNG", icon: "✨", category: "Games", href: "../games/starfallrng.html", description: "RNG starfall entry." },
+      { title: "Unwanted Problems", icon: "🧠", category: "Games", href: "../games/UnwantedProblems.html", description: "Puzzle and problem game." },
+      { title: "Angel RNG", icon: "👼", category: "Games", href: "../games/angelrng.html", description: "Angel-themed RNG game." },
+      { title: "Epoch Era", icon: "⏳", category: "Games", href: "../games/epochera.html", description: "Era-hopping game." },
+      { title: "JJK RNG", icon: "🥋", category: "Games", href: "../games/jjkrng.html", description: "JJK-inspired RNG page." },
+      { title: "Starfall RNG Ultimate", icon: "🌠", category: "Games", href: "../games/starfallrngultimate.html", description: "Ultimate starfall RNG edition." },
+      { title: "CQB SIM", icon: "🎯", category: "Games", href: "../games/CQBSIM.html", description: "Close-quarters simulation." },
+      { title: "Chess", icon: "♟️", category: "Games", href: "../chess.html", description: "Standalone chess page." },
+      { title: "Sloperider", icon: "🏂", category: "Games", href: "../sloperider.html", description: "Slope-riding game." },
+      { title: "Reports", icon: "📣", category: "Core", href: "../report.html", description: "Report issues or feedback." },
+      { title: "Privacy Policy", icon: "🔐", category: "Core", href: "../privacypolicy.html", description: "Privacy details for the project." },
+      { title: "Terms", icon: "📜", category: "Core", href: "../tos.html", description: "Terms of service." },
+      { title: "Contact", icon: "📬", category: "Core", href: "../contact.html", description: "Contact page." }
+    ];
+
+    const categories = ["All", "Core", "Tools", "Apps", "Games"];
+    const state = { category: "All", query: "" };
+    const grid = document.getElementById("cardGrid");
+    const appGrid = document.getElementById("appGrid");
+    const gameGrid = document.getElementById("gameGrid");
+    const chips = document.getElementById("chips");
+    const searchInput = document.getElementById("searchInput");
+    const noResults = document.getElementById("noResults");
+    const toast = document.getElementById("toast");
+
+    function cardTemplate(item, wide = false) {
+      return `<a class="card ${wide ? "wide-card" : ""}" href="${item.href}" data-category="${item.category}" data-title="${item.title.toLowerCase()}" data-description="${item.description.toLowerCase()}">
+        <span class="icon" aria-hidden="true">${item.icon}</span>
+        <span>
+          <h3>${item.title}</h3>
+          <p>${item.description}</p>
+        </span>
+        <span class="meta"><span>${item.category}</span><span class="launch">Launch →</span></span>
+      </a>`;
+    }
+
+    function renderChips() {
+      chips.innerHTML = categories.map(category => `<button class="chip ${category === state.category ? "active" : ""}" type="button" data-category="${category}">${category}</button>`).join("");
+    }
+
+    function filteredLinks() {
+      const query = state.query.trim().toLowerCase();
+      return links.filter(item => {
+        const categoryMatch = state.category === "All" || item.category === state.category;
+        const queryMatch = !query || `${item.title} ${item.category} ${item.description}`.toLowerCase().includes(query);
+        return categoryMatch && queryMatch;
+      });
+    }
+
+    function renderCards() {
+      const filtered = filteredLinks();
+      grid.innerHTML = filtered.map(item => cardTemplate(item)).join("");
+      noResults.classList.toggle("show", filtered.length === 0);
+      document.getElementById("terminalText").innerHTML = `$ query ${state.category.toLowerCase()}<br />${filtered.length} matching launch cards ready<br />theme=${document.documentElement.dataset.theme || "dark"}`;
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    renderChips();
+    renderCards();
+    appGrid.innerHTML = links.filter(item => item.category === "Apps").map(item => cardTemplate(item, true)).join("");
+    gameGrid.innerHTML = links.filter(item => item.category === "Games").map(item => cardTemplate(item)).join("");
+    document.getElementById("totalCount").textContent = links.length;
+
+    chips.addEventListener("click", event => {
+      const button = event.target.closest("button[data-category]");
+      if (!button) return;
+      state.category = button.dataset.category;
+      renderChips();
+      renderCards();
+      showToast(`Showing ${state.category} cards`);
+    });
+
+    searchInput.addEventListener("input", event => {
+      state.query = event.target.value;
+      renderCards();
+    });
+
+    document.getElementById("themeToggle").addEventListener("click", event => {
+      const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+      document.documentElement.dataset.theme = next;
+      event.currentTarget.textContent = next === "light" ? "Dark mode" : "Light mode";
+      renderCards();
+      showToast(`${next === "light" ? "Light" : "Dark"} mode enabled`);
+    });
+
+    document.getElementById("randomPick").addEventListener("click", () => {
+      const pool = filteredLinks().length ? filteredLinks() : links;
+      const item = pool[Math.floor(Math.random() * pool.length)];
+      showToast(`Surprise: ${item.title}`);
+      setTimeout(() => { window.location.href = item.href; }, 650);
+    });
+  </script>
+</body>
+</html>
