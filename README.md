@@ -107,7 +107,7 @@ Support: zakii@360-search.com
 
 ## Join the Patreon! (It's free!)
 Support means everything to us, and knowing how big our community is motivates us to do better! Joining the Patreon is free and supports us :) Thanks! 
-<a href="patreon.com/cw/360search">360Digital on Patreon</a>
+<a href="https://www.patreon.com/c/360search">360Digital on Patreon</a>
 
 ---
 
