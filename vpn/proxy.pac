@@ -1,5 +1,5 @@
 // 360VPN — Proxy Auto-Config
-// 360Digital Co. — https://360-search.com/vpn
+// 360Digital Co. — https://360-search.com/vpn/vpn
 // This file is also served dynamically by the Cloudflare Worker at /vpn/proxy.pac
 
 function FindProxyForURL(url, host) {
