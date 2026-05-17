@@ -11,7 +11,7 @@
       height: 100%;
       width: 100%;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #05060a;
+      background: #343a51;
       color: #f5f5f5;
       overflow: hidden;
     }
@@ -189,6 +189,25 @@
       overflow-y: auto;
     }
 
+    .analysis {
+      display: flex;
+      flex-direction: column;
+      min-height: 120px;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 12px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .analysis-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
     .chat-input-row {
       display: flex;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -271,12 +290,37 @@
 
         <div class="mode-buttons">
           <button class="btn" id="new-ai-game">New vs AI</button>
+          <button class="btn" id="new-local-game">New 2‑Player</button>
           <button class="btn" id="new-friend-game">New vs Friend</button>
+        </div>
+
+        <div class="player-card">
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div>Difficulty</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <select id="difficulty-select">
+                <option value="beginner">Beginner</option>
+                <option value="intermediate" selected>Intermediate</option>
+                <option value="advanced">Advanced</option>
+                <option value="expert">Expert</option>
+              </select>
+              <label style="font-size:12px; opacity:0.8; white-space:nowrap;"><input type="checkbox" id="auto-difficulty" checked /> Auto by rating</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="player-card">
+          <div>Rating: <strong id="player-rating">1200</strong></div>
+          <button class="btn" id="hint-btn">Hint</button>
         </div>
 
         <div class="status" id="status">Choose a mode to start.</div>
 
         <div class="moves" id="moves"></div>
+        <div class="analysis" id="analysis">
+          <div class="analysis-title">Game review & analysis</div>
+          <div id="analysis-content">No review yet. Finish a game or request a hint.</div>
+        </div>
 
         <div class="chat">
           <div class="chat-log" id="chat-log"></div>
@@ -295,11 +339,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
-    // 🔧 CONFIG — replace with your Supabase project
+    // 🔧 CONFIG — replace with your Supabase project if you want friend mode.
     const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
     const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
-    const CHESS_BOT_URL = `${SUPABASE_URL}/functions/v1/chess-bot`;
-
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const boardEl = document.getElementById("board");
@@ -308,39 +350,51 @@
     const userLabelEl = document.getElementById("user-label");
     const chatLogEl = document.getElementById("chat-log");
     const chatInputEl = document.getElementById("chat-input");
-
     const whiteNameEl = document.getElementById("white-name");
     const blackNameEl = document.getElementById("black-name");
+    const difficultySelect = document.getElementById("difficulty-select");
+    const autoDifficultyCheckbox = document.getElementById("auto-difficulty");
+    const hintBtn = document.getElementById("hint-btn");
+    const playerRatingEl = document.getElementById("player-rating");
+    const analysisContentEl = document.getElementById("analysis-content");
+
+    const DIFFICULTY_SETTINGS = {
+      beginner: { label: "Beginner", depth: 1, randomness: 0.45, elo: 800 },
+      intermediate: { label: "Intermediate", depth: 2, randomness: 0.25, elo: 1100 },
+      advanced: { label: "Advanced", depth: 3, randomness: 0.12, elo: 1500 },
+      expert: { label: "Expert", depth: 4, randomness: 0.00, elo: 1900 }
+    };
+    const DEFAULT_ELO = 1200;
+    const STORAGE_KEY = "360_chess_elo";
 
     let game = new Chess();
     let squares = [];
     let selectedSquare = null;
-    let isMyTurn = true;
-    let myColor = "white"; // "white" or "black"
+    let myColor = null;
     let gameId = null;
     let channel = null;
     let user = null;
-    let mode = null; // "ai" or "friend"
+    let mode = null; // "ai", "local", "friend"
+    let botDifficulty = "intermediate";
+    let autoDifficulty = true;
+    let playerElo = DEFAULT_ELO;
 
-    // ---------- AUTH ----------
     async function initAuth() {
-      const { data, error } = await supabase.auth.getUser();
-      if (data.user) {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) {
         user = data.user;
       } else {
         const res = await supabase.auth.signInAnonymously();
         user = res.data.user;
       }
-      userLabelEl.textContent = `You: ${user.id.slice(0, 6)}`;
+      userLabelEl.textContent = `You: ${user?.id?.slice(0, 6) || "guest"}`;
     }
 
-    // ---------- BOARD RENDER ----------
     function createBoard() {
       boardEl.innerHTML = "";
       squares = [];
       const files = ["a","b","c","d","e","f","g","h"];
       const ranks = [8,7,6,5,4,3,2,1];
-
       for (let r = 0; r < 8; r++) {
         for (let f = 0; f < 8; f++) {
           const sq = files[f] + ranks[r];
@@ -364,30 +418,28 @@
       });
     }
 
-    function pieceToChar(p) {
+    function pieceToChar(piece) {
       const map = {
         p: "♟", r: "♜", n: "♞", b: "♝", q: "♛", k: "♚",
         P: "♙", R: "♖", N: "♘", B: "♗", Q: "♕", K: "♔"
       };
-      return map[p.color === "w" ? p.type.toUpperCase() : p.type] || "?";
+      return map[piece.color === "w" ? piece.type.toUpperCase() : piece.type] || "?";
     }
 
     function onSquareClick(sq) {
-      if (!gameId && mode === "friend") {
+      if (mode === "friend" && !gameId) {
         alert("Game not created yet.");
         return;
       }
-
-      if (mode === "ai" || mode === "friend") {
+      if (mode !== "local") {
         const turnColor = game.turn() === "w" ? "white" : "black";
-        if (turnColor !== myColor) return; // not your turn
+        if (turnColor !== myColor) return;
       }
-
       if (!selectedSquare) {
         const piece = game.get(sq);
         if (!piece) return;
         const color = piece.color === "w" ? "white" : "black";
-        if (color !== myColor) return;
+        if (mode !== "local" && color !== myColor) return;
         selectedSquare = sq;
         highlightSelection();
       } else {
@@ -411,23 +463,15 @@
       });
     }
 
-    // ---------- MOVES ----------
     async function makeMove(from, to, isRemote = false) {
       const move = game.move({ from, to, promotion: "q" });
       if (!move) return;
-
       renderPieces();
       appendMove(move);
       updateStatus();
-
       if (!isRemote && mode === "friend" && channel) {
-        channel.send({
-          type: "broadcast",
-          event: "move",
-          payload: { from, to, fen: game.fen() }
-        });
+        channel.send({ type: "broadcast", event: "move", payload: { from, to, fen: game.fen() } });
       }
-
       if (!isRemote && mode === "ai") {
         await aiMove();
       }
@@ -437,15 +481,12 @@
       const moveNumber = Math.ceil(game.history().length / 2);
       const row = document.createElement("div");
       row.className = "move-row";
-
       const num = document.createElement("div");
       num.className = "move-num";
       num.textContent = moveNumber + ".";
-
       const san = document.createElement("div");
       san.className = "move-san";
       san.textContent = move.san;
-
       row.appendChild(num);
       row.appendChild(san);
       movesEl.appendChild(row);
@@ -462,36 +503,252 @@
         } else {
           statusEl.textContent = "Game over.";
         }
+        if (mode === "ai") {
+          const result = game.isCheckmate() ? (game.turn() === "w" ? 0 : 1) : 0.5;
+          const change = updateRating(result);
+          statusEl.textContent += ` Rating ${playerElo} (${change >= 0 ? '+' + change : change}).`;
+          setTimeout(runReview, 100);
+        }
       } else {
         const turn = game.turn() === "w" ? "White" : "Black";
-        statusEl.textContent = `${turn} to move.`;
-      }
-    }
-
-    // ---------- AI ----------
-    async function aiMove() {
-      statusEl.textContent = "AI thinking…";
-      try {
-        const res = await fetch(CHESS_BOT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fen: game.fen() })
-        });
-        const data = await res.json();
-        if (!data.move) {
-          statusEl.textContent = "AI error.";
-          return;
+        if (mode === "ai") {
+          statusEl.textContent = `AI vs You — ${getDifficultyLabel()}. ${turn} to move.`;
+        } else if (mode === "local" || mode === "friend") {
+          statusEl.textContent = `${turn} to move.`;
+        } else {
+          statusEl.textContent = "Choose a mode to start.";
         }
-        const uci = data.move.trim();
-        const from = uci.slice(0, 2);
-        const to = uci.slice(2, 4);
-        await makeMove(from, to, true);
-      } catch (e) {
-        statusEl.textContent = "AI error.";
+        updateAnalysis();
       }
     }
 
-    // ---------- FRIEND / REALTIME ----------
+    function getAutoDifficulty() {
+      if (playerElo < 900) return "beginner";
+      if (playerElo < 1200) return "intermediate";
+      if (playerElo < 1600) return "advanced";
+      return "expert";
+    }
+
+    function getDifficultyLabel() {
+      const selected = autoDifficulty ? getAutoDifficulty() : botDifficulty;
+      return `${DIFFICULTY_SETTINGS[selected].label}${autoDifficulty ? " (auto)" : ""}`;
+    }
+
+    function getActiveBotConfig() {
+      const selected = autoDifficulty ? getAutoDifficulty() : botDifficulty;
+      return DIFFICULTY_SETTINGS[selected];
+    }
+
+    function loadRating() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      playerElo = stored ? Number(stored) || DEFAULT_ELO : DEFAULT_ELO;
+      updateRatingDisplay();
+    }
+
+    function saveRating() {
+      localStorage.setItem(STORAGE_KEY, String(playerElo));
+    }
+
+    function updateRatingDisplay() {
+      playerRatingEl.textContent = String(playerElo);
+    }
+
+    function updateRating(result) {
+      const selected = autoDifficulty ? getAutoDifficulty() : botDifficulty;
+      const botElo = DIFFICULTY_SETTINGS[selected].elo;
+      const expected = 1 / (1 + Math.pow(10, (botElo - playerElo) / 400));
+      const k = 24;
+      const change = Math.round(k * (result - expected));
+      playerElo = Math.max(400, playerElo + change);
+      saveRating();
+      updateRatingDisplay();
+      return change;
+    }
+
+    function orientationBonus(piece, square) {
+      const file = square.charCodeAt(0) - 97;
+      const rank = Number(square[1]) - 1;
+      const centerDistance = Math.abs(3.5 - file) + Math.abs(3.5 - rank);
+      let bonus = 20 - centerDistance * 3;
+      if (piece.type === "n" || piece.type === "b") bonus += 6;
+      if (piece.type === "r") bonus += 2;
+      if (piece.type === "q") bonus += 1;
+      if (piece.type === "p") bonus += rank * 2;
+      return bonus;
+    }
+
+    function evaluateBoard(chess) {
+      if (chess.isCheckmate()) {
+        return chess.turn() === "w" ? -100000 : 100000;
+      }
+      if (chess.isDraw() || chess.isStalemate() || chess.isInsufficientMaterial()) {
+        return 0;
+      }
+      const values = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+      let score = 0;
+      const board = chess.board();
+      for (let rank = 0; rank < board.length; rank++) {
+        for (let file = 0; file < board[rank].length; file++) {
+          const piece = board[rank][file];
+          if (!piece) continue;
+          const square = String.fromCharCode(97 + file) + String(8 - rank);
+          score += (piece.color === "w" ? 1 : -1) * (values[piece.type] + orientationBonus(piece, square));
+        }
+      }
+      if (chess.in_check("w")) score -= 35;
+      if (chess.in_check("b")) score += 35;
+      return score;
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function movePriority(move) {
+      let score = 0;
+      if (move.captured) score += 100 + { p: 100, n: 320, b: 330, r: 500, q: 900 }[move.captured] || 0;
+      if (move.promotion) score += 250;
+      return score;
+    }
+
+    function sortMoves(moves) {
+      return moves.slice().sort((a, b) => movePriority(b) - movePriority(a));
+    }
+
+    function minimax(chess, depth, alpha, beta, isMaximizing) {
+      if (depth === 0 || chess.isGameOver()) return evaluateBoard(chess);
+      const moves = sortMoves(chess.moves({ verbose: true }));
+      if (isMaximizing) {
+        let best = -Infinity;
+        for (const move of moves) {
+          chess.move(move);
+          const score = minimax(chess, depth - 1, alpha, beta, false);
+          chess.undo();
+          best = Math.max(best, score);
+          alpha = Math.max(alpha, score);
+          if (beta <= alpha) break;
+        }
+        return best;
+      }
+      let best = Infinity;
+      for (const move of moves) {
+        chess.move(move);
+        const score = minimax(chess, depth - 1, alpha, beta, true);
+        chess.undo();
+        best = Math.min(best, score);
+        beta = Math.min(beta, score);
+        if (beta <= alpha) break;
+      }
+      return best;
+    }
+
+    function getBestMove(chess, depth, randomness = 0) {
+      const position = new Chess(chess.fen());
+      const isWhite = position.turn() === "w";
+      const legalMoves = position.moves({ verbose: true });
+      if (!legalMoves.length) return null;
+      if (Math.random() < randomness) {
+        return legalMoves[Math.floor(Math.random() * legalMoves.length)];
+      }
+      const sorted = sortMoves(legalMoves);
+      let bestScore = isWhite ? -Infinity : Infinity;
+      const candidates = [];
+      for (const move of sorted) {
+        position.move(move);
+        const score = minimax(position, depth - 1, -Infinity, Infinity, !isWhite);
+        position.undo();
+        if (isWhite) {
+          if (score > bestScore + 0.001) {
+            bestScore = score;
+            candidates.length = 0;
+            candidates.push(move);
+          } else if (Math.abs(score - bestScore) < 0.001) {
+            candidates.push(move);
+          }
+        } else {
+          if (score < bestScore - 0.001) {
+            bestScore = score;
+            candidates.length = 0;
+            candidates.push(move);
+          } else if (Math.abs(score - bestScore) < 0.001) {
+            candidates.push(move);
+          }
+        }
+      }
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+
+    async function aiMove() {
+      const config = getActiveBotConfig();
+      statusEl.textContent = `AI thinking (${getDifficultyLabel()})…`;
+      await sleep(25);
+      const move = getBestMove(game, config.depth, config.randomness);
+      if (!move) {
+        statusEl.textContent = "AI has no legal move.";
+        return;
+      }
+      await makeMove(move.from, move.to, true);
+    }
+
+    function formatEvaluation(value) {
+      const score = (value / 100).toFixed(2);
+      if (value > 0) return `White advantage +${score}`;
+      if (value < 0) return `Black advantage +${Math.abs(score).toFixed(2)}`;
+      return "Equal position";
+    }
+
+    function evaluateAfterMove(fen, move) {
+      const cloned = new Chess(fen);
+      cloned.move(move);
+      return evaluateBoard(cloned);
+    }
+
+    async function runReview() {
+      analysisContentEl.textContent = "Review in progress…";
+      await sleep(60);
+      const history = game.history({ verbose: true });
+      const clone = new Chess();
+      const insights = [];
+      for (let index = 0; index < history.length; index++) {
+        const actualMove = history[index];
+        const turn = clone.turn();
+        const fenBefore = clone.fen();
+        const bestMove = getBestMove(clone, 2, 0);
+        const actualEval = evaluateAfterMove(fenBefore, actualMove);
+        const bestEval = bestMove ? evaluateAfterMove(fenBefore, bestMove) : actualEval;
+        const diff = turn === "w" ? bestEval - actualEval : actualEval - bestEval;
+        if (diff >= 120) {
+          insights.push({
+            index,
+            turn,
+            actual: actualMove.san,
+            best: bestMove ? bestMove.san : "N/A",
+            diff,
+            type: diff >= 300 ? "Blunder" : diff >= 180 ? "Mistake" : "Inaccuracy"
+          });
+        }
+        clone.move(actualMove);
+      }
+      const lines = [`Final evaluation: ${formatEvaluation(evaluateBoard(game))}.`, `Review summary:`];
+      if (!insights.length) {
+        lines.push("No major mistakes detected. Nice job! Move carefully in the next game.");
+      } else {
+        lines.push(`Detected ${insights.length} key moment(s):`);
+        insights.slice(0, 5).forEach(item => {
+          const moveNumber = Math.ceil((item.index + 1) / 2);
+          const prefix = item.turn === "w" ? `${moveNumber}.` : `${moveNumber}...`;
+          lines.push(`${prefix} ${item.actual} — ${item.type}, best was ${item.best} (${(item.diff / 100).toFixed(2)} pawns).`);
+        });
+      }
+      analysisContentEl.textContent = lines.join("\n");
+    }
+
+    function updateAnalysis() {
+      if (game.isGameOver()) return;
+      const evaluation = formatEvaluation(evaluateBoard(game));
+      analysisContentEl.textContent = `${evaluation}. ${getDifficultyLabel()} ${autoDifficulty ? `(auto from ${playerElo})` : ""}`;
+    }
+
     function getGameIdFromUrl() {
       const url = new URL(window.location.href);
       return url.searchParams.get("game");
@@ -503,58 +760,42 @@
       game.reset();
       renderPieces();
       movesEl.innerHTML = "";
+      selectedSquare = null;
       updateStatus();
-
-      const { data, error } = await supabase
-        .from("games")
-        .insert({
-          white_id: user.id,
-          status: "waiting",
-          fen: game.fen(),
-          time_control: "10+0"
-        })
-        .select()
-        .single();
-
+      const { data, error } = await supabase.from("games").insert({ white_id: user.id, status: "waiting", fen: game.fen(), time_control: "10+0" }).select().single();
       if (error) {
         alert("Error creating game");
         return;
       }
-
       gameId = data.id;
       attachChannel();
       const url = new URL(window.location.href);
       url.searchParams.set("game", gameId);
       window.history.replaceState({}, "", url.toString());
       statusEl.textContent = "Game created. Share the link with a friend.";
+      whiteNameEl.textContent = "You";
+      blackNameEl.textContent = "Friend";
     }
 
     async function joinFriendGame(id) {
       mode = "friend";
-      gameId = id;
       myColor = "black";
       game.reset();
       renderPieces();
       movesEl.innerHTML = "";
+      selectedSquare = null;
       updateStatus();
-
-      await supabase
-        .from("games")
-        .update({ black_id: user.id, status: "ongoing" })
-        .eq("id", gameId);
-
+      await supabase.from("games").update({ black_id: user.id, status: "ongoing" }).eq("id", id);
+      gameId = id;
       attachChannel();
       statusEl.textContent = "Joined game. You are Black.";
+      whiteNameEl.textContent = "Friend";
+      blackNameEl.textContent = "You";
     }
 
     function attachChannel() {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-      channel = supabase.channel(`game:${gameId}`, {
-        config: { broadcast: { self: false } }
-      });
-
+      if (channel) supabase.removeChannel(channel);
+      channel = supabase.channel(`game:${gameId}`, { config: { broadcast: { self: false } } });
       channel.on("broadcast", { event: "move" }, payload => {
         const { from, to, fen } = payload.payload;
         game.load(fen);
@@ -562,16 +803,13 @@
         appendMove({ san: game.history({ verbose: true }).slice(-1)[0].san });
         updateStatus();
       });
-
       channel.on("broadcast", { event: "chat" }, payload => {
         const { sender, message } = payload.payload;
         appendChat(sender, message);
       });
-
       channel.subscribe();
     }
 
-    // ---------- CHAT ----------
     function appendChat(sender, message) {
       const div = document.createElement("div");
       div.textContent = `${sender}: ${message}`;
@@ -585,54 +823,77 @@
       chatInputEl.value = "";
       appendChat("You", msg);
       if (mode === "friend" && channel) {
-        channel.send({
-          type: "broadcast",
-          event: "chat",
-          payload: { sender: user.id.slice(0, 6), message: msg }
-        });
+        channel.send({ type: "broadcast", event: "chat", payload: { sender: user.id.slice(0, 6), message: msg } });
       }
     }
 
-    // ---------- UI HOOKS ----------
-    document.getElementById("new-ai-game").addEventListener("click", () => {
-      mode = "ai";
-      myColor = "white";
-      game.reset();
-      renderPieces();
-      movesEl.innerHTML = "";
-      updateStatus();
-      whiteNameEl.textContent = "You";
-      blackNameEl.textContent = "AI";
-      statusEl.textContent = "You are White vs AI.";
-    });
+    function startMode(selectedMode) {
+      if (selectedMode === "local") {
+        mode = "local";
+        myColor = null;
+        whiteNameEl.textContent = "White";
+        blackNameEl.textContent = "Black";
+        game.reset();
+        renderPieces();
+        movesEl.innerHTML = "";
+        selectedSquare = null;
+        updateStatus();
+        analysisContentEl.textContent = "Local game: take turns with another player.";
+      } else if (selectedMode === "ai") {
+        mode = "ai";
+        myColor = "white";
+        whiteNameEl.textContent = "You";
+        blackNameEl.textContent = "AI";
+        game.reset();
+        renderPieces();
+        movesEl.innerHTML = "";
+        selectedSquare = null;
+        updateStatus();
+        analysisContentEl.textContent = `AI game started. ${getDifficultyLabel()} difficulty.`;
+      }
+    }
 
-    document.getElementById("new-friend-game").addEventListener("click", () => {
-      createFriendGame();
-      whiteNameEl.textContent = "You";
-      blackNameEl.textContent = "Friend";
-    });
+    function displayHint() {
+      if (!mode || game.isGameOver()) return;
+      const hintMove = getBestMove(game, 3, 0);
+      if (!hintMove) {
+        analysisContentEl.textContent = "No hint available.";
+        return;
+      }
+      analysisContentEl.textContent = `Hint: ${hintMove.san}. ${formatEvaluation(evaluateAfterMove(game.fen(), hintMove))}.`;
+    }
 
+    document.getElementById("new-ai-game").addEventListener("click", () => startMode("ai"));
+    document.getElementById("new-local-game").addEventListener("click", () => startMode("local"));
+    document.getElementById("new-friend-game").addEventListener("click", () => createFriendGame());
     document.getElementById("copy-link-btn").addEventListener("click", () => {
       navigator.clipboard.writeText(window.location.href);
       statusEl.textContent = "Link copied.";
     });
-
     document.getElementById("chat-send").addEventListener("click", sendChat);
     chatInputEl.addEventListener("keydown", e => {
       if (e.key === "Enter") sendChat();
     });
+    difficultySelect.addEventListener("change", () => {
+      botDifficulty = difficultySelect.value;
+      if (!autoDifficulty && mode === "ai") updateStatus();
+    });
+    autoDifficultyCheckbox.addEventListener("change", () => {
+      autoDifficulty = autoDifficultyCheckbox.checked;
+      difficultySelect.disabled = autoDifficulty;
+      if (mode === "ai") updateStatus();
+      updateRatingDisplay();
+    });
+    hintBtn.addEventListener("click", displayHint);
 
-    // ---------- INIT ----------
     (async function init() {
+      loadRating();
       await initAuth();
       createBoard();
       updateStatus();
-
       const existingGameId = getGameIdFromUrl();
       if (existingGameId) {
         await joinFriendGame(existingGameId);
-        whiteNameEl.textContent = "Friend";
-        blackNameEl.textContent = "You";
       }
     })();
   </script>
