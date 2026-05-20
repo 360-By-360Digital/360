@@ -654,6 +654,44 @@
           </div>
         </div>
 
+
+        <div class="st-card">
+          <div class="st-card-title">Widgets</div>
+          <form id="widgetForm" style="display:grid;gap:8px;">
+            <select id="widgetType" class="st-input">
+              <option value="weather">Weather widget</option>
+              <option value="time">Time widget</option>
+              <option value="note">Note widget</option>
+            </select>
+            <input id="widgetTitle" class="st-input" placeholder="Widget title" />
+            <div style="display:flex;gap:8px;">
+              <input id="widgetWidth" class="st-input" type="number" min="140" value="220" placeholder="Width" />
+              <input id="widgetHeight" class="st-input" type="number" min="80" value="130" placeholder="Height" />
+            </div>
+            <input id="widgetText" class="st-input" placeholder="Note text (for note widget)" />
+            <div style="display:flex;gap:8px;">
+              <select id="widgetUnit" class="st-input"><option value="C">Celsius</option><option value="F">Fahrenheit</option></select>
+              <input id="widgetTimezone" class="st-input" placeholder="Timezone (optional, e.g. America/New_York)" />
+            </div>
+            <input id="widgetLocale" class="st-input" placeholder="Locale (optional, e.g. en-US)" />
+            <select id="widgetShape" class="st-input"><option value="rounded">Rounded</option><option value="pill">Pill</option><option value="square">Square</option></select>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <label class="st-row-sub">Background <input id="widgetBgColor" type="color" value="#0f172a"/></label>
+              <label class="st-row-sub">Header <input id="widgetHeaderColor" type="color" value="#3b82f6"/></label>
+              <label class="st-row-sub">Text <input id="widgetTextColor" type="color" value="#ffffff"/></label>
+              <label class="st-row-sub">Border <input id="widgetBorderColor" type="color" value="#94a3b8"/></label>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <input id="widgetRadius" class="st-input" type="number" min="0" max="48" value="12" placeholder="Corner radius" />
+              <input id="widgetFontSize" class="st-input" type="number" min="10" max="48" value="18" placeholder="Font size" />
+              <input id="widgetOpacity" class="st-input" type="number" min="0.2" max="1" step="0.05" value="0.85" placeholder="Opacity" />
+            </div>
+            <button class="st-btn primary" type="submit">Add Widget</button>
+          </form>
+          <div id="widgetList" style="margin-top:12px;"></div>
+          <div class="st-row-sub" style="margin-top:10px;">Tip: drag widgets around on the homepage after adding them.</div>
+        </div>
+
         <!-- About -->
         <div class="st-card">
           <div class="st-card-title">About 360</div>
@@ -731,6 +769,8 @@
   <script src="/assets/js/wide.js"></script>
   <script src="/assets/js/cookie.js"></script>
   <script src="/assets/js/cursor.js"></script>
+  <script src="/assets/js/widgets.js"></script>
+  <script src="/assets/js/platform-v3.js"></script>
 
   <script>
   // ────────────────────────────────────────

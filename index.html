@@ -148,6 +148,11 @@
     }
     .bob-track.on { background: var(--a); }
     .bob-track.on::before { transform: translateX(16px); }
+    #widgetBoard { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+    .home-widget { position: absolute; pointer-events: auto; border:1px solid var(--br); background: rgba(15,23,42,.6); color: #fff; border-radius: 12px; overflow: hidden; backdrop-filter: blur(8px); }
+    .home-widget-header { padding: 8px 10px; font-size: 12px; font-weight: 700; cursor: grab; background: rgba(59,130,246,.35); user-select:none; }
+    .home-widget-body { padding: 10px; font-size: 18px; }
+
   </style>
 </head>
 <body>
@@ -270,6 +275,9 @@
       </div>
     </div>
 
+    <h3 style="margin-top:25px;">Advanced</h3>
+    <a href="settings.html?tab=preference" class="legal-link">🧩 Widget Settings</a>
+
     <h3 style="margin-top:25px;">Legal</h3>
     <a href="privacypolicy.html" class="legal-link">🔒 Privacy Policy</a>
     <a href="tos.html" class="legal-link">📜 Terms of Service</a>
@@ -301,6 +309,7 @@
   </div>
 
   <!-- HOME PAGE CONTENT -->
+  <div id="widgetBoard" aria-label="Homepage widget board"></div>
   <div class="home-inner">
     <br><br>
     <div class="clock-pill" id="clock">--:--</div>
@@ -336,6 +345,8 @@
   <script src="/assets/js/main.js"></script>
   <script src="/assets/js/wide.js"></script>
   <script src="/assets/js/home.js"></script>
+  <script src="/assets/js/widgets.js"></script>
+  <script src="/assets/js/platform-v3.js"></script>
   <script src="/assets/js/cookie.js"></script>
   <script src="/assets/js/cursor.js"></script>
 
