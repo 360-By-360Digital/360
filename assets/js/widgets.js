@@ -9,6 +9,7 @@
   function loadWidgets() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
   }
+  const byId = id => document.getElementById(id);
   function saveWidgets(w) { localStorage.setItem(STORAGE_KEY, JSON.stringify(w)); }
   function uid() { return `w_${Date.now()}_${Math.random().toString(36).slice(2,8)}`; }
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
@@ -114,23 +115,24 @@
     if (!list) return;
     const form = document.getElementById('widgetForm');
     const fields = {
-      type: document.getElementById('widgetType'),
-      title: document.getElementById('widgetTitle'),
-      width: document.getElementById('widgetWidth'),
-      height: document.getElementById('widgetHeight'),
-      text: document.getElementById('widgetText'),
-      unit: document.getElementById('widgetUnit'),
-      timezone: document.getElementById('widgetTimezone'),
-      locale: document.getElementById('widgetLocale'),
-      shape: document.getElementById('widgetShape'),
-      bgColor: document.getElementById('widgetBgColor'),
-      headerColor: document.getElementById('widgetHeaderColor'),
-      textColor: document.getElementById('widgetTextColor'),
-      borderColor: document.getElementById('widgetBorderColor'),
-      radius: document.getElementById('widgetRadius'),
-      fontSize: document.getElementById('widgetFontSize'),
-      opacity: document.getElementById('widgetOpacity')
+      type: byId('widgetType'),
+      title: byId('widgetTitle'),
+      width: byId('widgetWidth'),
+      height: byId('widgetHeight'),
+      text: byId('widgetText'),
+      unit: byId('widgetUnit'),
+      timezone: byId('widgetTimezone'),
+      locale: byId('widgetLocale'),
+      shape: byId('widgetShape'),
+      bgColor: byId('widgetBgColor'),
+      headerColor: byId('widgetHeaderColor'),
+      textColor: byId('widgetTextColor'),
+      borderColor: byId('widgetBorderColor'),
+      radius: byId('widgetRadius'),
+      fontSize: byId('widgetFontSize'),
+      opacity: byId('widgetOpacity')
     };
+    if (!fields.type || !fields.title || !fields.width || !fields.height) return;
     let widgets = loadWidgets();
 
     function refresh() {
@@ -169,17 +171,17 @@
         width: clamp(Number(fields.width.value) || 220, 140, 600),
         height: clamp(Number(fields.height.value) || 130, 80, 500),
         text: fields.text.value.trim(),
-        unit: fields.unit.value,
-        timezone: fields.timezone.value.trim(),
-        locale: fields.locale.value.trim(),
-        shape: fields.shape.value,
-        bgColor: fields.bgColor.value,
-        headerColor: fields.headerColor.value,
-        textColor: fields.textColor.value,
-        borderColor: fields.borderColor.value,
-        radius: clamp(Number(fields.radius.value) || 12, 0, 48),
-        fontSize: clamp(Number(fields.fontSize.value) || 18, 10, 48),
-        opacity: clamp(Number(fields.opacity.value) || 0.85, 0.2, 1),
+        unit: fields.unit?.value || 'C',
+        timezone: fields.timezone?.value?.trim?.() || '',
+        locale: fields.locale?.value?.trim?.() || '',
+        shape: fields.shape?.value || 'rounded',
+        bgColor: fields.bgColor?.value || '#0f172a',
+        headerColor: fields.headerColor?.value || '#3b82f6',
+        textColor: fields.textColor?.value || '#ffffff',
+        borderColor: fields.borderColor?.value || '#94a3b8',
+        radius: clamp(Number(fields.radius?.value) || 12, 0, 48),
+        fontSize: clamp(Number(fields.fontSize?.value) || 18, 10, 48),
+        opacity: clamp(Number(fields.opacity?.value) || 0.85, 0.2, 1),
         x: 20,
         y: 20
       });
