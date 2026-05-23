@@ -1,20 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><script>(function(w,i,g){w[g]=w[g]||[];if(typeof w[g].push=='function')w[g].push(i)})
-(window,'GTM-NZHQGS65','google_tags_first_party');</script><script>(function(w,d,s,l){w[l]=w[l]||[];(function(){w[l].push(arguments);})('set', 'developer_id.dYzg1YT', true);
-		w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-		j=d.createElement(s);j.async=true;j.src='/uw4z/';
-		f.parentNode.insertBefore(j,f);
-		})(window,document,'script','dataLayer');</script>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-89NN1P6CEV');
-</script>
+<head>
+  <script>(function(w,i,g){w[g]=w[g]||[];if(typeof w[g].push=='function')w[g].push(i)})(window,'GTM-NZHQGS65','google_tags_first_party');</script>
+  <script>(function(w,d,s,l){w[l]=w[l]||[];(function(){w[l].push(arguments);})('set','developer_id.dYzg1YT',true);w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src='/uw4z/';f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer');</script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-89NN1P6CEV');</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>360 — Chat</title>
@@ -37,6 +27,36 @@
       animation: badgePop .2s ease;
     }
     @keyframes badgePop { from{transform:scale(0)} to{transform:scale(1)} }
+
+    /* AutoMod message styling */
+    .automod-message {
+      background: rgba(239,68,68,.06) !important;
+      border: 1px solid rgba(239,68,68,.18) !important;
+      border-radius: 8px;
+    }
+    /* Soft-deleted message */
+    .msg-deleted {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .msg-deleted .msg-text { font-style: italic; color: var(--mut) !important; }
+    .msg-deleted .msg-actions { display: none !important; }
+    .msg-deleted .reactions-row { display: none !important; }
+    /* AutoMod active pill */
+    .automod-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700;
+      background: rgba(34,197,94,.12); color: #22c55e;
+      border: 1px solid rgba(34,197,94,.25); flex-shrink: 0;
+    }
+    /* Muted input overlay */
+    .input-blocked-msg {
+      position: absolute; inset: 0; z-index: 20;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,.45); backdrop-filter: blur(4px);
+      border-radius: 14px; font-size: 13px; font-weight: 600;
+      color: #fff; gap: 8px; pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -56,7 +76,7 @@
       <div class="nav-item" data-href="../stocks">Stocks</div>
       <div class="nav-item" data-href="../url-shortener">URL Shortener</div>
       <div class="nav-item active" data-href="../chat">Chat</div>
-	  <div class="nav-item" data-href="../news">News</div>
+      <div class="nav-item" data-href="../news">News</div>
       <div class="nav-item" data-href="../apps">Apps</div>
       <div class="nav-item" data-href="../games">Games</div>
     </nav>
@@ -123,7 +143,6 @@
     <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
   </div>
 
-  <!-- Profile popup -->
   <div id="profile-popup">
     <div class="pp-avatar" id="pp-avatar"></div>
     <div class="pp-name"  id="pp-name"></div>
@@ -209,6 +228,7 @@
         <span class="chat-header-icon" id="hdr-icon">🌐</span>
         <span class="chat-header-name" id="hdr-name">General</span>
         <span class="chat-header-desc" id="hdr-desc">Public chat · everyone is here</span>
+        <span class="automod-pill" id="automod-pill" style="margin-left:8px;">🤖 AutoMod</span>
         <button id="notif-btn" title="Enable notifications" style="margin-left:auto;padding:5px 12px;border-radius:999px;border:1px solid var(--glass-border);background:transparent;color:inherit;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;">🔔 Notify</button>
       </div>
       <div id="chat-window"></div>
@@ -232,15 +252,19 @@
           <div id="slash-popup"></div>
         </div>
         <div id="typing-indicator"></div>
-        <div id="chat-input-row">
-          <button class="input-action-btn" id="attachBtn" title="Attach">📎</button>
-          <input type="file" id="fileInput" style="display:none" />
-          <textarea id="message-input" rows="1" placeholder="Message General..." maxlength="4000"></textarea>
-          <div style="position:relative;">
-            <button class="input-action-btn" id="emojiBtn">😊</button>
-            <div class="emoji-picker" id="inputEmojiPicker"></div>
+        <!-- input row wrapper is position:relative so blocked overlay can sit on top -->
+        <div style="position:relative;">
+          <div id="input-blocked-overlay" class="input-blocked-msg" style="display:none;"></div>
+          <div id="chat-input-row">
+            <button class="input-action-btn" id="attachBtn" title="Attach">📎</button>
+            <input type="file" id="fileInput" style="display:none" />
+            <textarea id="message-input" rows="1" placeholder="Message General..." maxlength="4000"></textarea>
+            <div style="position:relative;">
+              <button class="input-action-btn" id="emojiBtn">😊</button>
+              <div class="emoji-picker" id="inputEmojiPicker"></div>
+            </div>
+            <button id="send-button">Send</button>
           </div>
-          <button id="send-button">Send</button>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 4px 0;gap:8px;">
           <div style="font-size:11px;opacity:.35;">Shortcodes: :fire: :skull: :heart: :rocket: · Enter to send · Shift+Enter for newline</div>
@@ -282,6 +306,152 @@
   <script src="/assets/js/cookie.js"></script>
   <script src="/assets/js/cursor.js"></script>
   <script src="/assets/js/chat.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9e0f1c953e1fa02c',t:'MTc3NDI4NjQ3Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"ff0a2d9a55154fa7bec0287a68d6f56f","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       AUTOMOD INTEGRATION PATCH
+       Runs after chat.js is fully loaded.
+  ════════════════════════════════════════════════════════════ -->
+  <script>
+  (function patchAutomod() {
+    "use strict";
+
+    const AUTOMOD_ID = "automod-system";
+    const AUTOMOD_FN = "https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/automod";
+
+    // ── Wait for chat.js globals ──────────────────────────────
+    function waitFor(fn, cb, tries = 0) {
+      if (tries > 100) return;
+      try { if (fn()) { cb(); return; } } catch(_) {}
+      setTimeout(() => waitFor(fn, cb, tries + 1), 80);
+    }
+
+    waitFor(() => typeof sb !== "undefined" && typeof sendMessage !== "undefined", init);
+
+    function init() {
+
+      // ── 1. Check mute/ban status before sending ──────────────
+      async function checkUserStatus() {
+        if (!currentUserId) return { ok: true };
+        const { data } = await sb.from("profiles")
+          .select("banned, muted_until")
+          .eq("id", currentUserId)
+          .single();
+        if (!data) return { ok: true };
+        if (data.banned) return { ok: false, reason: "🚫 You are banned from 360 Chat." };
+        if (data.muted_until && new Date(data.muted_until) > new Date()) {
+          const mins = Math.ceil((new Date(data.muted_until) - Date.now()) / 60000);
+          return { ok: false, reason: `🔇 You are muted for ${mins} more minute${mins !== 1 ? "s" : ""}.` };
+        }
+        return { ok: true };
+      }
+
+      function showBlockedOverlay(reason) {
+        const overlay = document.getElementById("input-blocked-overlay");
+        if (!overlay) return;
+        overlay.textContent = reason;
+        overlay.style.display = "flex";
+        // Auto-hide after 3s
+        setTimeout(() => { overlay.style.display = "none"; }, 3000);
+      }
+
+      // Patch sendMessage to gate on mute/ban
+      const _origSend = window.sendMessage || sendMessage;
+      const patchedSend = async function() {
+        const status = await checkUserStatus();
+        if (!status.ok) {
+          showBlockedOverlay(status.reason);
+          showToast(status.reason);
+          return;
+        }
+        return _origSend.apply(this, arguments);
+      };
+      // Rebind button and enter key to patched version
+      const sendBtn = document.getElementById("send-button");
+      if (sendBtn) {
+        sendBtn.onclick = null;
+        sendBtn.addEventListener("click", patchedSend);
+      }
+      const msgInput = document.getElementById("message-input");
+      if (msgInput) {
+        // Remove old listener by cloning (nuclear but clean)
+        const newInput = msgInput.cloneNode(true);
+        msgInput.parentNode.replaceChild(newInput, msgInput);
+        newInput.addEventListener("keydown", e => {
+          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); patchedSend(); }
+        });
+        newInput.addEventListener("input", () => {
+          newInput.style.height = "auto";
+          newInput.style.height = Math.min(newInput.scrollHeight, 120) + "px";
+        });
+      }
+
+      // ── 2. Real-time: handle UPDATE events (soft-deletes) ────
+      // We patch switchRoom to also subscribe to UPDATE on messages
+      const _origSwitchRoom = switchRoom;
+      window.switchRoom = function(room) {
+        _origSwitchRoom.apply(this, arguments);
+        subscribeAutomodUpdates(room);
+      };
+
+      let updateChannel = null;
+      function subscribeAutomodUpdates(room) {
+        if (updateChannel) { supabaseClient.removeChannel(updateChannel); updateChannel = null; }
+
+        const chanKey = `automod-updates-${room.type}-${room.id}-${Date.now()}`;
+        updateChannel = supabaseClient.channel(chanKey)
+          .on("postgres_changes", {
+            event: "UPDATE", schema: "public", table: "messages"
+          }, payload => {
+            const msg = payload.new;
+            if (!msg) return;
+            if (msg.deleted_at) {
+              applyDeletedStyle(String(msg.id));
+            }
+          })
+          .subscribe();
+      }
+
+      // ── 3. Style AutoMod messages + soft-deleted messages ────
+      // Patch renderMessage to add special classes
+      const _origRenderMessage = window.renderMessage || renderMessage;
+      window.renderMessage = function(msg, loadRxn) {
+        // Skip if already soft-deleted
+        if (msg.deleted_at) return;
+        _origRenderMessage.apply(this, arguments);
+        // After it's been added to the DOM, style it
+        requestAnimationFrame(() => {
+          if (msg.user_id === AUTOMOD_ID) {
+            const el = msgElMap && msgElMap.get(String(msg.id));
+            if (el) el.classList.add("automod-message");
+          }
+        });
+      };
+
+      function applyDeletedStyle(msgId) {
+        const el = msgElMap && msgElMap.get(msgId);
+        if (!el) return;
+        el.classList.add("msg-deleted");
+        const textDiv = el.querySelector(".msg-text");
+        if (textDiv) textDiv.innerHTML = '<em>Message removed by AutoMod</em>';
+      }
+
+      // ── 4. Poll mute/ban status every 30s to unblock input ──
+      setInterval(async () => {
+        const overlay = document.getElementById("input-blocked-overlay");
+        if (!overlay || overlay.style.display === "none") return;
+        const status = await checkUserStatus();
+        if (status.ok) overlay.style.display = "none";
+      }, 30_000);
+
+      // ── 5. Subscribe the current room on load ────────────────
+      // activeRoom is defined in chat.js
+      if (typeof activeRoom !== "undefined") {
+        subscribeAutomodUpdates(activeRoom);
+      }
+
+      console.log("%c🤖 AutoMod patch active", "color:#22c55e;font-weight:bold;");
+    }
+  })();
+  </script>
 </body>
 </html>
