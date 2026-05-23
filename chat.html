@@ -309,39 +309,52 @@
 
   <!-- ═══════════════════════════════════════════════════════════
        AUTOMOD INTEGRATION PATCH
-       Runs after chat.js is fully loaded.
+       Intercepts sendMessage via a guard flag — no DOM cloning,
+       no listener removal, no interference with chat.js internals.
   ════════════════════════════════════════════════════════════ -->
   <script>
   (function patchAutomod() {
     "use strict";
 
     const AUTOMOD_ID = "automod-system";
-    const AUTOMOD_FN = "https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/automod";
 
-    // ── Wait for chat.js globals ──────────────────────────────
+    // ── Wait until chat.js has finished its async INIT block ──
+    // We know init is done when currentUserId is set OR session
+    // check has run (a few hundred ms after DOMContentLoaded).
     function waitFor(fn, cb, tries = 0) {
-      if (tries > 100) return;
+      if (tries > 150) return;
       try { if (fn()) { cb(); return; } } catch(_) {}
       setTimeout(() => waitFor(fn, cb, tries + 1), 80);
     }
 
-    waitFor(() => typeof sb !== "undefined" && typeof sendMessage !== "undefined", init);
+    // sb and sendMessage are both declared at the top of chat.js
+    // (not inside any function), so they're globals immediately.
+    waitFor(
+      () => typeof sb !== "undefined" && typeof sendMessage !== "undefined",
+      init
+    );
 
     function init() {
 
-      // ── 1. Check mute/ban status before sending ──────────────
+      // ── Check mute/ban status ─────────────────────────────────
+      // Returns { ok: true } or { ok: false, reason: "..." }
       async function checkUserStatus() {
-        if (!currentUserId) return { ok: true };
-        const { data } = await sb.from("profiles")
-          .select("banned, muted_until")
-          .eq("id", currentUserId)
-          .single();
-        if (!data) return { ok: true };
-        if (data.banned) return { ok: false, reason: "🚫 You are banned from 360 Chat." };
-        if (data.muted_until && new Date(data.muted_until) > new Date()) {
-          const mins = Math.ceil((new Date(data.muted_until) - Date.now()) / 60000);
-          return { ok: false, reason: `🔇 You are muted for ${mins} more minute${mins !== 1 ? "s" : ""}.` };
-        }
+        // currentUserId is a chat.js global
+        if (typeof currentUserId === "undefined" || !currentUserId) return { ok: true };
+        try {
+          const { data } = await sb.from("profiles")
+            .select("banned, muted_until")
+            .eq("id", currentUserId)
+            .single();
+          if (!data) return { ok: true };
+          if (data.banned) {
+            return { ok: false, reason: "🚫 You are banned from 360 Chat." };
+          }
+          if (data.muted_until && new Date(data.muted_until) > new Date()) {
+            const mins = Math.ceil((new Date(data.muted_until) - Date.now()) / 60000);
+            return { ok: false, reason: `🔇 You are muted for ${mins} more minute${mins !== 1 ? "s" : ""}.` };
+          }
+        } catch(_) { /* non-fatal — allow send on DB error */ }
         return { ok: true };
       }
 
@@ -350,106 +363,110 @@
         if (!overlay) return;
         overlay.textContent = reason;
         overlay.style.display = "flex";
-        // Auto-hide after 3s
         setTimeout(() => { overlay.style.display = "none"; }, 3000);
       }
 
-      // Patch sendMessage to gate on mute/ban
-      const _origSend = window.sendMessage || sendMessage;
-      const patchedSend = async function() {
+      // ── Guard flag injected into the chat.js sendMessage flow ─
+      // Instead of replacing the function or cloning DOM nodes,
+      // we set a module-level flag that sendMessage checks at the
+      // top of its own execution. We do this by wrapping the
+      // send-button click and Enter-key handler with a pre-check,
+      // then calling the real sendMessage only if clear.
+      //
+      // Strategy: override the two entry points (button click +
+      // keydown on textarea) using capture-phase listeners which
+      // fire BEFORE the bubble-phase listeners chat.js registered.
+
+      async function guardedSend(e) {
+        // Stop the event so chat.js's listener doesn't fire yet
+        e.stopImmediatePropagation();
+        if (e.type === "keydown" && !(e.key === "Enter" && !e.shiftKey)) return;
+        if (e.type === "keydown") e.preventDefault();
+
         const status = await checkUserStatus();
         if (!status.ok) {
           showBlockedOverlay(status.reason);
-          showToast(status.reason);
+          if (typeof showToast === "function") showToast(status.reason);
           return;
         }
-        return _origSend.apply(this, arguments);
-      };
-      // Rebind button and enter key to patched version
+        // All clear — call sendMessage directly (it's a plain async fn)
+        sendMessage();
+      }
+
+      // Capture phase (true) fires before chat.js's bubble listeners
       const sendBtn = document.getElementById("send-button");
-      if (sendBtn) {
-        sendBtn.onclick = null;
-        sendBtn.addEventListener("click", patchedSend);
-      }
+      if (sendBtn) sendBtn.addEventListener("click", guardedSend, true);
+
       const msgInput = document.getElementById("message-input");
-      if (msgInput) {
-        // Remove old listener by cloning (nuclear but clean)
-        const newInput = msgInput.cloneNode(true);
-        msgInput.parentNode.replaceChild(newInput, msgInput);
-        newInput.addEventListener("keydown", e => {
-          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); patchedSend(); }
-        });
-        newInput.addEventListener("input", () => {
-          newInput.style.height = "auto";
-          newInput.style.height = Math.min(newInput.scrollHeight, 120) + "px";
-        });
-      }
+      if (msgInput) msgInput.addEventListener("keydown", guardedSend, true);
 
-      // ── 2. Real-time: handle UPDATE events (soft-deletes) ────
-      // We patch switchRoom to also subscribe to UPDATE on messages
-      const _origSwitchRoom = switchRoom;
-      window.switchRoom = function(room) {
-        _origSwitchRoom.apply(this, arguments);
-        subscribeAutomodUpdates(room);
-      };
-
+      // ── Real-time soft-delete listener ────────────────────────
+      // Subscribe to UPDATE events so automod deletions appear
+      // instantly without a refresh.
       let updateChannel = null;
-      function subscribeAutomodUpdates(room) {
-        if (updateChannel) { supabaseClient.removeChannel(updateChannel); updateChannel = null; }
 
-        const chanKey = `automod-updates-${room.type}-${room.id}-${Date.now()}`;
-        updateChannel = supabaseClient.channel(chanKey)
+      function subscribeUpdates(room) {
+        if (updateChannel) {
+          try { supabaseClient.removeChannel(updateChannel); } catch(_) {}
+          updateChannel = null;
+        }
+        const key = `am-upd-${room.type}-${room.id}-${Date.now()}`;
+        updateChannel = supabaseClient.channel(key)
           .on("postgres_changes", {
             event: "UPDATE", schema: "public", table: "messages"
           }, payload => {
-            const msg = payload.new;
-            if (!msg) return;
-            if (msg.deleted_at) {
-              applyDeletedStyle(String(msg.id));
+            if (payload.new?.deleted_at) {
+              applyDeletedStyle(String(payload.new.id));
             }
           })
           .subscribe();
       }
 
-      // ── 3. Style AutoMod messages + soft-deleted messages ────
-      // Patch renderMessage to add special classes
-      const _origRenderMessage = window.renderMessage || renderMessage;
-      window.renderMessage = function(msg, loadRxn) {
-        // Skip if already soft-deleted
-        if (msg.deleted_at) return;
-        _origRenderMessage.apply(this, arguments);
-        // After it's been added to the DOM, style it
-        requestAnimationFrame(() => {
-          if (msg.user_id === AUTOMOD_ID) {
-            const el = msgElMap && msgElMap.get(String(msg.id));
-            if (el) el.classList.add("automod-message");
-          }
-        });
-      };
+      // Wrap switchRoom to keep the update subscription in sync
+      if (typeof switchRoom !== "undefined") {
+        const _orig = switchRoom;
+        window.switchRoom = function(room) {
+          _orig.apply(this, arguments);
+          subscribeUpdates(room);
+        };
+      }
 
+      // ── Style helpers ─────────────────────────────────────────
       function applyDeletedStyle(msgId) {
-        const el = msgElMap && msgElMap.get(msgId);
+        const el = typeof msgElMap !== "undefined" && msgElMap.get(msgId);
         if (!el) return;
         el.classList.add("msg-deleted");
         const textDiv = el.querySelector(".msg-text");
-        if (textDiv) textDiv.innerHTML = '<em>Message removed by AutoMod</em>';
+        if (textDiv) textDiv.innerHTML = "<em>Message removed by AutoMod</em>";
       }
 
-      // ── 4. Poll mute/ban status every 30s to unblock input ──
+      // Wrap renderMessage to style AutoMod's own announcements
+      if (typeof renderMessage !== "undefined") {
+        const _origRender = renderMessage;
+        window.renderMessage = function(msg, loadRxn) {
+          if (msg.deleted_at) return; // never show pre-deleted msgs
+          _origRender.apply(this, arguments);
+          if (msg.user_id === AUTOMOD_ID) {
+            requestAnimationFrame(() => {
+              const el = typeof msgElMap !== "undefined" && msgElMap.get(String(msg.id));
+              if (el) el.classList.add("automod-message");
+            });
+          }
+        };
+      }
+
+      // ── Auto-clear mute overlay every 30s ────────────────────
       setInterval(async () => {
         const overlay = document.getElementById("input-blocked-overlay");
         if (!overlay || overlay.style.display === "none") return;
         const status = await checkUserStatus();
         if (status.ok) overlay.style.display = "none";
-      }, 30_000);
+      }, 30000);
 
-      // ── 5. Subscribe the current room on load ────────────────
-      // activeRoom is defined in chat.js
-      if (typeof activeRoom !== "undefined") {
-        subscribeAutomodUpdates(activeRoom);
-      }
+      // Subscribe immediately for the default room
+      if (typeof activeRoom !== "undefined") subscribeUpdates(activeRoom);
 
-      console.log("%c🤖 AutoMod patch active", "color:#22c55e;font-weight:bold;");
+      console.log("%c🤖 AutoMod active", "color:#22c55e;font-weight:bold;font-size:13px;");
     }
   })();
   </script>
