@@ -319,30 +319,6 @@
       background: linear-gradient(120deg, var(--a), var(--a2));
       color: #fff; border-color: transparent;
     }
-    .search-utility-bar {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      max-width: 1240px;
-      padding: 0 20px;
-      box-sizing: border-box;
-    }
-    .search-safe-pill, .kp-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: 999px;
-      padding: 6px 10px;
-      background: var(--glass-light-mid);
-      border: 1px solid var(--glass-border);
-      backdrop-filter: var(--glass-blur-sm);
-    }
-    body.dark .search-safe-pill, body.dark .kp-controls { background: var(--glass-dark-mid); border-color: var(--glass-border-dk); }
-    .search-utility-bar label { font-size: 12px; color: var(--mut); font-weight: 700; }
-    body.dark .search-utility-bar label { color: var(--mutd); }
-    .search-utility-bar select { border-radius: 999px; border: 1px solid var(--glass-border); background: transparent; padding: 5px 10px; font-size: 12px; color: inherit; }
 
     /* ── Results container ── */
     #custom-results-area {
@@ -377,8 +353,6 @@
     }
     body.dark #knowledge-panel { background: var(--glass-dark-mid); border-color: var(--glass-border-dk); box-shadow: var(--glass-shadow-sm), var(--glass-inset-dk);}
     #knowledge-panel.active { display:block; }
-    #knowledge-panel.compact { padding: 10px; }
-    #knowledge-panel.minimal .kp-image, #knowledge-panel.minimal .kp-facts, #knowledge-panel.minimal .kp-source { display: none; }
     .kp-image { width: 100%; height: 170px; object-fit: cover; border-radius: 12px; margin-bottom: 10px; }
 
     .results-info {
@@ -731,7 +705,6 @@
       #knowledge-panel { position: static; order: -1; }
       .results-tabs { gap: 4px; padding: 8px; }
       .results-tab { padding: 6px 12px; font-size: 12px; }
-      .search-utility-bar { padding: 0 12px; flex-direction: column; align-items: stretch; }
     }
   </style>
 </head>
@@ -886,27 +859,6 @@
         AI
       </div>
     </div>
-    <div class="search-utility-bar">
-      <div class="search-safe-pill">
-        <label for="safeSearchSelect">Safe search</label>
-        <select id="safeSearchSelect">
-          <option value="active" selected>Strict</option>
-        </select>
-      </div>
-      <div class="kp-controls">
-        <label for="kpPositionSelect">Knowledge panel</label>
-        <select id="kpPositionSelect">
-          <option value="left" selected>Left</option>
-          <option value="top">Top</option>
-          <option value="right">Right</option>
-        </select>
-        <select id="kpStyleSelect">
-          <option value="default" selected>Default</option>
-          <option value="compact">Compact</option>
-          <option value="minimal">Minimal</option>
-        </select>
-      </div>
-    </div>
 
     <div class="results-layout">
       <aside id="knowledge-panel"></aside>
@@ -980,10 +932,6 @@
     const aiPanel     = document.getElementById('ai-panel');
     const tabsEl      = document.getElementById('results-tabs');
     const knowledgePanel = document.getElementById('knowledge-panel');
-    const safeSearchSelect = document.getElementById('safeSearchSelect');
-    const kpPositionSelect = document.getElementById('kpPositionSelect');
-    const kpStyleSelect = document.getElementById('kpStyleSelect');
-    const resultsLayout = document.querySelector('.results-layout');
 
     /* ─────────────────────────────────
        INIT FROM URL
@@ -1023,11 +971,6 @@
     
     async function loadKnowledgePanel(q) {
       if (!q?.trim()) { knowledgePanel.classList.remove('active'); knowledgePanel.innerHTML=''; return; }
-      if (scoreKnowledgePanelRelevance(q) < 0.85) {
-        knowledgePanel.classList.remove('active');
-        knowledgePanel.innerHTML = '';
-        return;
-      }
       knowledgePanel.classList.add('active');
       knowledgePanel.innerHTML = '<div class="kp-subtext">Loading knowledge panel…</div>';
       try {
@@ -1046,31 +989,6 @@
       } catch (e) {
         knowledgePanel.innerHTML = '<div class="kp-subtext">Knowledge panel is unavailable right now.</div>';
       }
-    }
-    function scoreKnowledgePanelRelevance(q) {
-      const tokens = String(q || '').toLowerCase().split(/\s+/).filter(t => t.length > 2);
-      if (!tokens.length) return 0;
-      const overlapRatio = tokens.length > 1 ? 1 : 0.8;
-      return Math.min(1, overlapRatio + Math.min(0.2, tokens.length * 0.04));
-    }
-    function applyKnowledgePanelLayout() {
-      const position = kpPositionSelect?.value || 'left';
-      if (!resultsLayout) return;
-      if (position === 'right') {
-        resultsLayout.style.gridTemplateColumns = 'minmax(0,1fr) 320px';
-        resultsLayout.appendChild(knowledgePanel);
-      } else if (position === 'top') {
-        resultsLayout.style.gridTemplateColumns = '1fr';
-        resultsLayout.prepend(knowledgePanel);
-      } else {
-        resultsLayout.style.gridTemplateColumns = '320px minmax(0,1fr)';
-        resultsLayout.prepend(knowledgePanel);
-      }
-    }
-    function applyKnowledgePanelStyle() {
-      knowledgePanel.classList.remove('compact', 'minimal');
-      const mode = kpStyleSelect?.value || 'default';
-      if (mode !== 'default') knowledgePanel.classList.add(mode);
     }
 
     function waitForGcseAndSearch(q, tab) {
@@ -1127,16 +1045,6 @@
                      google.search.cse.element.getAllElements()[0];
           if (el) {
             el.execute(q);
-            const safe = safeSearchSelect?.value || 'active';
-            if (safe === 'active') {
-              document.querySelectorAll('#gcse-hidden-container a, .gsc-control-cse a').forEach((a) => {
-                try {
-                  const u = new URL(a.href, location.origin);
-                  u.searchParams.set('safe', 'active');
-                  a.href = u.toString();
-                } catch {}
-              });
-            }
             setupGcseObserver();
             return;
           }
@@ -1609,12 +1517,9 @@
 
       showResultsArea(true);
       if (state.query) {
-        loadKnowledgePanel(state.query);
         waitForGcseAndSearch(state.query, t);
       }
     });
-    kpPositionSelect?.addEventListener('change', applyKnowledgePanelLayout);
-    kpStyleSelect?.addEventListener('change', applyKnowledgePanelStyle);
 
     function setActiveTab(t) {
       tabsEl.querySelectorAll('.results-tab').forEach(el => {
@@ -2244,8 +2149,6 @@
        BOOT
     ───────────────────────────────── */
     initFromUrl();
-    applyKnowledgePanelLayout();
-    applyKnowledgePanelStyle();
 
   })();
   </script>
