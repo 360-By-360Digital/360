@@ -319,57 +319,6 @@
       background: linear-gradient(120deg, var(--a), var(--a2));
       color: #fff; border-color: transparent;
     }
-    .search-utility-bar {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      max-width: 1240px;
-      padding: 0 20px;
-      box-sizing: border-box;
-    }
-    .search-safe-pill, .kp-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: 999px;
-      padding: 6px 10px;
-      background: var(--glass-light-mid);
-      border: 1px solid var(--glass-border);
-      backdrop-filter: var(--glass-blur-sm);
-    }
-    body.dark .search-safe-pill, body.dark .kp-controls { background: var(--glass-dark-mid); border-color: var(--glass-border-dk); }
-    .search-utility-bar label { font-size: 12px; color: var(--mut); font-weight: 700; }
-    body.dark .search-utility-bar label { color: var(--mutd); }
-    .search-utility-bar select { border-radius: 999px; border: 1px solid var(--glass-border); background: transparent; padding: 5px 10px; font-size: 12px; color: inherit; }
-    .speed-test-trigger { display:none; margin-left:auto; }
-    .speed-test-trigger.visible { display:inline-flex; }
-    .speed-test-btn {
-      border: none; border-radius: 999px; padding: 7px 12px; font-size: 12px; font-weight: 700; cursor: pointer;
-      background: linear-gradient(120deg, var(--a), var(--a2)); color: #fff;
-      box-shadow: 0 4px 14px rgba(59,130,246,0.35);
-    }
-    .speed-test-panel {
-      display: none;
-      width: 100%;
-      max-width: 900px;
-      margin: 6px auto 0;
-      padding: 12px 14px;
-      border-radius: 16px;
-      background: var(--glass-light-mid);
-      border: 1px solid var(--glass-border);
-      backdrop-filter: var(--glass-blur);
-      box-sizing: border-box;
-    }
-    .speed-test-panel.active { display: block; }
-    body.dark .speed-test-panel { background: var(--glass-dark-mid); border-color: var(--glass-border-dk); }
-    .speed-grid { display:grid; grid-template-columns: repeat(4, minmax(100px, 1fr)); gap: 8px; margin-top: 10px; }
-    .speed-stat { border-radius: 12px; padding: 10px; background: rgba(255,255,255,0.4); }
-    body.dark .speed-stat { background: rgba(10,15,30,0.6); }
-    .speed-label { font-size: 11px; color: var(--mut); text-transform: uppercase; letter-spacing: .04em; }
-    .speed-value { font-size: 18px; font-weight: 800; color: var(--txt); margin-top: 3px; }
-    body.dark .speed-value { color: var(--txtd); }
 
     /* ── Results container ── */
     #custom-results-area {
@@ -404,8 +353,6 @@
     }
     body.dark #knowledge-panel { background: var(--glass-dark-mid); border-color: var(--glass-border-dk); box-shadow: var(--glass-shadow-sm), var(--glass-inset-dk);}
     #knowledge-panel.active { display:block; }
-    #knowledge-panel.compact { padding: 10px; }
-    #knowledge-panel.minimal .kp-image, #knowledge-panel.minimal .kp-facts, #knowledge-panel.minimal .kp-source { display: none; }
     .kp-image { width: 100%; height: 170px; object-fit: cover; border-radius: 12px; margin-bottom: 10px; }
 
     .results-info {
@@ -758,8 +705,6 @@
       #knowledge-panel { position: static; order: -1; }
       .results-tabs { gap: 4px; padding: 8px; }
       .results-tab { padding: 6px 12px; font-size: 12px; }
-      .search-utility-bar { padding: 0 12px; flex-direction: column; align-items: stretch; }
-      .speed-grid { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -914,38 +859,6 @@
         AI
       </div>
     </div>
-    <div class="search-utility-bar">
-      <div class="search-safe-pill">
-        <label for="safeSearchSelect">Safe search</label>
-        <select id="safeSearchSelect">
-          <option value="active" selected>Strict</option>
-        </select>
-      </div>
-      <div class="kp-controls">
-        <label for="kpStyleSelect">Knowledge panel</label>
-        <select id="kpStyleSelect">
-          <option value="default" selected>Default</option>
-          <option value="compact">Compact</option>
-          <option value="minimal">Minimal</option>
-        </select>
-      </div>
-      <div class="speed-test-trigger" id="speedTestTrigger">
-        <button class="speed-test-btn" id="speedTestBtn">Run internet speed test</button>
-      </div>
-    </div>
-    <div class="speed-test-panel" id="speedTestPanel">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-        <strong>Internet Speed Test</strong>
-        <button class="speed-test-btn" id="speedTestRunBtn">Start test</button>
-      </div>
-      <div class="speed-grid">
-        <div class="speed-stat"><div class="speed-label">Latency</div><div class="speed-value"><span id="latencyResult">--</span> ms</div></div>
-        <div class="speed-stat"><div class="speed-label">Ping</div><div class="speed-value"><span id="pingResult">--</span> ms</div></div>
-        <div class="speed-stat"><div class="speed-label">Download</div><div class="speed-value"><span id="downloadResult">--</span> Mbps</div></div>
-        <div class="speed-stat"><div class="speed-label">Upload</div><div class="speed-value"><span id="uploadResult">--</span> Mbps</div></div>
-      </div>
-      <div id="speedFeedback" style="margin-top:10px;color:var(--mut);font-size:13px;">Press “Start test” to run.</div>
-    </div>
 
     <div class="results-layout">
       <aside id="knowledge-panel"></aside>
@@ -1019,17 +932,6 @@
     const aiPanel     = document.getElementById('ai-panel');
     const tabsEl      = document.getElementById('results-tabs');
     const knowledgePanel = document.getElementById('knowledge-panel');
-    const safeSearchSelect = document.getElementById('safeSearchSelect');
-    const kpStyleSelect = document.getElementById('kpStyleSelect');
-    const speedTestTrigger = document.getElementById('speedTestTrigger');
-    const speedTestBtn = document.getElementById('speedTestBtn');
-    const speedTestPanel = document.getElementById('speedTestPanel');
-    const speedTestRunBtn = document.getElementById('speedTestRunBtn');
-    const latencyResult = document.getElementById('latencyResult');
-    const pingResult = document.getElementById('pingResult');
-    const downloadResult = document.getElementById('downloadResult');
-    const uploadResult = document.getElementById('uploadResult');
-    const speedFeedback = document.getElementById('speedFeedback');
 
     /* ─────────────────────────────────
        INIT FROM URL
@@ -1049,19 +951,10 @@
           runAiSearch(q);
         } else {
           showResultsArea(true);
-          toggleSpeedTestTrigger(q);
           loadKnowledgePanel(q);
           waitForGcseAndSearch(q, t);
         }
       }
-    }
-    function isSpeedTestQuery(q) {
-      return /(speed\s*test|internet\s*speed|wifi\s*speed|bandwidth|latency|ping\s*test|download\s*speed|upload\s*speed)/i.test(String(q || ''));
-    }
-    function toggleSpeedTestTrigger(q) {
-      const visible = isSpeedTestQuery(q);
-      speedTestTrigger?.classList.toggle('visible', visible);
-      if (!visible) speedTestPanel?.classList.remove('active');
     }
 
     /* ─────────────────────────────────
@@ -1078,11 +971,6 @@
     
     async function loadKnowledgePanel(q) {
       if (!q?.trim()) { knowledgePanel.classList.remove('active'); knowledgePanel.innerHTML=''; return; }
-      if (scoreKnowledgePanelRelevance(q) < 0.85) {
-        knowledgePanel.classList.remove('active');
-        knowledgePanel.innerHTML = '';
-        return;
-      }
       knowledgePanel.classList.add('active');
       knowledgePanel.innerHTML = '<div class="kp-subtext">Loading knowledge panel…</div>';
       try {
@@ -1101,17 +989,6 @@
       } catch (e) {
         knowledgePanel.innerHTML = '<div class="kp-subtext">Knowledge panel is unavailable right now.</div>';
       }
-    }
-    function scoreKnowledgePanelRelevance(q) {
-      const tokens = String(q || '').toLowerCase().split(/\s+/).filter(t => t.length > 2);
-      if (!tokens.length) return 0;
-      const overlapRatio = tokens.length > 1 ? 1 : 0.8;
-      return Math.min(1, overlapRatio + Math.min(0.2, tokens.length * 0.04));
-    }
-    function applyKnowledgePanelStyle() {
-      knowledgePanel.classList.remove('compact', 'minimal');
-      const mode = kpStyleSelect?.value || 'default';
-      if (mode !== 'default') knowledgePanel.classList.add(mode);
     }
 
     function waitForGcseAndSearch(q, tab) {
@@ -1168,16 +1045,6 @@
                      google.search.cse.element.getAllElements()[0];
           if (el) {
             el.execute(q);
-            const safe = safeSearchSelect?.value || 'active';
-            if (safe === 'active') {
-              document.querySelectorAll('#gcse-hidden-container a, .gsc-control-cse a').forEach((a) => {
-                try {
-                  const u = new URL(a.href, location.origin);
-                  u.searchParams.set('safe', 'active');
-                  a.href = u.toString();
-                } catch {}
-              });
-            }
             setupGcseObserver();
             return;
           }
@@ -1650,42 +1517,9 @@
 
       showResultsArea(true);
       if (state.query) {
-        toggleSpeedTestTrigger(state.query);
-        loadKnowledgePanel(state.query);
         waitForGcseAndSearch(state.query, t);
       }
     });
-    speedTestBtn?.addEventListener('click', () => speedTestPanel?.classList.toggle('active'));
-    speedTestRunBtn?.addEventListener('click', async () => {
-      const fmt = (n) => Number.isFinite(n) ? n.toFixed(1) : '--';
-      speedFeedback.textContent = 'Running test…';
-      try {
-        const t0 = performance.now();
-        await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache: 'no-store' });
-        const latency = performance.now() - t0;
-        latencyResult.textContent = String(Math.round(latency));
-        pingResult.textContent = String(Math.round(latency));
-
-        const dlStart = performance.now();
-        const dlRes = await fetch('https://speed.cloudflare.com/__down?bytes=5000000', { cache: 'no-store' });
-        const dlBuf = await dlRes.arrayBuffer();
-        const dlSecs = Math.max((performance.now() - dlStart) / 1000, 0.001);
-        const dlMbps = (dlBuf.byteLength * 8) / dlSecs / 1_000_000;
-        downloadResult.textContent = fmt(dlMbps);
-
-        const ulData = new Uint8Array(1_000_000);
-        crypto.getRandomValues(ulData);
-        const ulStart = performance.now();
-        await fetch('https://httpbin.org/post', { method: 'POST', body: ulData, cache: 'no-store' });
-        const ulSecs = Math.max((performance.now() - ulStart) / 1000, 0.001);
-        const ulMbps = (ulData.byteLength * 8) / ulSecs / 1_000_000;
-        uploadResult.textContent = fmt(ulMbps);
-        speedFeedback.textContent = 'Test complete.';
-      } catch (err) {
-        speedFeedback.textContent = 'Speed test failed. Please try again.';
-      }
-    });
-    kpStyleSelect?.addEventListener('change', applyKnowledgePanelStyle);
 
     function setActiveTab(t) {
       tabsEl.querySelectorAll('.results-tab').forEach(el => {
@@ -1968,7 +1802,6 @@
 
       state.query = q;
       state.page = 1;
-      toggleSpeedTestTrigger(q);
       input.value = q;
       updateClearBtn();
       updateUrl(q, state.tab);
@@ -2316,8 +2149,6 @@
        BOOT
     ───────────────────────────────── */
     initFromUrl();
-    toggleSpeedTestTrigger(state.query);
-    applyKnowledgePanelStyle();
 
   })();
   </script>
