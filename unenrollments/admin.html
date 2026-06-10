@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Methods</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="wide-mode">
+
+<div class="top-bar">
+  <h1 id="h1">Admin Panel</h1>
+  <button id="addMethodBtn" class="pill-btn">Add Method</button>
+</div>
+
+<div id="listView">
+  <div id="grid" class="grid-container"></div>
+</div>
+
+<div id="detailView" class="hidden">
+  <button onclick="goHome()" class="pill-btn">Back</button>
+  <h2 id="title"></h2>
+  <p id="desc"></p>
+  <div id="steps"></div>
+  <div class="detail-buttons">
+    <button id="editBtn" class="pill-btn">Edit</button>
+    <button id="deleteBtn" class="pill-btn">Delete</button>
+  </div>
+</div>
+
+<div id="editor" class="modal-box hidden">
+  <div class="modal-inner">
+    <h2 id="editorTitle"></h2>
+
+    <div class="field-group">
+      <label for="methodTitle">Title</label>
+      <input type="text" id="methodTitle" placeholder="e.g. Pomodoro Technique">
+    </div>
+
+    <div class="field-group">
+      <label for="methodShort">Short Description</label>
+      <input type="text" id="methodShort" placeholder="One-line summary">
+    </div>
+
+    <div class="field-group">
+      <label for="methodDescription">Full Description</label>
+      <textarea id="methodDescription" rows="4" placeholder="Explain this method in detail…"></textarea>
+    </div>
+
+    <div class="field-group">
+      <label>Steps</label>
+      <div id="stepsList" class="steps-list"></div>
+      <button id="addStepBtn">+ Add Step</button>
+    </div>
+
+    <div class="modal-buttons">
+      <button id="cancelBtn">Cancel</button>
+      <button id="saveBtn">Save Method</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+<script type="module" src="admin.js"></script>
+</body>
+</html>
