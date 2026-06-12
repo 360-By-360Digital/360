@@ -66,6 +66,7 @@ sudo apt install gdebi -y
 
 ### Android
 Coming soon via Samsung Galaxy Store.
+SOON AVAILABLE THROUGH .APK! CHECK RELEASES FOR THE LATEST IMPROVEMENTS AMONG 360 FOR AndroidOS!
 
 ---
 
