@@ -148,10 +148,204 @@
     }
     .bob-track.on { background: var(--a); }
     .bob-track.on::before { transform: translateX(16px); }
+    /* ══ Widget Board ══════════════════════════════════════════ */
     #widgetBoard { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
-    .home-widget { position: absolute; pointer-events: auto; border:1px solid var(--br); background: rgba(15,23,42,.6); color: #fff; border-radius: 12px; overflow: hidden; backdrop-filter: blur(8px); }
-    .home-widget-header { padding: 8px 10px; font-size: 12px; font-weight: 700; cursor: grab; background: rgba(59,130,246,.35); user-select:none; }
-    .home-widget-body { padding: 10px; font-size: 18px; }
+
+    @keyframes widgetAppear {
+      from { opacity: 0; transform: scale(0.80) translateY(10px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0); }
+    }
+    @keyframes widgetVanish {
+      from { opacity: 1; transform: scale(1); }
+      to   { opacity: 0; transform: scale(0.80); }
+    }
+
+    .home-widget {
+      position: absolute;
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(8, 12, 28, 0.54);
+      color: #e7edf5;
+      border-radius: 18px;
+      overflow: hidden;
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      box-shadow:
+        0 8px 32px rgba(0,0,0,0.45),
+        0 0 0 1px rgba(255,255,255,0.05),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+      transition: box-shadow 0.28s, border-color 0.28s;
+      animation: widgetAppear 0.38s cubic-bezier(0.34,1.56,0.64,1) forwards;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      min-width: 140px; min-height: 90px;
+    }
+    .home-widget:hover {
+      box-shadow:
+        0 18px 52px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(255,255,255,0.15),
+        inset 0 1px 0 rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.18);
+    }
+
+    /* Header */
+    .home-widget-header {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: grab;
+      user-select: none;
+      flex-shrink: 0;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: linear-gradient(
+        115deg,
+        var(--widget-accent, #8b5cf6),
+        color-mix(in srgb, var(--widget-accent, #8b5cf6) 55%, #000020)
+      );
+    }
+    .home-widget-header:active { cursor: grabbing; }
+    .home-widget-icon  { font-size: 13px; line-height: 1; flex-shrink: 0; }
+    .home-widget-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .home-widget-close {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.45);
+      font-size: 11px;
+      cursor: pointer;
+      padding: 2px 5px;
+      border-radius: 5px;
+      line-height: 1;
+      opacity: 0;
+      transform: scale(0.7);
+      transition: opacity 0.18s, transform 0.18s, background 0.15s, color 0.15s;
+    }
+    .home-widget:hover .home-widget-close { opacity: 1; transform: scale(1); }
+    .home-widget-close:hover { background: rgba(239,68,68,0.35); color: #fff; }
+
+    /* Body */
+    .home-widget-body {
+      flex: 1;
+      padding: 12px;
+      overflow: auto;
+      font-size: 13px;
+      min-height: 0;
+    }
+    .home-widget-body::-webkit-scrollbar { width: 3px; }
+    .home-widget-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 99px; }
+
+    /* Resize handle */
+    .home-widget-resizer {
+      position: absolute;
+      bottom: 5px; right: 5px;
+      width: 14px; height: 14px;
+      cursor: se-resize;
+      opacity: 0;
+      transition: opacity 0.2s;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,0.55) 1.2px, transparent 1.2px),
+        radial-gradient(circle, rgba(255,255,255,0.35) 1.2px, transparent 1.2px),
+        radial-gradient(circle, rgba(255,255,255,0.35) 1.2px, transparent 1.2px),
+        radial-gradient(circle, rgba(255,255,255,0.20) 1.2px, transparent 1.2px);
+      background-size: 5px 5px;
+      background-position: 9px 9px, 4px 9px, 9px 4px, 4px 4px;
+      background-repeat: no-repeat;
+      z-index: 2;
+    }
+    .home-widget:hover .home-widget-resizer { opacity: 1; }
+
+    /* ── Clock widget ── */
+    .wg-clock-time {
+      font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1;
+      background: linear-gradient(120deg, #c4b5fd, #a78bfa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .wg-clock-date    { font-size: 0.73rem; color: rgba(255,255,255,0.45); margin-top: 5px; }
+    .wg-clock-greeting{ font-size: 0.76rem; color: rgba(255,255,255,0.65); margin-top: 7px; font-weight: 600; }
+
+    /* ── Weather widget ── */
+    .wg-weather-main  { display: flex; align-items: center; gap: 12px; }
+    .wg-weather-icon  { font-size: 2.3rem; line-height: 1; flex-shrink: 0; }
+    .wg-weather-temp  {
+      font-size: 1.8rem; font-weight: 800;
+      background: linear-gradient(120deg, #67e8f9, #22d3ee);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .wg-weather-desc  { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
+    .wg-weather-loc   { font-size: 0.71rem; color: rgba(255,255,255,0.4); margin-top: 8px; }
+    .wg-weather-extra { font-size: 0.73rem; color: rgba(255,255,255,0.4); margin-top: 4px; }
+    .wg-weather-loading,.wg-weather-err { color: rgba(255,255,255,0.45); font-size: 0.8rem; }
+
+    /* ── Note widget ── */
+    .wg-note-area {
+      width: 100%; height: 100%; min-height: 80px;
+      background: transparent; border: none; outline: none;
+      color: rgba(255,255,255,0.82); font-size: 0.84rem;
+      font-family: inherit; resize: none; line-height: 1.58;
+      padding: 12px;
+    }
+    .wg-note-area::placeholder { color: rgba(255,255,255,0.28); }
+
+    /* ── Stocks widget ── */
+    .wg-stocks-header {
+      display: flex; gap: 6px; padding-bottom: 5px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: rgba(255,255,255,0.35);
+      margin-bottom: 4px;
+    }
+    .wg-stocks-header span:nth-child(1) { min-width: 44px; }
+    .wg-stocks-header span:nth-child(2) { flex: 1; }
+    .wg-stocks-header span:nth-child(3) { min-width: 52px; text-align: right; }
+    .wg-stock-row {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 0.79rem;
+    }
+    .wg-stock-row:last-of-type { border-bottom: none; }
+    .wg-stock-sym    { font-weight: 800; color: #6ee7b7; font-size: 0.76rem; min-width: 44px; }
+    .wg-stock-name   { flex: 1; color: rgba(255,255,255,0.48); font-size: 0.71rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wg-stock-price  { font-weight: 700; color: rgba(255,255,255,0.88); }
+    .wg-stock-change { font-weight: 700; font-size: 0.74rem; min-width: 52px; text-align: right; }
+    .wg-stock-change.up   { color: #34d399; }
+    .wg-stock-change.down { color: #f87171; }
+    .wg-stocks-note  { font-size: 0.62rem; color: rgba(255,255,255,0.22); margin-top: 6px; text-align: right; font-style: italic; }
+
+    /* ── Countdown widget ── */
+    .wg-cd-event   { font-size: 0.76rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 9px; }
+    .wg-cd-display { display: flex; align-items: center; gap: 4px; }
+    .wg-cd-block   { display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.07); border-radius: 9px; padding: 7px 9px; flex: 1; }
+    .wg-cd-num     { font-size: 1.35rem; font-weight: 800; color: #fda4af; line-height: 1; }
+    .wg-cd-label   { font-size: 0.58rem; color: rgba(255,255,255,0.38); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .wg-cd-sep     { font-size: 1.1rem; font-weight: 700; color: rgba(255,255,255,0.3); flex-shrink: 0; }
+    .wg-cd-done    { font-size: 1.05rem; font-weight: 700; text-align: center; width: 100%; }
+    .wg-cd-none    { font-size: 0.79rem; color: rgba(255,255,255,0.42); text-align: center; line-height: 1.65; }
+    .wg-cd-none small { color: rgba(255,255,255,0.28); }
+
+    /* ── Quote widget ── */
+    .wg-quote-mark   { font-size: 2.6rem; line-height: 0.8; color: rgba(147,197,253,0.35); font-family: Georgia, serif; margin-bottom: -2px; }
+    .wg-quote-text   { font-size: 0.82rem; font-style: italic; line-height: 1.62; color: rgba(255,255,255,0.80); }
+    .wg-quote-author { font-size: 0.71rem; color: rgba(255,255,255,0.38); margin-top: 9px; font-weight: 600; }
+
+    /* ── News widget ── */
+    .wg-news-loading { color: rgba(255,255,255,0.45); font-size: 0.8rem; }
+    .wg-news-item {
+      display: block; padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      text-decoration: none; transition: color 0.15s;
+    }
+    .wg-news-item:last-child { border-bottom: none; }
+    .wg-news-headline {
+      font-size: 0.77rem; font-weight: 600;
+      color: rgba(255,255,255,0.80); line-height: 1.42;
+      transition: color 0.15s;
+    }
+    .wg-news-item:hover .wg-news-headline { color: #93c5fd; }
+    .wg-news-meta { font-size: 0.66rem; color: rgba(255,255,255,0.32); margin-top: 2px; }
 
   </style>
 </head>
