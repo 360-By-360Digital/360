@@ -622,204 +622,111 @@
 
 <script>
   const PROXY_BASE = window.location.origin;
-  const PAC_URL = PROXY_BASE + '/vpn/proxy.pac';
-  const PROXY_URL = PROXY_BASE + '/vpn/proxy';
-  const SAFE_IP_URL = 'https://api.ipify.org?format=json';
+const PROXY_URL = PROXY_BASE + "/vpn/proxy";
+const PAC_URL = PROXY_BASE + "/vpn/proxy.pac";
+const TEST_URL = "https://api.ipify.org?format=json";
 
-  function ts() {
-    return new Date().toTimeString().slice(0, 8);
-  }
+function log(msg, type = "info") {
+  const el = document.getElementById("log");
+  const line = document.createElement("div");
+  line.className = "log-line";
+  line.innerHTML = `<span class="log-time">${new Date().toTimeString().slice(0,8)}</span>
+  <span class="log-msg ${type}">${msg}</span>`;
+  el.appendChild(line);
+}
 
-  function log(msg, type = 'info') {
-    const el = document.getElementById('log');
-    const line = document.createElement('div');
-    line.className = 'log-line';
-    line.innerHTML = `<span class="log-time">${ts()}</span><span class="log-msg ${type}">${msg}</span>`;
-    el.appendChild(line);
-    el.scrollTop = el.scrollHeight;
-    if (el.children.length > 50) el.removeChild(el.firstChild);
-  }
-
-  function setConnected(ip = '—') {
-    document.getElementById('proxyBadge').className = 'badge badge-ok';
-    document.getElementById('proxyBadge').textContent = '✓ PROXY ACTIVE';
-    document.getElementById('proxyNote').textContent = 'Exit IP: ' + ip;
-    document.getElementById('dot').classList.add('on');
-    document.getElementById('statusLabel').classList.add('on');
-    document.getElementById('statusLabel').textContent = 'CONNECTED';
-  }
-
-  function setDisconnected(note = 'See setup below to activate') {
-    document.getElementById('proxyBadge').className = 'badge badge-warn';
-    document.getElementById('proxyBadge').textContent = '⚠ NOT CONFIGURED';
-    document.getElementById('proxyNote').textContent = note;
-    document.getElementById('dot').classList.remove('on');
-    document.getElementById('statusLabel').classList.remove('on');
-    document.getElementById('statusLabel').textContent = 'DISCONNECTED';
-  }
-
-  window.addEventListener('load', () => {
-    fetchRealIp();
-    pingWorker();
+async function fetchViaProxy(url) {
+  return fetch(PROXY_URL + "?url=" + encodeURIComponent(url), {
+    cache: "no-store"
   });
+}
 
-  async function fetchRealIp() {
+async function pingWorker() {
   try {
-    const r = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const start = Date.now();
+    const r = await fetchViaProxy(TEST_URL);
+    const ms = Date.now() - start;
 
-    const d = await r.json();
-    document.getElementById('realIp').textContent = d.ip || 'Unknown';
-    document.getElementById('realLoc').textContent = 'Your real IP (no proxy active)';
-    log('Real IP fetched: ' + (d.ip || 'unknown'), 'info');
+    if (!r.ok) throw new Error("Worker HTTP " + r.status);
+
+    document.getElementById("workerLatency").textContent = ms + " ms";
+    document.getElementById("workerStatus").textContent = "Online";
+    log("Worker OK " + ms + "ms", "ok");
   } catch (e) {
-    document.getElementById('realIp').textContent = 'Could not fetch';
-    document.getElementById('realLoc').textContent = 'Browser request failed';
-    log('Failed to fetch real IP: ' + e.message, 'warn');
+    document.getElementById("workerStatus").textContent = "Offline";
+    log("Worker failed: " + e.message, "err");
   }
 }
 
-  async function pingWorker() {
-    const start = Date.now();
-    try {
-      const r = await fetch(PROXY_URL + '?url=' + encodeURIComponent(SAFE_IP_URL), {
-        cache: 'no-store'
-      });
+async function fetchRealIp() {
+  try {
+    const r = await fetchViaProxy(TEST_URL);
+    const d = await r.json();
+    document.getElementById("realIp").textContent = d.ip || d.origin || "Unknown";
+  } catch {
+    document.getElementById("realIp").textContent = "Failed";
+  }
+}
 
-      const ms = Date.now() - start;
-      const text = await r.text();
+async function checkProxy() {
+  const btn = document.getElementById("checkBtn");
+  btn.disabled = true;
 
-      if (!r.ok) {
-        throw new Error(`HTTP ${r.status}: ${text.slice(0, 200)}`);
-      }
+  try {
+    const r = await fetchViaProxy(TEST_URL);
+    const text = await r.text();
 
-      document.getElementById('workerLatency').textContent = ms + ' ms';
-      document.getElementById('workerLatency').className = 'stat-val green';
-      document.getElementById('workerStatus').textContent = 'Online';
-      document.getElementById('workerStatus').className = 'stat-val green';
-      log('Worker reachable — ' + ms + 'ms', 'ok');
-    } catch (e) {
-      document.getElementById('workerLatency').textContent = '—';
-      document.getElementById('workerStatus').textContent = 'Unreachable';
-      document.getElementById('workerStatus').className = 'stat-val red';
-      log('Worker ping failed: ' + e.message, 'err');
+    const proxied = r.headers.get("X-360VPN-Proxied");
+
+    if (proxied === "true") {
+      document.getElementById("statusLabel").textContent = "CONNECTED";
+      document.getElementById("dot").classList.add("on");
+      log("Proxy ACTIVE", "ok");
+    } else {
+      log("Proxy header missing", "warn");
     }
+  } catch (e) {
+    log("Proxy check failed: " + e.message, "err");
   }
 
-  async function checkProxy() {
-    const btn = document.getElementById('checkBtn');
-    btn.disabled = true;
-    btn.textContent = 'CHECKING...';
-    log('Checking proxy configuration...', 'info');
+  btn.disabled = false;
+}
 
-    try {
-      const r = await fetch(PROXY_URL + '?url=' + encodeURIComponent(SAFE_IP_URL), {
-        cache: 'no-store'
-      });
+async function testProxy() {
+  const url = document.getElementById("testUrl").value;
+  const out = document.getElementById("testResult");
 
-      const text = await r.text();
+  out.textContent = "Loading via proxy...";
 
-      if (!r.ok) {
-        throw new Error(`HTTP ${r.status}: ${text.slice(0, 200)}`);
-      }
+  try {
+    const r = await fetchViaProxy(url);
+    const text = await r.text();
 
-      const proxied = r.headers.get('X-360VPN-Proxied');
-      let data = {};
-      try { data = JSON.parse(text); } catch {}
-
-      if (proxied === 'true') {
-        const exitIp = data.ip || data.origin || '—';
-        setConnected(exitIp);
-        log('Proxy confirmed active. Exit IP: ' + exitIp, 'ok');
-      } else {
-        setDisconnected('Worker responded but proxy header missing');
-        log('Worker responded but proxy header missing.', 'warn');
-      }
-    } catch (e) {
-      setDisconnected('Proxy check failed');
-      log('Proxy check failed: ' + e.message, 'err');
-    }
-
-    btn.disabled = false;
-    btn.textContent = 'CHECK PROXY';
+    out.textContent = text.slice(0, 2000);
+  } catch (e) {
+    out.textContent = "Error: " + e.message;
   }
+}
 
-  async function testProxy() {
-    const url = document.getElementById('testUrl').value.trim();
-    const out = document.getElementById('testResult');
-    if (!url) return;
+function copyPac() {
+  navigator.clipboard.writeText(PAC_URL);
+}
 
-    out.textContent = 'Fetching via 360VPN Worker...';
-    log('Proxying: ' + url, 'info');
-
-    try {
-      const start = Date.now();
-      const r = await fetch(PROXY_URL + '?url=' + encodeURIComponent(url), {
-        cache: 'no-store'
-      });
-      const ms = Date.now() - start;
-      const text = await r.text();
-      const proxied = r.headers.get('X-360VPN-Proxied') === 'true';
-
-      if (!r.ok) {
-        out.textContent = `Error ${r.status}\n\n${text}`;
-        log('Proxy fetch failed — HTTP ' + r.status, 'err');
-        return;
-      }
-
-      out.textContent =
-        (proxied ? `✓ Proxied via CF edge (${ms}ms)\n\n` : '') +
-        text.slice(0, 3000);
-
-      log('Proxy fetch OK — ' + r.status + ' in ' + ms + 'ms', 'ok');
-    } catch (e) {
-      out.textContent = 'Error: ' + e.message;
-      log('Proxy fetch failed: ' + e.message, 'err');
-    }
-  }
-
-  function copyPac() {
-    navigator.clipboard.writeText(PAC_URL)
-      .then(() => log('PAC URL copied.', 'ok'))
-      .catch(e => log('Failed to copy PAC URL: ' + e.message, 'err'));
-  }
-
-  function downloadPac() {
-    const pac = `// 360VPN — proxy.pac
-// 360Digital Co. — ${PROXY_BASE}
-
-function FindProxyForURL(url, host) {
+function downloadPac() {
+  const pac = `function FindProxyForURL(url, host) {
   if (dnsDomainIs(host, "360-search.com")) return "DIRECT";
-  if (isPlainHostName(host) || host === "localhost" || host === "127.0.0.1") return "DIRECT";
-  return "HTTPS 360-search.com:443; DIRECT";
+  if (isPlainHostName(host)) return "DIRECT";
+  return "HTTPS ${window.location.hostname}:443; DIRECT";
 }`;
 
-    const blob = new Blob([pac], { type: 'application/x-ns-proxy-autoconfig' });
-    const a = Object.assign(document.createElement('a'), {
-      href: URL.createObjectURL(blob),
-      download: 'proxy.pac'
-    });
-    a.click();
-    URL.revokeObjectURL(a.href);
-    log('proxy.pac downloaded.', 'ok');
-  }
+  const blob = new Blob([pac], { type: "application/x-ns-proxy-autoconfig" });
+  const a = Object.assign(document.createElement("a"), {
+    href: URL.createObjectURL(blob),
+    download: "proxy.pac"
+  });
 
-  function downloadKiosk() {
-    const policy = JSON.stringify({
-      ProxyMode: "pac_script",
-      ProxyPacUrl: PAC_URL,
-      comment: "360VPN — 360Digital Co."
-    }, null, 2);
-
-    const blob = new Blob([policy], { type: 'application/json' });
-    const a = Object.assign(document.createElement('a'), {
-      href: URL.createObjectURL(blob),
-      download: '360vpn-kiosk-policy.json'
-    });
-    a.click();
-    URL.revokeObjectURL(a.href);
-    log('Kiosk policy downloaded.', 'ok');
-  }
+  a.click();
+}
 </script>
 
 <script
