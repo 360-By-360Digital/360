@@ -664,20 +664,20 @@
   });
 
   async function fetchRealIp() {
-    try {
-      const r = await fetch(SAFE_IP_URL, { cache: 'no-store' });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const d = await r.json();
+  try {
+    const r = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
 
-      document.getElementById('realIp').textContent = d.ip || 'Unknown';
-      document.getElementById('realLoc').textContent = 'Your real IP (no proxy active)';
-      log('Real IP fetched: ' + (d.ip || 'unknown'), 'info');
-    } catch (e) {
-      document.getElementById('realIp').textContent = 'Could not fetch';
-      document.getElementById('realLoc').textContent = 'Browser request failed';
-      log('Failed to fetch real IP: ' + e.message, 'warn');
-    }
+    const d = await r.json();
+    document.getElementById('realIp').textContent = d.ip || 'Unknown';
+    document.getElementById('realLoc').textContent = 'Your real IP (no proxy active)';
+    log('Real IP fetched: ' + (d.ip || 'unknown'), 'info');
+  } catch (e) {
+    document.getElementById('realIp').textContent = 'Could not fetch';
+    document.getElementById('realLoc').textContent = 'Browser request failed';
+    log('Failed to fetch real IP: ' + e.message, 'warn');
   }
+}
 
   async function pingWorker() {
     const start = Date.now();
