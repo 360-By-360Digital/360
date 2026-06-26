@@ -1,474 +1,311 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>(function(w,i,g){w[g]=w[g]||[];if(typeof w[g].push=='function')w[g].push(i)})(window,'GTM-NZHQGS65','google_tags_first_party');</script>
-  <script>(function(w,d,s,l){w[l]=w[l]||[];(function(){w[l].push(arguments);})('set','developer_id.dYzg1YT',true);w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src='/uw4z/';f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer');</script>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
-  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-89NN1P6CEV');</script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 — Chat</title>
-  <link rel="icon" type="image/png" href="../favicon-32x32.png" />
-  <link rel="manifest" href="../manifest.json" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="/assets/css/chat.css">
-  <style>
-    .unread-badge {
-      min-width: 18px; height: 18px; border-radius: 999px;
-      background: var(--a); color: #fff;
-      font-size: 10px; font-weight: 700;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0 5px; margin-left: auto; flex-shrink: 0;
-      box-shadow: 0 2px 8px rgba(59,130,246,.4);
-      animation: badgePop .2s ease;
-    }
-    @keyframes badgePop { from{transform:scale(0)} to{transform:scale(1)} }
-
-    /* AutoMod message styling */
-    .automod-message {
-      background: rgba(239,68,68,.06) !important;
-      border: 1px solid rgba(239,68,68,.18) !important;
-      border-radius: 8px;
-    }
-    /* Soft-deleted message */
-    .msg-deleted {
-      opacity: 0.4;
-      pointer-events: none;
-    }
-    .msg-deleted .msg-text { font-style: italic; color: var(--mut) !important; }
-    .msg-deleted .msg-actions { display: none !important; }
-    .msg-deleted .reactions-row { display: none !important; }
-    /* AutoMod active pill */
-    .automod-pill {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700;
-      background: rgba(34,197,94,.12); color: #22c55e;
-      border: 1px solid rgba(34,197,94,.25); flex-shrink: 0;
-    }
-    /* Muted input overlay */
-    .input-blocked-msg {
-      position: absolute; inset: 0; z-index: 20;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,.45); backdrop-filter: blur(4px);
-      border-radius: 14px; font-size: 13px; font-weight: 600;
-      color: #fff; gap: 8px; pointer-events: none;
-    }
-  </style>
+<script>(function(w,i,g){w[g]=w[g]||[];if(typeof w[g].push=='function')w[g].push(i)})(window,'GTM-NZHQGS65','google_tags_first_party');</script>
+<script>(function(w,d,s,l){w[l]=w[l]||[];(function(){w[l].push(arguments);})('set','developer_id.dYzg1YT',true);w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src='/uw4z/';f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer');</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-89NN1P6CEV');</script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>360 — Chat</title>
+<link rel="icon" type="image/png" href="../favicon-32x32.png"/>
+<link rel="manifest" href="../manifest.json"/>
+<link rel="stylesheet" href="/assets/css/main.css"/>
+<link rel="stylesheet" href="/assets/css/wide.css"/>
+<link rel="stylesheet" href="/assets/css/cursor.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="/assets/css/chat.css"/>
 </head>
-<body>
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
+<body class="dc-body">
+<div class="cursor-dot"></div><div class="cursor-trail"></div><div class="cursor-crosshair"></div><div class="cursor-blob"></div>
 
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header"><div class="logo-mark"></div><button id="settingsBtn">⚙</button></div>
-    <nav class="nav-list">
-      <div class="nav-item" data-href="../">Home</div>
-      <div class="nav-item" data-href="../ai">AI</div>
-      <div class="nav-item" data-href="../weather">Weather</div>
-      <div class="nav-item" data-href="../translator">Translator</div>
-      <div class="nav-item" data-href="../stocks">Stocks</div>
-      <div class="nav-item" data-href="../url-shortener">URL Shortener</div>
-      <div class="nav-item active" data-href="../chat">Chat</div>
-      <div class="nav-item" data-href="../news">News</div>
-      <div class="nav-item" data-href="../apps">Apps</div>
-      <div class="nav-item" data-href="../games">Games</div>
-    </nav>
-    <div class="sidebar-footer"><span id="sidebar-ver">Loading...</span></div>
-  </aside>
-  <div class="overlay" id="overlay"></div>
+<!-- Platform-wide nav (slides in over the Discord layout; toggle lives in the rail) -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header"><div class="logo-mark"></div><button id="settingsBtn">⚙</button></div>
+  <nav class="nav-list">
+    <div class="nav-item" data-href="../">Home</div>
+    <div class="nav-item" data-href="../ai">AI</div>
+    <div class="nav-item" data-href="../weather">Weather</div>
+    <div class="nav-item" data-href="../translator">Translator</div>
+    <div class="nav-item" data-href="../stocks">Stocks</div>
+    <div class="nav-item" data-href="../url-shortener">URL Shortener</div>
+    <div class="nav-item active" data-href="../chat">Chat</div>
+    <div class="nav-item" data-href="../news">News</div>
+    <div class="nav-item" data-href="../apps">Apps</div>
+    <div class="nav-item" data-href="../games">Games</div>
+  </nav>
+  <div class="sidebar-footer"><span id="sidebar-ver">Loading...</span></div>
+</aside>
+<div class="overlay" id="overlay"></div>
 
-  <div class="settings-panel" id="settingsPanel">
-    <h3>Appearance</h3>
-    <div class="settings-label">Theme</div>
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-    </div>
-    <div class="settings-label" style="margin-top:20px;">Mode</div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:14px;">Dark mode</span>
-      <input type="checkbox" id="darkToggle" />
-    </label>
-    <h3 style="margin-top:20px;">Cursor</h3>
-    <div class="settings-label">Style</div>
-    <div class="cursor-options">
-      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-    </div>
-    <div class="cursor-color-row">
-      <label>Cursor color</label>
-      <input type="color" id="cursorColorPicker" value="#3b82f6" />
-      <button id="cursorColorReset">Reset</button>
-    </div>
+<div class="settings-panel" id="settingsPanel">
+  <h3>Appearance</h3>
+  <div class="settings-label">Theme</div>
+  <div class="theme-swatches">
+    <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+    <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+    <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+    <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+    <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+    <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
   </div>
-
-  <div id="auth-popup" class="auth-popup hidden">
-    <div class="auth-box">
-      <h2>Account</h2>
-      <input id="auth-email" type="email" placeholder="Email" />
-      <input id="auth-password" type="password" placeholder="Password" />
-      <button id="auth-login-btn">Log In</button>
-      <button id="auth-signup-btn">Sign Up</button>
-      <button id="github-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        <span>Sign in with GitHub</span>
-      </button>
-      <button id="google-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        <span>Sign in with Google</span>
-      </button>
-      <p id="auth-error" class="auth-error"></p>
-      <button id="auth-close-btn" class="close-btn">Close</button>
-    </div>
+  <div class="settings-label" style="margin-top:20px;">Mode</div>
+  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+    <span style="font-size:14px;">Dark mode</span>
+    <input type="checkbox" id="darkToggle" />
+  </label>
+  <h3 style="margin-top:20px;">Cursor</h3>
+  <div class="settings-label">Style</div>
+  <div class="cursor-options">
+    <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+    <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+    <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+    <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+    <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+    <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
   </div>
-
-  <div class="auth-top-right">
-    <button id="signInBtn" class="auth-btn">Sign In</button>
-    <button id="signUpBtn" class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+  <div class="cursor-color-row">
+    <label>Cursor color</label>
+    <input type="color" id="cursorColorPicker" value="#3b82f6" />
+    <button id="cursorColorReset">Reset</button>
   </div>
+</div>
 
-  <div id="profile-popup">
-    <div class="pp-avatar" id="pp-avatar"></div>
-    <div class="pp-name"  id="pp-name"></div>
+<!-- main.js mounts the user-chip here; kept in the DOM as a fixed-position
+     anchor so it never falls back to appending onto <body> (which would
+     become an unwanted flex child of .dc-body and break the 3-panel layout).
+     Hidden in Discord mode since the rail's own avatar (railUser) already
+     covers identity/sign-in. -->
+<div class="auth-top-right">
+  <button id="signInBtn" class="auth-btn">Sign In</button>
+  <button id="signUpBtn" class="auth-btn">Sign Up</button>
+  <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+</div>
+
+<!-- Context menu -->
+<div id="ctx-menu" class="ctx-menu hidden">
+  <div class="ctx-item" id="ctx-reply">↩ Reply</div>
+  <div class="ctx-item" id="ctx-react">😊 Add Reaction</div>
+  <div class="ctx-item" id="ctx-thread">🧵 Create Thread</div>
+  <div class="ctx-item" id="ctx-pin">📌 Pin Message</div>
+  <div class="ctx-item" id="ctx-copy">📋 Copy Text</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" id="ctx-delete">🗑 Delete</div>
+</div>
+
+<!-- Reaction picker (emoji quick-pick) -->
+<div id="reaction-picker" class="reaction-picker hidden"></div>
+
+<!-- Thread panel (slides in from right) -->
+<div id="thread-panel" class="thread-panel hidden">
+  <div class="thread-header">
+    <span class="thread-title">Thread</span>
+    <button id="thread-close">✕</button>
+  </div>
+  <div id="thread-root-msg" class="thread-root-msg"></div>
+  <div id="thread-messages" class="thread-messages"></div>
+  <div class="thread-input-row">
+    <textarea id="thread-input" placeholder="Reply in thread…" rows="1" maxlength="2000"></textarea>
+    <button id="thread-send">↑</button>
+  </div>
+</div>
+
+<!-- Pins panel -->
+<div id="pins-panel" class="pins-panel hidden">
+  <div class="pins-header"><span>📌 Pinned Messages</span><button id="pins-close">✕</button></div>
+  <div id="pins-list" class="pins-list"></div>
+</div>
+
+<!-- Members panel -->
+<div id="members-panel" class="members-panel hidden">
+  <div class="members-header"><span>Members</span><button id="members-close">✕</button></div>
+  <div id="members-list" class="members-list"></div>
+</div>
+
+<!-- Profile popup -->
+<div id="profile-popup" class="profile-popup hidden">
+  <div class="pp-banner" id="pp-banner"></div>
+  <div class="pp-body">
+    <div class="pp-avatar-wrap"><div class="pp-avatar" id="pp-avatar"></div></div>
+    <div class="pp-name" id="pp-name"></div>
+    <div class="pp-tag" id="pp-tag"></div>
+    <div class="pp-role" id="pp-role"></div>
+    <hr class="pp-divider"/>
     <div class="pp-email" id="pp-email"></div>
-    <button class="pp-dm-btn" id="pp-dm-btn">💬 Send DM</button>
+    <button class="pp-dm-btn" id="pp-dm-btn">💬 Send Message</button>
+  </div>
+</div>
+
+<!-- Create/Edit Server modal -->
+<div class="dc-modal-overlay hidden" id="serverModal">
+  <div class="dc-modal">
+    <h3 id="serverModalTitle">Create Server</h3>
+    <div class="dc-field"><label>Server Name</label><input id="sm-name" maxlength="32" placeholder="My Server"/></div>
+    <div class="dc-field"><label>Icon Emoji</label><input id="sm-icon" maxlength="2" placeholder="🌐" style="width:60px;text-align:center;font-size:22px;"/></div>
+    <div class="dc-field"><label>Description</label><input id="sm-desc" maxlength="120" placeholder="What's this server about?"/></div>
+    <div class="dc-field"><label>Passcode <span style="font-weight:400;font-size:11px;">(leave blank for public)</span></label><input id="sm-pass" type="password" placeholder="Optional passcode"/></div>
+    <p class="dc-modal-err" id="sm-err"></p>
+    <div class="dc-modal-btns">
+      <button class="dc-btn-sec" id="sm-cancel">Cancel</button>
+      <button class="dc-btn-pri" id="sm-submit">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Join Server modal -->
+<div class="dc-modal-overlay hidden" id="joinModal">
+  <div class="dc-modal">
+    <h3>Join Server</h3>
+    <p id="jm-desc" style="font-size:13px;color:var(--mut);margin-bottom:14px;"></p>
+    <div class="dc-field" id="jm-pass-wrap"><label>Passcode</label><input id="jm-pass" type="password"/></div>
+    <p class="dc-modal-err" id="jm-err"></p>
+    <div class="dc-modal-btns">
+      <button class="dc-btn-sec" id="jm-cancel">Cancel</button>
+      <button class="dc-btn-pri" id="jm-join">Join</button>
+    </div>
+  </div>
+</div>
+
+<!-- New DM modal -->
+<div class="dc-modal-overlay hidden" id="dmModal">
+  <div class="dc-modal">
+    <h3>New Direct Message</h3>
+    <div class="dc-field"><label>Email or @Username</label><input id="dm-target" placeholder="someone@example.com or @username"/></div>
+    <p class="dc-modal-err" id="dm-err"></p>
+    <div class="dc-modal-btns">
+      <button class="dc-btn-sec" id="dm-cancel">Cancel</button>
+      <button class="dc-btn-pri" id="dm-start">Start Chat</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Channel modal -->
+<div class="dc-modal-overlay hidden" id="channelModal">
+  <div class="dc-modal">
+    <h3>Add Channel</h3>
+    <div class="dc-field"><label>Channel Name</label><input id="ch-name" placeholder="general" maxlength="32"/></div>
+    <div class="dc-field"><label>Category</label><input id="ch-cat" placeholder="TEXT CHANNELS" maxlength="32"/></div>
+    <div class="dc-field"><label>Topic <span style="font-weight:400;font-size:11px;">(optional)</span></label><input id="ch-topic" placeholder="What's this channel for?" maxlength="120"/></div>
+    <p class="dc-modal-err" id="ch-err"></p>
+    <div class="dc-modal-btns">
+      <button class="dc-btn-sec" id="ch-cancel">Cancel</button>
+      <button class="dc-btn-pri" id="ch-create">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="hidden"><img id="lightbox-img" src="" alt=""/><button id="lightbox-close">✕</button></div>
+
+<!-- ── 3-PANEL DISCORD LAYOUT ─────────────────── -->
+<div class="dc-root">
+
+  <!-- 1. Server rail (left-most, narrow) -->
+  <div class="dc-rail" id="dcRail">
+    <button class="sidebar-toggle" id="sidebarToggle" title="Menu">☰</button>
+    <div class="rail-divider"></div>
+    <div id="rail-servers"></div>
+    <button class="rail-add-btn" id="railAddServer" title="Create or browse servers">＋</button>
+    <div class="rail-divider"></div>
+    <button class="rail-dm-btn" id="railDMs" title="Direct Messages">💬</button>
+    <div class="rail-spacer"></div>
+    <div class="rail-user" id="railUser" title="Your profile"></div>
   </div>
 
-  <div id="lightbox"><img id="lightbox-img" src="" alt="" /></div>
-  <button class="rooms-toggle" id="roomsToggle">💬 Rooms</button>
-
-  <!-- Modals -->
-  <div class="modal-overlay" id="createCommunityModal">
-    <div class="modal-box">
-      <h3>Create Community</h3>
-      <p>Leave passcode blank for a public community.</p>
-      <input class="modal-input" id="cc-name" placeholder="Community name" maxlength="32" />
-      <input class="modal-input" id="cc-passcode" placeholder="Passcode (optional)" type="password" />
-      <p class="modal-error" id="cc-error"></p>
-      <div class="modal-btn-row">
-        <button class="modal-btn secondary" id="cc-cancel">Cancel</button>
-        <button class="modal-btn primary"   id="cc-create">Create</button>
+  <!-- 2. Channel list -->
+  <div class="dc-sidebar" id="dcSidebar">
+    <div class="dc-sidebar-header" id="sidebarHeader">
+      <span id="sb-server-name">360 Chat</span>
+      <button id="sb-server-menu" title="Server settings">⌄</button>
+    </div>
+    <div class="dc-sidebar-body" id="sidebarBody"></div>
+    <div class="dc-sidebar-footer">
+      <div class="dc-user-chip" id="dcUserChip">
+        <div class="dc-user-avatar" id="dcUserAv"></div>
+        <div class="dc-user-info">
+          <div class="dc-user-name" id="dcUserName">Not signed in</div>
+          <div class="dc-user-status">● Online</div>
+        </div>
+        <button class="dc-settings-btn" onclick="window.location.href='/account'" title="Account settings">⚙</button>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" id="joinCommunityModal">
-    <div class="modal-box">
-      <h3 id="jc-title">Join Community</h3>
-      <p  id="jc-desc">Enter the passcode to join.</p>
-      <input class="modal-input" id="jc-passcode" placeholder="Passcode" type="password" />
-      <p class="modal-error" id="jc-error"></p>
-      <div class="modal-btn-row">
-        <button class="modal-btn secondary" id="jc-cancel">Cancel</button>
-        <button class="modal-btn primary"   id="jc-join">Join</button>
+  <!-- 3. Main chat area -->
+  <div class="dc-main" id="dcMain">
+    <div class="dc-chat-header" id="dcChatHeader">
+      <button class="dc-mobile-back" id="dcMobileBack">←</button>
+      <span class="dc-ch-icon" id="hdrIcon">#</span>
+      <div class="dc-ch-info">
+        <span class="dc-ch-name" id="hdrName">general</span>
+        <span class="dc-ch-topic" id="hdrTopic"></span>
+      </div>
+      <div class="dc-header-actions">
+        <button class="dc-hdr-btn" id="btnPins" title="Pinned messages">📌</button>
+        <button class="dc-hdr-btn" id="btnMembers" title="Members">👥</button>
+        <button class="dc-hdr-btn" id="notif-btn" title="Toggle push notifications">🔔 Notify</button>
+        <button class="dc-hdr-btn" id="dnd-toggle" title="Do Not Disturb">🔔 DnD Off</button>
+        <span class="dc-online-pill" id="onlinePill"><span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;"></span> <span id="onlineCount">0</span></span>
+      </div>
+    </div>
+
+    <div id="dc-messages" class="dc-messages"></div>
+
+    <!-- Typing indicator -->
+    <div id="dc-typing" class="dc-typing"></div>
+
+    <!-- Reply bar -->
+    <div id="dc-reply-bar" class="dc-reply-bar hidden">
+      <span>Replying to <strong id="reply-author"></strong>: <em id="reply-preview"></em></span>
+      <button id="reply-cancel-btn">✕</button>
+    </div>
+
+    <!-- Upload preview -->
+    <div id="dc-upload-preview" class="dc-upload-preview hidden">
+      <span id="up-icon">📎</span>
+      <span id="up-name"></span>
+      <button id="up-cancel">✕</button>
+    </div>
+    <div class="dc-upload-bar hidden" id="dc-upload-bar"><div id="dc-upload-fill" class="dc-upload-fill"></div></div>
+
+    <!-- Input -->
+    <div class="dc-input-area">
+      <button class="dc-input-btn" id="attachBtn" title="Attach file">＋</button>
+      <input type="file" id="fileInput" style="display:none"/>
+      <div class="dc-input-box">
+        <div id="dc-mention-popup" class="dc-mention-popup"></div>
+        <textarea id="msgInput" rows="1" placeholder="Message #general…" maxlength="4000"></textarea>
+      </div>
+      <button class="dc-input-btn" id="emojiBtn">😊</button>
+      <div class="dc-emoji-picker hidden" id="dcEmojiPicker"></div>
+      <button class="dc-send-btn" id="sendBtn">↑</button>
+    </div>
+    <div class="dc-input-footer">
+      <span>Markdown: **bold** *italic* `code` · @mention · Enter to send · Shift+Enter newline</span>
+      <div style="display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0;">
+        <span style="font-size:11px;opacity:.5;">Translate:</span>
+        <select id="translateLang" style="font-size:11px;padding:2px 6px;border-radius:6px;border:1px solid var(--br);background:transparent;color:inherit;font-family:inherit;">
+          <option value="">Off</option>
+          <option value="en">🇬🇧 EN</option><option value="es">🇪🇸 ES</option><option value="fr">🇫🇷 FR</option>
+          <option value="de">🇩🇪 DE</option><option value="ja">🇯🇵 JA</option><option value="ko">🇰🇷 KO</option>
+          <option value="zh">🇨🇳 ZH</option><option value="ar">🇸🇦 AR</option><option value="pt">🇧🇷 PT</option>
+          <option value="ru">🇷🇺 RU</option><option value="hi">🇮🇳 HI</option><option value="tr">🇹🇷 TR</option>
+        </select>
       </div>
     </div>
   </div>
+</div>
 
-  <div class="modal-overlay" id="startDmModal">
-    <div class="modal-box">
-      <h3>New Direct Message</h3>
-      <p>Enter the email address of the person you want to message.</p>
-      <input class="modal-input" id="dm-email" placeholder="their@email.com" type="email" />
-      <p class="modal-error" id="dm-error"></p>
-      <div class="modal-btn-row">
-        <button class="modal-btn secondary" id="dm-cancel">Cancel</button>
-        <button class="modal-btn primary"   id="dm-start">Start DM</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Chat layout -->
-  <div class="chat-root">
-    <div class="chat-left" id="chatLeft">
-      <div style="padding:8px 14px 4px;display:flex;align-items:center;justify-content:space-between;">
-        <span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);">360 Chat</span>
-        <span id="online-counter" style="font-size:11px;color:#22c55e;font-weight:600;display:flex;align-items:center;gap:4px;">
-          <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
-          <span id="online-count">0</span> online
-        </span>
-      </div>
-      <div class="panel-section">
-        <div class="panel-label">Public</div>
-        <div class="room-item active" id="publicRoomItem">
-          <span class="room-icon">🌐</span><span class="room-name">General</span>
-        </div>
-      </div>
-      <div class="panel-section">
-        <div class="panel-label">Communities</div>
-        <div id="communities-list"></div>
-        <button class="add-room-btn" id="createCommunityBtn">＋ Create community</button>
-        <button class="add-room-btn" id="browseCommunityBtn">🔍 Browse communities</button>
-      </div>
-      <div class="panel-section">
-        <div class="panel-label">Direct Messages</div>
-        <div id="dm-list"></div>
-        <button class="add-room-btn" id="startDmBtn">＋ New message</button>
-      </div>
-    </div>
-
-    <div class="chat-main">
-      <div class="chat-header">
-        <span class="chat-header-icon" id="hdr-icon">🌐</span>
-        <span class="chat-header-name" id="hdr-name">General</span>
-        <span class="chat-header-desc" id="hdr-desc">Public chat · everyone is here</span>
-        <span class="automod-pill" id="automod-pill" style="margin-left:8px;">🤖 AutoMod</span>
-        <button id="notif-btn" title="Enable notifications" style="margin-left:auto;padding:5px 12px;border-radius:999px;border:1px solid var(--glass-border);background:transparent;color:inherit;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;">🔔 Notify</button>
-      </div>
-      <div id="chat-window"></div>
-      <div class="chat-input-wrap">
-        <div id="reply-bar">
-          <span class="rb-label">Replying to</span>
-          <span class="rb-author" id="rb-author"></span>
-          <span class="rb-text"   id="rb-text"></span>
-          <button id="reply-cancel">✕</button>
-        </div>
-        <div id="upload-preview">
-          <span id="up-thumb"></span>
-          <span class="up-name" id="up-name"></span>
-          <button id="upload-cancel">✕</button>
-        </div>
-        <div class="upload-progress" id="upload-progress">
-          <div class="upload-progress-bar" id="upload-progress-bar"></div>
-        </div>
-        <div style="position:relative;">
-          <div id="mention-popup"></div>
-          <div id="slash-popup"></div>
-        </div>
-        <div id="typing-indicator"></div>
-        <!-- input row wrapper is position:relative so blocked overlay can sit on top -->
-        <div style="position:relative;">
-          <div id="input-blocked-overlay" class="input-blocked-msg" style="display:none;"></div>
-          <div id="chat-input-row">
-            <button class="input-action-btn" id="attachBtn" title="Attach">📎</button>
-            <input type="file" id="fileInput" style="display:none" />
-            <textarea id="message-input" rows="1" placeholder="Message General..." maxlength="4000"></textarea>
-            <div style="position:relative;">
-              <button class="input-action-btn" id="emojiBtn">😊</button>
-              <div class="emoji-picker" id="inputEmojiPicker"></div>
-            </div>
-            <button id="send-button">Send</button>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 4px 0;gap:8px;">
-          <div style="font-size:11px;opacity:.35;">Shortcodes: :fire: :skull: :heart: :rocket: · Enter to send · Shift+Enter for newline</div>
-          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-            <span style="font-size:11px;opacity:.5;">Auto-translate:</span>
-            <select id="translateLang" style="font-size:11px;padding:2px 6px;border-radius:6px;border:1px solid var(--br);background:transparent;color:inherit;font-family:inherit;cursor:pointer;">
-              <option value="">Off</option>
-              <option value="en">🇬🇧 English</option>
-              <option value="es">🇪🇸 Spanish</option>
-              <option value="fr">🇫🇷 French</option>
-              <option value="de">🇩🇪 German</option>
-              <option value="it">🇮🇹 Italian</option>
-              <option value="pt">🇧🇷 Portuguese</option>
-              <option value="ru">🇷🇺 Russian</option>
-              <option value="ja">🇯🇵 Japanese</option>
-              <option value="ko">🇰🇷 Korean</option>
-              <option value="zh">🇨🇳 Chinese</option>
-              <option value="ar">🇸🇦 Arabic</option>
-              <option value="hi">🇮🇳 Hindi</option>
-              <option value="tr">🇹🇷 Turkish</option>
-              <option value="pl">🇵🇱 Polish</option>
-              <option value="nl">🇳🇱 Dutch</option>
-              <option value="sv">🇸🇪 Swedish</option>
-              <option value="uk">🇺🇦 Ukrainian</option>
-              <option value="th">🇹🇭 Thai</option>
-              <option value="vi">🇻🇳 Vietnamese</option>
-              <option value="id">🇮🇩 Indonesian</option>
-              <option value="tl">🇵🇭 Filipino</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <audio id="clickSound" src="../click-sound.mp3" preload="auto"></audio>
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-  <script src="/assets/js/chat.js"></script>
-
-  <!-- ═══════════════════════════════════════════════════════════
-       AUTOMOD INTEGRATION PATCH
-       Intercepts sendMessage via a guard flag — no DOM cloning,
-       no listener removal, no interference with chat.js internals.
-  ════════════════════════════════════════════════════════════ -->
-  <script>
-  (function patchAutomod() {
-    "use strict";
-
-    const AUTOMOD_ID = "0fd9511a-0c05-48f2-bc48-000169cdb449";
-
-    // ── Wait until chat.js has finished its async INIT block ──
-    // We know init is done when currentUserId is set OR session
-    // check has run (a few hundred ms after DOMContentLoaded).
-    function waitFor(fn, cb, tries = 0) {
-      if (tries > 150) return;
-      try { if (fn()) { cb(); return; } } catch(_) {}
-      setTimeout(() => waitFor(fn, cb, tries + 1), 80);
-    }
-
-    // sb and sendMessage are both declared at the top of chat.js
-    // (not inside any function), so they're globals immediately.
-    waitFor(
-      () => typeof sb !== "undefined" && typeof sendMessage !== "undefined",
-      init
-    );
-
-    function init() {
-
-      // ── Check mute/ban status ─────────────────────────────────
-      // Returns { ok: true } or { ok: false, reason: "..." }
-      async function checkUserStatus() {
-        // currentUserId is a chat.js global
-        if (typeof currentUserId === "undefined" || !currentUserId) return { ok: true };
-        try {
-          const { data } = await sb.from("profiles")
-            .select("banned, muted_until")
-            .eq("id", currentUserId)
-            .single();
-          if (!data) return { ok: true };
-          if (data.banned) {
-            return { ok: false, reason: "🚫 You are banned from 360 Chat." };
-          }
-          if (data.muted_until && new Date(data.muted_until) > new Date()) {
-            const mins = Math.ceil((new Date(data.muted_until) - Date.now()) / 60000);
-            return { ok: false, reason: `🔇 You are muted for ${mins} more minute${mins !== 1 ? "s" : ""}.` };
-          }
-        } catch(_) { /* non-fatal — allow send on DB error */ }
-        return { ok: true };
-      }
-
-      function showBlockedOverlay(reason) {
-        const overlay = document.getElementById("input-blocked-overlay");
-        if (!overlay) return;
-        overlay.textContent = reason;
-        overlay.style.display = "flex";
-        setTimeout(() => { overlay.style.display = "none"; }, 3000);
-      }
-
-      // ── Guard flag injected into the chat.js sendMessage flow ─
-      // Instead of replacing the function or cloning DOM nodes,
-      // we set a module-level flag that sendMessage checks at the
-      // top of its own execution. We do this by wrapping the
-      // send-button click and Enter-key handler with a pre-check,
-      // then calling the real sendMessage only if clear.
-      //
-      // Strategy: override the two entry points (button click +
-      // keydown on textarea) using capture-phase listeners which
-      // fire BEFORE the bubble-phase listeners chat.js registered.
-
-      async function guardedSend(e) {
-        // Stop the event so chat.js's listener doesn't fire yet
-        e.stopImmediatePropagation();
-        if (e.type === "keydown" && !(e.key === "Enter" && !e.shiftKey)) return;
-        if (e.type === "keydown") e.preventDefault();
-
-        const status = await checkUserStatus();
-        if (!status.ok) {
-          showBlockedOverlay(status.reason);
-          if (typeof showToast === "function") showToast(status.reason);
-          return;
-        }
-        // All clear — call sendMessage directly (it's a plain async fn)
-        sendMessage();
-      }
-
-      // Capture phase (true) fires before chat.js's bubble listeners
-      const sendBtn = document.getElementById("send-button");
-      if (sendBtn) sendBtn.addEventListener("click", guardedSend, true);
-
-      const msgInput = document.getElementById("message-input");
-      if (msgInput) msgInput.addEventListener("keydown", guardedSend, true);
-
-      // ── Real-time soft-delete listener ────────────────────────
-      // Subscribe to UPDATE events so automod deletions appear
-      // instantly without a refresh.
-      let updateChannel = null;
-
-      function subscribeUpdates(room) {
-        if (updateChannel) {
-          try { supabaseClient.removeChannel(updateChannel); } catch(_) {}
-          updateChannel = null;
-        }
-        const key = `am-upd-${room.type}-${room.id}-${Date.now()}`;
-        updateChannel = supabaseClient.channel(key)
-          .on("postgres_changes", {
-            event: "UPDATE", schema: "public", table: "messages"
-          }, payload => {
-            if (payload.new?.deleted_at) {
-              applyDeletedStyle(String(payload.new.id));
-            }
-          })
-          .subscribe();
-      }
-
-      // Wrap switchRoom to keep the update subscription in sync
-      if (typeof switchRoom !== "undefined") {
-        const _orig = switchRoom;
-        window.switchRoom = function(room) {
-          _orig.apply(this, arguments);
-          subscribeUpdates(room);
-        };
-      }
-
-      // ── Style helpers ─────────────────────────────────────────
-      function applyDeletedStyle(msgId) {
-        const el = typeof msgElMap !== "undefined" && msgElMap.get(msgId);
-        if (!el) return;
-        el.classList.add("msg-deleted");
-        const textDiv = el.querySelector(".msg-text");
-        if (textDiv) textDiv.innerHTML = "<em>Message removed by AutoMod</em>";
-      }
-
-      // Wrap renderMessage to style AutoMod's own announcements
-      if (typeof renderMessage !== "undefined") {
-        const _origRender = renderMessage;
-        window.renderMessage = function(msg, loadRxn) {
-          if (msg.deleted_at) return; // never show pre-deleted msgs
-          _origRender.apply(this, arguments);
-          if (msg.user_id === AUTOMOD_ID) {
-            requestAnimationFrame(() => {
-              const el = typeof msgElMap !== "undefined" && msgElMap.get(String(msg.id));
-              if (el) el.classList.add("automod-message");
-            });
-          }
-        };
-      }
-
-      // ── Auto-clear mute overlay every 30s ────────────────────
-      setInterval(async () => {
-        const overlay = document.getElementById("input-blocked-overlay");
-        if (!overlay || overlay.style.display === "none") return;
-        const status = await checkUserStatus();
-        if (status.ok) overlay.style.display = "none";
-      }, 30000);
-
-      // Subscribe immediately for the default room
-      if (typeof activeRoom !== "undefined") subscribeUpdates(activeRoom);
-
-      console.log("%c🤖 AutoMod active", "color:#22c55e;font-weight:bold;font-size:13px;");
-    }
-  })();
-  </script>
+<audio id="clickSound" src="../click-sound.mp3" preload="auto"></audio>
+<audio id="notifSound" src="../click-sound.mp3" preload="auto"></audio>
+<script>window.SKIP_AUTH_CHIP = true;</script>
+<script>window.SKIP_AUTH_CHIP = true;</script>
+<script src="/assets/js/main.js"></script>
+  <script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script src="/assets/js/chat.js"></script>
+<script src="/assets/js/notifications.js"></script>
 </body>
 </html>

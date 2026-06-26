@@ -3,305 +3,484 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 — AI</title>
-  <link rel="icon" type="image/png" href="../favicon-32x32.png" />
-  <link rel="manifest" href="../manifest.json" />
+  <title>360 AI</title>
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
+  <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#3b82f6" />
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <link rel="stylesheet" href="/assets/css/main.css" />
   <link rel="stylesheet" href="/assets/css/wide.css" />
   <link rel="stylesheet" href="/assets/css/responsive.css" />
   <link rel="stylesheet" href="/assets/css/cursor.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-SCZB3M2PNX"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-SCZB3M2PNX');
-  </script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SCZB3M2PNX');</script>
   <style>
-    .ai-page {
+    /* ── Reset & shell ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; }
+
+    .ai-shell {
       display: flex;
-      flex-direction: row;
-      height: calc(100vh - 48px);
-      max-width: 100%;
-      padding: 0;
-      gap: 0;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--txt);
     }
 
-    /* ── Collapsible conversations sidebar ── */
-    #conv-sidebar {
-      width: 10px;
+    /* ── Sidebar ── */
+    #ai-sidebar {
+      width: 240px;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
-      border-right: 1px solid var(--br);
       background: rgba(148,163,184,.06);
-      overflow: hidden;
-      transition: width .25s cubic-bezier(.4,0,.2,1);
-      position: relative;
-      z-index: 5;
-    }
-    #conv-sidebar:hover,
-    #conv-sidebar.open {
-      width: 220px;
-    }
-
-    /* Collapsed tab indicator */
-    #conv-sidebar::before {
-      content: "❮";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(180deg);
-      font-size: 10px;
-      opacity: .3;
-      pointer-events: none;
-      transition: opacity .2s;
-      white-space: nowrap;
-    }
-    #conv-sidebar:hover::before,
-    #conv-sidebar.open::before {
-      opacity: 0;
-    }
-
-    #conv-sidebar-inner {
-      width: 220px;
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
+      border-right: 1px solid var(--br);
+      transition: width .22s ease;
       overflow: hidden;
     }
+    #ai-sidebar.collapsed { width: 0; border-right: none; }
 
-    #conv-sidebar-header {
+    .sb-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 14px 8px;
+      padding: 14px 12px 10px;
       border-bottom: 1px solid var(--br);
       flex-shrink: 0;
-      gap: 50px;
     }
-    #conv-sidebar-header span {
-      font-size: 11px;
+    .sb-logo {
+      font-size: 13px;
       font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      opacity: .5;
+      letter-spacing: .03em;
+      opacity: .9;
       white-space: nowrap;
-      gap: 50px;
     }
     #new-chat-btn {
-      background: none;
-      border: none;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--br);
+      background: rgba(59,130,246,.12);
+      color: var(--a);
+      font-size: 12px;
       cursor: pointer;
-      font-size: 20px;
-      line-height: 1;
-      padding: 2px 6px;
-      border-radius: 6px;
-      color: inherit;
-      opacity: .6;
+      white-space: nowrap;
       flex-shrink: 0;
     }
-    #new-chat-btn:hover { opacity: 1; transform: none !important; box-shadow: none !important; }
+    #new-chat-btn:hover { background: rgba(59,130,246,.22); }
 
     #conv-list {
       flex: 1;
       overflow-y: auto;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
+      padding: 8px 6px;
     }
-    #conv-list::-webkit-scrollbar { width: 4px; }
-    #conv-list::-webkit-scrollbar-track { background: transparent; }
-    #conv-list::-webkit-scrollbar-thumb { background: var(--br); border-radius: 999px; }
-
     .conv-item {
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 7px 10px;
+      padding: 7px 8px;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 13px;
-      transition: .15s;
-      border: 1px solid transparent;
-      white-space: nowrap;
-    }
-    .conv-item:hover { background: rgba(148,163,184,.12); border-color: var(--br); }
-    .conv-item.active {
-      background: linear-gradient(110deg, var(--a), var(--a2));
-      color: #050816 !important;
-      font-weight: 600;
-      border-color: transparent;
-    }
-    .conv-item-title {
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 13px;
-    }
-    .conv-del-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 13px;
-      opacity: 0;
-      padding: 0 2px;
-      flex-shrink: 0;
-      color: inherit;
-      line-height: 1;
-      border-radius: 4px;
-    }
-    .conv-item:hover .conv-del-btn { opacity: .5; }
-    .conv-del-btn:hover { opacity: 1 !important; color: #ef4444; transform: none !important; box-shadow: none !important; }
-
-    .conv-empty {
       font-size: 12px;
-      opacity: .4;
-      padding: 8px 6px;
-      text-align: center;
-      white-space: nowrap;
+      opacity: .8;
+      position: relative;
     }
+    .conv-item:hover { background: rgba(148,163,184,.12); opacity: 1; }
+    .conv-item.active { background: rgba(59,130,246,.12); opacity: 1; }
+    .conv-item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .conv-del {
+      display: none;
+      border: none;
+      background: transparent;
+      color: var(--txt);
+      opacity: .5;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .conv-item:hover .conv-del { display: block; }
+    .conv-del:hover { opacity: 1; color: #ef4444; }
+    .conv-empty { font-size: 12px; opacity: .5; padding: 12px 8px; }
 
-    /* ── Chat area ── */
-    #ai-chat-area {
+    /* ── Main area ── */
+    .ai-main {
       flex: 1;
       display: flex;
       flex-direction: column;
       min-width: 0;
       position: relative;
     }
-    #ai-chat-area h2 {
-      padding: 16px 24px 0;
-      margin: 0 0 8px;
-      font-size: 20px;
+
+    /* ── Top bar ── */
+    .ai-topbar {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--br);
+      background: rgba(10,12,20,.92);
       flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+    }
+    #sidebar-toggle {
+      border: none;
+      background: transparent;
+      color: var(--txt);
+      cursor: pointer;
+      font-size: 16px;
+      opacity: .6;
+      padding: 4px 6px;
+      border-radius: 6px;
+    }
+    /* Give the main.js sidebar-toggle room — it sits at fixed top:10px left:10px z-index:70 */
+    .ai-topbar { padding-left: 80px; }
+    @media (max-width: 600px) { .ai-topbar { padding-left: 60px; } }
+
+    .ai-topbar-title {
+      font-size: 14px;
+      font-weight: 600;
+      flex: 1;
+    }
+    .ai-model-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(59,130,246,.35);
+      background: rgba(59,130,246,.08);
+      color: var(--a);
+      white-space: nowrap;
+    }
+    .ai-topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
+    /* ── Messages ── */
     #ai-output {
       flex: 1;
       overflow-y: auto;
-      padding: 16px 24px 140px;
+      padding: 20px 0;
+      scroll-behavior: smooth;
+    }
+
+    .ai-bubble {
+      max-width: 760px;
+      margin: 0 auto 4px;
+      padding: 10px 16px;
+      animation: fadeUp .18s ease;
+    }
+    @keyframes fadeUp { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+
+    /* User bubble */
+    .ai-bubble.user {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      align-items: flex-end;
     }
-    #ai-output::-webkit-scrollbar { width: 5px; }
-    #ai-output::-webkit-scrollbar-track { background: transparent; }
-    #ai-output::-webkit-scrollbar-thumb { background: var(--br); border-radius: 999px; }
+    .ai-bubble.user .bubble-inner {
+      background: rgba(59,130,246,.15);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: 16px 16px 4px 16px;
+      padding: 10px 14px;
+      font-size: 14px;
+      max-width: 80%;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .ai-bubble.user .attached-preview {
+      max-width: 260px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .ai-bubble.user .attached-preview img {
+      width: 100%;
+      display: block;
+      border-radius: 10px;
+    }
+    .ai-bubble.user .attached-file-link {
+      font-size: 12px;
+      background: rgba(148,163,184,.12);
+      border: 1px solid var(--br);
+      border-radius: 8px;
+      padding: 5px 10px;
+      margin-bottom: 6px;
+      color: var(--a);
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    /* Assistant bubble */
+    .ai-bubble.assistant {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .ai-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .ai-bubble.assistant .bubble-inner {
+      flex: 1;
+      font-size: 14px;
+      line-height: 1.65;
+      min-width: 0;
+    }
+
+    /* Markdown styles inside assistant bubble */
+    .bubble-inner h1, .bubble-inner h2, .bubble-inner h3 {
+      margin: 16px 0 8px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .bubble-inner h1 { font-size: 1.3em; }
+    .bubble-inner h2 { font-size: 1.15em; }
+    .bubble-inner h3 { font-size: 1.05em; }
+    .bubble-inner p { margin: 6px 0; }
+    .bubble-inner ul, .bubble-inner ol { padding-left: 20px; margin: 6px 0; }
+    .bubble-inner li { margin: 3px 0; }
+    .bubble-inner strong { font-weight: 700; }
+    .bubble-inner em { font-style: italic; }
+    .bubble-inner a { color: var(--a); text-decoration: underline; }
+    .bubble-inner hr { border: none; border-top: 1px solid var(--br); margin: 14px 0; }
+    .bubble-inner table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
+    .bubble-inner th, .bubble-inner td { border: 1px solid var(--br); padding: 6px 10px; text-align: left; }
+    .bubble-inner th { background: rgba(148,163,184,.1); font-weight: 600; }
+    .bubble-inner blockquote { border-left: 3px solid var(--a); margin: 10px 0; padding: 4px 12px; opacity: .8; }
+
+    /* Inline code */
+    .bubble-inner code:not(pre code) {
+      background: rgba(148,163,184,.15);
+      border: 1px solid rgba(148,163,184,.2);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: .88em;
+      font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    }
+
+    /* Code blocks */
+    .code-block-wrap {
+      position: relative;
+      margin: 10px 0;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(148,163,184,.15);
+    }
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      background: rgba(15,23,42,.6);
+      font-size: 11px;
+      opacity: .8;
+    }
+    .code-block-lang { font-family: monospace; letter-spacing: .05em; }
+    .code-copy-btn {
+      border: none;
+      background: rgba(148,163,184,.15);
+      color: inherit;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .code-copy-btn:hover { background: rgba(148,163,184,.3); }
+    .code-block-wrap pre {
+      margin: 0 !important;
+      border-radius: 0 !important;
+      max-height: 480px;
+      overflow: auto;
+    }
+    .code-block-wrap pre code { font-size: 13px !important; }
+
+    /* Thinking spinner */
+    .thinking {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      padding: 4px 0;
+      opacity: .6;
+    }
+    .thinking span {
+      width: 6px; height: 6px;
+      background: var(--a);
+      border-radius: 50%;
+      animation: bounce .9s infinite;
+    }
+    .thinking span:nth-child(2) { animation-delay: .15s; }
+    .thinking span:nth-child(3) { animation-delay: .3s; }
+    @keyframes bounce { 0%,80%,100%{transform:scale(.8)} 40%{transform:scale(1.2)} }
+
+    /* ── Image paste drop zone ── */
+    .ai-main.drag-over #ai-output::after {
+      content: '📎 Drop to attach';
+      position: fixed;
+      inset: 0;
+      background: rgba(59,130,246,.12);
+      border: 2px dashed var(--a);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--a);
+      z-index: 50;
+      pointer-events: none;
+    }
 
     /* ── Input area ── */
-    #ai-input-area {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      padding: 10px 16px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      background: transparent;
+    .ai-input-area {
+      border-top: 1px solid var(--br);
+      padding: 10px 14px 12px;
+      background: rgba(255,255,255,.02);
+      flex-shrink: 0;
     }
 
-    /* File preview */
+    /* Attach preview */
     #file-preview {
       display: none;
       align-items: center;
       gap: 8px;
-      padding: 6px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--br);
-      background: rgba(148,163,184,.08);
+      padding: 6px 10px;
+      background: rgba(59,130,246,.08);
+      border: 1px solid rgba(59,130,246,.2);
+      border-radius: 8px;
+      margin-bottom: 8px;
       font-size: 12px;
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
     }
     #file-preview.show { display: flex; }
-    #file-preview-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .7; }
-    #file-cancel {
-      background: none; border: none; cursor: pointer;
-      color: #ef4444; font-size: 15px; padding: 0 2px; line-height: 1;
-      transform: none !important; box-shadow: none !important;
-    }
+    #fp-thumb img { max-height: 44px; border-radius: 6px; display: block; }
+    #fp-thumb .fp-icon { font-size: 22px; }
+    #fp-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .8; }
+    #fp-cancel { border: none; background: transparent; color: var(--txt); opacity: .5; cursor: pointer; font-size: 14px; }
+    #fp-cancel:hover { opacity: 1; }
 
-    /* Upload progress */
-    #upload-progress {
-      height: 3px; background: rgba(148,163,184,.2);
-      border-radius: 999px; display: none; overflow: hidden;
-    }
-    #upload-progress.show { display: block; }
-    #upload-progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, var(--a), var(--a2));
-      border-radius: 999px; width: 0%; transition: width .3s;
-    }
-
-    /* Input row */
-    #ai-input-row {
+    .ai-input-row {
       display: flex;
+      align-items: flex-end;
       gap: 8px;
-      align-items: center;
-    }
-
-    #ai-attach-btn {
-      width: 40px; height: 40px;
-      border-radius: 12px;
+      max-width: 760px;
+      margin: 0 auto;
+      background: rgba(148,163,184,.08);
       border: 1px solid var(--br);
-      background: transparent;
-      cursor: pointer; font-size: 18px;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--mut); flex-shrink: 0;
-      transform: none !important; box-shadow: none !important;
+      border-radius: 14px;
+      padding: 8px 10px;
+      transition: border-color .15s;
     }
-    body.dark #ai-attach-btn { color: var(--mutd); }
-    #ai-attach-btn:hover { background: rgba(148,163,184,.12); color: var(--a); }
-
+    .ai-input-row:focus-within {
+      border-color: rgba(59,130,246,.5);
+      box-shadow: 0 0 0 2px rgba(59,130,246,.08);
+    }
     #ai-input {
       flex: 1;
-      padding: 10px 14px;
-      border-radius: 12px;
-      border: 1px solid var(--br);
-      background: rgba(255,255,255,.08);
+      border: none;
+      outline: none;
+      background: transparent;
       color: var(--txt);
       font-size: 14px;
-      outline: none;
-      font-family: inherit;
-      backdrop-filter: blur(8px);
-      transition: border-color .2s;
+      resize: none;
+      max-height: 200px;
+      overflow-y: auto;
+      line-height: 1.5;
+      padding: 2px 0;
     }
-    body.dark #ai-input { color: var(--txtd); background: rgba(15,23,42,.4); }
-    #ai-input:focus { border-color: var(--a); }
-
-    #ai-send-btn {
-      padding: 0 18px;
-      height: 40px;
-      border-radius: 12px;
-      border: none;
-      background: linear-gradient(110deg, var(--a), var(--a2));
-      color: #050816;
-      font-weight: 700;
-      font-size: 14px;
-      cursor: pointer;
+    .ai-input-btns {
+      display: flex;
+      align-items: center;
+      gap: 4px;
       flex-shrink: 0;
-      font-family: inherit;
-      transform: none !important; box-shadow: none !important;
     }
-    #ai-send-btn:hover { opacity: .85; }
+    #ai-attach-btn {
+      border: none;
+      background: transparent;
+      color: var(--txt);
+      opacity: .55;
+      cursor: pointer;
+      font-size: 17px;
+      padding: 4px;
+      border-radius: 6px;
+    }
+    #ai-attach-btn:hover { opacity: 1; background: rgba(148,163,184,.12); }
+    #ai-send-btn {
+      border: none;
+      background: linear-gradient(135deg, var(--a), #8b5cf6);
+      color: #fff;
+      border-radius: 9px;
+      width: 34px;
+      height: 34px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity .15s;
+    }
+    #ai-send-btn:hover { opacity: .88; }
+    #ai-send-btn:disabled { opacity: .35; cursor: default; }
 
-    /* Attached image in bubble */
-    .ai-bubble img.attached-img {
-      max-width: 280px; max-height: 200px;
-      border-radius: 10px; display: block;
-      margin-bottom: 6px; border: 1px solid var(--br);
+    .ai-input-hint {
+      text-align: center;
+      font-size: 11px;
+      opacity: .4;
+      margin-top: 6px;
     }
-    .ai-bubble a.attached-file {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 12px; border-radius: 8px;
-      background: rgba(148,163,184,.1); border: 1px solid var(--br);
-      font-size: 13px; text-decoration: none; color: var(--a); margin-bottom: 6px;
+
+    /* ── Welcome screen ── */
+    #ai-welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 12px;
+      text-align: center;
+      padding: 24px;
+      opacity: .9;
     }
+    .wl-logo {
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      margin-bottom: 4px;
+    }
+    .wl-title { font-size: 22px; font-weight: 700; }
+    .wl-sub { font-size: 14px; opacity: .6; max-width: 340px; line-height: 1.6; }
+    .wl-chips {
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+      margin-top: 6px; max-width: 460px;
+    }
+    .wl-chip {
+      padding: 7px 13px;
+      border-radius: 999px;
+      border: 1px solid var(--br);
+      background: rgba(148,163,184,.07);
+      font-size: 12px;
+      cursor: pointer;
+      transition: .15s;
+    }
+    .wl-chip:hover { background: rgba(59,130,246,.12); border-color: rgba(59,130,246,.35); color: var(--a); }
 
     /* ── Toast ── */
     .ai-toast {
@@ -309,44 +488,49 @@
       bottom: 80px; left: 50%;
       transform: translateX(-50%);
       background: rgba(15,23,42,.95);
-      color: #fff; padding: 8px 20px;
-      border-radius: 999px; font-size: 13px;
-      font-weight: 600; z-index: 9999;
+      color: #f5f5f5;
+      padding: 7px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      border: 1px solid rgba(255,255,255,.1);
       pointer-events: none;
       animation: toastIn .2s ease;
+      z-index: 999;
     }
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateX(-50%) translateY(8px); }
-      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-    }
-
-    @media (max-width: 600px) {
-      #conv-sidebar { display: none; }
-    }
+    @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
   </style>
 </head>
-<body>
-
+<body class="dark">
   <div class="cursor-dot"></div>
   <div class="cursor-trail"></div>
   <div class="cursor-crosshair"></div>
   <div class="cursor-blob"></div>
 
+  <div class="auth-top-right">
+    <button id="signInBtn" class="auth-btn">Sign In</button>
+    <button id="signUpBtn" class="auth-btn">Sign Up</button>
+    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+  </div>
+
+  <!-- ── 360 Navigation sidebar (required by main.js) ── -->
   <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
 
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header"><div class="logo-mark"></div><button id="settingsBtn">⚙</button></div>
+    <div class="sidebar-header">
+      <br>
+      <button id="settingsBtn">⚙</button>
+    </div>
     <nav class="nav-list">
       <div class="nav-item" data-href="/">Home</div>
-      <div class="nav-item active" data-href="../ai">AI</div>
-      <div class="nav-item" data-href="../weather">Weather</div>
-      <div class="nav-item" data-href="../translator">Translator</div>
-      <div class="nav-item" data-href="../stocks">Stocks</div>
-      <div class="nav-item" data-href="../url-shortener">URL Shortener</div>
-      <div class="nav-item" data-href="../chat">Chat</div>
-      <div class="nav-item" data-href="../news">News</div>
-      <div class="nav-item" data-href="../apps">Apps</div>
-      <div class="nav-item" data-href="../games">Games</div>
+      <div class="nav-item active" data-href="/ai">AI</div>
+      <div class="nav-item" data-href="/weather">Weather</div>
+      <div class="nav-item" data-href="/translator">Translator</div>
+      <div class="nav-item" data-href="/stocks">Stocks</div>
+      <div class="nav-item" data-href="/url-shortener">URL Shortener</div>
+      <div class="nav-item" data-href="/chat">Chat</div>
+      <div class="nav-item" data-href="/news">News</div>
+      <div class="nav-item" data-href="/apps">Apps</div>
+      <div class="nav-item" data-href="/games">Games</div>
     </nav>
     <div class="sidebar-footer"><span id="sidebar-ver">Loading...</span></div>
   </aside>
@@ -379,11 +563,21 @@
       <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
       <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
     </div>
-    <div class="cursor-color-row">
-      <label>Cursor color</label>
-      <input type="color" id="cursorColorPicker" value="#3b82f6" />
-      <button id="cursorColorReset">Reset</button>
+    <div class="settings-label" style="margin-top:20px;">Background</div>
+    <div class="settings-box">
+      <input type="file" id="bgUpload" accept="image/*" class="settings-input" />
+      <input type="text" id="bgUrlInput" placeholder="Paste image URL…" class="settings-input" />
+      <button id="bgUrlBtn" class="settings-btn">Apply URL</button>
+      <button id="bgResetBtn" class="settings-btn">Reset</button>
     </div>
+    <h3 style="margin-top:25px;">Legal</h3>
+    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
+    <a href="/tos" class="legal-link">📜 Terms of Service</a>
+    <h3 style="margin-top:25px;">About</h3>
+    <details class="about-dropdown">
+      <summary>ℹ️ What is 360?</summary>
+      <p>360 is a next-generation search engine and digital workspace. Built by 360 Digital, Co.</p>
+    </details>
   </div>
 
   <div id="auth-popup" class="auth-popup hidden">
@@ -393,12 +587,12 @@
       <input id="auth-password" type="password" placeholder="Password" />
       <button id="auth-login-btn">Log In</button>
       <button id="auth-signup-btn">Sign Up</button>
-      <button id="github-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      <button id="github-login" class="oauth-btn github">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
         <span>Sign in with GitHub</span>
       </button>
-      <button id="google-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      <button id="google-login" class="oauth-btn google">
+        <svg width="18" height="18" viewBox="0 0 24 24" style="flex-shrink:0"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
         <span>Sign in with Google</span>
       </button>
       <p id="auth-error" class="auth-error"></p>
@@ -406,44 +600,67 @@
     </div>
   </div>
 
-  <div class="auth-top-right">
-    <button id="signInBtn" class="auth-btn">Sign In</button>
-    <button id="signUpBtn" class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-
-  <div class="ai-page">
-    <div id="conv-sidebar">
-      <div id="conv-sidebar-inner">
-        <div id="conv-sidebar-header">
-          <span>Saved Chats</span>
-          <button id="new-chat-btn" title="New chat">＋</button>
-        </div>
-        <div id="conv-list"></div>
+  <div class="ai-shell">
+    <!-- Sidebar -->
+    <div id="ai-sidebar">
+      <div class="sb-head">
+        <span class="sb-logo">💬 Chats</span>
+        <button id="new-chat-btn">+ New</button>
       </div>
+      <div id="conv-list"></div>
     </div>
-    <div id="ai-chat-area">
-      <h2 style="text-align:center;">360 AI</h2>
-      <div id="ai-output"></div>
-      <div id="ai-input-area">
+
+    <!-- Main -->
+    <div class="ai-main" id="ai-main">
+      <div class="ai-topbar">
+        <button id="ai-chat-sidebar-toggle" title="Toggle chat history" style="border:none;background:transparent;color:var(--txt);cursor:pointer;font-size:15px;opacity:.6;padding:4px 8px;border-radius:6px;margin-left:2px;">
+          💬
+        </button>
+        <div class="ai-topbar-title">360 AI</div>
+        <div class="ai-topbar-right">
+          <span class="ai-model-badge" id="model-badge">✦ Claude Opus · OpenRouter</span>
+          <a href="/apps" class="auth-btn" style="text-decoration:none;font-size:12px;">Apps</a>
+        </div>
+      </div>
+
+      <div id="ai-output">
+        <div id="ai-welcome">
+          <div class="wl-logo">✦</div>
+          <div class="wl-title">360 AI</div>
+          <div class="wl-sub">Powered by Claude Opus on OpenRouter. Ask anything, paste images, upload files, write code.</div>
+          <div class="wl-chips">
+            <div class="wl-chip" data-prompt="Explain how the internet works in simple terms">🌐 How the internet works</div>
+            <div class="wl-chip" data-prompt="Write a Python function to reverse a linked list">🐍 Reverse a linked list</div>
+            <div class="wl-chip" data-prompt="What are the best ways to learn a new language fast?">📚 Learn a language fast</div>
+            <div class="wl-chip" data-prompt="Debug this code for me and explain what was wrong">🐛 Debug my code</div>
+            <div class="wl-chip" data-prompt="Write a short creative story about a time traveler">✍️ Creative story</div>
+            <div class="wl-chip" data-prompt="What is the difference between machine learning and AI?">🤖 ML vs AI</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-input-area">
         <div id="file-preview">
-          <span id="file-preview-thumb"></span>
-          <span id="file-preview-name"></span>
-          <button id="file-cancel">✕</button>
+          <div id="fp-thumb"></div>
+          <span id="fp-name"></span>
+          <button id="fp-cancel">✕</button>
         </div>
-        <div id="upload-progress"><div id="upload-progress-bar"></div></div>
-        <div id="ai-input-row">
-          <button id="ai-attach-btn" title="Attach file">📎</button>
-          <input type="file" id="ai-file-input" style="display:none" />
-          <input type="text" id="ai-input" placeholder="Ask anything..." />
-          <button id="ai-send-btn">Send</button>
+        <div class="ai-input-row">
+          <textarea id="ai-input" rows="1" placeholder="Ask anything… (Ctrl+V to paste image)"></textarea>
+          <div class="ai-input-btns">
+            <button id="ai-attach-btn" title="Attach file or image">📎</button>
+            <button id="ai-send-btn" title="Send (Enter)">↑</button>
+          </div>
         </div>
+        <div class="ai-input-hint">Enter to send · Shift+Enter for new line · Paste image with Ctrl+V</div>
       </div>
     </div>
   </div>
 
-  <audio id="clickSound" src="../click-sound.mp3" preload="auto"></audio>
+  <input type="file" id="ai-file-input" style="display:none" accept="image/*,audio/*,.pdf,.doc,.docx,.txt,.md,.csv,.xls,.xlsx,.py,.js,.ts,.jsx,.tsx,.cpp,.c,.java,.go,.rs,.html,.css,.json,.yaml,.sql" />
+
   <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/auth-fix.js"></script>
   <script src="/assets/js/wide.js"></script>
   <script src="/assets/js/cookie.js"></script>
   <script src="/assets/js/cursor.js"></script>

@@ -255,7 +255,7 @@
   <div class="cursor-crosshair"></div>
   <div class="cursor-blob"></div>
 
-  <button class="back-btn" onclick="window.location.href='../'">← Back</button>
+  <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='../'">← Back</button>
   <div class="auth-top-right">
     <button id="signInBtn"  class="auth-btn">Sign In</button>
     <button id="signUpBtn"  class="auth-btn">Sign Up</button>
@@ -267,15 +267,15 @@
     <div class="sidebar-header"><div class="logo-mark"></div><button id="settingsBtn">⚙</button></div>
     <nav class="nav-list">
       <div class="nav-item" data-href="../">Home</div>
-      <div class="nav-item" data-href="../ai.html">AI</div>
-      <div class="nav-item" data-href="../weather.html">Weather</div>
-      <div class="nav-item" data-href="../translator.html">Translator</div>
-      <div class="nav-item" data-href="../stocks.html">Stocks</div>
-      <div class="nav-item" data-href="../url-shortener.html">URL Shortener</div>
-      <div class="nav-item" data-href="../chat.html">Chat</div>
-      <div class="nav-item" data-href="../news.html">News</div>
-      <div class="nav-item" data-href="../apps.html">Apps</div>
-      <div class="nav-item active" data-href="../games.html">Games</div>
+      <div class="nav-item" data-href="/ai">AI</div>
+      <div class="nav-item" data-href="/weather">Weather</div>
+      <div class="nav-item" data-href="/translator">Translator</div>
+      <div class="nav-item" data-href="/stocks">Stocks</div>
+      <div class="nav-item" data-href="/url-shortener">URL Shortener</div>
+      <div class="nav-item" data-href="/chat">Chat</div>
+      <div class="nav-item" data-href="/news">News</div>
+      <div class="nav-item" data-href="/apps">Apps</div>
+      <div class="nav-item active" data-href="/games">Games</div>
     </nav>
     <div class="sidebar-footer"><span id="sidebar-ver">Loading...</span></div>
   </aside>
@@ -915,6 +915,7 @@
   </script>
   <audio id="clickSound" src="../click-sound.mp3" preload="auto"></audio>
   <script src="../main.js"></script>
+  <script src="/assets/js/auth-fix.js"></script>
   <script src="../cookie.js"></script>
   <script src="../cursor.js"></script>
 </body>

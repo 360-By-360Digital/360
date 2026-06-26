@@ -178,8 +178,8 @@
       <button id="tempUnitBtn">Switch</button>
     </div>
     <h3 style="margin-top:25px;">Legal</h3>
-    <a href="privacypolicy.html" class="legal-link">🔒 Privacy Policy</a>
-    <a href="tos.html" class="legal-link">📜 Terms of Service</a>
+    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
+    <a href="/tos" class="legal-link">📜 Terms of Service</a>
     <h3 style="margin-top:25px;">About</h3>
     <details class="about-dropdown">
       <summary>ℹ️ What is 360?</summary>
@@ -216,7 +216,7 @@
     <div class="apps-grid">
       <!-- 360Mail — links to mail.html -->
       <!-- NOT WORKING!!
-      <a class="app-card" href="mail.html">
+      <a class="app-card" href="/mail">
         <span class="app-badge">New</span>
         <div class="app-icon">✉️</div>
         <div class="app-title">360 Mail</div>
@@ -224,8 +224,8 @@
       </a>
       -->
 
-            <a class="app-card" href="apps/360vids.html">
-        <span class="app-badge">BETA</span>
+      <a class="app-card" href="apps/360vids">
+        <span class="app-badge"></span>
         <div class="app-icon">🎬</div>
         <div class="app-title">360Vids</div>
         <div class="app-desc">Watch and upload content!</div>
@@ -233,7 +233,7 @@
     
 
       <!-- Music — links to 360Music -->
-      <a class="app-card" href="apps/360Music.html">
+      <a class="app-card" href="apps/360Music">
         <span class="app-badge">Popular!</span>
         <div class="app-icon">🎶</div>
         <div class="app-title">360Music</div>
@@ -241,53 +241,46 @@
       </a>
       
       <!-- Zone — links to 360zone -->
-      <a class="app-card" href="apps/360zone.html">
-        <span class="app-badge">Tools</span>
+      <a class="app-card" href="apps/360zone">
         <div class="app-icon">🏫</div>
         <div class="app-title">Zone</div>
         <div class="app-desc">Work faster and smarter in the Zone.</div>
       </a>
 
-      <!-- Notes — links to 360Notes, NEEDS TO BE FIXED!! TRASH ISN'T WORKING! -->
-      <a class="app-card" href="apps/360Notes.html">
-        <span class="app-badge">New | BETA</span>
+      <a class="app-card" href="apps/360Notes">
+        <span class="app-badge">New</span>
         <div class="app-icon">📖</div>
         <div class="app-title">360Notes</div>
         <div class="app-desc">Smarter notekeeping.</div>
       </a>
 
-      <a class="app-card" href="vpn/360vpn.html">
-        <span class="app-badge">NEW | BETA</span>
-        <div class="app-icon">🛜</div>
-        <div class="app-title">360VPN</div>
-        <div class="app-desc">Simple proxy. Privacy belongs to private people.</div>
-      </a>
-
-      <!-- Draw — links to 360Draw, WHY IS THIS IN DARK MODE!?? FIX THE UI, NEEDS TO MATCH THE OTHERS (for example 360music)!! No Saves, Page goes outside of view, Collaboration don't work, tools don't work. Eraser is sketchy!
-      <a class="app-card" href="apps/360Draw.html">
+      <a class="app-card" href="apps/360Draw">
         <span class="app-badge">New</span>
         <div class="app-icon">🎨</div>
         <div class="app-title">360Draw</div>
         <div class="app-desc">Draw and share.</div>
-      </a>-->
+      </a>
 
-      <!-- Docs — links to 360Docs, FIX IT!!! SAVES NOT WORKING!!
-      <a class="app-card" href="apps/360Docs.html">
+      <a class="app-card" href="apps/360Docs">
         <span class="app-badge">New</span>
         <div class="app-icon">📃</div>
         <div class="app-title">360Docs</div>
         <div class="app-desc">Write your heart out... or write in HTML....</div>
-      </a> -->
+      </a>
 
-      <!-- Do — links to 360Do, WHY IS THIS IN DARK MODE!!!!! I AM CRASHING OUT! FIX THE UI, NEEDS TO MATCH THE OTHERS (for example 360music)!! New list don't work, Collaborations here too!
-      <a class="app-card" href="apps/360Do.html">
+      <a class="app-card" href="apps/360Do">
         <span class="app-badge">New</span>
         <div class="app-icon">💡</div>
         <div class="app-title">360Do</div>
         <div class="app-desc">If your memory is bad... try 360 memory!</div>
-      </a>-->
-  
-    
+      </a>
+
+      <a class="app-card" href="apps/360mail">
+        <span class="app-badge">New</span>
+        <div class="app-icon">✉️</div>
+        <div class="app-title">360Mail</div>
+        <div class="app-desc">Your private, 360-powered email inbox.</div>
+      </a>
     </div>
     
     <div class="apps-section-label">Coming Soon</div>
@@ -364,6 +357,7 @@
   </script>
   <audio id="clickSound" src="click-sound.mp3" preload="auto"></audio>
   <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/auth-fix.js"></script>
   <script src="/assets/js/wide.js"></script>
   <script src="/assets/js/cookie.js"></script>
   <script src="/assets/js/cursor.js"></script>

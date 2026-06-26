@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-89NN1P6CEV');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>360 — Sign Up</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="360" />
+  <link rel="icon" type="image/png" href="favicon-32x32.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/wide.css" />
+  <link rel="stylesheet" href="/assets/css/cursor.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ac-wrap {
+      margin: 80px 20px;
+      width: 420px;
+      max-width: calc(100vw - 40px);
+      position: relative;
+      z-index: 1;
+    }
+
+    .ac-card {
+      background: rgba(255,255,255,.97);
+      backdrop-filter: blur(22px);
+      border: 1px solid var(--br);
+      border-radius: 20px;
+      padding: 40px 38px 34px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.10), 0 4px 16px rgba(0,0,0,.05);
+      display: flex;
+      flex-direction: column;
+      animation: cardIn .42s cubic-bezier(.22,.68,0,1.1);
+    }
+    body.dark .ac-card {
+      background: rgba(9,9,20,.97);
+      border-color: rgba(255,255,255,.1);
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(26px) scale(.97); }
+      to   { opacity: 1; transform: translateY(0)    scale(1);   }
+    }
+
+    .ac-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+    .ac-logo-mark {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--a), var(--a2));
+      flex-shrink: 0;
+    }
+    .ac-logo-text { font-size: 21px; font-weight: 900; letter-spacing: -.02em; color: var(--txt); }
+    body.dark .ac-logo-text { color: var(--txtd); }
+
+    .ac-tabs {
+      display: flex;
+      background: rgba(148,163,184,.12);
+      border-radius: 10px;
+      padding: 3px; gap: 2px;
+      margin-bottom: 22px;
+    }
+    .ac-tab {
+      flex: 1; padding: 8px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; text-align: center;
+      cursor: pointer; transition: .2s;
+      color: var(--mut); border: none; background: transparent;
+    }
+    body.dark .ac-tab { color: var(--mutd); }
+    .ac-tab.active { background: linear-gradient(110deg, var(--a), var(--a2)); color: #050816; }
+    .ac-tab:not(.active):hover { background: rgba(148,163,184,.15); }
+
+    .ac-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .ac-field label {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .05em;
+      color: var(--mut);
+    }
+    body.dark .ac-field label { color: var(--mutd); }
+    .ac-field input {
+      width: 100%; padding: 11px 13px;
+      border-radius: 9px; border: 1.5px solid var(--br);
+      background: rgba(255,255,255,.75);
+      color: var(--txt); font-size: 14px; outline: none;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    body.dark .ac-field input {
+      background: rgba(255,255,255,.06);
+      color: var(--txtd);
+      border-color: rgba(255,255,255,.12);
+    }
+    .ac-field input:focus {
+      border-color: var(--a);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+    }
+    .ac-field input.invalid {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239,68,68,.12);
+    }
+
+    .ac-hint { font-size: 11px; color: var(--mut); margin-top: 3px; min-height: 14px; }
+    body.dark .ac-hint { color: var(--mutd); }
+    .ac-hint.err { color: #ef4444; }
+    .ac-hint.ok  { color: #10b981; }
+
+    .ac-btn {
+      width: 100%; padding: 12px;
+      border-radius: 10px; border: none;
+      background: linear-gradient(110deg, var(--a), var(--a2));
+      color: #050816; font-weight: 700; font-size: 15px;
+      cursor: pointer; transition: opacity .18s, transform .15s;
+      margin-top: 6px;
+    }
+    .ac-btn:hover:not(:disabled) { opacity: .87; transform: translateY(-1px); }
+    .ac-btn:active:not(:disabled) { transform: translateY(0); }
+    .ac-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    .ac-msg { font-size: 13px; text-align: center; min-height: 18px; margin-top: 10px; }
+    .ac-msg.err { color: #ef4444; }
+    .ac-msg.ok  { color: #10b981; }
+
+    .ac-switch { font-size: 13px; text-align: center; margin-top: 14px; color: var(--mut); }
+    body.dark .ac-switch { color: var(--mutd); }
+    .ac-switch a { color: var(--a); font-weight: 600; text-decoration: none; }
+    .ac-switch a:hover { text-decoration: underline; }
+
+    /* Password strength */
+    .pw-strength-wrap { margin-top: 6px; }
+    .pw-bar-track { height: 3px; background: rgba(148,163,184,.2); border-radius: 999px; overflow: hidden; margin-bottom: 5px; }
+    .pw-bar-fill { height: 100%; width: 0%; border-radius: 999px; transition: width .35s cubic-bezier(.34,1.56,.64,1), background .25s; }
+    .pw-meta { display: flex; justify-content: space-between; align-items: center; min-height: 14px; }
+    .pw-strength-label { font-size: 11px; font-weight: 600; transition: color .2s; }
+    .pw-strength-hint { font-size: 11px; color: var(--mut); }
+    body.dark .pw-strength-hint { color: var(--mutd); }
+    .pw-checks { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+    .pw-pill {
+      display: flex; align-items: center; gap: 3px;
+      padding: 2px 7px; border-radius: 999px;
+      font-size: 10px; font-weight: 500;
+      border: 1px solid var(--br);
+      background: rgba(148,163,184,.08);
+      color: var(--mut); transition: background .2s, border-color .2s, color .2s;
+    }
+    body.dark .pw-pill { color: var(--mutd); border-color: rgba(255,255,255,.1); }
+    .pw-pill.pass { background: rgba(16,185,129,.12); border-color: rgba(16,185,129,.35); color: #059669; }
+    body.dark .pw-pill.pass { color: #34d399; background: rgba(52,211,153,.1); border-color: rgba(52,211,153,.3); }
+    .pw-pip { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .4; transition: opacity .2s; flex-shrink: 0; }
+    .pw-pill.pass .pw-pip { opacity: 1; }
+
+    .ac-divider {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px; color: var(--mut); margin: 14px 0 10px;
+    }
+    body.dark .ac-divider { color: var(--mutd); }
+    .ac-divider::before, .ac-divider::after { content: ""; flex: 1; height: 1px; background: var(--br); }
+    .ac-oauth { display: flex; flex-direction: column; gap: 8px; }
+    .ac-oauth-btn {
+      width: 100%; padding: 10px 14px;
+      border-radius: 9px; border: 1.5px solid var(--br);
+      background: rgba(255,255,255,.8);
+      color: var(--txt); font-size: 13px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .18s, transform .15s;
+    }
+    body.dark .ac-oauth-btn { background: rgba(255,255,255,.05); color: var(--txtd); border-color: rgba(255,255,255,.1); }
+    .ac-oauth-btn:hover { background: rgba(148,163,184,.18); transform: translateY(-1px); }
+
+    @media (max-width: 600px) {
+      .ac-wrap { margin: 70px 12px 20px; }
+      .ac-card { padding: 28px 20px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor-dot"></div>
+  <div class="cursor-trail"></div>
+  <div class="cursor-crosshair"></div>
+  <div class="cursor-blob"></div>
+
+  <div class="auth-top-right">
+    <button id="signInBtn"  class="auth-btn" style="display:none;">Sign In</button>
+    <button id="signUpBtn"  class="auth-btn" style="display:none;">Sign Up</button>
+    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+  </div>
+
+  <button id="installBtn" class="install-banner" style="display:none;">Install 360</button>
+  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-mark"></div>
+      <button id="settingsBtn">⚙</button>
+    </div>
+    <nav class="nav-list">
+      <div class="nav-item" data-href="/">Home</div>
+      <div class="nav-item" data-href="../ai">AI</div>
+      <div class="nav-item" data-href="../weather">Weather</div>
+      <div class="nav-item" data-href="../translator">Translator</div>
+      <div class="nav-item" data-href="../stocks">Stocks</div>
+      <div class="nav-item" data-href="../url-shortener">URL Shortener</div>
+      <div class="nav-item" data-href="../chat">Chat</div>
+      <div class="nav-item" data-href="../news">News</div>
+      <div class="nav-item" data-href="../apps">Apps</div>
+      <div class="nav-item" data-href="../games">Games</div>
+    </nav>
+    <div class="sidebar-footer"><span id="sidebar-ver">Loading...</span></div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="settings-panel" id="settingsPanel">
+    <h3>Appearance</h3>
+    <div class="settings-label">Theme</div>
+    <div class="theme-swatches">
+      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+    </div>
+    <div class="settings-label" style="margin-top:20px;">Mode</div>
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <span style="font-size:14px;">Dark mode</span>
+      <input type="checkbox" id="darkToggle" />
+    </label>
+    <h3 style="margin-top:20px;">Cursor</h3>
+    <div class="settings-label">Style</div>
+    <div class="cursor-options">
+      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+    </div>
+    <div class="cursor-color-row">
+      <label>Cursor color</label>
+      <input type="color" id="cursorColorPicker" value="#3b82f6" />
+      <button id="cursorColorReset">Reset</button>
+    </div>
+    <h3 style="margin-top:25px;">Legal</h3>
+    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
+    <a href="/tos" class="legal-link">📜 Terms of Service</a>
+    <h3 style="margin-top:25px;">About</h3>
+    <details class="about-dropdown">
+      <summary>ℹ️ What is 360?</summary>
+      <p>360 is a next-generation search engine and digital workspace.</p>
+    </details>
+  </div>
+
+  <!-- SIGN UP CARD -->
+  <div class="ac-wrap">
+    <div class="ac-card">
+      <div class="ac-logo">
+        <div class="ac-logo-mark"></div>
+        <span class="ac-logo-text">360</span>
+      </div>
+
+      <div class="ac-tabs">
+        <button class="ac-tab" onclick="window.location.href='/signin'">Sign In</button>
+        <button class="ac-tab active" onclick="window.location.href='/signup'">Sign Up</button>
+      </div>
+
+      <div class="ac-field">
+        <label>Email</label>
+        <input id="suEmail" type="email" placeholder="you@360-search.com" autocomplete="email" />
+      </div>
+      <div class="ac-field">
+        <label>Username</label>
+        <input id="suUser" type="text" placeholder="your_username" autocomplete="username" maxlength="32" />
+        <span class="ac-hint" id="userHint"></span>
+      </div>
+      <div class="ac-field">
+        <label>Password</label>
+        <input id="suPass" type="password" placeholder="Min. 6 characters" autocomplete="new-password" />
+        <div class="pw-strength-wrap" id="pwStrengthWrap">
+          <div class="pw-bar-track"><div class="pw-bar-fill"></div></div>
+          <div class="pw-meta">
+            <span class="pw-strength-label"></span>
+            <span class="pw-strength-hint"></span>
+          </div>
+          <div class="pw-checks">
+            <div class="pw-pill" id="pw-c-len"><span class="pw-pip"></span>8+ chars</div>
+            <div class="pw-pill" id="pw-c-up"><span class="pw-pip"></span>uppercase</div>
+            <div class="pw-pill" id="pw-c-num"><span class="pw-pip"></span>number</div>
+            <div class="pw-pill" id="pw-c-sym"><span class="pw-pip"></span>symbol</div>
+          </div>
+        </div>
+        <span class="ac-hint" id="passHint"></span>
+      </div>
+      <div class="ac-field">
+        <label>Confirm Password</label>
+        <input id="suConfirm" type="password" placeholder="Repeat your password" autocomplete="new-password" />
+        <span class="ac-hint" id="confirmHint"></span>
+      </div>
+
+      <p class="ac-msg" id="suMsg"></p>
+      <button class="ac-btn" id="suBtn">Create Account</button>
+
+      <div class="ac-divider">or continue with</div>
+      <div class="ac-oauth">
+        <button class="ac-oauth-btn" id="suGithub">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          Continue with GitHub
+        </button>
+        <button class="ac-oauth-btn" id="suGoogle">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continue with Google
+        </button>
+      </div>
+
+      <p class="ac-switch">Already have an account? <a href="/signin">Sign In</a></p>
+    </div>
+  </div>
+
+  <script>window.SKIP_AUTH_CHIP = true;</script>
+  <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/auth-fix.js"></script>
+  <script src="/assets/js/wide.js"></script>
+  <script src="/assets/js/cookie.js"></script>
+  <script src="/assets/js/cursor.js"></script>
+
+  <script>
+    const sb = supabaseClient;
+
+    // Parse redirect target
+    const qs = location.search.slice(1);
+    const _fromParam = qs.match(/(?:^|&)from=([^&]*)/i);
+    const _redirectTo = _fromParam ? decodeURIComponent(_fromParam[1]) || "/" : "/";
+
+    // If already signed in, redirect away
+    (async () => {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) window.location.replace(_redirectTo);
+    })();
+
+    const suEmail   = document.getElementById("suEmail");
+    const suUser    = document.getElementById("suUser");
+    const suPass    = document.getElementById("suPass");
+    const suConfirm = document.getElementById("suConfirm");
+    const suBtn     = document.getElementById("suBtn");
+    const suMsg     = document.getElementById("suMsg");
+    const userHint  = document.getElementById("userHint");
+    const passHint  = document.getElementById("passHint");
+    const confirmHint = document.getElementById("confirmHint");
+
+    let usernameOk = false, usernameTimer = null;
+
+    suUser.addEventListener("input", () => {
+      const v = suUser.value.trim();
+      usernameOk = false;
+      clearTimeout(usernameTimer);
+      suUser.classList.remove("invalid");
+      if (!v) { setHint(userHint, "", ""); return; }
+      if (!/^[a-zA-Z0-9_]{3,32}$/.test(v)) {
+        setHint(userHint, "3–32 characters, letters/numbers/underscores only.", "err");
+        suUser.classList.add("invalid"); return;
+      }
+      setHint(userHint, "Checking…", "");
+      usernameTimer = setTimeout(async () => {
+        const { data } = await sb.from("profiles").select("id").eq("username", v).maybeSingle();
+        if (data) { setHint(userHint, "Username already taken.", "err"); suUser.classList.add("invalid"); }
+        else { setHint(userHint, "✓ Username available", "ok"); suUser.classList.remove("invalid"); usernameOk = true; }
+      }, 500);
+    });
+
+    suPass.addEventListener("input", () => {
+      const v = suPass.value;
+      if (!v) { setHint(passHint, "", ""); suPass.classList.remove("invalid"); return; }
+      if (v.length < 6) { setHint(passHint, "Must be at least 6 characters.", "err"); suPass.classList.add("invalid"); }
+      else { setHint(passHint, "", ""); suPass.classList.remove("invalid"); }
+      if (suConfirm.value) validateConfirm();
+    });
+
+    suConfirm.addEventListener("input", validateConfirm);
+
+    function validateConfirm() {
+      if (!suConfirm.value) { setHint(confirmHint, "", ""); suConfirm.classList.remove("invalid"); return; }
+      if (suConfirm.value === suPass.value) { setHint(confirmHint, "✓ Passwords match", "ok"); suConfirm.classList.remove("invalid"); }
+      else { setHint(confirmHint, "Passwords do not match.", "err"); suConfirm.classList.add("invalid"); }
+    }
+
+    suEmail.addEventListener("keydown",   e => { if (e.key === "Enter") suUser.focus(); });
+    suUser.addEventListener("keydown",    e => { if (e.key === "Enter") suPass.focus(); });
+    suPass.addEventListener("keydown",    e => { if (e.key === "Enter") suConfirm.focus(); });
+    suConfirm.addEventListener("keydown", e => { if (e.key === "Enter") doSignUp(); });
+    suBtn.onclick = doSignUp;
+
+    document.getElementById("suGithub").onclick = () => oAuth("github");
+    document.getElementById("suGoogle").onclick = () => oAuth("google");
+
+    async function oAuth(provider) {
+      const { error } = await sb.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: window.location.origin + _redirectTo }
+      });
+      if (error) alert("OAuth error: " + error.message);
+    }
+
+    async function doSignUp() {
+      const email    = suEmail.value.trim();
+      const username = suUser.value.trim();
+      const password = suPass.value;
+      const confirm  = suConfirm.value;
+      if (!email || !username || !password || !confirm) { setMsg(suMsg, "All fields are required.", "err"); return; }
+      if (!/^[a-zA-Z0-9_]{3,32}$/.test(username)) { setMsg(suMsg, "Username must be 3–32 chars, letters/numbers/underscores only.", "err"); return; }
+      if (password.length < 6) { setMsg(suMsg, "Password must be at least 6 characters.", "err"); return; }
+      if (password !== confirm) { setMsg(suMsg, "Passwords do not match.", "err"); return; }
+
+      const { data: existing } = await sb.from("profiles").select("id").eq("username", username).maybeSingle();
+      if (existing) { setMsg(suMsg, "That username is already taken.", "err"); return; }
+
+      suBtn.disabled = true; suBtn.textContent = "Creating account…"; setMsg(suMsg, "", "");
+
+      const { data: signUpData, error: signUpErr } = await sb.auth.signUp({
+        email, password, options: { data: { username } }
+      });
+      if (signUpErr) { setMsg(suMsg, signUpErr.message, "err"); suBtn.disabled = false; suBtn.textContent = "Create Account"; return; }
+
+      const userId = signUpData?.user?.id;
+      if (userId) await sb.from("profiles").upsert({
+        id: userId, username, email,
+        first_name: document.getElementById("suFirst")?.value?.trim() || "",
+        last_name:  document.getElementById("suLast")?.value?.trim()  || null,
+      }, { onConflict: "id" });
+
+      setMsg(suMsg, 'Account created! Check your email to confirm, then <a href="/signin" style="color:var(--a)">sign in</a>.', "ok");
+      suBtn.textContent = "Check your email ✓";
+    }
+
+    /* Password strength meter */
+    const PW_COLORS = ['#ef4444','#f97316','#eab308','#10b981','#3b82f6'];
+    const PW_LABELS = ['Weak','Fair','Moderate','Strong','Very Strong'];
+    const PW_HINTS  = ['Add more variety','Try a number or symbol','Getting better!','Add a symbol to max out',''];
+
+    function getStrength(v) {
+      let s = 0;
+      if (v.length >= 6)  s++;
+      if (v.length >= 10) s++;
+      if (/[A-Z]/.test(v)) s++;
+      if (/[0-9]/.test(v)) s++;
+      if (/[^A-Za-z0-9]/.test(v)) s++;
+      return Math.min(s, 5);
+    }
+
+    (function initStrengthMeter() {
+      const wrap  = document.getElementById("pwStrengthWrap");
+      const bar   = wrap.querySelector('.pw-bar-fill');
+      const label = wrap.querySelector('.pw-strength-label');
+      const hint  = wrap.querySelector('.pw-strength-hint');
+
+      function togglePill(id, pass) {
+        const el = wrap.querySelector('#' + id);
+        if (el) el.classList.toggle('pass', pass);
+      }
+
+      suPass.addEventListener('input', () => {
+        const v = suPass.value;
+        const s = getStrength(v);
+        if (!v) {
+          bar.style.width = '0%'; label.textContent = ''; hint.textContent = '';
+          ['pw-c-len','pw-c-up','pw-c-num','pw-c-sym'].forEach(id => togglePill(id, false));
+          return;
+        }
+        bar.style.width = (s * 20) + '%';
+        bar.style.background = PW_COLORS[Math.max(s - 1, 0)];
+        label.textContent = PW_LABELS[Math.max(s - 1, 0)];
+        label.style.color = PW_COLORS[Math.max(s - 1, 0)];
+        hint.textContent  = PW_HINTS[Math.max(s - 1, 0)];
+        togglePill('pw-c-len', v.length >= 8);
+        togglePill('pw-c-up',  /[A-Z]/.test(v));
+        togglePill('pw-c-num', /[0-9]/.test(v));
+        togglePill('pw-c-sym', /[^A-Za-z0-9]/.test(v));
+      });
+    })();
+
+    function setMsg(el, text, type) {
+      if (!el) return; el.innerHTML = text;
+      el.className = "ac-msg" + (type ? " " + type : "");
+    }
+    function setHint(el, text, type) {
+      if (!el) return; el.textContent = text;
+      el.className = "ac-hint" + (type ? " " + type : "");
+    }
+  </script>
+</body>
+</html>

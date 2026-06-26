@@ -350,55 +350,6 @@
     }
     .st-legal-link:last-child { border-bottom: none; }
     .st-legal-link:hover { text-decoration: underline; }
-
-    /* ── Widget Form ─────────────────────────────────────── */
-    .wf-type-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-      gap: 6px;
-      margin-bottom: 14px;
-    }
-    .wf-type-btn {
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      padding: 10px 6px; border-radius: 10px;
-      border: 1.5px solid var(--br);
-      background: rgba(148,163,184,.07);
-      cursor: pointer; font-size: 20px;
-      transition: border-color .15s, background .15s, transform .15s;
-      font-family: inherit;
-    }
-    .wf-type-btn span {
-      font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .06em; color: var(--mut);
-    }
-    .wf-type-btn:hover { background: rgba(148,163,184,.14); border-color: var(--a,#3b82f6); transform: translateY(-2px); }
-    .wf-type-btn.wf-type-active {
-      border-color: var(--a,#3b82f6);
-      background: rgba(59,130,246,.12);
-      box-shadow: 0 0 0 1px rgba(59,130,246,.25);
-    }
-    .wf-type-btn.wf-type-active span { color: var(--a,#3b82f6); }
-
-    .wf-cond-field { display: grid; gap: 8px; }
-
-    .wf-widget-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: 10px;
-      border: 1px solid var(--br);
-      background: rgba(148,163,184,.05);
-      transition: background .15s;
-    }
-    .wf-widget-row:hover { background: rgba(148,163,184,.10); }
-    .wf-row-icon  { font-size: 22px; flex-shrink: 0; }
-    .wf-row-info  { flex: 1; min-width: 0; }
-    .wf-row-name  { font-size: 13px; font-weight: 600; }
-    .wf-row-meta  { font-size: 11px; color: var(--mut); margin-top: 2px; }
-    .wf-del-btn {
-      background: none; border: none; cursor: pointer;
-      font-size: 16px; opacity: .4; transition: opacity .15s; padding: 4px;
-    }
-    .wf-del-btn:hover { opacity: 1; }
-    .wf-empty { font-size: 13px; color: var(--mut); text-align: center; padding: 18px 0; }
   </style>
 </head>
 <body>
@@ -525,8 +476,8 @@
             <div class="ac-wall-title">Sign in to continue</div>
             <div class="ac-wall-sub">You need to be signed in to view and manage your account settings.</div>
             <div class="ac-wall-btns">
-              <button class="st-btn primary" onclick="window.location.href='/accounts.html?signin&from=settings'">Sign In</button>
-              <button class="st-btn" onclick="window.location.href='/accounts.html?signup&from=settings'">Create Account</button>
+              <button class="st-btn primary" onclick="window.location.href='/account?signin&from=%2Fsettings'">Sign In</button>
+              <button class="st-btn" onclick="window.location.href='/account?signup&from=%2Fsettings'">Create Account</button>
             </div>
           </div>
         </div>
@@ -543,7 +494,7 @@
                 <div class="ac-name"  id="acName">—</div>
                 <div class="ac-email" id="acEmail">—</div>
               </div>
-              <button class="st-btn" onclick="window.location.href='/accounts.html'">Full Profile →</button>
+              <button class="st-btn" onclick="window.location.href='/account'">Full Profile →</button>
             </div>
           </div>
 
@@ -572,8 +523,8 @@
           <!-- Legal -->
           <div class="st-card">
             <div class="st-card-title">Legal</div>
-            <a class="st-legal-link" href="privacypolicy.html">🔒 Privacy Policy</a>
-            <a class="st-legal-link" href="tos.html">📜 Terms of Service</a>
+            <a class="st-legal-link" href="/privacypolicy">🔒 Privacy Policy</a>
+            <a class="st-legal-link" href="/tos">📜 Terms of Service</a>
           </div>
 
           <!-- Danger Zone: Sign Out -->
@@ -703,65 +654,6 @@
           </div>
         </div>
 
-
-        <div class="st-card">
-          <div class="st-card-title">Widgets</div>
-          <div style="font-size:12px;color:var(--mut);font-weight:600;margin-bottom:8px;">Widget Type</div>
-          <div class="wf-type-grid">
-            <button class="wf-type-btn" data-widget-type="clock"     type="button">🕐<span>Clock</span></button>
-            <button class="wf-type-btn" data-widget-type="weather"   type="button">🌤️<span>Weather</span></button>
-            <button class="wf-type-btn" data-widget-type="note"      type="button">📝<span>Note</span></button>
-            <button class="wf-type-btn" data-widget-type="stocks"    type="button">📈<span>Stocks</span></button>
-            <button class="wf-type-btn" data-widget-type="countdown" type="button">⏳<span>Countdown</span></button>
-            <button class="wf-type-btn" data-widget-type="quote"     type="button">💬<span>Quote</span></button>
-            <button class="wf-type-btn" data-widget-type="news"      type="button">📰<span>News</span></button>
-          </div>
-
-          <form id="widgetForm" style="display:grid;gap:10px;">
-            <!-- Common -->
-            <input id="wf-title" class="st-input" placeholder="Widget title (optional)" />
-
-            <!-- Note fields -->
-            <div id="wf-note-fields" class="wf-cond-field" style="display:none;">
-              <textarea id="wf-note-text" class="st-input" rows="3"
-                placeholder="Initial note text…" style="resize:vertical;font-family:inherit;"></textarea>
-            </div>
-
-            <!-- Weather fields -->
-            <div id="wf-weather-fields" class="wf-cond-field" style="display:none;">
-              <select id="wf-unit" class="st-input">
-                <option value="C">Celsius (°C)</option>
-                <option value="F">Fahrenheit (°F)</option>
-              </select>
-            </div>
-
-            <!-- Clock fields -->
-            <div id="wf-clock-fields" class="wf-cond-field" style="display:none;">
-              <input id="wf-timezone" class="st-input"
-                placeholder="Timezone (e.g. America/New_York) — leave blank for local" />
-              <input id="wf-locale" class="st-input"
-                placeholder="Locale (e.g. en-US) — leave blank for default"
-                style="margin-top:8px;" />
-            </div>
-
-            <!-- Countdown fields -->
-            <div id="wf-countdown-fields" class="wf-cond-field" style="display:none;">
-              <input id="wf-countdown-event" class="st-input"
-                placeholder="Event name (e.g. New Year 2027)" />
-              <input id="wf-countdown-date" class="st-input" type="datetime-local"
-                style="margin-top:8px;" />
-            </div>
-
-            <button class="st-btn primary" type="submit">＋ Add Widget to Homepage</button>
-          </form>
-
-          <!-- Existing widgets -->
-          <div id="widgetList" style="margin-top:18px;display:grid;gap:7px;"></div>
-          <div class="st-row-sub" style="margin-top:10px;">
-            Drag widgets anywhere on the homepage. Resize from the bottom-right corner.
-          </div>
-        </div>
-
         <!-- About -->
         <div class="st-card">
           <div class="st-card-title">About 360</div>
@@ -836,10 +728,10 @@
 
   <script>window.SKIP_AUTH_CHIP = true;</script>
   <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/auth-fix.js"></script>
   <script src="/assets/js/wide.js"></script>
   <script src="/assets/js/cookie.js"></script>
   <script src="/assets/js/cursor.js"></script>
-  <script src="/assets/js/widgets.js"></script>
 
   <script>
   // ────────────────────────────────────────
@@ -938,8 +830,9 @@
     document.getElementById('confirmSignOutBtn').onclick = async () => {
       const btn = document.getElementById('confirmSignOutBtn');
       btn.disabled = true; btn.textContent = 'Signing out…';
+      sessionStorage.removeItem('360_auth_redirect');
       await sb.auth.signOut();
-      location.href = '/accounts.html?login&from=logout';
+      location.href = '/';
     };
   }
 

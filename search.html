@@ -1,5 +1,5 @@
 <!-- ===============================
-  SEARCH.HTML V.2.0.3 CUSTOM SEARCH
+  SEARCH.HTML V.3.0 CUSTOM SEARCH
 ================================ -->
 <!DOCTYPE html>
 <html lang="en">
@@ -184,6 +184,27 @@
     body.dark #custom-clear-btn:hover { background: rgba(255,255,255,0.20); color: var(--txtd); }
     #custom-clear-btn.visible { display: flex; }
 
+    #voice-search-btn {
+      flex-shrink: 0;
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--mut);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      margin-right: 4px;
+      transition: background 0.18s, color 0.18s;
+    }
+    #voice-search-btn:hover { background: rgba(0,0,0,0.10); color: var(--txt); }
+    body.dark #voice-search-btn:hover { background: rgba(255,255,255,0.12); color: var(--txtd); }
+    #voice-search-btn.listening { color: #ef4444; animation: voicePulse 1.2s ease-in-out infinite; }
+    @keyframes voicePulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.35); }
+      50%      { box-shadow: 0 0 0 7px rgba(239,68,68,0); }
+    }
+
     /* Search button — gradient pill */
     #custom-search-btn {
       flex-shrink: 0;
@@ -254,6 +275,32 @@
     body.dark .suggestion-icon { color: var(--mutd); }
 
     .suggestion-text { flex: 1; }
+    .suggestion-remove {
+      flex-shrink: 0;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--mut);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .12s, background .12s, color .12s;
+    }
+    .suggestion-item:hover .suggestion-remove { opacity: 1; }
+    .suggestion-remove:hover { background: rgba(0,0,0,0.10); color: var(--txt); }
+    body.dark .suggestion-remove:hover { background: rgba(255,255,255,0.12); color: var(--txtd); }
+    .suggestion-footer {
+      padding: 9px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--mut);
+      text-align: center;
+      cursor: pointer;
+      transition: color .12s;
+    }
+    .suggestion-footer:hover { color: var(--a); }
+    body.dark .suggestion-footer { color: var(--mutd); }
     .suggestion-text em {
       font-style: normal;
       font-weight: 700;
@@ -278,6 +325,32 @@
       width: 100%;
       max-width: 900px;
       box-sizing: border-box;
+    }
+    .safe-search-toggle {
+      margin-left: auto;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--mut);
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      border-radius: 999px;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s, background .15s;
+      white-space: nowrap;
+    }
+    .safe-search-toggle:hover { color: var(--txt); border-color: var(--a); }
+    .safe-search-toggle.off { color: #ef4444; border-color: rgba(239,68,68,0.4); }
+    body.dark .safe-search-toggle { color: var(--mutd); border-color: var(--glass-border-dk); }
+    body.dark .safe-search-toggle:hover { color: var(--txtd); border-color: var(--a); }
+    @media (max-width: 640px) {
+      .safe-search-toggle span { display: none; }
+      .safe-search-toggle { padding: 7px 9px; }
     }
     .results-tab {
       display: flex;
@@ -319,58 +392,6 @@
       background: linear-gradient(120deg, var(--a), var(--a2));
       color: #fff; border-color: transparent;
     }
-    .search-utility-bar {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: flex-start;
-      width: 100%;
-      max-width: 900px;
-      padding: 0 20px;
-      box-sizing: border-box;
-      margin: 0 auto;
-    }
-    .search-safe-pill, .kp-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: 999px;
-      padding: 6px 10px;
-      background: var(--glass-light-mid);
-      border: 1px solid var(--glass-border);
-      backdrop-filter: var(--glass-blur-sm);
-    }
-    body.dark .search-safe-pill, body.dark .kp-controls { background: var(--glass-dark-mid); border-color: var(--glass-border-dk); }
-    .search-utility-bar label { font-size: 12px; color: var(--mut); font-weight: 700; }
-    body.dark .search-utility-bar label { color: var(--mutd); }
-    .search-utility-bar select { border-radius: 999px; border: 1px solid var(--glass-border); background: transparent; padding: 5px 10px; font-size: 12px; color: inherit; }
-    .speed-test-trigger { display:none; }
-    .speed-test-trigger.visible { display:inline-flex; }
-    .speed-test-btn {
-      border: none; border-radius: 999px; padding: 7px 12px; font-size: 12px; font-weight: 700; cursor: pointer;
-      background: linear-gradient(120deg, var(--a), var(--a2)); color: #fff;
-      box-shadow: 0 4px 14px rgba(59,130,246,0.35);
-    }
-    .speed-test-panel {
-      display: none;
-      width: 100%;
-      max-width: 900px;
-      margin: 6px auto 0;
-      padding: 12px 14px;
-      border-radius: 16px;
-      background: var(--glass-light-mid);
-      border: 1px solid var(--glass-border);
-      backdrop-filter: var(--glass-blur);
-      box-sizing: border-box;
-    }
-    .speed-test-panel.active { display: block; }
-    body.dark .speed-test-panel { background: var(--glass-dark-mid); border-color: var(--glass-border-dk); }
-    .speed-grid { display:grid; grid-template-columns: repeat(4, minmax(100px, 1fr)); gap: 8px; margin-top: 10px; }
-    .speed-stat { border-radius: 12px; padding: 10px; background: rgba(255,255,255,0.4); }
-    body.dark .speed-stat { background: rgba(10,15,30,0.6); }
-    .speed-label { font-size: 11px; color: var(--mut); text-transform: uppercase; letter-spacing: .04em; }
-    .speed-value { font-size: 18px; font-weight: 800; color: var(--txt); margin-top: 3px; }
-    body.dark .speed-value { color: var(--txtd); }
 
     /* ── Results container ── */
     #custom-results-area {
@@ -405,9 +426,155 @@
     }
     body.dark #knowledge-panel { background: var(--glass-dark-mid); border-color: var(--glass-border-dk); box-shadow: var(--glass-shadow-sm), var(--glass-inset-dk);}
     #knowledge-panel.active { display:block; }
-    #knowledge-panel.compact { padding: 10px; }
-    #knowledge-panel.minimal .kp-image, #knowledge-panel.minimal .kp-facts, #knowledge-panel.minimal .kp-source { display: none; }
     .kp-image { width: 100%; height: 170px; object-fit: cover; border-radius: 12px; margin-bottom: 10px; }
+
+    .kp-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--txt);
+      line-height: 1.3;
+      margin-bottom: 4px;
+    }
+    body.dark .kp-title { color: var(--txtd); }
+    .kp-subtext {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--mut);
+      margin-bottom: 10px;
+    }
+    body.dark .kp-subtext { color: var(--mutd); }
+    .kp-desc {
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--txt);
+      margin-bottom: 12px;
+    }
+    body.dark .kp-desc { color: var(--txtd); }
+    .kp-source {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--a);
+      text-decoration: none;
+      margin-bottom: 14px;
+    }
+    .kp-source:hover { text-decoration: underline; }
+
+    .kp-related-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--mut);
+      margin: 4px 0 8px;
+      padding-top: 12px;
+      border-top: 1px solid var(--glass-border);
+    }
+    body.dark .kp-related-label { color: var(--mutd); border-top-color: var(--glass-border-dk); }
+    .kp-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .kp-pill {
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--txt);
+      background: rgba(0,0,0,0.06);
+      border: none;
+      border-radius: 999px;
+      padding: 6px 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: background .15s, color .15s;
+    }
+    .kp-pill:hover { background: var(--a); color: #fff; }
+    body.dark .kp-pill { color: var(--txtd); background: rgba(255,255,255,0.08); }
+    body.dark .kp-pill:hover { background: var(--a); color: #fff; }
+
+    /* Shimmer skeleton shown while the panel loads */
+    .kp-skel-img, .kp-skel-line {
+      background: linear-gradient(90deg, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.11) 37%, rgba(0,0,0,0.06) 63%);
+      background-size: 400% 100%;
+      animation: kpShimmer 1.4s ease infinite;
+      border-radius: 8px;
+    }
+    body.dark .kp-skel-img, body.dark .kp-skel-line {
+      background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.13) 37%, rgba(255,255,255,0.06) 63%);
+      background-size: 400% 100%;
+    }
+    .kp-skel-img { width: 100%; height: 170px; border-radius: 12px; margin-bottom: 12px; }
+    .kp-skel-line { height: 13px; margin-bottom: 9px; width: 100%; }
+    @keyframes kpShimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+    /* Structured facts table — Wikidata-sourced "Born / Founded / Headquarters"
+       style rows, the part that actually makes this a knowledge panel rather
+       than a Wikipedia excerpt. */
+    .kp-facts {
+      margin: 4px 0 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--glass-border);
+    }
+    body.dark .kp-facts { border-top-color: var(--glass-border-dk); }
+    .kp-fact-row {
+      display: flex;
+      gap: 10px;
+      padding: 5px 0;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .kp-fact-label {
+      flex: 0 0 38%;
+      color: var(--mut);
+      font-weight: 600;
+    }
+    body.dark .kp-fact-label { color: var(--mutd); }
+    .kp-fact-value { flex: 1; color: var(--txt); }
+    body.dark .kp-fact-value { color: var(--txtd); }
+
+    /* Inline calculator card — shown instead of the bio panel when the
+       query itself looks like a math expression. */
+    .kp-calc {
+      text-align: center;
+      padding: 6px 2px 4px;
+    }
+    .kp-calc-expr {
+      font-size: 13px;
+      color: var(--mut);
+      margin-bottom: 6px;
+      word-break: break-word;
+    }
+    body.dark .kp-calc-expr { color: var(--mutd); }
+    .kp-calc-result {
+      font-size: 30px;
+      font-weight: 800;
+      color: var(--txt);
+      word-break: break-word;
+      line-height: 1.25;
+    }
+    body.dark .kp-calc-result { color: var(--txtd); }
+    .kp-calc-icon { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--a); margin-bottom: 10px; }
+
+    /* Dictionary instant answer */
+    .kp-dict-word {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--txt);
+      margin-bottom: 2px;
+    }
+    body.dark .kp-dict-word { color: var(--txtd); }
+    .kp-dict-phonetic { font-size: 13px; color: var(--a); margin-bottom: 12px; }
+    .kp-dict-pos {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      font-style: italic;
+      color: var(--mut);
+      margin: 10px 0 4px;
+    }
+    body.dark .kp-dict-pos { color: var(--mutd); }
+    .kp-dict-defs { margin: 0 0 0 18px; padding: 0; }
+    .kp-dict-defs li { font-size: 13.5px; line-height: 1.55; color: var(--txt); margin-bottom: 4px; }
+    body.dark .kp-dict-defs li { color: var(--txtd); }
 
     .results-info {
       font-size: 13px;
@@ -759,8 +926,6 @@
       #knowledge-panel { position: static; order: -1; }
       .results-tabs { gap: 4px; padding: 8px; }
       .results-tab { padding: 6px 12px; font-size: 12px; }
-      .search-utility-bar { padding: 0 12px; flex-direction: column; align-items: stretch; }
-      .speed-grid { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -830,8 +995,8 @@
       <button id="bgResetBtn" class="settings-btn">Reset</button>
     </div>
     <h3 style="margin-top:25px;">Legal</h3>
-    <a href="privacypolicy.html" class="legal-link">🔒 Privacy Policy</a>
-    <a href="tos.html" class="legal-link">📜 Terms of Service</a>
+    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
+    <a href="/tos" class="legal-link">📜 Terms of Service</a>
     <h3 style="margin-top:25px;">About</h3>
     <details class="about-dropdown">
       <summary>ℹ️ What is 360?</summary>
@@ -893,6 +1058,9 @@
           <button id="custom-clear-btn" aria-label="Clear search" title="Clear">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
+          <button id="voice-search-btn" aria-label="Search by voice" title="Search by voice" style="display:none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+          </button>
           <button id="custom-search-btn">Search</button>
         </div>
         <!-- Live suggestions dropdown -->
@@ -914,38 +1082,10 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 5 5"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
         AI
       </div>
-    </div>
-    <div class="search-utility-bar">
-      <div class="search-safe-pill">
-        <label for="safeSearchSelect">Safe search</label>
-        <select id="safeSearchSelect">
-          <option value="active" selected>Strict</option>
-        </select>
-      </div>
-      <div class="kp-controls">
-        <label for="kpStyleSelect">Knowledge panel</label>
-        <select id="kpStyleSelect">
-          <option value="default" selected>Default</option>
-          <option value="compact">Compact</option>
-          <option value="minimal">Minimal</option>
-        </select>
-      </div>
-      <div class="speed-test-trigger" id="speedTestTrigger">
-        <button class="speed-test-btn" id="speedTestBtn">Run internet speed test</button>
-      </div>
-    </div>
-    <div class="speed-test-panel" id="speedTestPanel">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-        <strong>Internet Speed Test</strong>
-        <button class="speed-test-btn" id="speedTestRunBtn">Start test</button>
-      </div>
-      <div class="speed-grid">
-        <div class="speed-stat"><div class="speed-label">Latency</div><div class="speed-value"><span id="latencyResult">--</span> ms</div></div>
-        <div class="speed-stat"><div class="speed-label">Ping</div><div class="speed-value"><span id="pingResult">--</span> ms</div></div>
-        <div class="speed-stat"><div class="speed-label">Download</div><div class="speed-value"><span id="downloadResult">--</span> Mbps</div></div>
-        <div class="speed-stat"><div class="speed-label">Upload</div><div class="speed-value"><span id="uploadResult">--</span> Mbps</div></div>
-      </div>
-      <div id="speedFeedback" style="margin-top:10px;color:var(--mut);font-size:13px;">Press “Start test” to run.</div>
+      <button id="safe-search-toggle" class="safe-search-toggle" title="Toggle Safe Search">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"/></svg>
+        <span id="safe-search-label">Safe Search: On</span>
+      </button>
     </div>
 
     <div class="results-layout">
@@ -984,6 +1124,7 @@
 
   <audio id="clickSound" src="click-sound.mp3" preload="auto"></audio>
   <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/auth-fix.js"></script>
   <script src="/assets/js/wide.js"></script>
   <script src="/assets/js/cookie.js"></script>
   <script src="/assets/js/cursor.js"></script>
@@ -1007,6 +1148,10 @@
       suggestOpen: false,
       // prevent observer from firing during suggestion mirroring
       suppressObserver: false,
+      // currently only filters the Images tab (passed to the image-search
+      // edge function); GCSE's own web-results safe search is configured
+      // at the CSE control-panel level, not adjustable per-request here.
+      safeSearch: localStorage.getItem('360_safe_search') !== 'off',
     };
 
     /* ─────────────────────────────────
@@ -1020,17 +1165,7 @@
     const aiPanel     = document.getElementById('ai-panel');
     const tabsEl      = document.getElementById('results-tabs');
     const knowledgePanel = document.getElementById('knowledge-panel');
-    const safeSearchSelect = document.getElementById('safeSearchSelect');
-    const kpStyleSelect = document.getElementById('kpStyleSelect');
-    const speedTestTrigger = document.getElementById('speedTestTrigger');
-    const speedTestBtn = document.getElementById('speedTestBtn');
-    const speedTestPanel = document.getElementById('speedTestPanel');
-    const speedTestRunBtn = document.getElementById('speedTestRunBtn');
-    const latencyResult = document.getElementById('latencyResult');
-    const pingResult = document.getElementById('pingResult');
-    const downloadResult = document.getElementById('downloadResult');
-    const uploadResult = document.getElementById('uploadResult');
-    const speedFeedback = document.getElementById('speedFeedback');
+    let kpToken = 0; // increments per knowledge-panel request; guards against a slow, stale response overwriting a newer one
 
     /* ─────────────────────────────────
        INIT FROM URL
@@ -1048,21 +1183,17 @@
         if (t === 'ai') {
           showResultsArea(false);
           runAiSearch(q);
+        } else if (t === 'images') {
+          showResultsArea(true);
+          loadKnowledgePanel(q);
+          state.page = 1;
+          scrapeImageResults(document.getElementById('gcse-hidden-container'));
         } else {
           showResultsArea(true);
-          toggleSpeedTestTrigger(q);
           loadKnowledgePanel(q);
           waitForGcseAndSearch(q, t);
         }
       }
-    }
-    function isSpeedTestQuery(q) {
-      return /(speed\s*test|internet\s*speed|wifi\s*speed|bandwidth|latency|ping\s*test|download\s*speed|upload\s*speed)/i.test(String(q || ''));
-    }
-    function toggleSpeedTestTrigger(q) {
-      const visible = isSpeedTestQuery(q);
-      speedTestTrigger?.classList.toggle('visible', visible);
-      if (!visible) speedTestPanel?.classList.remove('active');
     }
 
     /* ─────────────────────────────────
@@ -1077,42 +1208,360 @@
        WAIT FOR GCSE THEN SEARCH
     ───────────────────────────────── */
     
+    /* ─────────────────────────────────
+       INLINE CALCULATOR
+       Detects math-expression queries ("2+2", "15% of 200", "sqrt(81)")
+       and evaluates them without ever passing raw, unwhitelisted input to
+       Function() — known function/constant words are stripped first, and
+       whatever's left must be only digits/operators/whitespace/punctuation.
+    ───────────────────────────────── */
+    function tryCalculate(q) {
+      const trimmed = q.trim();
+      if (!trimmed || trimmed.length > 100) return null;
+
+      const pctOf = trimmed.match(/^([\d.]+)\s*%\s*of\s*([\d.]+)$/i);
+      if (pctOf) {
+        const a = parseFloat(pctOf[1]), b = parseFloat(pctOf[2]);
+        if (isNaN(a) || isNaN(b)) return null;
+        return { expr: trimmed, result: (a / 100) * b };
+      }
+
+      if (!/\d/.test(trimmed)) return null;
+      const looksMathy = /[+\-*/^%]/.test(trimmed) || /\b(sqrt|sin|cos|tan|log|ln|abs|pow)\s*\(/i.test(trimmed);
+      if (!looksMathy) return null;
+
+      const stripped = trimmed.replace(/\b(sqrt|sin|cos|tan|log|ln|abs|pow|pi|e)\b/gi, '');
+      if (!/^[\d\s+\-*/^%.(),]*$/.test(stripped)) return null; // anything else → not safe, bail
+
+      const expr = trimmed
+        .replace(/\^/g, '**')
+        .replace(/\bsqrt\(/gi, 'Math.sqrt(')
+        .replace(/\bsin\(/gi, 'Math.sin(')
+        .replace(/\bcos\(/gi, 'Math.cos(')
+        .replace(/\btan\(/gi, 'Math.tan(')
+        .replace(/\blog\(/gi, 'Math.log10(')
+        .replace(/\bln\(/gi, 'Math.log(')
+        .replace(/\babs\(/gi, 'Math.abs(')
+        .replace(/\bpow\(/gi, 'Math.pow(')
+        .replace(/\bpi\b/gi, 'Math.PI')
+        .replace(/(?<![a-zA-Z])e(?![a-zA-Z])/gi, 'Math.E');
+
+      try {
+        const result = Function(`"use strict"; return (${expr});`)();
+        if (typeof result !== 'number' || !isFinite(result)) return null;
+        return { expr: trimmed, result };
+      } catch (e) { return null; }
+    }
+
+    function renderCalculator(calc) {
+      const formatted = Number.isInteger(calc.result)
+        ? calc.result.toLocaleString()
+        : parseFloat(calc.result.toFixed(8)).toLocaleString(undefined, { maximumFractionDigits: 8 });
+      knowledgePanel.innerHTML = `
+        <div class="kp-calc">
+          <div class="kp-calc-icon">Calculator</div>
+          <div class="kp-calc-expr">${escHtml(calc.expr)} =</div>
+          <div class="kp-calc-result">${escHtml(formatted)}</div>
+        </div>
+      `;
+      knowledgePanel.classList.add('active');
+    }
+
+    /* ─────────────────────────────────
+       UNIT CONVERTER
+       "10 km to miles", "5kg in lbs", "100 f to c" — pure math, no API,
+       so it's instant and can never fail/timeout.
+    ───────────────────────────────── */
+    const UNIT_CATEGORIES = {
+      length: { mm:0.001, cm:0.01, m:1, km:1000, in:0.0254, ft:0.3048, yd:0.9144, mi:1609.344 },
+      weight: { mg:0.001, g:1, kg:1000, oz:28.3495, lb:453.592, ton:1000000, stone:6350.29 },
+      volume: { ml:0.001, l:1, gal:3.78541, qt:0.946353, pt:0.473176, cup:0.236588, floz:0.0295735 },
+      speed:  { mph:0.44704, kmh:0.277778, kph:0.277778, mps:1, knot:0.514444 },
+    };
+    const UNIT_ALIASES = {
+      meter:'m', meters:'m', metre:'m', metres:'m', millimeter:'mm', millimeters:'mm',
+      centimeter:'cm', centimeters:'cm', kilometer:'km', kilometers:'km', kilometre:'km', kilometres:'km',
+      mile:'mi', miles:'mi', foot:'ft', feet:'ft', inch:'in', inches:'in', yard:'yd', yards:'yd',
+      gram:'g', grams:'g', kilogram:'kg', kilograms:'kg', kilo:'kg', kilos:'kg', milligram:'mg', milligrams:'mg',
+      pound:'lb', pounds:'lb', lbs:'lb', ounce:'oz', ounces:'oz', tonne:'ton', tonnes:'ton', tons:'ton', stones:'stone',
+      liter:'l', liters:'l', litre:'l', litres:'l', milliliter:'ml', milliliters:'ml',
+      gallon:'gal', gallons:'gal', quart:'qt', quarts:'qt', pint:'pt', pints:'pt', cups:'cup',
+      'fl oz':'floz', 'fluid ounce':'floz', 'fluid ounces':'floz',
+      celsius:'c', '°c':'c', fahrenheit:'f', '°f':'f', kelvin:'k',
+      'km/h':'kmh', 'kph':'kph', 'mi/h':'mph', knots:'knot', 'm/s':'mps',
+    };
+    function normalizeUnit(raw) {
+      const u = raw.trim().toLowerCase();
+      return UNIT_ALIASES[u] || u;
+    }
+    function convertTemp(value, from, to) {
+      let c = from === 'c' ? value : from === 'f' ? (value - 32) * 5/9 : value - 273.15;
+      return to === 'c' ? c : to === 'f' ? c * 9/5 + 32 : c + 273.15;
+    }
+    const TEMP_LABEL = { c: '°C', f: '°F', k: 'K' };
+
+    function tryUnitConvert(q) {
+      const m = q.trim().match(/^([\d.]+)\s*([a-z°\/]+)\s+(?:to|in|as|->)\s+([a-z°\/]+)\??$/i);
+      if (!m) return null;
+      const value = parseFloat(m[1]);
+      if (isNaN(value)) return null;
+      const fromUnit = normalizeUnit(m[2]);
+      const toUnit   = normalizeUnit(m[3]);
+      if (fromUnit === toUnit) return null; // not a meaningful conversion
+
+      if (['c','f','k'].includes(fromUnit) && ['c','f','k'].includes(toUnit)) {
+        return {
+          expr: `${value}${TEMP_LABEL[fromUnit]} =`,
+          result: convertTemp(value, fromUnit, toUnit),
+          unit: TEMP_LABEL[toUnit],
+        };
+      }
+      for (const cat of Object.values(UNIT_CATEGORIES)) {
+        if (cat[fromUnit] != null && cat[toUnit] != null) {
+          return { expr: `${value} ${fromUnit} =`, result: (value * cat[fromUnit]) / cat[toUnit], unit: toUnit };
+        }
+      }
+      return null;
+    }
+
+    function renderUnitConvert(conv) {
+      const formatted = parseFloat(conv.result.toFixed(6)).toLocaleString(undefined, { maximumFractionDigits: 6 });
+      knowledgePanel.innerHTML = `
+        <div class="kp-calc">
+          <div class="kp-calc-icon">Unit Converter</div>
+          <div class="kp-calc-expr">${escHtml(conv.expr)}</div>
+          <div class="kp-calc-result">${escHtml(formatted)} <span style="font-size:18px;font-weight:700;">${escHtml(conv.unit)}</span></div>
+        </div>
+      `;
+      knowledgePanel.classList.add('active');
+    }
+
+    /* ─────────────────────────────────
+       DICTIONARY LOOKUP
+       "define X" / "what does X mean" / "X meaning" — keyless, CORS-enabled
+       free dictionary API.
+    ───────────────────────────────── */
+    function parseDictionaryQuery(q) {
+      const trimmed = q.trim();
+      let m = /^define\s+([a-z\-']+)\??$/i.exec(trimmed)
+           || /^definition\s+of\s+([a-z\-']+)\??$/i.exec(trimmed)
+           || /^what\s+does\s+([a-z\-']+)\s+mean\??$/i.exec(trimmed)
+           || /^([a-z\-']+)\s+meaning\??$/i.exec(trimmed)
+           || /^meaning\s+of\s+([a-z\-']+)\??$/i.exec(trimmed);
+      return m ? m[1] : null;
+    }
+
+    async function tryDictionaryLookup(q, token) {
+      const word = parseDictionaryQuery(q);
+      if (!word) return null;
+      try {
+        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+        if (!res.ok || token !== kpToken) return null;
+        const data = await res.json();
+        const entry = Array.isArray(data) ? data[0] : null;
+        if (!entry) return null;
+        const phonetic = entry.phonetic || entry.phonetics?.find(p => p.text)?.text || '';
+        const meanings = (entry.meanings || []).slice(0, 3).map(m => ({
+          pos: m.partOfSpeech,
+          defs: (m.definitions || []).slice(0, 2).map(d => d.definition).filter(Boolean),
+        })).filter(m => m.defs.length);
+        if (!meanings.length) return null;
+        return { word: entry.word || word, phonetic, meanings };
+      } catch (e) { return null; }
+    }
+
+    function renderDictionary(dict) {
+      knowledgePanel.innerHTML = `
+        <div class="kp-dict-word">${escHtml(dict.word)}</div>
+        ${dict.phonetic ? `<div class="kp-dict-phonetic">${escHtml(dict.phonetic)}</div>` : ''}
+        ${dict.meanings.map(m => `
+          <div class="kp-dict-pos">${escHtml(m.pos)}</div>
+          <ol class="kp-dict-defs">${m.defs.map(d => `<li>${escHtml(d)}</li>`).join('')}</ol>
+        `).join('')}
+      `;
+      knowledgePanel.classList.add('active');
+    }
+
+    /* ─────────────────────────────────
+       WIKIDATA STRUCTURED FACTS
+       The piece that turns "a paragraph from Wikipedia" into an actual
+       knowledge panel — Born/Founded/Headquarters/Population style rows.
+       Keyless, CORS-enabled, same access pattern as the Wikipedia calls
+       already used above.
+    ───────────────────────────────── */
+    const WIKIDATA_PROPS = {
+      P569: 'Born', P570: 'Died', P19: 'Born in', P27: 'Citizenship', P106: 'Occupation',
+      P571: 'Founded', P112: 'Founded by', P159: 'Headquarters', P1128: 'Employees',
+      P2046: 'Area', P1082: 'Population', P36: 'Capital', P17: 'Country', P452: 'Industry',
+    };
+
+    function formatWikidataDate(timeStr, precision) {
+      const m = /^([+-])(\d+)-(\d{2})-(\d{2})/.exec(timeStr || '');
+      if (!m) return null;
+      const [, sign, y, mo, d] = m;
+      const year = sign === '-' ? `${parseInt(y)} BCE` : `${parseInt(y)}`;
+      if (precision <= 9) return year;
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const monthName = months[parseInt(mo) - 1] || '';
+      return precision === 10 ? `${monthName} ${year}` : `${monthName} ${parseInt(d)}, ${year}`;
+    }
+
+    async function fetchWikidataFacts(title, token) {
+      try {
+        const entRes = await fetch(`https://www.wikidata.org/w/api.php?action=wbgetentities&sites=enwiki&titles=${encodeURIComponent(title)}&props=claims&languages=en&format=json&origin=*`);
+        if (!entRes.ok || token !== kpToken) return [];
+        const entData = await entRes.json();
+        const entity = Object.values(entData.entities || {})[0];
+        if (!entity || !entity.claims || entity.id === undefined) return [];
+
+        const rawFacts = [];
+        for (const [pid, label] of Object.entries(WIKIDATA_PROPS)) {
+          const dv = entity.claims[pid]?.[0]?.mainsnak?.datavalue;
+          if (dv) rawFacts.push({ label, dv });
+          if (rawFacts.length >= 8) break; // cap — a panel, not a spreadsheet
+        }
+        if (!rawFacts.length) return [];
+
+        const qids = new Set();
+        rawFacts.forEach(f => { if (f.dv.type === 'wikibase-entityid') qids.add(f.dv.value.id); });
+
+        let labelMap = {};
+        if (qids.size) {
+          const labelRes = await fetch(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${[...qids].join('|')}&props=labels&languages=en&format=json&origin=*`);
+          if (labelRes.ok && token === kpToken) {
+            const labelData = await labelRes.json();
+            Object.entries(labelData.entities || {}).forEach(([qid, ent]) => {
+              labelMap[qid] = ent.labels?.en?.value || qid;
+            });
+          }
+        }
+
+        const facts = [];
+        for (const f of rawFacts) {
+          let value = null;
+          if (f.dv.type === 'wikibase-entityid') value = labelMap[f.dv.value.id] || null;
+          else if (f.dv.type === 'time') value = formatWikidataDate(f.dv.value.time, f.dv.value.precision);
+          else if (f.dv.type === 'quantity') {
+            const amt = parseFloat(f.dv.value.amount);
+            value = isNaN(amt) ? null : amt.toLocaleString();
+          } else if (f.dv.type === 'string' || f.dv.type === 'monolingualtext') {
+            value = f.dv.value?.text || (typeof f.dv.value === 'string' ? f.dv.value : null);
+          }
+          if (value) facts.push({ label: f.label, value });
+        }
+        return facts;
+      } catch (e) { return []; }
+    }
+
+
     async function loadKnowledgePanel(q) {
-      if (!q?.trim()) { knowledgePanel.classList.remove('active'); knowledgePanel.innerHTML=''; return; }
-      if (scoreKnowledgePanelRelevance(q) < 0.85) {
+      const myToken = ++kpToken; // guards against a slow earlier request clobbering a newer one
+      if (!q?.trim()) { knowledgePanel.classList.remove('active'); knowledgePanel.innerHTML = ''; return; }
+
+      // Math expressions get an instant calculator card — no need to hit
+      // Wikipedia/DuckDuckGo/Wikidata for "2+2".
+      const calc = tryCalculate(q);
+      if (calc) { renderCalculator(calc); return; }
+
+      // "10 km to miles" style queries — pure math, instant, no API needed.
+      const conv = tryUnitConvert(q);
+      if (conv) { renderUnitConvert(conv); return; }
+
+      // "define X" / "what does X mean" — try the dictionary before falling
+      // through to the Wikipedia/Wikidata bio-panel flow.
+      const dictWord = parseDictionaryQuery(q);
+      if (dictWord) {
+        knowledgePanel.classList.add('active');
+        knowledgePanel.innerHTML = `
+          <div class="kp-skel-line" style="width:50%;height:22px;"></div>
+          <div class="kp-skel-line" style="width:30%"></div>
+          <div class="kp-skel-line"></div>
+          <div class="kp-skel-line" style="width:80%"></div>
+        `;
+        const dict = await tryDictionaryLookup(q, myToken);
+        if (myToken !== kpToken) return;
+        if (dict) { renderDictionary(dict); return; }
+        // No dictionary entry found (not a real word, or API miss) — fall
+        // through to the normal knowledge-panel flow below as a backstop.
+      }
+
+      knowledgePanel.classList.add('active');
+      knowledgePanel.innerHTML = `
+        <div class="kp-skel-img"></div>
+        <div class="kp-skel-line" style="width:70%"></div>
+        <div class="kp-skel-line" style="width:40%"></div>
+        <div class="kp-skel-line"></div>
+        <div class="kp-skel-line"></div>
+        <div class="kp-skel-line" style="width:55%"></div>
+      `;
+
+      try {
+        // Wikipedia's summary endpoint needs an EXACT page title — most real
+        // search queries (questions, multi-word phrases) aren't exact titles
+        // and would just 404. Searching first and feeding the best match's
+        // title into the summary endpoint covers vastly more queries.
+        const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&origin=*&srlimit=1`);
+        const searchData = searchRes.ok ? await searchRes.json() : {};
+        const bestTitle = searchData?.query?.search?.[0]?.title;
+
+        const [wikiRes, ddgRes, facts] = await Promise.all([
+          bestTitle
+            ? fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(bestTitle)}`)
+            : Promise.resolve(null),
+          fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1&skip_disambig=1`),
+          bestTitle ? fetchWikidataFacts(bestTitle, myToken) : Promise.resolve([]),
+        ]);
+        if (myToken !== kpToken) return; // a newer search started while we were waiting
+
+        const wiki = (wikiRes && wikiRes.ok) ? await wikiRes.json() : {};
+        const ddg  = ddgRes.ok ? await ddgRes.json() : {};
+
+        const img    = wiki.thumbnail?.source || ddg.Image || '';
+        const title  = wiki.title || ddg.Heading || '';
+        const desc   = wiki.extract || ddg.AbstractText || '';
+        const source = wiki.content_urls?.desktop?.page || ddg.AbstractURL || '';
+        const related = (ddg.RelatedTopics || [])
+          .map(x => x.Text || x.Topics?.[0]?.Text)
+          .filter(Boolean)
+          .slice(0, 5);
+
+        // Genuinely nothing to show — hide rather than render a panel with
+        // the raw query as a fake title and an empty body.
+        if (!title && !desc && !related.length && !facts.length) {
+          knowledgePanel.classList.remove('active');
+          knowledgePanel.innerHTML = '';
+          return;
+        }
+
+        knowledgePanel.innerHTML = `
+          ${img ? `<img class="kp-image" src="${escHtml(img)}" alt="${escHtml(title || q)}" loading="lazy">` : ''}
+          <div class="kp-title">${escHtml(title || q)}</div>
+          <div class="kp-subtext">From Wikipedia &amp; DuckDuckGo</div>
+          ${desc ? `<div class="kp-desc">${escHtml(desc)}</div>` : ''}
+          ${facts.length ? `
+            <div class="kp-facts">
+              ${facts.map(f => `
+                <div class="kp-fact-row">
+                  <div class="kp-fact-label">${escHtml(f.label)}</div>
+                  <div class="kp-fact-value">${escHtml(f.value)}</div>
+                </div>`).join('')}
+            </div>` : ''}
+          ${source ? `<a class="kp-source" href="${escHtml(source)}" target="_blank" rel="noopener noreferrer">Read more →</a>` : ''}
+          ${related.length ? `
+            <div class="kp-related-label">People also search for</div>
+            <div class="kp-pills">
+              ${related.map(f => `<button class="kp-pill" data-q="${escHtml(f)}">${escHtml(f.length > 38 ? f.slice(0, 36) + '…' : f)}</button>`).join('')}
+            </div>` : ''}
+        `;
+
+        knowledgePanel.querySelectorAll('.kp-pill').forEach(btn => {
+          btn.addEventListener('click', () => { hideSuggestions(); doSearch(btn.dataset.q); });
+        });
+      } catch (e) {
+        if (myToken !== kpToken) return;
         knowledgePanel.classList.remove('active');
         knowledgePanel.innerHTML = '';
-        return;
       }
-      knowledgePanel.classList.add('active');
-      knowledgePanel.innerHTML = '<div class="kp-subtext">Loading knowledge panel…</div>';
-      try {
-        const [wikiRes, ddgRes] = await Promise.all([
-          fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`),
-          fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1&skip_disambig=1`)
-        ]);
-        const wiki = wikiRes.ok ? await wikiRes.json() : {};
-        const ddg = ddgRes.ok ? await ddgRes.json() : {};
-        const img = wiki.thumbnail?.source || ddg.Image || '';
-        const title = wiki.title || ddg.Heading || q;
-        const desc = wiki.extract || ddg.AbstractText || 'No summary available yet.';
-        const source = wiki.content_urls?.desktop?.page || ddg.AbstractURL || '';
-        const related = (ddg.RelatedTopics || []).slice(0,4).map((x)=>x.Text).filter(Boolean);
-        knowledgePanel.innerHTML = `${img ? `<img class="kp-image" src="${img}" alt="${title}">` : ''}<div class="kp-title">${title}</div><div class="kp-subtext">Relevant context from Wikipedia + DuckDuckGo</div><div class="kp-desc">${desc}</div>${source ? `<div class="kp-source"><a href="${source}" target="_blank" rel="noopener noreferrer">Open source page</a></div>` : ''}${related.length ? `<ul class="kp-facts">${related.map((f)=>`<li>• ${f}</li>`).join('')}</ul>` : ''}`;
-      } catch (e) {
-        knowledgePanel.innerHTML = '<div class="kp-subtext">Knowledge panel is unavailable right now.</div>';
-      }
-    }
-    function scoreKnowledgePanelRelevance(q) {
-      const tokens = String(q || '').toLowerCase().split(/\s+/).filter(t => t.length > 2);
-      if (!tokens.length) return 0;
-      const overlapRatio = tokens.length > 1 ? 1 : 0.8;
-      return Math.min(1, overlapRatio + Math.min(0.2, tokens.length * 0.04));
-    }
-    function applyKnowledgePanelStyle() {
-      knowledgePanel.classList.remove('compact', 'minimal');
-      const mode = kpStyleSelect?.value || 'default';
-      if (mode !== 'default') knowledgePanel.classList.add(mode);
     }
 
     function waitForGcseAndSearch(q, tab) {
@@ -1169,16 +1618,6 @@
                      google.search.cse.element.getAllElements()[0];
           if (el) {
             el.execute(q);
-            const safe = safeSearchSelect?.value || 'active';
-            if (safe === 'active') {
-              document.querySelectorAll('#gcse-hidden-container a, .gsc-control-cse a').forEach((a) => {
-                try {
-                  const u = new URL(a.href, location.origin);
-                  u.searchParams.set('safe', 'active');
-                  a.href = u.toString();
-                } catch {}
-              });
-            }
             setupGcseObserver();
             return;
           }
@@ -1291,7 +1730,6 @@
         }
 
         const thumb = thumbEl ? (thumbEl.src || thumbEl.getAttribute('data-src') || '') : '';
-        if (isSafeSearchEnabled() && isUnsafeResult({ title, snippet, href, displayUrl })) return;
         results.push({ title, href, displayUrl, snippet, thumb });
       });
 
@@ -1300,68 +1738,48 @@
     }
 
     function scrapeImageResults(gcseContainer) {
-      // GCSE's widget only returns web results with thumbnails.
-      // For real image search (30-50 per page), use the Google Custom Search JSON API
-      // with searchType=image. cx matches your GCSE cx.
-      const CX     = 'e003eb0834b6b4be8';
-      const start  = ((state.page - 1) * 10) + 1; // API uses 1-based index, 10 per page
+      // Real per-page image results via our image-search edge function (keeps
+      // the Google API key server-side instead of exposed in page source).
+      // Google's Custom Search JSON API hard-caps at 100 total results
+      // (start must be 1-91), so with 30 results/page (3 calls of 10) we
+      // cap at 3 full pages — anything beyond that the API can't serve.
+      const PAGE_SIZE = 30;
+      const pageStart = ((state.page - 1) * PAGE_SIZE) + 1; // 1, 31, 61…
+      const starts = [0, 10, 20].map(off => pageStart + off);
 
       showLoading();
 
-      // Fetch up to 10 results per API call; to get more we make multiple calls
-      // Google CSE API max is 10 per request, so we fetch 3 pages in parallel (30 total)
-      const starts = [1, 11, 21].map(offset => start + offset - 1);
-      const safe = isSafeSearchEnabled() ? '&safe=active' : '';
-
       Promise.allSettled(
         starts.map(s =>
-          fetch(`https://www.googleapis.com/customsearch/v1?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&cx=${CX}&searchType=image&q=${encodeURIComponent(state.query)}&start=${s}&num=10${safe}`)
-            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+          fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/image-search?q=${encodeURIComponent(state.query)}&start=${s}&safe=${state.safeSearch === false ? 'off' : 'active'}`)
+            .then(r => r.json())
         )
       ).then(responses => {
         const seenSrcs = new Set();
         const imgs = [];
+        let totalResults = 0;
 
         responses.forEach(res => {
-          if (res.status !== 'fulfilled') return;
-          const data = res.value;
-          if (!data.items) return;
-          data.items.forEach(item => {
-            const src = item.link || '';
-            if (!src || seenSrcs.has(src)) return;
-            if (isSafeSearchEnabled() && isUnsafeResult({
-              title: item.title || '',
-              snippet: item.snippet || '',
-              href: item.image?.contextLink || item.displayLink || src,
-              displayUrl: item.displayLink || '',
-            })) return;
-            seenSrcs.add(src);
-            imgs.push({
-              src,
-              href:       item.image?.contextLink || item.displayLink || src,
-              alt:        item.title || 'Image',
-              displayUrl: item.displayLink || '',
-            });
+          if (res.status !== 'fulfilled' || !res.value || res.value.error) return;
+          if (!totalResults && res.value.totalResults) totalResults = res.value.totalResults;
+          (res.value.items || []).forEach(item => {
+            if (!item.src || seenSrcs.has(item.src)) return;
+            seenSrcs.add(item.src);
+            imgs.push(item);
           });
         });
 
-        // Get total count from first response
-        const firstOk = responses.find(r => r.status === 'fulfilled' && r.value?.searchInformation);
-        const totalResults = firstOk ? parseInt(firstOk.value.searchInformation.totalResults || '0') : 0;
-        // Google CSE API allows up to 100 results (pages 1-10 with 10 each)
-        const totalPages = Math.min(10, Math.ceil(totalResults / 30));
-        const countText  = totalResults ? `About ${totalResults.toLocaleString()} image results` : '';
-
         if (!imgs.length) {
-          // API key missing or quota exceeded — fall back to GCSE thumbnail scrape
+          // Key missing/invalid, quota exceeded, or zero real results —
+          // fall back to thumbnails already present in the GCSE web results.
           scrapeImageFallback(gcseContainer);
           return;
         }
 
-        renderImageResults(imgs, countText, state.page, Math.max(totalPages, 1));
-      }).catch(() => {
-        scrapeImageFallback(gcseContainer);
-      });
+        const totalPages = Math.min(3, Math.max(1, Math.ceil(totalResults / PAGE_SIZE)));
+        const countText  = totalResults ? `About ${totalResults.toLocaleString()} image results` : '';
+        renderImageResults(imgs, countText, state.page, totalPages);
+      }).catch(() => scrapeImageFallback(gcseContainer));
     }
 
     // Fallback: scrape whatever thumbnails GCSE put in web results
@@ -1400,55 +1818,9 @@
       return { countText, currentPage, totalPages };
     }
 
-    function scrapeImageResults(gcseContainer) {
-      // A standard web GCSE widget never renders .gsc-imageResult elements —
-      // those only appear in image-search-configured CSEs.
-      // The only images available are the thumbnails GCSE embeds inside
-      // each web result card. Collect every non-trivial <img> from results.
-      const seenSrcs = new Set();
-      const results  = [];
-
-      gcseContainer.querySelectorAll('.gsc-webResult.gsc-result').forEach(el => {
-        const titleEl = el.querySelector('.gs-title a');
-
-        // Get destination URL
-        let href = titleEl ? (titleEl.getAttribute('data-ctorig') || titleEl.href || '#') : '#';
-        if (href.includes('google.com/url')) {
-          try { href = new URL(href).searchParams.get('q') || href; } catch(e) {}
-        }
-        const altBase = titleEl ? titleEl.textContent.trim() : 'Image';
-        let displayUrl = '';
-        try { displayUrl = new URL(href).hostname.replace(/^www\./, ''); } catch(e) { displayUrl = href; }
-
-        // Collect all imgs inside this result — GCSE may put several thumbnails
-        el.querySelectorAll('img').forEach(imgEl => {
-          // Prefer data-src (lazy-loaded) over src
-          let src = imgEl.getAttribute('data-src') || imgEl.getAttribute('src') || '';
-          // Skip data URIs, blanks, favicons, and tiny tracker pixels
-          if (!src || src.startsWith('data:') || /blank|favicon|1x1|pixel|spacer/i.test(src)) return;
-          // Skip if already seen
-          if (seenSrcs.has(src)) return;
-          // Skip images with explicit tiny dimensions
-          const w = parseInt(imgEl.getAttribute('width') || '0');
-          const h = parseInt(imgEl.getAttribute('height') || '0');
-          if ((w > 0 && w < 40) || (h > 0 && h < 40)) return;
-          seenSrcs.add(src);
-
-          const alt = imgEl.alt || altBase;
-          results.push({ src, href, alt, displayUrl });
-        });
-      });
-
-      if (!results.length) {
-        const noResults = gcseContainer.querySelector('.gs-no-results-result, .gsc-no-results-result');
-        if (noResults) { renderNoResults(); return; }
-        // Still loading — don't show anything yet
-        return;
-      }
-
-      const { countText, currentPage, totalPages } = getGcsePaginationInfo(gcseContainer);
-      renderImageResults(results, countText, currentPage, totalPages);
-    }
+    /* The web-result-thumbnail-scraping fallback used when image-search
+       returns nothing (key missing/invalid/quota exceeded, or zero results) —
+       see scrapeImageFallback() above, which already handles this case. */
 
     /* ─────────────────────────────────
        LIVE SUGGESTIONS
@@ -1476,23 +1848,18 @@
         setTimeout(() => { state.suppressObserver = false; }, 300);
       }
 
-      // JSONP from Google Suggest
-      const old = document.getElementById('suggest-jsonp');
-      if (old) old.remove();
-
-      window.__suggestCallback = function(data) {
-        // Only show if input still focused and query still matches
-        if (!inputFocused) return;
-        if (data && data[1]) {
-          const suggs = data[1].slice(0, 7).map(s => Array.isArray(s) ? s[0] : s);
+      const reqToken = q;
+      fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/autocomplete?q=${encodeURIComponent(q)}`)
+        .then(r => r.json())
+        .then(data => {
+          // Stale response guard — a slower earlier request shouldn't clobber
+          // a newer one if responses arrive out of order.
+          if (reqToken !== lastSuggestQuery) return;
+          if (!inputFocused) return;
+          const suggs = (data?.suggestions || []).slice(0, 8).map(s => s.text || s);
           showSuggestions(suggs, q);
-        }
-      };
-
-      const script = document.createElement('script');
-      script.id = 'suggest-jsonp';
-      script.src = `https://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(q)}&callback=__suggestCallback`;
-      document.head.appendChild(script);
+        })
+        .catch(() => { /* suggestions are best-effort — fail silently */ });
     }
 
     function showSuggestions(items, query) {
@@ -1541,6 +1908,74 @@
     }
 
     /* ─────────────────────────────────
+       RECENT SEARCHES — shown when the search bar is focused while empty.
+       Plain localStorage on a real shipped page (not a Claude artifact),
+       so this is safe to use.
+    ───────────────────────────────── */
+    const RECENT_KEY = '360_recent_searches';
+    function getRecentSearches() {
+      try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch { return []; }
+    }
+    function addRecentSearch(q) {
+      if (!q?.trim()) return;
+      let list = getRecentSearches().filter(s => s.toLowerCase() !== q.toLowerCase());
+      list.unshift(q);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 8)));
+    }
+    function removeRecentSearch(q) {
+      const list = getRecentSearches().filter(s => s !== q);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+    }
+
+    function showRecentSearches() {
+      const recent = getRecentSearches();
+      if (!recent.length) { hideSuggestions(); return; }
+
+      state.suggestList = recent;
+      state.suggestIdx = -1;
+      state.suggestOpen = true;
+
+      const clockIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`;
+      const xIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
+
+      dropdown.innerHTML = recent.map((s, i) => `
+        <div class="suggestion-item" data-idx="${i}" data-val="${escHtml(s)}">
+          <span class="suggestion-icon">${clockIcon}</span>
+          <span class="suggestion-text">${escHtml(s)}</span>
+          <button class="suggestion-remove" data-remove="${escHtml(s)}" title="Remove" aria-label="Remove from recent searches">${xIcon}</button>
+        </div>
+      `).join('') + `<div class="suggestion-footer" id="clear-recent-btn">Clear recent searches</div>`;
+
+      dropdown.classList.add('visible');
+
+      dropdown.querySelectorAll('.suggestion-item').forEach(item => {
+        item.addEventListener('mousedown', e => {
+          if (e.target.closest('.suggestion-remove')) return; // handled separately below
+          e.preventDefault();
+          const val = item.getAttribute('data-val');
+          input.value = val;
+          state.query = val;
+          hideSuggestions();
+          updateClearBtn();
+          doSearch(val);
+        });
+      });
+      dropdown.querySelectorAll('.suggestion-remove').forEach(btn => {
+        btn.addEventListener('mousedown', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          removeRecentSearch(btn.dataset.remove);
+          showRecentSearches();
+        });
+      });
+      document.getElementById('clear-recent-btn')?.addEventListener('mousedown', e => {
+        e.preventDefault();
+        localStorage.setItem(RECENT_KEY, '[]');
+        hideSuggestions();
+      });
+    }
+
+    /* ─────────────────────────────────
        KEYBOARD NAVIGATION
     ───────────────────────────────── */
     input.addEventListener('keydown', e => {
@@ -1582,8 +2017,8 @@
       state.query = val;
       updateClearBtn();
       if (!val.trim()) {
-        hideSuggestions();
         lastSuggestQuery = '';
+        if (inputFocused) showRecentSearches(); else hideSuggestions();
         return;
       }
       clearTimeout(suggestTimeout);
@@ -1592,8 +2027,10 @@
 
     input.addEventListener('focus', () => {
       inputFocused = true;
-      // Re-show suggestions if we have them and there's a query
-      if (input.value.trim() && state.suggestList.length) {
+      if (!input.value.trim()) {
+        showRecentSearches();
+      } else if (state.suggestList.length) {
+        // Re-show suggestions if we have them and there's a query
         dropdown.classList.add('visible');
         state.suggestOpen = true;
       }
@@ -1659,44 +2096,12 @@
 
       showResultsArea(true);
       if (state.query) {
-        toggleSpeedTestTrigger(state.query);
-        loadKnowledgePanel(state.query);
-        waitForGcseAndSearch(state.query, t);
+        if (t === 'images') {
+          scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        } else {
+          waitForGcseAndSearch(state.query, t);
+        }
       }
-    });
-    speedTestBtn?.addEventListener('click', () => speedTestPanel?.classList.toggle('active'));
-    speedTestRunBtn?.addEventListener('click', async () => {
-      const fmt = (n) => Number.isFinite(n) ? n.toFixed(1) : '--';
-      speedFeedback.textContent = 'Running test…';
-      try {
-        const t0 = performance.now();
-        await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache: 'no-store' });
-        const latency = performance.now() - t0;
-        latencyResult.textContent = String(Math.round(latency));
-        pingResult.textContent = String(Math.round(latency));
-
-        const dlStart = performance.now();
-        const dlRes = await fetch('https://speed.cloudflare.com/__down?bytes=5000000', { cache: 'no-store' });
-        const dlBuf = await dlRes.arrayBuffer();
-        const dlSecs = Math.max((performance.now() - dlStart) / 1000, 0.001);
-        const dlMbps = (dlBuf.byteLength * 8) / dlSecs / 1_000_000;
-        downloadResult.textContent = fmt(dlMbps);
-
-        const ulData = new Uint8Array(1_000_000);
-        crypto.getRandomValues(ulData);
-        const ulStart = performance.now();
-        await fetch('https://httpbin.org/post', { method: 'POST', body: ulData, cache: 'no-store' });
-        const ulSecs = Math.max((performance.now() - ulStart) / 1000, 0.001);
-        const ulMbps = (ulData.byteLength * 8) / ulSecs / 1_000_000;
-        uploadResult.textContent = fmt(ulMbps);
-        speedFeedback.textContent = 'Test complete.';
-      } catch (err) {
-        speedFeedback.textContent = 'Speed test failed. Please try again.';
-      }
-    });
-    kpStyleSelect?.addEventListener('change', applyKnowledgePanelStyle);
-    safeSearchSelect?.addEventListener('change', () => {
-      if (state.query) doSearch(state.query);
     });
 
     function setActiveTab(t) {
@@ -1738,7 +2143,79 @@
     });
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') closeLightbox();
+
+      // "/" focuses the search bar — but never while the person is already
+      // typing somewhere (would otherwise insert a literal "/" mid-thought).
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey) {
+        const tag = document.activeElement?.tagName;
+        const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable;
+        if (!isTyping) {
+          e.preventDefault();
+          input.focus();
+          input.select();
+        }
+      }
     });
+
+    /* ─────────────────────────────────
+       VOICE SEARCH — Web Speech API.
+       Not supported in Firefox; button stays hidden there rather than
+       doing nothing when clicked.
+    ───────────────────────────────── */
+    (function setupVoiceSearch() {
+      const voiceBtn = document.getElementById('voice-search-btn');
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) return; // stays display:none
+
+      voiceBtn.style.display = 'flex';
+      let recognizer = null;
+      let listening = false;
+
+      voiceBtn.addEventListener('click', () => {
+        if (listening) { recognizer?.stop(); return; }
+
+        recognizer = new SpeechRecognition();
+        recognizer.lang = navigator.language || 'en-US';
+        recognizer.interimResults = false;
+        recognizer.maxAlternatives = 1;
+
+        recognizer.onstart = () => { listening = true; voiceBtn.classList.add('listening'); };
+        recognizer.onend   = () => { listening = false; voiceBtn.classList.remove('listening'); };
+        recognizer.onerror = () => { listening = false; voiceBtn.classList.remove('listening'); };
+        recognizer.onresult = (e) => {
+          const transcript = e.results?.[0]?.[0]?.transcript;
+          if (!transcript) return;
+          input.value = transcript;
+          updateClearBtn();
+          hideSuggestions();
+          doSearch(transcript);
+        };
+
+        try { recognizer.start(); } catch (err) { listening = false; }
+      });
+    })();
+
+    /* ─────────────────────────────────
+       SAFE SEARCH TOGGLE
+    ───────────────────────────────── */
+    (function setupSafeSearchToggle() {
+      const btn   = document.getElementById('safe-search-toggle');
+      const label = document.getElementById('safe-search-label');
+      function render() {
+        label.textContent = state.safeSearch ? 'Safe Search: On' : 'Safe Search: Off';
+        btn.classList.toggle('off', !state.safeSearch);
+      }
+      render();
+      btn.addEventListener('click', () => {
+        state.safeSearch = !state.safeSearch;
+        localStorage.setItem('360_safe_search', state.safeSearch ? 'on' : 'off');
+        render();
+        if (state.tab === 'images' && state.query) {
+          state.page = 1;
+          scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        }
+      });
+    })();
 
     /* ─────────────────────────────────
        AI SEARCH
@@ -1980,10 +2457,10 @@
 
       state.query = q;
       state.page = 1;
-      toggleSpeedTestTrigger(q);
       input.value = q;
       updateClearBtn();
       updateUrl(q, state.tab);
+      addRecentSearch(q);
 
       if (state.tab === 'ai') {
         showResultsArea(false);
@@ -1993,7 +2470,11 @@
 
       showResultsArea(true);
       loadKnowledgePanel(q);
-      waitForGcseAndSearch(q, state.tab);
+      if (state.tab === 'images') {
+        scrapeImageResults(document.getElementById('gcse-hidden-container'));
+      } else {
+        waitForGcseAndSearch(q, state.tab);
+      }
     }
 
     /* ─────────────────────────────────
@@ -2111,19 +2592,6 @@
         </div>`;
     }
 
-    function isSafeSearchEnabled() {
-      return (safeSearchSelect?.value || 'active') === 'active';
-    }
-
-    function isUnsafeResult({ title = '', snippet = '', href = '', displayUrl = '' }) {
-      const text = `${title} ${snippet} ${href} ${displayUrl}`.toLowerCase();
-      const blockedPatterns = [
-        /\b(porn|porno|pornography|xxx|sexcam|nude|nudity|hentai|rule34|nsfw|escort|onlyfans)\b/i,
-        /\b(adult\s*(video|site|content|dating)|erotic)\b/i
-      ];
-      return blockedPatterns.some((re) => re.test(text));
-    }
-
     function renderWebResults(results, countText, currentPage, totalPages) {
       if (!results.length) { renderNoResults(); return; }
 
@@ -2230,6 +2698,13 @@
     function goToPage(targetPage) {
       if (targetPage < 1) return;
       if (targetPage === state.page) return;
+
+      if (state.tab === 'images') {
+        state.page = targetPage;
+        scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
 
       showLoading();
 
@@ -2341,8 +2816,6 @@
        BOOT
     ───────────────────────────────── */
     initFromUrl();
-    toggleSpeedTestTrigger(state.query);
-    applyKnowledgePanelStyle();
 
   })();
   </script>

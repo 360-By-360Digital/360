@@ -1,8 +1,8 @@
 {
   "name": "360",
   "short_name": "360",
-  "id": "https://360-search.com/",
-  "start_url": "https://360-search.com/",
+  "id": "/",
+  "start_url": "/",
   "scope": "/",
   "display": "browser",
   "orientation": "landscape",

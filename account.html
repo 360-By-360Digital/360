@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-89NN1P6CEV');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>360 — Account</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="360" />
+  <link rel="icon" type="image/png" href="favicon-32x32.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/wide.css" />
+  <link rel="stylesheet" href="/assets/css/cursor.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ac-wrap {
+      margin: 80px 20px;
+      width: 420px;
+      max-width: calc(100vw - 40px);
+      position: relative;
+      z-index: 1;
+    }
+
+    .ac-card {
+      background: rgba(255,255,255,.97);
+      backdrop-filter: blur(22px);
+      border: 1px solid var(--br);
+      border-radius: 20px;
+      padding: 40px 38px 34px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.10), 0 4px 16px rgba(0,0,0,.05);
+      display: flex;
+      flex-direction: column;
+      animation: cardIn .42s cubic-bezier(.22,.68,0,1.1);
+    }
+    body.dark .ac-card {
+      background: rgba(9,9,20,.97);
+      border-color: rgba(255,255,255,.1);
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(26px) scale(.97); }
+      to   { opacity: 1; transform: translateY(0)    scale(1);   }
+    }
+
+    .ac-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+    .ac-logo-mark {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--a), var(--a2));
+      flex-shrink: 0;
+    }
+    .ac-logo-text { font-size: 21px; font-weight: 900; letter-spacing: -.02em; color: var(--txt); }
+    body.dark .ac-logo-text { color: var(--txtd); }
+
+    .ac-tabs {
+      display: flex;
+      background: rgba(148,163,184,.12);
+      border-radius: 10px;
+      padding: 3px; gap: 2px;
+      margin-bottom: 22px;
+    }
+    .ac-tab {
+      flex: 1; padding: 8px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; text-align: center;
+      cursor: pointer; transition: .2s;
+      color: var(--mut); border: none; background: transparent;
+    }
+    body.dark .ac-tab { color: var(--mutd); }
+    .ac-tab.active { background: linear-gradient(110deg, var(--a), var(--a2)); color: #050816; }
+    .ac-tab:not(.active):hover { background: rgba(148,163,184,.15); }
+
+    .ac-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .ac-field label {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .05em;
+      color: var(--mut);
+    }
+    body.dark .ac-field label { color: var(--mutd); }
+    .ac-field input {
+      width: 100%; padding: 11px 13px;
+      border-radius: 9px; border: 1.5px solid var(--br);
+      background: rgba(255,255,255,.75);
+      color: var(--txt); font-size: 14px; outline: none;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    body.dark .ac-field input {
+      background: rgba(255,255,255,.06);
+      color: var(--txtd);
+      border-color: rgba(255,255,255,.12);
+    }
+    .ac-field input:focus {
+      border-color: var(--a);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+    }
+    .ac-field input.invalid {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239,68,68,.12);
+    }
+
+    .ac-hint { font-size: 11px; color: var(--mut); margin-top: 3px; min-height: 14px; }
+    body.dark .ac-hint { color: var(--mutd); }
+    .ac-hint.err { color: #ef4444; }
+    .ac-hint.ok  { color: #10b981; }
+
+    .ac-btn {
+      width: 100%; padding: 12px;
+      border-radius: 10px; border: none;
+      background: linear-gradient(110deg, var(--a), var(--a2));
+      color: #050816; font-weight: 700; font-size: 15px;
+      cursor: pointer; transition: opacity .18s, transform .15s;
+      margin-top: 6px;
+    }
+    .ac-btn:hover:not(:disabled) { opacity: .87; transform: translateY(-1px); }
+    .ac-btn:active:not(:disabled) { transform: translateY(0); }
+    .ac-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    .ac-msg { font-size: 13px; text-align: center; min-height: 18px; margin-top: 10px; }
+    .ac-msg.err { color: #ef4444; }
+    .ac-msg.ok  { color: #10b981; }
+
+    .ac-divider {
+      display: flex; align-items: center; gap: 10px;
+      color: var(--mut); font-size: 12px;
+      margin: 16px 0 14px;
+    }
+    body.dark .ac-divider { color: var(--mutd); }
+    .ac-divider::before, .ac-divider::after { content: ""; flex: 1; height: 1px; background: var(--br); }
+
+    .ac-oauth { display: flex; flex-direction: column; gap: 8px; }
+    .ac-oauth-btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; padding: 11px 14px;
+      border-radius: 9px; border: 1px solid var(--br);
+      background: rgba(255,255,255,.85);
+      cursor: pointer; font-size: 14px; font-weight: 500;
+      transition: background .18s, transform .15s; color: var(--txt);
+    }
+    body.dark .ac-oauth-btn { background: rgba(255,255,255,.05); color: var(--txtd); border-color: rgba(255,255,255,.1); }
+    .ac-oauth-btn:hover { background: rgba(148,163,184,.18); transform: translateY(-1px); }
+
+    .ac-switch { font-size: 13px; text-align: center; margin-top: 14px; color: var(--mut); }
+    body.dark .ac-switch { color: var(--mutd); }
+    .ac-switch a { color: var(--a); font-weight: 600; text-decoration: none; }
+    .ac-switch a:hover { text-decoration: underline; }
+
+    .ac-profile { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 6px 0; text-align: center; }
+    .ac-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--a), var(--a2)); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: #fff; }
+    .ac-pname  { font-size: 19px; font-weight: 700; color: var(--txt); }
+    body.dark .ac-pname { color: var(--txtd); }
+    .ac-pemail { font-size: 13px; color: var(--mut); }
+    body.dark .ac-pemail { color: var(--mutd); }
+    .ac-sec-btn { width: 100%; padding: 11px; border-radius: 10px; border: 1px solid var(--br); background: rgba(148,163,184,.12); color: var(--txt); font-weight: 600; font-size: 14px; cursor: pointer; transition: .18s; }
+    body.dark .ac-sec-btn { color: var(--txtd); border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.05); }
+    .ac-sec-btn:hover { background: rgba(148,163,184,.22); }
+    .ac-signout-btn { background: rgba(239,68,68,.09) !important; border-color: rgba(239,68,68,.28) !important; color: #ef4444 !important; }
+    .ac-signout-btn:hover { background: rgba(239,68,68,.17) !important; }
+
+    .ac-logout { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 6px 0; text-align: center; }
+    .ac-logout-icon { font-size: 44px; }
+    .ac-logout-title { font-size: 19px; font-weight: 700; color: var(--txt); }
+    body.dark .ac-logout-title { color: var(--txtd); }
+    .ac-logout-sub { font-size: 13px; color: var(--mut); }
+    body.dark .ac-logout-sub { color: var(--mutd); }
+
+    /* ── 360ID: name row + avatar picker ── */
+    .ac-row { display: flex; gap: 10px; }
+    .ac-row .ac-field { flex: 1; min-width: 0; }
+
+    .ac-avatar-picker { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .ac-avatar-preview {
+      width: 84px; height: 84px; border-radius: 50%;
+      border: 2px solid var(--br); background: rgba(148,163,184,.12);
+      object-fit: cover;
+    }
+    .ac-avatar-controls { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+    .ac-avatar-toggle { display: flex; border: 1px solid var(--br); border-radius: 999px; overflow: hidden; }
+    .ac-toggle-btn {
+      padding: 6px 14px; border: none; background: transparent; cursor: pointer;
+      font-size: 12px; font-weight: 600; color: var(--mut); transition: .15s;
+    }
+    body.dark .ac-toggle-btn { color: var(--mutd); }
+    .ac-toggle-btn.active { background: var(--a); color: #050816; }
+    .ac-avatar-gen-controls { display: flex; align-items: center; gap: 8px; }
+    .ac-avatar-select {
+      padding: 8px 10px; border-radius: 9px; border: 1.5px solid var(--br);
+      background: rgba(255,255,255,.75); color: var(--txt); font-size: 13px; outline: none;
+    }
+    body.dark .ac-avatar-select { background: rgba(255,255,255,.06); color: var(--txtd); border-color: rgba(255,255,255,.12); }
+    .ac-avatar-gen-controls .ac-sec-btn { width: auto; padding: 8px 12px; font-size: 13px; }
+
+    /* ── PASSWORD STRENGTH METER ── */
+    .pw-strength-wrap { margin-top: 6px; }
+    .pw-bar-track { height: 3px; background: rgba(148,163,184,.2); border-radius: 999px; overflow: hidden; margin-bottom: 5px; }
+    .pw-bar-fill { height: 100%; width: 0%; border-radius: 999px; transition: width .35s cubic-bezier(.34,1.56,.64,1), background .25s; }
+    .pw-meta { display: flex; justify-content: space-between; align-items: center; min-height: 14px; }
+    .pw-strength-label { font-size: 11px; font-weight: 600; transition: color .2s; }
+    .pw-strength-hint { font-size: 11px; color: var(--mut); }
+    body.dark .pw-strength-hint { color: var(--mutd); }
+    .pw-checks { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+    .pw-pill {
+      display: flex; align-items: center; gap: 3px;
+      padding: 2px 7px; border-radius: 999px;
+      font-size: 10px; font-weight: 500;
+      border: 1px solid var(--br);
+      background: rgba(148,163,184,.08);
+      color: var(--mut); transition: background .2s, border-color .2s, color .2s;
+    }
+    body.dark .pw-pill { color: var(--mutd); border-color: rgba(255,255,255,.1); }
+    .pw-pill.pass { background: rgba(16,185,129,.12); border-color: rgba(16,185,129,.35); color: #059669; }
+    body.dark .pw-pill.pass { color: #34d399; background: rgba(52,211,153,.1); border-color: rgba(52,211,153,.3); }
+    .pw-pip { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .4; transition: opacity .2s; flex-shrink: 0; }
+    .pw-pill.pass .pw-pip { opacity: 1; }
+
+    /* ── SETTINGS BOB SECTION ── */
+    .settings-bob-section {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 12px;
+      background: rgba(148,163,184,.07);
+      border: 1px solid var(--br);
+    }
+    body.dark .settings-bob-section { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); }
+
+    .bob-toggle-row {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      cursor: pointer; user-select: none;
+    }
+    .bob-toggle-label { font-size: 13px; font-weight: 600; color: var(--txt); }
+    body.dark .bob-toggle-label { color: var(--txtd); }
+    .bob-toggle-sub { font-size: 11px; color: var(--mut); margin-top: 1px; }
+    body.dark .bob-toggle-sub { color: var(--mutd); }
+
+    .bob-track {
+      width: 38px; height: 22px;
+      background: rgba(148,163,184,.3);
+      border-radius: 999px; position: relative;
+      cursor: pointer; transition: background .25s;
+      flex-shrink: 0; border: none;
+    }
+    .bob-track::before {
+      content: "";
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 16px; height: 16px;
+      background: white; border-radius: 50%;
+      transition: transform .25s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .bob-track.on { background: var(--a); }
+    .bob-track.on::before { transform: translateX(16px); }
+
+    /* Bob canvas badge in search bar — injected by JS */
+    #bob-search-canvas-wrap {
+      position: absolute;
+      right: 48px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: none;
+      align-items: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #bob-search-canvas-wrap.visible { display: flex; }
+
+    @media (max-width: 600px) {
+      .ac-wrap { margin: 70px 12px 20px; }
+      .ac-card { padding: 28px 20px 24px; }
+    }
+
+    /* ── Step wizard ── */
+    .su-progress { display:flex; align-items:center; justify-content:center; gap:0; margin:-4px 0 20px; }
+    .su-dot { width:10px; height:10px; border-radius:50%; background:rgba(148,163,184,.25); transition:.25s; }
+    .su-dot.done { background:var(--a); }
+    .su-dot.active { background:var(--a); box-shadow:0 0 0 3px rgba(59,130,246,.22); }
+    .su-prog-line { flex:1; height:2px; background:rgba(148,163,184,.2); max-width:36px; }
+    .su-step-title { font-size:17px; font-weight:700; color:var(--txt); margin:0 0 4px; text-align:center; }
+    body.dark .su-step-title { color:var(--txtd); }
+    .su-step-sub { font-size:12px; color:var(--mut); text-align:center; margin:0 0 18px; }
+    body.dark .su-step-sub { color:var(--mutd); }
+    .su-back-btn { width:100%; margin-top:8px; padding:10px; border:1px solid var(--br); border-radius:10px; background:transparent; color:var(--mut); font-size:13px; font-weight:600; cursor:pointer; transition:.15s; }
+    body.dark .su-back-btn { color:var(--mutd); border-color:rgba(255,255,255,.1); }
+    .su-back-btn:hover { background:rgba(148,163,184,.12); }
+
+    /* ── Monogram avatar picker ── */
+    .av-wrap { display:flex; align-items:flex-start; gap:18px; margin-bottom:20px; padding:16px; border-radius:14px; background:rgba(148,163,184,.07); border:1px solid var(--br); }
+    body.dark .av-wrap { background:rgba(255,255,255,.04); border-color:rgba(255,255,255,.08); }
+    .av-img { width:72px; height:72px; border-radius:50%; flex-shrink:0; }
+    .av-controls { flex:1; display:flex; flex-direction:column; gap:8px; }
+    .av-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); margin-bottom:1px; }
+    body.dark .av-label { color:var(--mutd); }
+    .av-letter-input { width:52px; padding:7px 10px; border-radius:8px; border:1.5px solid var(--br); background:rgba(255,255,255,.8); color:var(--txt); font-size:18px; font-weight:700; text-align:center; text-transform:uppercase; outline:none; }
+    body.dark .av-letter-input { background:rgba(255,255,255,.07); color:var(--txtd); border-color:rgba(255,255,255,.12); }
+    .av-letter-input:focus { border-color:var(--a); box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+    .av-color-grid { display:flex; flex-wrap:wrap; gap:6px; }
+    .av-color { width:24px; height:24px; border-radius:50%; border:2.5px solid transparent; cursor:pointer; transition:.15s; padding:0; }
+    .av-color:hover { transform:scale(1.15); }
+    .av-color.active { border-color:var(--txt); box-shadow:0 0 0 2px rgba(255,255,255,.6); }
+    body.dark .av-color.active { border-color:var(--txtd); }
+    .av-preview-small { display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:12px; background:rgba(148,163,184,.07); border:1px solid var(--br); margin-bottom:4px; }
+    body.dark .av-preview-small { background:rgba(255,255,255,.04); border-color:rgba(255,255,255,.08); }
+    .av-preview-img { width:40px; height:40px; border-radius:50%; }
+    .av-preview-name { font-size:14px; font-weight:700; color:var(--txt); }
+    body.dark .av-preview-name { color:var(--txtd); }
+
+  </style>
+</head>
+<body>
+
+  <div class="cursor-dot"></div>
+  <div class="cursor-trail"></div>
+  <div class="cursor-crosshair"></div>
+  <div class="cursor-blob"></div>
+
+  <div class="auth-top-right">
+    <button id="signInBtn"  class="auth-btn">Sign In</button>
+    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
+    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+  </div>
+
+  <button id="installBtn" class="install-banner" style="display:none;">Install 360</button>
+  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-mark"></div>
+      <button id="settingsBtn">⚙</button>
+    </div>
+    <nav class="nav-list">
+      <div class="nav-item"        data-href="/">Home</div>
+      <div class="nav-item"        data-href="../ai">AI</div>
+      <div class="nav-item"        data-href="../weather">Weather</div>
+      <div class="nav-item"        data-href="../translator">Translator</div>
+      <div class="nav-item"        data-href="../stocks">Stocks</div>
+      <div class="nav-item"        data-href="../url-shortener">URL Shortener</div>
+      <div class="nav-item"        data-href="../chat">Chat</div>
+      <div class="nav-item"        data-href="../news">News</div>
+      <div class="nav-item"        data-href="../apps">Apps</div>
+      <div class="nav-item"        data-href="../games">Games</div>
+      <div class="nav-item active" data-href="../accounts">Accounts</div>
+    </nav>
+    <div class="sidebar-footer"><span id="sidebar-ver">Loading...</span></div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <!-- SETTINGS PANEL — includes Bob toggle -->
+  <div class="settings-panel" id="settingsPanel">
+    <h3>Appearance</h3>
+    <div class="settings-label">Theme</div>
+    <div class="theme-swatches">
+      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+    </div>
+
+    <div class="settings-label" style="margin-top:20px;">Mode</div>
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <span style="font-size:14px;">Dark mode</span>
+      <input type="checkbox" id="darkToggle" />
+    </label>
+
+    <h3 style="margin-top:20px;">Cursor</h3>
+    <div class="settings-label">Style</div>
+    <div class="cursor-options">
+      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+    </div>
+    <div class="cursor-color-row">
+      <label>Cursor color</label>
+      <input type="color" id="cursorColorPicker" value="#3b82f6" />
+      <button id="cursorColorReset">Reset</button>
+    </div>
+
+    <div class="temp-unit-box" style="margin-top:20px;">
+      Temp Unit: <span id="tempUnitLabel">°C</span>
+      <button id="tempUnitBtn">Switch</button>
+    </div>
+
+    <div class="settings-box" style="margin-top:20px;">
+      <div class="settings-label">Background Image</div>
+      <input type="file" id="bgUpload" accept="image/*" class="settings-input" />
+      <input type="text" id="bgUrlInput" placeholder="Paste image URL…" class="settings-input" />
+      <button id="bgUrlBtn" class="settings-btn">Apply URL</button>
+      <button id="bgResetBtn" class="settings-btn">Reset</button>
+    </div>
+
+    <!-- ── BOB SECTION in Settings ── -->
+    <h3 style="margin-top:20px;">Bob</h3>
+    <div class="settings-bob-section">
+      <div class="bob-toggle-row" id="settingsBobToggleRow">
+        <div>
+          <div class="bob-toggle-label">Enable Bob</div>
+          <div class="bob-toggle-sub">Stick figure reacts to your search typing</div>
+        </div>
+        <div class="bob-track" id="settingsBobTrack"></div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:25px;">Legal</h3>
+    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
+    <a href="/tos" class="legal-link">📜 Terms of Service</a>
+
+    <h3 style="margin-top:25px;">About</h3>
+    <details class="about-dropdown">
+      <summary>ℹ️ What is 360?</summary>
+      <p>360 is a next-generation search engine and digital workspace. Search, chat, translate, check weather, monitor stocks, and interact with AI — all in one unified interface. Built by 360 Digital, Co.</p>
+    </details>
+  </div>
+
+  <!-- ACCOUNT CARD -->
+  <div class="ac-wrap">
+    <div class="ac-card" id="acCard">
+      <div class="ac-logo">
+        <div class="ac-logo-mark"></div>
+        <span class="ac-logo-text">360</span>
+      </div>
+      <div id="acContent"></div>
+    </div>
+  </div>
+
+  <script>window.SKIP_AUTH_CHIP = true;</script>
+  <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/auth-fix.js"></script>
+  <script src="/assets/js/wide.js"></script>
+  <script src="/assets/js/cookie.js"></script>
+  <script src="/assets/js/cursor.js"></script>
+
+
+  <script>
+    const sb = supabaseClient;
+
+    const qs         = location.search.slice(1);
+    const param      = qs.split('&')[0].toLowerCase();
+    const _fromParam = qs.match(/(?:^|&)from=([^&]*)/i);
+    const _redirectTo = _fromParam ? decodeURIComponent(_fromParam[1]) || '/' : '/';;
+    const isLogout   = param === 'signout';
+    const content    = document.getElementById('acContent');
+
+    // ── Persist redirect target so email-confirm links can still bounce back ──
+    // Written whenever the user arrives with a real ?from= destination.
+    // auth-fix.js (and our onAuthStateChange below) reads this.
+    if (_redirectTo && _redirectTo !== '/' && !isLogout) {
+      sessionStorage.setItem('360_auth_redirect', _redirectTo);
+    }
+
+    // Helper: get the best destination — URL param first, sessionStorage fallback
+    function getBestRedirect() {
+      if (_redirectTo && _redirectTo !== '/') return _redirectTo;
+      const ss = sessionStorage.getItem('360_auth_redirect');
+      return (ss && !ss.includes('/account')) ? ss : '/';
+    }
+
+    const _signInBtn  = document.getElementById('signInBtn');
+    const _signUpBtn  = document.getElementById('signUpBtn');
+    const _signOutBtn = document.getElementById('signOutBtn');
+
+    /* ─── utils ─────────────────────────────────── */
+    function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function setMsg(el,t,cls){ if(!el)return; el.textContent=t; el.className='ac-msg'+(cls?' '+cls:''); }
+    function setHint(el,t,cls){ if(!el)return; el.textContent=t; el.className='ac-hint'+(cls?' '+cls:''); }
+
+    /* ─── Google-style monogram avatar ──────────── */
+    const BG_COLORS = [
+      '#ef4444','#f97316','#f59e0b','#10b981','#06b6d4',
+      '#3b82f6','#8b5cf6','#ec4899','#14b8a6','#64748b',
+    ];
+    let avatarBg   = BG_COLORS[Math.floor(Math.random()*BG_COLORS.length)];
+    let avatarLetter = 'A';
+    let providerAvatarUrl = null;
+    let useProviderAvatar = false;
+
+    function monogramSVG(letter, bg, size=80){
+      const l = (letter||'A').toUpperCase().charAt(0);
+      return `data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${size/2}" fill="${bg}"/><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-weight="700" font-size="${size*.42}" fill="#fff">${l}</text></svg>`
+      )}`;
+    }
+
+    function renderMonogramPicker(idPrefix, initLetter, initBg){
+      return `
+        <div class="av-wrap" id="${idPrefix}AvWrap">
+          <img class="av-img" id="${idPrefix}AvImg" src="${monogramSVG(initLetter,initBg)}" alt="Avatar"/>
+          <div class="av-controls">
+            <div class="av-label">Initial</div>
+            <input class="av-letter-input" id="${idPrefix}AvLetter" type="text" maxlength="1" value="${esc(initLetter)}" />
+            <div class="av-label">Background</div>
+            <div class="av-color-grid" id="${idPrefix}AvGrid">
+              ${BG_COLORS.map(c=>`<button type="button" class="av-color${c===initBg?' active':''}" style="background:${c};" data-color="${c}"></button>`).join('')}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function wireMonogramPicker(idPrefix, state){
+      const img   = document.getElementById(idPrefix+'AvImg');
+      const inp   = document.getElementById(idPrefix+'AvLetter');
+      const grid  = document.getElementById(idPrefix+'AvGrid');
+      function refresh(){ img.src = monogramSVG(state.letter, state.bg); }
+      inp.addEventListener('input', ()=>{
+        state.letter = inp.value.trim() || 'A';
+        inp.value = state.letter;
+        refresh();
+      });
+      grid.querySelectorAll('.av-color').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          grid.querySelectorAll('.av-color').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          state.bg = btn.dataset.color;
+          refresh();
+        });
+      });
+    }
+
+    /* ─── password strength ──────────────────────── */
+    function initStrengthMeter(passEl, wrapId){
+      const wrap = document.getElementById(wrapId); if(!wrap) return;
+      const bar  = wrap.querySelector('.pw-bar-fill');
+      const lbl  = wrap.querySelector('.pw-strength-label');
+      const hint = wrap.querySelector('.pw-strength-hint');
+      const pills = {len:document.getElementById('pw-c-len'),up:document.getElementById('pw-c-up'),num:document.getElementById('pw-c-num'),sym:document.getElementById('pw-c-sym')};
+      passEl.addEventListener('input',()=>{
+        const v=passEl.value;
+        const checks={len:v.length>=8,up:/[A-Z]/.test(v),num:/[0-9]/.test(v),sym:/[^a-zA-Z0-9]/.test(v)};
+        Object.keys(pills).forEach(k=>{ if(pills[k]) pills[k].classList.toggle('met',checks[k]); });
+        const score=Object.values(checks).filter(Boolean).length;
+        const pct=[0,25,50,75,100][score];
+        const colors=['','#ef4444','#f59e0b','#10b981','#3b82f6'];
+        const labels=['','Weak','Fair','Good','Strong'];
+        const hints=['','Add uppercase, numbers & symbols','Add numbers & symbols','Add a symbol','Great password!'];
+        bar.style.width=pct+'%'; bar.style.background=colors[score]||'';
+        if(lbl) lbl.textContent=labels[score]||'';
+        if(hint) hint.textContent=hints[score]||'';
+      });
+    }
+
+    /* ─── OAuth ──────────────────────────────────── */
+    function oAuth(provider){
+      // After OAuth the browser returns to this URL; we then redirect to _redirectTo
+      const redirectUrl = location.origin+'/account?signin&from='+encodeURIComponent(_redirectTo);
+      sb.auth.signInWithOAuth({ provider, options:{ redirectTo: redirectUrl, scopes: provider==='google'?'profile email':'' } });
+    }
+
+    /* ═══════════════════════════════════════════════
+       SIGN IN
+    ═══════════════════════════════════════════════ */
+    function renderSignIn(){
+      content.innerHTML = `
+        <div class="ac-tabs">
+          <button class="ac-tab active" id="tabSI">Sign In</button>
+          <button class="ac-tab"        id="tabSU">Sign Up</button>
+        </div>
+        <div class="ac-field">
+          <label>Email or Username</label>
+          <input id="siLogin" type="text" placeholder="you@example.com" autocomplete="username" />
+        </div>
+        <div class="ac-field">
+          <label>Password</label>
+          <input id="siPass" type="password" placeholder="Your password" autocomplete="current-password" />
+        </div>
+        <p class="ac-msg" id="siMsg"></p>
+        <button class="ac-btn" id="siBtn">Sign In</button>
+        <div class="ac-divider">or continue with</div>
+        <div class="ac-oauth">
+          <button class="ac-oauth-btn" id="siGithub">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            Continue with GitHub
+          </button>
+          <button class="ac-oauth-btn" id="siGoogle">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Continue with Google
+          </button>
+        </div>
+        <p class="ac-switch">Don't have an account? <a href="#" id="switchToSU">Sign Up</a></p>
+      `;
+      document.getElementById('tabSI').onclick      = ()=>renderSignIn();
+      document.getElementById('tabSU').onclick      = ()=>{ history.replaceState(null,'','/account?signup'); renderSignUp(); };
+      document.getElementById('switchToSU').onclick = e=>{ e.preventDefault(); history.replaceState(null,'','/account?signup'); renderSignUp(); };
+      document.getElementById('siBtn').onclick      = doSignIn;
+      document.getElementById('siGithub').onclick   = ()=>oAuth('github');
+      document.getElementById('siGoogle').onclick   = ()=>oAuth('google');
+      const siLogin = document.getElementById('siLogin');
+      const siPass  = document.getElementById('siPass');
+      siLogin.addEventListener('keydown', e=>{ if(e.key==='Enter') siPass.focus(); });
+      siPass.addEventListener('keydown',  e=>{ if(e.key==='Enter') doSignIn(); });
+      siLogin.focus();
+    }
+
+    async function doSignIn(){
+      const loginVal = document.getElementById('siLogin').value.trim();
+      const passVal  = document.getElementById('siPass').value;
+      const btn = document.getElementById('siBtn');
+      const msg = document.getElementById('siMsg');
+      if(!loginVal||!passVal){ setMsg(msg,'Email/username and password are required.','err'); return; }
+      btn.disabled=true; btn.textContent='Signing in…'; setMsg(msg,'','');
+      let emailToUse = loginVal;
+      if(!loginVal.includes('@')){
+        const { data: prof } = await sb.from('profiles').select('email').eq('username',loginVal).maybeSingle();
+        if(!prof?.email){ setMsg(msg,'No account found with that username.','err'); btn.disabled=false; btn.textContent='Sign In'; return; }
+        emailToUse = prof.email;
+      }
+      const { error } = await sb.auth.signInWithPassword({ email:emailToUse, password:passVal });
+      if(error){ setMsg(msg,error.message,'err'); btn.disabled=false; btn.textContent='Sign In'; }
+      else {
+        sessionStorage.removeItem('360_auth_redirect');
+        setMsg(msg,'Signed in! Redirecting…','ok');
+        setTimeout(()=>location.replace(getBestRedirect()), 600);
+      }
+    }
+
+    /* ═══════════════════════════════════════════════
+       SIGN UP — multi-step wizard
+       Step 1: Name
+       Step 2: Avatar (monogram)
+       Step 3: Birthdate
+       Step 4: Email + Username + Password
+    ═══════════════════════════════════════════════ */
+    const SU = { step:1, firstName:'', lastName:'', bg: BG_COLORS[0], letter:'A', birthdate:'', email:'', username:'', password:'' };
+
+    function renderSignUp(){ SU.step=1; renderSUStep(); }
+
+    function suProgress(){
+      return `
+        <div class="su-progress">
+          ${[1,2,3,4].map(i=>`<div class="su-dot${SU.step>=i?' done':''}${SU.step===i?' active':''}"></div>`).join('<div class="su-prog-line"></div>')}
+        </div>`;
+    }
+
+    function suTabBar(){
+      return `
+        <div class="ac-tabs" style="margin-bottom:16px;">
+          <button class="ac-tab" id="tabSIinner">Sign In</button>
+          <button class="ac-tab active" id="tabSUinner">Sign Up</button>
+        </div>`;
+    }
+
+    function renderSUStep(){
+      if(SU.step===1) renderSU1();
+      else if(SU.step===2) renderSU2();
+      else if(SU.step===3) renderSU3();
+      else renderSU4();
+      // wire shared tab bar
+      const si = document.getElementById('tabSIinner');
+      const su = document.getElementById('tabSUinner');
+      if(si) si.onclick = ()=>{ history.replaceState(null,'','/account?signin'); renderSignIn(); };
+      if(su) su.onclick = ()=>{};
+    }
+
+    /* Step 1 — Name */
+    function renderSU1(){
+      content.innerHTML = `
+        ${suTabBar()}
+        ${suProgress()}
+        <p class="su-step-title">What's your name?</p>
+        <p class="su-step-sub">First name is required. Last name is optional.</p>
+        <div class="ac-field">
+          <label>First name</label>
+          <input id="s1First" type="text" placeholder="Jane" autocomplete="given-name" maxlength="60" value="${esc(SU.firstName)}" />
+        </div>
+        <div class="ac-field">
+          <label>Last name <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+          <input id="s1Last" type="text" placeholder="Doe" autocomplete="family-name" maxlength="60" value="${esc(SU.lastName)}" />
+        </div>
+        <p class="ac-msg" id="s1Msg"></p>
+        <button class="ac-btn" id="s1Next">Next →</button>
+        <div class="ac-divider">or jump straight in with</div>
+        <div class="ac-oauth">
+          <button class="ac-oauth-btn" id="s1Github">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            Continue with GitHub
+          </button>
+          <button class="ac-oauth-btn" id="s1Google">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Continue with Google
+          </button>
+        </div>
+        <p class="ac-switch">Already have an account? <a href="#" id="s1SI">Sign In</a></p>
+      `;
+      document.getElementById('s1Next').onclick   = ()=>{
+        const f = document.getElementById('s1First').value.trim();
+        if(!f){ setMsg(document.getElementById('s1Msg'),'Please enter your first name.','err'); return; }
+        SU.firstName = f; SU.lastName = document.getElementById('s1Last').value.trim();
+        SU.letter = f.charAt(0).toUpperCase();
+        SU.step=2; renderSUStep();
+      };
+      document.getElementById('s1Github').onclick = ()=>oAuth('github');
+      document.getElementById('s1Google').onclick = ()=>oAuth('google');
+      document.getElementById('s1SI').onclick = e=>{ e.preventDefault(); history.replaceState(null,'','/account?signin'); renderSignIn(); };
+      document.getElementById('s1First').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('s1Last').focus(); });
+      document.getElementById('s1Last').addEventListener('keydown',  e=>{ if(e.key==='Enter') document.getElementById('s1Next').click(); });
+      document.getElementById('s1First').focus();
+    }
+
+    /* Step 2 — Avatar */
+    function renderSU2(){
+      SU.bg = SU.bg || BG_COLORS[0];
+      const avState = { letter: SU.letter, bg: SU.bg };
+      content.innerHTML = `
+        ${suTabBar()}
+        ${suProgress()}
+        <p class="su-step-title">Choose your avatar</p>
+        <p class="su-step-sub">Pick an initial and a background color — you can always change it later.</p>
+        ${renderMonogramPicker('s2', avState.letter, avState.bg)}
+        <p class="ac-msg" id="s2Msg"></p>
+        <button class="ac-btn" id="s2Next">Next →</button>
+        <button class="su-back-btn" id="s2Back">← Back</button>
+      `;
+      wireMonogramPicker('s2', avState);
+      document.getElementById('s2Next').onclick = ()=>{ SU.letter=avState.letter; SU.bg=avState.bg; SU.step=3; renderSUStep(); };
+      document.getElementById('s2Back').onclick = ()=>{ SU.step=1; renderSUStep(); };
+    }
+
+    /* Step 3 — Birthdate */
+    function renderSU3(){
+      content.innerHTML = `
+        ${suTabBar()}
+        ${suProgress()}
+        <p class="su-step-title">When's your birthday?</p>
+        <p class="su-step-sub">Used to confirm you're old enough to use 360. We won't show this to others.</p>
+        <div class="av-preview-small">
+          <img src="${monogramSVG(SU.letter,SU.bg)}" class="av-preview-img" alt="Your avatar"/>
+          <span class="av-preview-name">${esc(SU.firstName+(SU.lastName?' '+SU.lastName:''))}</span>
+        </div>
+        <div class="ac-field" style="margin-top:8px;">
+          <label>Birthdate</label>
+          <input id="s3Birth" type="date" value="${esc(SU.birthdate)}" />
+        </div>
+        <p class="ac-msg" id="s3Msg"></p>
+        <button class="ac-btn" id="s3Next">Next →</button>
+        <button class="su-back-btn" id="s3Back">← Back</button>
+      `;
+      document.getElementById('s3Next').onclick = ()=>{
+        const v = document.getElementById('s3Birth').value;
+        if(!v){ setMsg(document.getElementById('s3Msg'),'Please enter your birthdate.','err'); return; }
+        const age = (Date.now()-new Date(v).getTime())/(1000*60*60*24*365.25);
+        if(age<13){ setMsg(document.getElementById('s3Msg'),'You must be 13 or older to create a 360ID.','err'); return; }
+        SU.birthdate=v; SU.step=4; renderSUStep();
+      };
+      document.getElementById('s3Back').onclick = ()=>{ SU.step=2; renderSUStep(); };
+      document.getElementById('s3Birth').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('s3Next').click(); });
+    }
+
+    /* Step 4 — Credentials */
+    function renderSU4(){
+      content.innerHTML = `
+        ${suTabBar()}
+        ${suProgress()}
+        <p class="su-step-title">Create your 360ID</p>
+        <p class="su-step-sub">Almost done! Set up your email, username, and password.</p>
+        <div class="av-preview-small" style="margin-bottom:14px;">
+          <img src="${monogramSVG(SU.letter,SU.bg)}" class="av-preview-img" alt="Your avatar"/>
+          <span class="av-preview-name">${esc(SU.firstName+(SU.lastName?' '+SU.lastName:''))}</span>
+        </div>
+        <div class="ac-field">
+          <label>Email</label>
+          <input id="s4Email" type="email" placeholder="you@example.com" autocomplete="email" value="${esc(SU.email)}" />
+        </div>
+        <div class="ac-field">
+          <label>Username</label>
+          <input id="s4User" type="text" placeholder="your_username" autocomplete="username" maxlength="32" value="${esc(SU.username)}" />
+          <span class="ac-hint" id="s4UserHint"></span>
+        </div>
+        <div class="ac-field">
+          <label>Password</label>
+          <input id="s4Pass" type="password" placeholder="Min. 6 characters" autocomplete="new-password" />
+          <div class="pw-strength-wrap" id="pwStrengthWrap">
+            <div class="pw-bar-track"><div class="pw-bar-fill"></div></div>
+            <div class="pw-meta"><span class="pw-strength-label"></span><span class="pw-strength-hint"></span></div>
+            <div class="pw-checks">
+              <div class="pw-pill" id="pw-c-len"><span class="pw-pip"></span>8+ chars</div>
+              <div class="pw-pill" id="pw-c-up"><span class="pw-pip"></span>uppercase</div>
+              <div class="pw-pill" id="pw-c-num"><span class="pw-pip"></span>number</div>
+              <div class="pw-pill" id="pw-c-sym"><span class="pw-pip"></span>symbol</div>
+            </div>
+          </div>
+          <span class="ac-hint" id="s4PassHint"></span>
+        </div>
+        <div class="ac-field">
+          <label>Confirm Password</label>
+          <input id="s4Confirm" type="password" placeholder="Repeat your password" autocomplete="new-password" />
+          <span class="ac-hint" id="s4ConfirmHint"></span>
+        </div>
+        <p class="ac-msg" id="s4Msg"></p>
+        <button class="ac-btn" id="s4Create">Create 360ID</button>
+        <button class="su-back-btn" id="s4Back">← Back</button>
+      `;
+      initStrengthMeter(document.getElementById('s4Pass'), 'pwStrengthWrap');
+
+      let usernameOk = false, utimer = null;
+      const uInp  = document.getElementById('s4User');
+      const uHint = document.getElementById('s4UserHint');
+      uInp.addEventListener('input', ()=>{
+        usernameOk=false; clearTimeout(utimer);
+        const v = uInp.value.trim();
+        if(!v){ setHint(uHint,'',''); return; }
+        if(!/^[a-zA-Z0-9_]{3,32}$/.test(v)){ setHint(uHint,'3–32 chars, letters/numbers/underscores.','err'); uInp.classList.add('invalid'); return; }
+        setHint(uHint,'Checking…','');
+        utimer = setTimeout(async()=>{
+          const { data } = await sb.from('profiles').select('id').eq('username',v).maybeSingle();
+          if(data){ setHint(uHint,'Username already taken.','err'); uInp.classList.add('invalid'); }
+          else { setHint(uHint,'✓ Available','ok'); uInp.classList.remove('invalid'); usernameOk=true; }
+        }, 500);
+      });
+
+      const pInp = document.getElementById('s4Pass');
+      const cInp = document.getElementById('s4Confirm');
+      pInp.addEventListener('input',()=>{ if(cInp.value) checkConfirm(); });
+      cInp.addEventListener('input', checkConfirm);
+      function checkConfirm(){
+        if(!cInp.value) return;
+        const ok = cInp.value===pInp.value;
+        setHint(document.getElementById('s4ConfirmHint'), ok?'✓ Passwords match':'Passwords do not match.', ok?'ok':'err');
+        ok ? cInp.classList.remove('invalid') : cInp.classList.add('invalid');
+      }
+      document.getElementById('s4Email').addEventListener('keydown', e=>{ if(e.key==='Enter') uInp.focus(); });
+      uInp.addEventListener('keydown', e=>{ if(e.key==='Enter') pInp.focus(); });
+      pInp.addEventListener('keydown', e=>{ if(e.key==='Enter') cInp.focus(); });
+      cInp.addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('s4Create').click(); });
+      document.getElementById('s4Create').onclick = ()=>doSignUp(usernameOk);
+      document.getElementById('s4Back').onclick   = ()=>{ SU.step=3; renderSUStep(); };
+      document.getElementById('s4Email').focus();
+    }
+
+    async function doSignUp(usernameOk){
+      const email    = document.getElementById('s4Email').value.trim();
+      const username = document.getElementById('s4User').value.trim();
+      const password = document.getElementById('s4Pass').value;
+      const confirm  = document.getElementById('s4Confirm').value;
+      const btn = document.getElementById('s4Create');
+      const msg = document.getElementById('s4Msg');
+      if(!email||!username||!password||!confirm){ setMsg(msg,'All fields are required.','err'); return; }
+      if(!/^[a-zA-Z0-9_]{3,32}$/.test(username)){ setMsg(msg,'Username must be 3–32 chars, letters/numbers/underscores.','err'); return; }
+      if(password.length<6){ setMsg(msg,'Password must be at least 6 characters.','err'); return; }
+      if(password!==confirm){ setMsg(msg,'Passwords do not match.','err'); return; }
+      if(!usernameOk){
+        const { data } = await sb.from('profiles').select('id').eq('username',username).maybeSingle();
+        if(data){ setMsg(msg,'That username is already taken.','err'); return; }
+      }
+      btn.disabled=true; btn.textContent='Creating your 360ID…'; setMsg(msg,'','');
+      const avatarUrl = monogramSVG(SU.letter, SU.bg, 200);
+      const { data: signUpData, error: signUpErr } = await sb.auth.signUp({
+        email, password,
+        options:{ data:{ username, first_name:SU.firstName, last_name:SU.lastName||null, birthdate:SU.birthdate,
+                         avatar_style:'monogram', avatar_seed:SU.letter+'|'+SU.bg } }
+      });
+      if(signUpErr){ setMsg(msg,signUpErr.message,'err'); btn.disabled=false; btn.textContent='Create 360ID'; return; }
+      const userId = signUpData?.user?.id;
+      if(userId){
+        const { error: upsertErr } = await sb.from('profiles').upsert({
+          id:userId, username, email,
+          first_name:SU.firstName, last_name:SU.lastName||null, birthdate:SU.birthdate,
+          avatar_url: avatarUrl, avatar_style:'monogram', avatar_seed:SU.letter+'|'+SU.bg,
+        },{ onConflict:'id' });
+        if(upsertErr) console.warn('Profile upsert failed (non-fatal):', upsertErr.message);
+      }
+      // If the session already exists (email confirmation disabled in project), redirect now
+      const { data: { session: immediateSession } } = await sb.auth.getSession();
+      if(immediateSession){
+        sessionStorage.removeItem('360_auth_redirect');
+        setMsg(msg,'Account created! Redirecting…','ok');
+        setTimeout(()=>location.replace(getBestRedirect()), 800);
+      } else {
+        // Confirmation email sent — keep the redirect saved in sessionStorage so the
+        // email-confirm link can bounce them back after they click it
+        setMsg(msg,'360ID created! Check your email to confirm your account.','ok');
+        btn.textContent='Check your email ✓';
+      }
+    }
+
+    /* ═══════════════════════════════════════════════
+       PROFILE
+    ═══════════════════════════════════════════════ */
+    function renderCompleteProfile(user, profile, isEdit){
+      const existingSeed = profile.avatar_seed || '';
+      const parts = existingSeed.split('|');
+      const avState = { letter: parts[0] || (profile.first_name||user.email||'A').charAt(0).toUpperCase(), bg: parts[1] || BG_COLORS[0] };
+      content.innerHTML = `
+        <p style="text-align:center;font-size:15px;font-weight:700;margin-bottom:4px;">${isEdit?'Edit your 360ID':'Finish your 360ID'}</p>
+        <p style="text-align:center;font-size:12px;color:var(--mut);margin:0 0 16px;">
+          ${isEdit?'Update your profile below.':'Just two more things and you\'re all set.'}
+        </p>
+        ${renderMonogramPicker('cp', avState.letter, avState.bg)}
+        <div style="display:flex;gap:10px;">
+          <div class="ac-field" style="flex:1">
+            <label>First name</label>
+            <input id="cpFirst" type="text" value="${esc(profile.first_name||'')}" maxlength="60" />
+          </div>
+          <div class="ac-field" style="flex:1">
+            <label>Last name <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+            <input id="cpLast" type="text" value="${esc(profile.last_name||'')}" maxlength="60" />
+          </div>
+        </div>
+        <div class="ac-field">
+          <label>Birthdate</label>
+          <input id="cpBirth" type="date" value="${esc(profile.birthdate||'')}" />
+        </div>
+        <p class="ac-msg" id="cpMsg"></p>
+        <button class="ac-btn" id="cpSave">${isEdit?'Save changes':'Finish setup'}</button>
+        ${isEdit?'<button class="su-back-btn" id="cpCancel">← Back</button>':''}
+      `;
+      wireMonogramPicker('cp', avState);
+      if(isEdit) document.getElementById('cpCancel').onclick = ()=>showProfile(user);
+      document.getElementById('cpSave').onclick = async()=>{
+        const firstName = document.getElementById('cpFirst').value.trim();
+        const lastName  = document.getElementById('cpLast').value.trim();
+        const birthdate = document.getElementById('cpBirth').value;
+        const btn = document.getElementById('cpSave'), msg = document.getElementById('cpMsg');
+        if(!firstName){ setMsg(msg,'First name is required.','err'); return; }
+        if(!birthdate){ setMsg(msg,'Birthdate is required.','err'); return; }
+        btn.disabled=true; btn.textContent='Saving…';
+        const avatarUrl = monogramSVG(avState.letter, avState.bg, 200);
+        const { data, error } = await sb.from('profiles').update({
+          first_name:firstName, last_name:lastName||null, birthdate,
+          avatar_url:avatarUrl, avatar_style:'monogram', avatar_seed:avState.letter+'|'+avState.bg,
+        }).eq('id',user.id).select('*').maybeSingle();
+        if(error){ setMsg(msg,error.message,'err'); btn.disabled=false; btn.textContent=isEdit?'Save changes':'Finish setup'; return; }
+        showProfile(user, data);
+      };
+    }
+
+    async function showProfile(user, preloadedProfile){
+      const profile = preloadedProfile || (await sb.from('profiles').select('*').eq('id',user.id).maybeSingle()).data || {};
+      const username = profile.username || user.user_metadata?.username || user.email?.split('@')[0] || 'User';
+      const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || username;
+      const avatarUrl = profile.avatar_url || monogramSVG((profile.first_name||username).charAt(0).toUpperCase(), BG_COLORS[0], 200);
+      content.innerHTML = `
+        <div class="ac-profile">
+          <img src="${esc(avatarUrl)}" class="ac-avatar" style="object-fit:cover;" alt="${esc(fullName)}" />
+          <div>
+            <div class="ac-pname">${esc(fullName)}</div>
+            <div class="ac-pemail">${esc(user.email||'')} · @${esc(username)}</div>
+          </div>
+          <button class="ac-sec-btn" id="editProfileBtn">✏️ Edit your 360ID</button>
+          <p class="ac-msg" id="profMsg"></p>
+          <div class="ac-field" style="margin-top:18px;text-align:left;">
+            <label>Phone Number</label>
+            <input id="phoneInput" type="tel" placeholder="+1 555 123 4567" />
+          </div>
+          <button class="ac-sec-btn" id="sendPhoneOtp">Send Verification Code</button>
+          <div class="ac-field" id="otpField" style="display:none;">
+            <label>Enter Code</label>
+            <input id="otpInput" type="text" placeholder="123456" />
+          </div>
+          <button class="ac-sec-btn" id="verifyPhoneOtp" style="display:none;">Verify</button>
+          <p class="ac-msg" id="phoneMsg"></p>
+          <button class="ac-sec-btn" onclick="window.location.href='/';">← Back to 360</button>
+          <button class="ac-sec-btn ac-signout-btn" id="pgSignOut">Sign Out</button>
+        </div>
+      `;
+      document.getElementById('editProfileBtn').onclick = ()=>renderCompleteProfile(user, profile, true);
+      document.getElementById('pgSignOut').onclick = async()=>{
+        const b=document.getElementById('pgSignOut'); b.textContent='Signing out…'; b.disabled=true;
+        await sb.auth.signOut();
+        // Clear any saved redirect target then reload — the page will show sign-in
+        sessionStorage.removeItem('360_auth_redirect');
+        location.href = '/';
+      };
+      const sendBtn=document.getElementById('sendPhoneOtp'), verifyBtn=document.getElementById('verifyPhoneOtp');
+      const phoneInput=document.getElementById('phoneInput'), otpField=document.getElementById('otpField');
+      const otpInput=document.getElementById('otpInput'), phoneMsg=document.getElementById('phoneMsg');
+      sendBtn.onclick=async()=>{
+        const phone=phoneInput.value.trim(); if(!phone){ setMsg(phoneMsg,'Enter a phone number.','err'); return; }
+        const{error}=await sb.auth.signInWithOtp({phone});
+        if(error){ setMsg(phoneMsg,error.message,'err'); return; }
+        setMsg(phoneMsg,'Code sent!','ok'); otpField.style.display='block'; verifyBtn.style.display='block';
+      };
+      verifyBtn.onclick=async()=>{
+        const{error}=await sb.auth.verifyOtp({phone:phoneInput.value.trim(),token:otpInput.value.trim(),type:'sms'});
+        if(error){ setMsg(phoneMsg,error.message,'err'); return; }
+        setMsg(phoneMsg,'Phone verified! ✓','ok'); verifyBtn.style.display='none';
+      };
+    }
+
+    function showLogout(){
+      content.innerHTML=`<div class="ac-logout">
+        <div class="ac-logout-icon">👋</div>
+        <div class="ac-logout-title">You've been signed out</div>
+        <div class="ac-logout-sub">See you next time!</div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:4px;">
+          <button class="ac-btn" onclick="history.replaceState(null,'','/account?signin');renderSignIn();">Sign Back In</button>
+          <button class="ac-btn" style="background:rgba(255,255,255,.06);" onclick="location.href='/'">← Back to 360</button>
+        </div>
+      </div>`;
+    }
+
+    /* ─── init ───────────────────────────────────── */
+    (async()=>{
+      if(isLogout){ showLogout(); return; }
+
+      // Handle email confirmation tokens in the URL hash (#access_token=…&type=signup)
+      if(location.hash.includes('access_token') || location.hash.includes('type=signup')){
+        // Supabase JS picks these up automatically; give it a tick then re-check session
+        await new Promise(r=>setTimeout(r,300));
+      }
+
+      const { data:{session} } = await sb.auth.getSession();
+      if(session){
+        if(_signInBtn)  _signInBtn.style.display='none';
+        if(_signUpBtn)  _signUpBtn.style.display='none';
+        if(_signOutBtn) _signOutBtn.style.display='inline-block';
+
+        const { data:profile } = await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle();
+        const cameFromOAuth = session.user.app_metadata?.provider && session.user.app_metadata.provider!=='email';
+
+        // If profile setup is incomplete, show completion flow; otherwise redirect or show profile
+        if(!profile?.username || (cameFromOAuth && !profile?.birthdate)){
+          renderCompleteProfile(session.user, profile||{}, false);
+        } else if(param==='signin' || param==='signup') {
+          // Arrived here to authenticate — send them back where they came from
+          const dest = getBestRedirect();
+          sessionStorage.removeItem('360_auth_redirect');
+          location.replace(dest);
+        } else {
+          showProfile(session.user, profile);
+        }
+      } else {
+        if(_signInBtn)  _signInBtn.style.display='inline-block';
+        if(_signUpBtn)  _signUpBtn.style.display='inline-block';
+        if(_signOutBtn) _signOutBtn.style.display='none';
+        if(param==='signup') renderSignUp();
+        else renderSignIn();
+      }
+
+      // Listen for auth changes (e.g. email confirmation landing here)
+      sb.auth.onAuthStateChange(async(event,sess)=>{
+        if(event==='SIGNED_IN' && sess && !session){
+          // User just confirmed email or signed in via magic link — redirect them back
+          const dest = getBestRedirect();
+          sessionStorage.removeItem('360_auth_redirect');
+          location.replace(dest);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
