@@ -8,7 +8,7 @@ const version = "3.0.0";
 
 //CHANGES THE FOOTER IN ALL PAGES!!
 const _sidebarVer = document.getElementById("sidebar-ver");
-if (_sidebarVer) _sidebarVer.textContent = "© " + new Date().getFullYear() + " 360 INC. · " + "v." + version;
+if (_sidebarVer) _sidebarVer.textContent = "© " + new Date().getFullYear() + " 360Digital, Co. · " + "V." + version;
 
 //Get's the current page's URL (Not including domain)
 let currentUrl = window.location.pathname + window.location.search + window.location.hash;
