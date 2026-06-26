@@ -81,12 +81,12 @@ Coming soon via Samsung Galaxy Store.
 - [ ] Android app (Samsung Galaxy Store)
 - [x] Android APK
 - [ ] Edge / Opera browser extension
-- [ ] PWA improvements
+- [x] PWA improvements
 
 ---
 
-## Releases
-
+# Releases
+## V.2.0 - 2.0.3:
 <a href="https://github.com/360-By-360Digital/360/releases/tag/V.2.0.3">Release V.2.0.3</a>
 
 <a href="https://github.com/360-By-360Digital/360/releases/tag/V.2.0.3">Release V.2.0.3 — Windows .exe (unstable)</a>
@@ -94,6 +94,13 @@ Coming soon via Samsung Galaxy Store.
 <a href="https://github.com/360-By-360Digital/360/releases/tag/V.2.0.3">Release V.2.0.3 — Windows .exe (stable)</a>
 
 <a href="https://github.com/360-By-360Digital/360/releases/tag/V.2.0.3">Release V.2.0.3 — Linux .deb (stable)</a>
+## V.3.0 - ?
+
+<a href="https://github.com/360DigitalCo/360/releases/tag/V.3.0">Release V.3.0</a>
+
+<a href="https://github.com/360DigitalCo/360/releases/tag/V.3.0">Release V.3.0 — Windows .exe/.msi (stable)</a>
+
+<a href="https://github.com/360DigitalCo/360/releases/tag/V.3.0">Release V.3.0 — Linux .deb (stable)</a>
 
 ---
 
