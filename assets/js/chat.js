@@ -1,14 +1,10 @@
 /* ════════════════════════════════════════════════════════
-   360 Chat — Discord Mode  v3.1
-   Three-panel layout: server rail → channel list → chat
-   Features: servers, channels (with categories), DMs,
-   threads, pins, members panel, reactions, @mentions,
-   /slash commands, upload, realtime presence, unread
-   badges, push notifications, profanity filter,
-   auto-translate, context-menu, right-click reactions.
+   360 Chat — Discord Mode  v3.2
+   Fixes: server menu, joined-only rail, online users panel,
+   slash command suggestions, unread channel badges,
+   owner-only invite management, improved threads/pins/notifs
 ════════════════════════════════════════════════════════ */
 
-// Prevent main.js from injecting its own user-chip (chat has its own rail user widget)
 window.SKIP_AUTH_CHIP = true;
 
 const sb = supabaseClient;
@@ -39,10 +35,12 @@ let mentionQuery     = null;
 let mentionStart     = 0;
 let mentionSelIdx    = 0;
 let activeThreadId   = null;
+let slashSuggIdx     = 0;
+let joinedServerIds  = new Set();
 const msgElMap       = new Map();
 const profileCache   = {};
 const translateCache = {};
-const unreadCounts   = {};
+const unreadCounts   = {};  // channel/room level unread
 const QUICK_EMOJIS   = ["👍","❤️","😂","💀","🔥","😮","😢","👏","✨","💯","🚀","⭐","🎉","👀","🙏"];
 const ALL_EMOJIS     = ["😀","😂","😍","🥰","😎","🤔","😢","😡","👍","👎","❤️","🔥","💀","🎉","✨",
                         "💯","🚀","⭐","👀","🙏","💪","🤖","😊","🥺","🤣","😅","😱","🫡","💅","🗿",
@@ -88,6 +86,9 @@ function closeAllPanels(){
   document.getElementById("thread-panel").classList.add("hidden");
   document.getElementById("pins-panel").classList.add("hidden");
   document.getElementById("members-panel").classList.add("hidden");
+  document.getElementById("online-panel")?.classList.add("hidden");
+  document.getElementById("invite-panel")?.classList.add("hidden");
+  document.getElementById("server-ctx-menu")?.classList.add("hidden");
 }
 
 /* ── Profile cache ──────────────────────────────────── */
@@ -109,12 +110,10 @@ async function logAutomod(userId,username,action,reason,expiresAt=null){
     await sb.from("automod_log").insert({user_id:userId,username,action,reason,expires_at:expiresAt});
   }catch(e){console.warn("automod_log write failed",e);}
 }
-
 function isMuted(profile){
   if(!profile?.muted_until)return false;
   return new Date(profile.muted_until)>new Date();
 }
-
 function muteExpiryText(profile){
   if(!profile?.muted_until)return"";
   const ms=new Date(profile.muted_until)-new Date();
@@ -122,8 +121,6 @@ function muteExpiryText(profile){
   const m=Math.ceil(ms/60000);
   return m<60?`${m}m`:Math.ceil(m/60)+"h";
 }
-
-/* ── Mod-only command guard ──────────────────────────── */
 function requiresMod(profile){
   return profile?.role==="admin"||profile?.role==="mod";
 }
@@ -145,28 +142,51 @@ function makeInitialsEl(p,size=38){
 }
 
 /* ══════════════════════════════════════════════════════
+   JOINED SERVERS CACHE
+══════════════════════════════════════════════════════ */
+async function refreshJoinedServers(){
+  joinedServerIds.clear();
+  if(!currentUserId)return;
+  const{data}=await sb.from("server_members").select("server_id").eq("user_id",currentUserId);
+  (data||[]).forEach(r=>joinedServerIds.add(r.server_id));
+}
+
+/* ══════════════════════════════════════════════════════
    RAIL
 ══════════════════════════════════════════════════════ */
 async function buildRail(){
+  await refreshJoinedServers();
   const rail=document.getElementById("rail-servers");rail.innerHTML="";
-  const{data:servers}=await sb.from("servers").select("*").order("name");
 
-  // Public / General pill
+  // Public/General pill
   const gen=document.createElement("button");
   gen.className="rail-server-icon"+(activeServerId===null&&!showingDMs?" active":"");
   gen.title="General";gen.textContent="🌐";
+  gen.dataset.serverId="";
   gen.addEventListener("click",()=>{ showingDMs=false;setActiveServer(null);buildSidebar(null);switchRoom({type:"public",id:"public",name:"general",icon:"#",serverName:"360 Chat",serverId:null}); });
   rail.appendChild(gen);
 
-  (servers||[]).forEach(s=>{
-    const btn=document.createElement("button");
-    btn.className="rail-server-icon"+(activeServerId===s.id?" active":"");
-    btn.title=s.name;btn.textContent=s.icon||s.name[0].toUpperCase();
-    btn.dataset.serverId=s.id;
-    if(unreadCounts["server:"+s.id]>0)btn.classList.add("unread");
-    btn.addEventListener("click",()=>handleServerClick(s));
-    rail.appendChild(btn);
-  });
+  // Only show servers the user has joined
+  if(joinedServerIds.size>0){
+    const ids=[...joinedServerIds];
+    const{data:servers}=await sb.from("servers").select("*").in("id",ids).order("name");
+    (servers||[]).forEach(s=>{
+      const btn=document.createElement("button");
+      btn.className="rail-server-icon"+(activeServerId===s.id?" active":"");
+      btn.title=s.name;btn.textContent=s.icon||s.name[0].toUpperCase();
+      btn.dataset.serverId=s.id;
+      const unreadKey="server:"+s.id;
+      if(unreadCounts[unreadKey]>0){
+        btn.classList.add("unread");
+        const pip=document.createElement("span");
+        pip.className="rail-unread";
+        pip.textContent=unreadCounts[unreadKey]>9?"9+":unreadCounts[unreadKey];
+        btn.appendChild(pip);
+      }
+      btn.addEventListener("click",()=>handleServerClick(s));
+      rail.appendChild(btn);
+    });
+  }
 
   // Update user avatar
   const ru=document.getElementById("railUser");ru.innerHTML="";
@@ -180,7 +200,7 @@ async function buildRail(){
 function setActiveServer(id){
   activeServerId=id;
   document.querySelectorAll(".rail-server-icon").forEach(b=>{
-    b.classList.toggle("active",b.dataset.serverId===id||(id===null&&!b.dataset.serverId&&!showingDMs));
+    b.classList.toggle("active",b.dataset.serverId===id||(id===null&&b.dataset.serverId===""&&!showingDMs));
   });
 }
 
@@ -213,13 +233,25 @@ async function buildSidebar(server){
       addCategoryHeader(body,cat,isAdmin?()=>openAddChannelModal(server):null);
       chs.forEach(ch=>{
         const item=makeChanItem(ch,activeRoom.id===ch.id,()=>switchRoom({type:"channel",id:ch.id,name:ch.name,icon:"#",serverName:server.name,serverId:server.id,topic:ch.topic||""}));
+        // Add unread badge to channel item
+        const chKey="channel:"+ch.id;
+        if(unreadCounts[chKey]>0){
+          item.style.position="relative";
+          const badge=document.createElement("span");
+          badge.className="ch-unread-badge";
+          badge.textContent=unreadCounts[chKey]>99?"99+":unreadCounts[chKey];
+          item.appendChild(badge);
+        }
         body.appendChild(item);
       });
     });
   }
   if(currentUserId){
     addSidebarBtn(body,"＋ Add Channel",()=>openAddChannelModal(server));
-    if(server.owner_id===currentUserId)addSidebarBtn(body,"✏️ Edit Server",()=>openEditServerModal(server));
+    if(server.owner_id===currentUserId){
+      addSidebarBtn(body,"✏️ Edit Server",()=>openEditServerModal(server));
+      addSidebarBtn(body,"🔗 Invite Links",()=>openInvitePanel(server));
+    }
   }
 }
 
@@ -256,6 +288,15 @@ async function buildDMList(body){
       const av=document.createElement("div");av.className="dc-dm-avatar";
       if(p.avatar_url){const img=document.createElement("img");img.src=p.avatar_url;av.appendChild(img);}else av.textContent=getInitials(p.username);
       const name=document.createElement("span");name.textContent=p.username||"User";
+      // DM unread badge
+      const dmKey="dm:"+dm.id;
+      if(unreadCounts[dmKey]>0){
+        item.style.position="relative";
+        const badge=document.createElement("span");
+        badge.className="ch-unread-badge";
+        badge.textContent=unreadCounts[dmKey]>99?"99+":unreadCounts[dmKey];
+        item.appendChild(badge);
+      }
       item.appendChild(av);item.appendChild(name);
       item.addEventListener("click",()=>switchRoom({type:"dm",id:dm.id,name:p.username,icon:"@",serverId:null,serverName:"Direct Messages",otherId:oid}));
       body.appendChild(item);
@@ -269,8 +310,9 @@ async function browseSidebar(body){
   body.innerHTML="";
   addCategoryHeader(body,"ALL SERVERS",null);
   (servers||[]).forEach(s=>{
+    const isJoined=joinedServerIds.has(s.id);
     const item=document.createElement("div");item.className="dc-ch-item";
-    item.innerHTML=`<span class="ch-hash">${esc(s.icon||"🌐")}</span><span>${esc(s.name)}</span>${s.passcode?`<span style="margin-left:auto;font-size:11px;opacity:.5;">🔒</span>`:""}`;
+    item.innerHTML=`<span class="ch-hash">${esc(s.icon||"🌐")}</span><span>${esc(s.name)}</span>${isJoined?`<span style="margin-left:auto;font-size:11px;color:var(--a);">✓</span>`:s.passcode?`<span style="margin-left:auto;font-size:11px;opacity:.5;">🔒</span>`:""}`;
     item.addEventListener("click",()=>handleServerClick(s));body.appendChild(item);
   });
 }
@@ -281,8 +323,8 @@ async function browseSidebar(body){
 async function handleServerClick(server){
   if(!currentUserId){location.href="/account";return;}
   showingDMs=false;setActiveServer(server.id);
-  const{data:mem}=await sb.from("server_members").select("id").eq("server_id",server.id).eq("user_id",currentUserId).maybeSingle();
-  if(mem){await enterServer(server);}
+  const isJoined=joinedServerIds.has(server.id);
+  if(isJoined){await enterServer(server);}
   else if(server.passcode){await buildSidebar(server);showPasscodeGate(server);}
   else{await joinServer(server.id);await enterServer(server);}
 }
@@ -290,6 +332,7 @@ async function handleServerClick(server){
 async function joinServer(serverId){
   const{error}=await sb.from("server_members").insert({server_id:serverId,user_id:currentUserId});
   if(error&&!error.message.includes("unique"))showToast("❌ "+error.message);
+  else joinedServerIds.add(serverId);
 }
 
 async function enterServer(server){
@@ -315,9 +358,193 @@ function showPasscodeGate(server){
   const tryUnlock=async()=>{
     const v=inp.value.trim();if(!v){gate.querySelector("#gate-err").textContent="Enter the passcode.";return;}
     if(v!==server.passcode){gate.querySelector("#gate-err").textContent="Wrong passcode.";inp.value="";inp.focus();return;}
-    await joinServer(server.id);gate.remove();main.style.position="";await enterServer(server);
+    await joinServer(server.id);gate.remove();main.style.position="";await enterServer(server);await buildRail();
   };
   gate.querySelector("#gate-btn").onclick=tryUnlock;inp.onkeydown=e=>{if(e.key==="Enter")tryUnlock();};
+}
+
+/* ══════════════════════════════════════════════════════
+   SERVER CONTEXT MENU (replaces broken sb-server-menu)
+══════════════════════════════════════════════════════ */
+document.getElementById("sb-server-menu")?.addEventListener("click",async(e)=>{
+  e.stopPropagation();
+  if(!activeRoom.serverId||!currentUserId)return;
+  const{data:server}=await sb.from("servers").select("*").eq("id",activeRoom.serverId).maybeSingle();
+  if(!server)return;
+  const isOwner=server.owner_id===currentUserId;
+  const isAdmin=currentProfile?.role==="admin";
+
+  // Remove existing menu
+  document.getElementById("server-ctx-menu")?.remove();
+  const menu=document.createElement("div");
+  menu.id="server-ctx-menu";
+  menu.className="server-ctx-menu";
+
+  const items=[];
+  items.push({label:"📋 Copy Server ID",fn:()=>{navigator.clipboard.writeText(server.id);showToast("Copied server ID");}});
+  if(isOwner||isAdmin){
+    items.push({label:"✏️ Edit Server",fn:()=>openEditServerModal(server)});
+    items.push({label:"🔗 Invite Links",fn:()=>openInvitePanel(server)});
+    items.push({label:"👥 Members",fn:()=>{ document.getElementById("btnMembers").click(); }});
+    items.push({sep:true});
+    items.push({label:"🗑 Delete Server",danger:true,fn:async()=>{
+      if(!confirm(`Delete "${server.name}"? This cannot be undone.`))return;
+      await sb.from("channels").delete().eq("server_id",server.id);
+      await sb.from("server_members").delete().eq("server_id",server.id);
+      await sb.from("servers").delete().eq("id",server.id);
+      joinedServerIds.delete(server.id);
+      setActiveServer(null);buildSidebar(null);
+      switchRoom({type:"public",id:"public",name:"general",icon:"#",serverName:"360 Chat",serverId:null});
+      await buildRail();showToast("Server deleted.");
+    }});
+  } else {
+    items.push({label:"🚪 Leave Server",danger:true,fn:async()=>{
+      if(!confirm(`Leave "${server.name}"?`))return;
+      await sb.from("server_members").delete().eq("server_id",server.id).eq("user_id",currentUserId);
+      joinedServerIds.delete(server.id);
+      setActiveServer(null);buildSidebar(null);
+      switchRoom({type:"public",id:"public",name:"general",icon:"#",serverName:"360 Chat",serverId:null});
+      await buildRail();showToast("Left server.");
+    }});
+  }
+
+  items.forEach(item=>{
+    if(item.sep){const s=document.createElement("div");s.className="ctx-sep";menu.appendChild(s);return;}
+    const d=document.createElement("div");d.className="ctx-item"+(item.danger?" danger":"");
+    d.textContent=item.label;
+    d.onclick=()=>{menu.remove();item.fn();};
+    menu.appendChild(d);
+  });
+
+  document.body.appendChild(menu);
+  const btn=document.getElementById("sb-server-menu");
+  const rect=btn.getBoundingClientRect();
+  menu.style.top=(rect.bottom+4)+"px";
+  menu.style.left=Math.max(8,rect.left-menu.offsetWidth+rect.width)+"px";
+  setTimeout(()=>document.addEventListener("click",()=>menu.remove(),{once:true}),10);
+});
+
+/* ══════════════════════════════════════════════════════
+   INVITE MANAGEMENT (owner-only)
+══════════════════════════════════════════════════════ */
+function openInvitePanel(server){
+  let panel=document.getElementById("invite-panel");
+  if(!panel){
+    panel=document.createElement("div");
+    panel.id="invite-panel";
+    panel.className="invite-panel";
+    panel.innerHTML=`
+      <div class="invite-header">
+        <span>🔗 Invite Links</span>
+        <button id="invite-close">✕</button>
+      </div>
+      <div class="invite-body">
+        <button id="invite-gen-btn" class="dc-btn-pri" style="width:100%;margin-bottom:12px;">Generate One-Time Invite</button>
+        <div id="invite-list" class="invite-list"></div>
+      </div>`;
+    document.getElementById("dcMain").appendChild(panel);
+    document.getElementById("invite-close").onclick=()=>panel.classList.add("hidden");
+  }
+  panel.classList.remove("hidden");
+  document.getElementById("invite-gen-btn").onclick=()=>generateInvite(server.id);
+  loadInvites(server.id);
+}
+
+async function generateInvite(serverId){
+  if(!currentUserId)return;
+  // Check ownership
+  const{data:server}=await sb.from("servers").select("owner_id").eq("id",serverId).maybeSingle();
+  if(!server||server.owner_id!==currentUserId){showToast("❌ Only the server owner can create invites.");return;}
+  const code=Math.random().toString(36).slice(2,10).toUpperCase();
+  const expiresAt=new Date(Date.now()+7*24*60*60*1000).toISOString(); // 7 days
+  const{error}=await sb.from("server_invites").insert({server_id:serverId,code,created_by:currentUserId,used:false,expires_at:expiresAt});
+  if(error){
+    if(error.message.includes("does not exist")||error.code==="42P01"){
+      // Table doesn't exist — show the invite link with a note
+      const link=`${location.origin}/chat?invite=${code}`;
+      const msg=document.createElement("div");
+      msg.style.cssText="background:var(--dc-input-bg);border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px;";
+      msg.innerHTML=`<div style="font-weight:700;margin-bottom:6px;color:var(--a);">Note: Run this SQL in Supabase to enable invites:</div>
+        <code style="font-size:11px;word-break:break-all;color:var(--dc-muted);">CREATE TABLE server_invites (id uuid DEFAULT gen_random_uuid() PRIMARY KEY, server_id uuid REFERENCES servers(id) ON DELETE CASCADE, code text UNIQUE NOT NULL, created_by uuid, used boolean DEFAULT false, used_by uuid, created_at timestamptz DEFAULT now(), expires_at timestamptz);</code>`;
+      document.getElementById("invite-list")?.prepend(msg);
+      showToast("⚠️ Setup needed — see invite panel");
+      return;
+    }
+    showToast("❌ "+error.message);return;
+  }
+  const link=`${location.origin}/chat?invite=${code}`;
+  navigator.clipboard.writeText(link).then(()=>showToast("✅ Invite link copied!")).catch(()=>showToast("✅ Invite created: "+code));
+  loadInvites(serverId);
+}
+
+async function loadInvites(serverId){
+  const list=document.getElementById("invite-list");if(!list)return;
+  list.innerHTML="";
+  let data,error;
+  try{
+    const res=await sb.from("server_invites").select("*").eq("server_id",serverId).order("created_at",{ascending:false});
+    data=res.data;error=res.error;
+  }catch(e){error=e;}
+  if(error||!data){
+    list.innerHTML=`<div style="font-size:12px;color:var(--dc-muted);text-align:center;padding:16px;">No invites yet. Create one above.</div>`;
+    return;
+  }
+  if(!data.length){list.innerHTML=`<div style="font-size:12px;color:var(--dc-muted);text-align:center;padding:16px;">No invite links. Generate one above.</div>`;return;}
+  data.forEach(inv=>{
+    const expired=inv.expires_at&&new Date(inv.expires_at)<new Date();
+    const link=`${location.origin}/chat?invite=${inv.code}`;
+    const item=document.createElement("div");item.className="invite-item";
+    item.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <code class="invite-code" title="${esc(link)}">${esc(inv.code)}</code>
+        <div style="display:flex;gap:6px;">
+          <button class="inv-copy-btn dc-action-btn" title="Copy link">📋</button>
+          <button class="inv-del-btn dc-action-btn" title="Revoke" style="color:#ef4444;">🗑</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--dc-muted);margin-top:4px;">
+        ${inv.used?`<span style="color:#ef4444;">✗ Used</span>`:`<span style="color:#22c55e;">✓ Active</span>`}
+        ${expired?`<span style="color:#f59e0b;margin-left:6px;">⏰ Expired</span>`:""}
+        ${inv.expires_at?`<span style="margin-left:6px;">Expires ${new Date(inv.expires_at).toLocaleDateString()}</span>`:""}
+      </div>`;
+    item.querySelector(".inv-copy-btn").onclick=()=>{
+      navigator.clipboard.writeText(link).then(()=>showToast("📋 Copied!")).catch(()=>showToast("Code: "+inv.code));
+    };
+    item.querySelector(".inv-del-btn").onclick=async()=>{
+      await sb.from("server_invites").delete().eq("id",inv.id);
+      loadInvites(serverId);
+    };
+    list.appendChild(item);
+  });
+}
+
+/* ── Handle invite on page load ── */
+async function handleInviteCode(){
+  const params=new URLSearchParams(location.search);
+  const code=params.get("invite");
+  if(!code)return;
+  if(!currentUserId){
+    showToast("Sign in to use invite links");
+    setTimeout(()=>location.href="/account?from=/chat?invite="+code,1500);
+    return;
+  }
+  // Look up invite
+  let data,error;
+  try{
+    const res=await sb.from("server_invites").select("*").eq("code",code).eq("used",false).maybeSingle();
+    data=res.data;error=res.error;
+  }catch(e){error=e;}
+  if(error||!data){showToast("❌ Invalid or expired invite link");history.replaceState(null,"","/chat");return;}
+  if(data.expires_at&&new Date(data.expires_at)<new Date()){showToast("❌ This invite link has expired");history.replaceState(null,"","/chat");return;}
+  if(joinedServerIds.has(data.server_id)){showToast("ℹ️ You're already in this server");history.replaceState(null,"","/chat");
+    const{data:s}=await sb.from("servers").select("*").eq("id",data.server_id).maybeSingle();
+    if(s)handleServerClick(s);return;}
+  // Mark used and join
+  await sb.from("server_invites").update({used:true,used_by:currentUserId}).eq("id",data.id);
+  await joinServer(data.server_id);
+  const{data:s}=await sb.from("servers").select("*").eq("id",data.server_id).maybeSingle();
+  if(s){showToast("🎉 Joined "+s.name+"!");await buildRail();handleServerClick(s);}
+  history.replaceState(null,"","/chat");
 }
 
 /* ══════════════════════════════════════════════════════
@@ -361,8 +588,15 @@ function switchRoom(room){
     .on("broadcast",{event:"typing"},p=>{const{username,uid}=p.payload;if(uid===currentUserId)return;typingUsers[uid]={username};renderTyping();clearTimeout(typingTimeouts[uid]);typingTimeouts[uid]=setTimeout(()=>{delete typingUsers[uid];renderTyping();},2500);})
     .subscribe();
 
-  // Notify the notification system that we switched rooms (clears unread badge for this room)
   window.ChatNotif?.onRoomSwitch(room);
+  // Clear local unread for this room
+  const key=getRoomKey(room);
+  unreadCounts[key]=0;
+  // Remove badge from channel item
+  const chEl=document.querySelector(`[data-ch-id="${room.id}"] .ch-unread-badge`);
+  chEl?.remove();
+  const dmEl=document.querySelector(`[data-dm-id="${room.id}"] .ch-unread-badge`);
+  dmEl?.remove();
 
   loadHistory();markRoomRead(room);
   document.getElementById("dcSidebar")?.classList.remove("mobile-open");
@@ -371,7 +605,6 @@ function switchRoom(room){
 function onIncoming(msg){
   renderMessage(msg,true);
   trackUnread(msg);
-  // Delegate push notifications and badge updates to notifications.js
   window.ChatNotif?.onMessage(msg,activeRoom,currentUserId);
 }
 
@@ -452,14 +685,12 @@ function buildMsgEl(msg){
   el.className="dc-msg"+(sameAuthor?" grouped":"");
   el.dataset.msgId=msg.id;el.dataset.userId=msg.user_id||"";
 
-  // Avatar
   const avWrap=document.createElement("div");avWrap.className="dc-msg-avatar";
   if(msg.avatar_url){const img=document.createElement("img");img.src=msg.avatar_url;img.style.cssText="width:100%;height:100%;border-radius:50%;object-fit:cover;";avWrap.appendChild(img);}
   else avWrap.textContent=getInitials(msg.username);
   avWrap.addEventListener("click",e=>{e.stopPropagation();showProfilePopup(msg.user_id,avWrap);});
   el.appendChild(avWrap);
 
-  // Body
   const body=document.createElement("div");body.className="dc-msg-body";
 
   if(!sameAuthor){
@@ -474,17 +705,14 @@ function buildMsgEl(msg){
     body.appendChild(hdr);
   }
 
-  // Reply quote
   if(msg.reply_to_id&&msg.reply_to_text){
     const ref=document.createElement("div");ref.className="dc-reply-ref";
     ref.innerHTML=`<span class="rr-author">@${esc(msg.reply_to_username||"?")} </span>${esc((msg.reply_to_text||"").slice(0,80))}`;
     ref.addEventListener("click",()=>jumpToMsg(msg.reply_to_id));body.appendChild(ref);
   }
 
-  // Text
   if(msg.text){const d=document.createElement("div");d.className="dc-msg-text";d.innerHTML=renderText(msg.text);body.appendChild(d);}
 
-  // Media / file
   if(msg.file_url){
     if(isImageUrl(msg.file_url)){
       const img=document.createElement("img");img.className="dc-msg-img";img.src=msg.file_url;img.loading="lazy";
@@ -496,19 +724,16 @@ function buildMsgEl(msg){
     }
   }
 
-  // Thread pill
   if(msg.thread_reply_count>0||msg.is_thread_root){
     const pill=document.createElement("div");pill.className="dc-thread-pill";
     pill.textContent=msg.thread_reply_count>0?`🧵 ${msg.thread_reply_count} repl${msg.thread_reply_count===1?"y":"ies"}`:"🧵 Open Thread";
     pill.addEventListener("click",()=>openThread(msg));body.appendChild(pill);
   }
 
-  // Reactions
   const rxnRow=document.createElement("div");rxnRow.className="dc-reactions";rxnRow.id="rxn-"+msg.id;body.appendChild(rxnRow);
 
   el.appendChild(body);
 
-  // Hover action bar
   const actions=document.createElement("div");actions.className="dc-msg-actions";
   [
     {i:"↩",t:"Reply",  fn:()=>setReply(msg)},
@@ -616,12 +841,14 @@ function openThread(msg){
   const panel=document.getElementById("thread-panel");panel.classList.remove("hidden");
   document.getElementById("pins-panel").classList.add("hidden");
   document.getElementById("members-panel").classList.add("hidden");
+  document.getElementById("online-panel")?.classList.add("hidden");
   document.getElementById("thread-root-msg").innerHTML=`<strong>${esc(msg.username||"")}</strong>: ${esc((msg.text||"📎 file").slice(0,200))}`;
   loadThreadMsgs(msg.id);
 }
 async function loadThreadMsgs(rootId){
   const list=document.getElementById("thread-messages");list.innerHTML="";
   const{data}=await sb.from("messages").select("*").eq("thread_id",rootId).order("created_at");
+  if(!data||!data.length){list.innerHTML=`<div style="padding:20px;text-align:center;font-size:13px;color:var(--dc-muted);">No replies yet. Be the first!</div>`;return;}
   (data||[]).forEach(m=>{
     const el=document.createElement("div");el.style.cssText="padding:6px 16px;";
     el.innerHTML=`<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px;"><span style="font-size:13px;font-weight:700;color:var(--dc-text)">${esc(m.username)}</span><span style="font-size:11px;color:var(--dc-muted)">${formatTime(m.created_at)}</span></div><div style="font-size:14px;color:var(--dc-text);">${renderText(m.text||"")}</div>`;
@@ -647,7 +874,8 @@ async function sendThreadMsg(){
 async function pinMsg(msg){
   if(!currentUserId)return;
   const r=activeRoom;
-  await sb.from("pinned_messages").insert({channel_id:r.type==="channel"?r.id:null,server_id:r.serverId||null,message_id:msg.id,pinned_by:currentUserId});
+  const{error}=await sb.from("pinned_messages").insert({channel_id:r.type==="channel"?r.id:null,server_id:r.serverId||null,message_id:msg.id,pinned_by:currentUserId});
+  if(error){if(error.message.includes("unique")||error.code==="23505"){showToast("📌 Already pinned");return;}showToast("❌ "+error.message);return;}
   showToast("📌 Message pinned");
 }
 async function loadPins(){
@@ -658,8 +886,14 @@ async function loadPins(){
   if(!data||!data.length){list.innerHTML=`<div style="padding:16px;text-align:center;font-size:13px;color:var(--dc-muted);">No pinned messages</div>`;return;}
   data.forEach(pin=>{
     const msg=pin.messages;const item=document.createElement("div");item.className="pin-item";
-    item.innerHTML=`<div class="pi-author">${esc(msg?.username||"Unknown")}</div><div class="pi-text">${esc((msg?.text||"📎 file").slice(0,100))}</div>`;
-    item.onclick=()=>jumpToMsg(pin.message_id);list.appendChild(item);
+    item.innerHTML=`<div class="pi-author">${esc(msg?.username||"Unknown")}</div><div class="pi-text">${esc((msg?.text||"📎 file").slice(0,100))}</div>
+      <button class="pin-unpin-btn" title="Unpin" style="float:right;background:none;border:none;cursor:pointer;color:var(--dc-muted);font-size:12px;margin-top:-2px;">✕</button>`;
+    item.onclick=e=>{if(e.target.classList.contains("pin-unpin-btn"))return;jumpToMsg(pin.message_id);};
+    item.querySelector(".pin-unpin-btn").onclick=async()=>{
+      await sb.from("pinned_messages").delete().eq("id",pin.id);
+      loadPins();showToast("📌 Unpinned");
+    };
+    list.appendChild(item);
   });
 }
 document.getElementById("btnPins").onclick=()=>{const p=document.getElementById("pins-panel");const h=p.classList.contains("hidden");closeAllPanels();if(h){p.classList.remove("hidden");loadPins();}};
@@ -675,24 +909,72 @@ async function loadMembers(){
   if(!mems||!mems.length){list.innerHTML=`<div style="padding:16px;font-size:13px;color:var(--dc-muted);">No members found.</div>`;return;}
   const profiles=await Promise.all(mems.map(m=>getProfile(m.user_id)));
   const groups={Admin:[],Mod:[],Member:[]};
-  profiles.forEach(p=>{ if(p.role==="admin")groups.Admin.push(p);else if(p.role==="mod")groups.Mod.push(p);else groups.Member.push(p); });
-  Object.entries(groups).forEach(([role,ps])=>{
-    if(!ps.length)return;
-    const sec=document.createElement("div");sec.className="member-role-section";sec.textContent=`${role} — ${ps.length}`;list.appendChild(sec);
-    ps.forEach(p=>{
+  profiles.forEach((p,i)=>{ if(p.role==="admin")groups.Admin.push({p,uid:mems[i].user_id});else if(p.role==="mod")groups.Mod.push({p,uid:mems[i].user_id});else groups.Member.push({p,uid:mems[i].user_id}); });
+  Object.entries(groups).forEach(([role,items])=>{
+    if(!items.length)return;
+    const sec=document.createElement("div");sec.className="member-role-section";sec.textContent=`${role} — ${items.length}`;list.appendChild(sec);
+    items.forEach(({p,uid})=>{
       const item=document.createElement("div");item.className="member-item";
       const av=document.createElement("div");av.className="mi-av";
       if(p.avatar_url){const img=document.createElement("img");img.src=p.avatar_url;av.appendChild(img);}else av.textContent=getInitials(p.username);
       const name=document.createElement("span");name.textContent=p.username||"User";
       const dot=document.createElement("div");dot.className="mi-status online";
       item.appendChild(av);item.appendChild(name);item.appendChild(dot);
-      item.addEventListener("click",()=>showProfilePopup(mems[profiles.indexOf(p)]?.user_id,item));
+      item.addEventListener("click",()=>showProfilePopup(uid,item));
       list.appendChild(item);
     });
   });
 }
 document.getElementById("btnMembers").onclick=()=>{const p=document.getElementById("members-panel");const h=p.classList.contains("hidden");closeAllPanels();if(h){p.classList.remove("hidden");loadMembers();}};
 document.getElementById("members-close").onclick=()=>document.getElementById("members-panel").classList.add("hidden");
+
+/* ══════════════════════════════════════════════════════
+   ONLINE USERS PANEL (360)
+══════════════════════════════════════════════════════ */
+let presenceState={};
+
+function initOnlinePanel(){
+  // Create panel if not in HTML
+  if(!document.getElementById("online-panel")){
+    const p=document.createElement("div");
+    p.id="online-panel";
+    p.className="online-panel hidden";
+    p.innerHTML=`
+      <div class="online-header">
+        <span>🟢 Online Now</span>
+        <button id="online-close">✕</button>
+      </div>
+      <div id="online-list" class="online-list"></div>`;
+    document.getElementById("dcMain").appendChild(p);
+    document.getElementById("online-close").onclick=()=>p.classList.add("hidden");
+  }
+}
+
+// Make the online count pill clickable
+document.getElementById("onlinePill")?.addEventListener("click",()=>{
+  initOnlinePanel();
+  const p=document.getElementById("online-panel");
+  if(p.classList.contains("hidden")){p.classList.remove("hidden");renderOnlineList();}
+  else p.classList.add("hidden");
+});
+
+function renderOnlineList(){
+  const list=document.getElementById("online-list");if(!list)return;
+  list.innerHTML="";
+  const users=Object.values(presenceState);
+  if(!users.length){list.innerHTML=`<div style="padding:16px;font-size:13px;color:var(--dc-muted);text-align:center;">No one else online.</div>`;return;}
+  users.forEach(u=>{
+    const item=document.createElement("div");item.className="online-item";
+    const initials=getInitials(u.username||"?");
+    item.innerHTML=`
+      <div class="online-av">${esc(initials)}</div>
+      <div class="online-info">
+        <span class="online-name">${esc(u.username||"User")}</span>
+        <span class="online-dot"></span>
+      </div>`;
+    list.appendChild(item);
+  });
+}
 
 /* ══════════════════════════════════════════════════════
    TYPING
@@ -754,6 +1036,48 @@ document.getElementById("emojiBtn").onclick=e=>{e.stopPropagation();emojiPicker.
 document.addEventListener("click",()=>emojiPicker.classList.add("hidden"));
 
 /* ══════════════════════════════════════════════════════
+   SLASH COMMAND SUGGESTIONS
+══════════════════════════════════════════════════════ */
+function getVisibleCmds(p){
+  return CMDS.filter(c=>!c.mod||requiresMod(p));
+}
+
+function renderSlashSuggestions(query){
+  let popup=document.getElementById("slash-popup");
+  if(!popup){
+    popup=document.createElement("div");
+    popup.id="slash-popup";
+    popup.className="slash-popup";
+    document.getElementById("msgInput").parentElement.appendChild(popup);
+  }
+  const matches=getVisibleCmds(currentProfile).filter(c=>c.c.startsWith("/"+query));
+  if(!matches.length){popup.innerHTML="";popup.classList.add("hidden");return;}
+  slashSuggIdx=Math.min(slashSuggIdx,matches.length-1);
+  popup.innerHTML="";popup.classList.remove("hidden");
+  matches.forEach((cmd,i)=>{
+    const item=document.createElement("div");
+    item.className="slash-item"+(i===slashSuggIdx?" active":"");
+    item.innerHTML=`<span class="slash-cmd">${esc(cmd.c)}</span><span class="slash-desc">${esc(cmd.desc||"")}</span>`;
+    item.onmousedown=e=>{e.preventDefault();applySlashSugg(cmd.c);};
+    popup.appendChild(item);
+  });
+}
+
+function applySlashSugg(cmdStr){
+  const inp=document.getElementById("msgInput");
+  inp.value=cmdStr+" ";
+  inp.focus();
+  document.getElementById("slash-popup")?.classList.add("hidden");
+  document.getElementById("slash-popup").innerHTML="";
+}
+
+function hideSlashPopup(){
+  const p=document.getElementById("slash-popup");
+  if(p){p.innerHTML="";p.classList.add("hidden");}
+  slashSuggIdx=0;
+}
+
+/* ══════════════════════════════════════════════════════
    TEXTAREA AUTO-RESIZE + TYPING BROADCAST
 ══════════════════════════════════════════════════════ */
 const msgInput=document.getElementById("msgInput");
@@ -764,7 +1088,18 @@ msgInput.addEventListener("input",()=>{
     if(!currentUserId||!typingChannel||!currentProfile)return;
     typingChannel.send({type:"broadcast",event:"typing",payload:{username:currentProfile.username,uid:currentUserId}});
   },200);
-  handleMentionAC();
+  const val=msgInput.value;
+  const pos=msgInput.selectionStart||0;
+  // Slash command suggestions
+  if(val.startsWith("/")){
+    const query=val.slice(1);
+    if(!query.includes(" ")){renderSlashSuggestions(query);return;}
+  }
+  hideSlashPopup();
+  // @mention suggestions
+  const before=val.slice(0,pos);
+  if(/@\w*$/.test(before))handleMentionAC();
+  else document.getElementById("dc-mention-popup").innerHTML="";
 });
 
 /* ══════════════════════════════════════════════════════
@@ -772,11 +1107,24 @@ msgInput.addEventListener("input",()=>{
 ══════════════════════════════════════════════════════ */
 document.getElementById("sendBtn").onclick=sendMessage;
 msgInput.onkeydown=e=>{
+  // Slash popup navigation
+  const slashPopup=document.getElementById("slash-popup");
+  if(slashPopup&&!slashPopup.classList.contains("hidden")){
+    const items=slashPopup.querySelectorAll(".slash-item");
+    if(e.key==="ArrowDown"){e.preventDefault();slashSuggIdx=Math.min(slashSuggIdx+1,items.length-1);items.forEach((el,i)=>el.classList.toggle("active",i===slashSuggIdx));return;}
+    if(e.key==="ArrowUp"){e.preventDefault();slashSuggIdx=Math.max(0,slashSuggIdx-1);items.forEach((el,i)=>el.classList.toggle("active",i===slashSuggIdx));return;}
+    if(e.key==="Tab"||e.key==="Enter"){
+      const active=slashPopup.querySelector(".slash-item.active");
+      if(active){e.preventDefault();const cmd=active.querySelector(".slash-cmd")?.textContent;if(cmd)applySlashSugg(cmd);return;}
+    }
+    if(e.key==="Escape"){hideSlashPopup();return;}
+  }
   if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}
-  if(e.key==="Escape")document.getElementById("dc-mention-popup").innerHTML="";
-  if(e.key==="ArrowUp"&&document.getElementById("dc-mention-popup").children.length){e.preventDefault();mentionSelIdx=Math.max(0,mentionSelIdx-1);handleMentionAC();}
-  if(e.key==="ArrowDown"&&document.getElementById("dc-mention-popup").children.length){e.preventDefault();mentionSelIdx=Math.min(7,mentionSelIdx+1);handleMentionAC();}
-  if(e.key==="Tab"&&document.getElementById("dc-mention-popup").children.length){e.preventDefault();const active=document.querySelector(".dc-mention-item.active");if(active)insertMention(active.dataset.user);}
+  if(e.key==="Escape"){document.getElementById("dc-mention-popup").innerHTML="";}
+  const mentPopup=document.getElementById("dc-mention-popup");
+  if(e.key==="ArrowUp"&&mentPopup.children.length){e.preventDefault();mentionSelIdx=Math.max(0,mentionSelIdx-1);handleMentionAC();}
+  if(e.key==="ArrowDown"&&mentPopup.children.length){e.preventDefault();mentionSelIdx=Math.min(7,mentionSelIdx+1);handleMentionAC();}
+  if(e.key==="Tab"&&mentPopup.children.length){e.preventDefault();const active=document.querySelector(".dc-mention-item.active");if(active)insertMention(active.dataset.user);}
 };
 
 async function sendMessage(){
@@ -784,15 +1132,13 @@ async function sendMessage(){
   if(slowModeSeconds>0){const el=(Date.now()-lastSentTime)/1000;if(el<slowModeSeconds){showToast(`🐌 Slow mode — wait ${Math.ceil(slowModeSeconds-el)}s`);return;}}
   const text=msgInput.value.trim();if(!text&&!pendingFile)return;
   const{data:{session}}=await sb.auth.getSession();if(!session){location.href="/account";return;}
-  // Always re-fetch own profile so ban/mute state is current
   delete profileCache[session.user.id];
   const p=await getProfile(session.user.id);
   currentProfile=p;
-  // Enforce ban
   if(p.banned){showToast("🚫 You have been banned from 360 Chat.");return;}
-  // Enforce mute
   if(isMuted(p)){showToast(`🔇 You are muted for another ${muteExpiryText(p)}.`);return;}
-  if(text.startsWith("/")){await runCommand(text,p);msgInput.value="";msgInput.style.height="auto";return;}
+  if(text.startsWith("/")){await runCommand(text,p);msgInput.value="";msgInput.style.height="auto";hideSlashPopup();return;}
+  hideSlashPopup();
   isSending=true;document.getElementById("sendBtn").disabled=true;
   try{
     let fileUrl=null;
@@ -816,42 +1162,33 @@ async function deleteMsg(msgId){
    SLASH COMMANDS
 ══════════════════════════════════════════════════════ */
 const CMDS=[
-  // ── Anyone ──────────────────────────────────────────────
-  {c:"/me",      mod:false, fn:async(args,p,pay)=>{pay.text=`_${p.username} ${filterProfanity(args)}_`;await insertMsg(pay);}},
-  {c:"/shrug",   mod:false, fn:async()=>{msgInput.value="¯\\_(ツ)_/¯";}},
-  {c:"/help",    mod:false, fn:async(args,p)=>{
+  {c:"/me",      mod:false, desc:"Send an action message", fn:async(args,p,pay)=>{pay.text=`_${p.username} ${filterProfanity(args)}_`;await insertMsg(pay);}},
+  {c:"/shrug",   mod:false, desc:"¯\\_(ツ)_/¯", fn:async()=>{msgInput.value="¯\\_(ツ)_/¯";}},
+  {c:"/lenny",   mod:false, desc:"( ͡° ͜ʖ ͡°)", fn:async()=>{msgInput.value="( ͡° ͜ʖ ͡°)";}},
+  {c:"/tableflip",mod:false,desc:"(╯°□°）╯︵ ┻━┻", fn:async()=>{msgInput.value="(╯°□°）╯︵ ┻━┻";}},
+  {c:"/unflip",  mod:false, desc:"┬─┬ノ( º _ ºノ)", fn:async()=>{msgInput.value="┬─┬ノ( º _ ºノ)";}},
+  {c:"/help",    mod:false, desc:"List all commands", fn:async(args,p)=>{
     const all=CMDS.filter(c=>!c.mod||requiresMod(p));
     showToast(all.map(c=>c.c).join("  ·  "),5000);
   }},
-  // ── Mod / Admin only ────────────────────────────────────
-  {c:"/clear",   mod:true, fn:async()=>{document.getElementById("dc-messages").innerHTML="";msgElMap.clear();}},
-  {c:"/slow",    mod:true, fn:async(args)=>{slowModeSeconds=parseInt(args)||0;showToast(slowModeSeconds?`🐌 Slow mode: ${slowModeSeconds}s`:"✅ Slow mode off");}},
-  {c:"/warn",    mod:true, fn:async(args,p)=>{
+  {c:"/clear",   mod:true,  desc:"Clear visible messages", fn:async()=>{document.getElementById("dc-messages").innerHTML="";msgElMap.clear();}},
+  {c:"/slow",    mod:true,  desc:"Set slow mode (seconds)", fn:async(args)=>{slowModeSeconds=parseInt(args)||0;showToast(slowModeSeconds?`🐌 Slow mode: ${slowModeSeconds}s`:"✅ Slow mode off");}},
+  {c:"/warn",    mod:true,  desc:"Warn a user", fn:async(args,p)=>{
     const[target,...rest]=args.split(" ");const reason=rest.join(" ")||"No reason given";
     if(!target){showToast("Usage: /warn <username> [reason]");return;}
     const{data:tgt}=await sb.from("profiles").select("id,username,warn_count").eq("username",target.replace(/^@/,"")).maybeSingle();
     if(!tgt){showToast("❌ User not found.");return;}
     const newCount=(tgt.warn_count||0)+1;
     await sb.from("profiles").update({warn_count:newCount}).eq("id",tgt.id);
-    // Auto-mute at 3 warnings (1 hour), auto-ban at 5
     let extra="";
-    if(newCount>=5){
-      await sb.from("profiles").update({banned:true}).eq("id",tgt.id);
-      await logAutomod(tgt.id,tgt.username,"auto_ban",`${newCount} warnings — last: ${reason}`);
-      extra=" (auto-banned after 5 warnings)";
-    } else if(newCount>=3){
-      const muteUntil=new Date(Date.now()+60*60*1000).toISOString();
-      await sb.from("profiles").update({muted_until:muteUntil}).eq("id",tgt.id);
-      await logAutomod(tgt.id,tgt.username,"auto_mute","3 warnings reached",muteUntil);
-      extra=" (auto-muted 1h)";
-    }
+    if(newCount>=5){await sb.from("profiles").update({banned:true}).eq("id",tgt.id);await logAutomod(tgt.id,tgt.username,"auto_ban",`${newCount} warnings — last: ${reason}`);extra=" (auto-banned after 5 warnings)";}
+    else if(newCount>=3){const muteUntil=new Date(Date.now()+60*60*1000).toISOString();await sb.from("profiles").update({muted_until:muteUntil}).eq("id",tgt.id);await logAutomod(tgt.id,tgt.username,"auto_mute","3 warnings reached",muteUntil);extra=" (auto-muted 1h)";}
     await logAutomod(tgt.id,tgt.username,"warn",reason);
     const pay={user_id:p.id||currentUserId,username:p.username,avatar_url:p.avatar_url,role:p.role};
     pay.text=`⚠️ **Warning ${newCount}/5** to @${tgt.username}: ${reason}${extra} — by ${p.username}`;
-    await insertMsg(pay);
-    showToast(`⚠️ Warned ${tgt.username} (${newCount}/5)${extra}`);
+    await insertMsg(pay);showToast(`⚠️ Warned ${tgt.username} (${newCount}/5)${extra}`);
   }},
-  {c:"/mute",    mod:true, fn:async(args,p)=>{
+  {c:"/mute",    mod:true,  desc:"Mute a user (minutes)", fn:async(args,p)=>{
     const[target,mins,...rest]=args.split(" ");const reason=rest.join(" ")||"No reason given";
     if(!target||!mins||isNaN(parseInt(mins))){showToast("Usage: /mute <username> <minutes> [reason]");return;}
     const{data:tgt}=await sb.from("profiles").select("id,username").eq("username",target.replace(/^@/,"")).maybeSingle();
@@ -861,10 +1198,9 @@ const CMDS=[
     await logAutomod(tgt.id,tgt.username,"mute",`${mins}m — ${reason}`,muteUntil);
     const pay={user_id:currentUserId,username:p.username,avatar_url:p.avatar_url,role:p.role};
     pay.text=`🔇 @${tgt.username} muted for ${mins} minute(s): ${reason} — by ${p.username}`;
-    await insertMsg(pay);
-    showToast(`🔇 Muted ${tgt.username} for ${mins}m`);
+    await insertMsg(pay);showToast(`🔇 Muted ${tgt.username} for ${mins}m`);
   }},
-  {c:"/unmute",  mod:true, fn:async(args,p)=>{
+  {c:"/unmute",  mod:true,  desc:"Unmute a user", fn:async(args,p)=>{
     const target=args.trim().replace(/^@/,"");if(!target){showToast("Usage: /unmute <username>");return;}
     const{data:tgt}=await sb.from("profiles").select("id,username").eq("username",target).maybeSingle();
     if(!tgt){showToast("❌ User not found.");return;}
@@ -872,7 +1208,7 @@ const CMDS=[
     await logAutomod(tgt.id,tgt.username,"unmute",`by ${p.username}`);
     showToast(`✅ Unmuted ${tgt.username}`);
   }},
-  {c:"/ban",     mod:true, fn:async(args,p)=>{
+  {c:"/ban",     mod:true,  desc:"Ban a user", fn:async(args,p)=>{
     const[target,...rest]=args.split(" ");const reason=rest.join(" ")||"No reason given";
     if(!target){showToast("Usage: /ban <username> [reason]");return;}
     const{data:tgt}=await sb.from("profiles").select("id,username,role").eq("username",target.replace(/^@/,"")).maybeSingle();
@@ -882,10 +1218,9 @@ const CMDS=[
     await logAutomod(tgt.id,tgt.username,"ban",`${reason} — by ${p.username}`);
     const pay={user_id:currentUserId,username:p.username,avatar_url:p.avatar_url,role:p.role};
     pay.text=`🚫 @${tgt.username} has been banned: ${reason} — by ${p.username}`;
-    await insertMsg(pay);
-    showToast(`🚫 Banned ${tgt.username}`);
+    await insertMsg(pay);showToast(`🚫 Banned ${tgt.username}`);
   }},
-  {c:"/unban",   mod:true, fn:async(args,p)=>{
+  {c:"/unban",   mod:true,  desc:"Unban a user", fn:async(args,p)=>{
     const target=args.trim().replace(/^@/,"");if(!target){showToast("Usage: /unban <username>");return;}
     const{data:tgt}=await sb.from("profiles").select("id,username").eq("username",target).maybeSingle();
     if(!tgt){showToast("❌ User not found.");return;}
@@ -893,28 +1228,30 @@ const CMDS=[
     await logAutomod(tgt.id,tgt.username,"unban",`by ${p.username}`);
     showToast(`✅ Unbanned ${tgt.username}`);
   }},
-  {c:"/promote", mod:true, fn:async(args,p)=>{
+  {c:"/promote", mod:true,  desc:"Promote user to mod", fn:async(args,p)=>{
     if(p.role!=="admin"){showToast("❌ Only admins can promote.");return;}
     const target=args.trim().replace(/^@/,"");
     await sb.from("profiles").update({role:"mod"}).eq("username",target);
     await logAutomod(null,target,"promote",`by ${p.username}`);
     showToast("✅ Promoted "+target+" to mod");
   }},
-  {c:"/demote",  mod:true, fn:async(args,p)=>{
+  {c:"/demote",  mod:true,  desc:"Demote mod to user", fn:async(args,p)=>{
     if(p.role!=="admin"){showToast("❌ Only admins can demote.");return;}
     const target=args.trim().replace(/^@/,"");
     await sb.from("profiles").update({role:"user"}).eq("username",target);
     await logAutomod(null,target,"demote",`by ${p.username}`);
     showToast("✅ Demoted "+target);
   }},
-  {c:"/announce",mod:true, fn:async(args,p,pay)=>{pay.text=`📢 **${args}**`;await insertMsg(pay);}},
-  {c:"/delete",  mod:true, fn:async(args)=>{const id=parseInt(args);if(id)await deleteMsg(id);}},
+  {c:"/announce",mod:true,  desc:"Post an announcement", fn:async(args,p,pay)=>{pay.text=`📢 **${args}**`;await insertMsg(pay);}},
+  {c:"/delete",  mod:true,  desc:"Delete message by ID", fn:async(args)=>{const id=parseInt(args);if(id)await deleteMsg(id);}},
 ];
+
 async function insertMsg(payload){
   if(activeRoom.type==="channel")payload.channel_id=activeRoom.id;else if(activeRoom.type==="server")payload.server_id=activeRoom.id;
   const{error}=await sb.from("messages").insert(payload);
   if(error){console.error("insertMsg failed:",error);showToast("❌ Could not send message: "+error.message);}
 }
+
 async function runCommand(text,p){
   const parts=text.split(" ");const cmd=parts[0].toLowerCase();const args=parts.slice(1).join(" ");
   const def=CMDS.find(c=>c.c===cmd);
@@ -988,7 +1325,6 @@ async function startDMWith(emailOrUsername){
 function openModal(id){document.getElementById(id)?.classList.remove("hidden");}
 function closeModal(id){document.getElementById(id)?.classList.add("hidden");}
 
-// Server create
 document.getElementById("railAddServer").onclick=()=>{if(!currentUserId){location.href="/account";return;}["sm-name","sm-icon","sm-desc","sm-pass"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});document.getElementById("sm-icon").value="🌐";document.getElementById("sm-err").textContent="";document.getElementById("serverModalTitle").textContent="Create Server";document.getElementById("sm-submit").textContent="Create";openModal("serverModal");};
 document.getElementById("sm-cancel").onclick=()=>closeModal("serverModal");
 document.getElementById("sm-submit").onclick=async()=>{
@@ -999,10 +1335,10 @@ document.getElementById("sm-submit").onclick=async()=>{
   if(error){document.getElementById("sm-err").textContent=error.message;btn.disabled=false;btn.textContent="Create";return;}
   await sb.from("channels").insert({name:"general",server_id:server.id,is_public:true,category:"TEXT CHANNELS"});
   await sb.from("server_members").insert({server_id:server.id,user_id:currentUserId});
+  joinedServerIds.add(server.id);
   closeModal("serverModal");btn.disabled=false;btn.textContent="Create";await buildRail();await enterServer(server);
 };
 
-// Edit server
 function openEditServerModal(server){
   document.getElementById("sm-name").value=server.name;document.getElementById("sm-icon").value=server.icon||"🌐";document.getElementById("sm-desc").value=server.description||"";document.getElementById("sm-pass").value="";document.getElementById("sm-err").textContent="";
   document.getElementById("serverModalTitle").textContent="Edit Server";const btn=document.getElementById("sm-submit");btn.textContent="Save";
@@ -1014,7 +1350,6 @@ function openEditServerModal(server){
   openModal("serverModal");
 }
 
-// Add channel
 function openAddChannelModal(server){
   document.getElementById("ch-name").value="";document.getElementById("ch-cat").value="TEXT CHANNELS";document.getElementById("ch-topic").value="";document.getElementById("ch-err").textContent="";
   document.getElementById("ch-create").dataset.serverId=server.id;openModal("channelModal");
@@ -1029,7 +1364,6 @@ document.getElementById("ch-create").onclick=async()=>{
   closeModal("channelModal");const{data:s}=await sb.from("servers").select("*").eq("id",sid).maybeSingle();if(s)await buildSidebar(s);
 };
 
-// DM modal
 document.getElementById("railDMs").onclick=async()=>{
   if(!currentUserId){location.href="/account";return;}
   showingDMs=!showingDMs;setActiveServer(null);await buildSidebar(null);
@@ -1039,31 +1373,16 @@ document.getElementById("dm-cancel").onclick=()=>closeModal("dmModal");
 document.getElementById("dm-start").onclick=async()=>await startDMWith(document.getElementById("dm-target").value.trim());
 document.getElementById("dm-target").onkeydown=e=>{if(e.key==="Enter")document.getElementById("dm-start").click();};
 
-// Mobile back
 document.getElementById("dcMobileBack").onclick=()=>document.getElementById("dcSidebar").classList.toggle("mobile-open");
 
-// Lightbox
 function openLightbox(src){document.getElementById("lightbox-img").src=src;document.getElementById("lightbox").classList.remove("hidden");}
 document.getElementById("lightbox").onclick=e=>{if(e.target===e.currentTarget)document.getElementById("lightbox").classList.add("hidden");};
 document.getElementById("lightbox-close").onclick=()=>document.getElementById("lightbox").classList.add("hidden");
 
-// Mobile sidebar toggle (hamburger in the rail)
 document.getElementById("sidebarToggle")?.addEventListener("click",()=>{
   document.getElementById("dcSidebar").classList.toggle("mobile-open");
 });
 
-// Server settings menu button — open edit modal if user owns the server
-document.getElementById("sb-server-menu")?.addEventListener("click",async()=>{
-  if(!activeRoom.serverId||!currentUserId)return;
-  const{data:server}=await sb.from("servers").select("*").eq("id",activeRoom.serverId).maybeSingle();
-  if(server&&(server.owner_id===currentUserId||currentProfile?.role==="admin")){
-    openEditServerModal(server);
-  }else{
-    showToast("Only the server owner can edit settings.");
-  }
-});
-
-// joinModal cancel/join buttons (legacy fallback — passcode gate handles inline)
 document.getElementById("jm-cancel")?.addEventListener("click",()=>closeModal("joinModal"));
 document.getElementById("jm-join")?.addEventListener("click",async()=>{
   const pass=document.getElementById("jm-pass")?.value.trim();
@@ -1084,29 +1403,79 @@ function startPresence(){
   if(!currentUserId)return;
   const presenceChan=sb.channel("presence-global",{config:{presence:{key:currentUserId}}});
   presenceChan
-    .on("presence",{event:"sync"},()=>{document.getElementById("onlineCount").textContent=Object.keys(presenceChan.presenceState()).length;})
+    .on("presence",{event:"sync"},()=>{
+      presenceState=presenceChan.presenceState();
+      const count=Object.keys(presenceState).length;
+      document.getElementById("onlineCount").textContent=count;
+      // If online panel is open, refresh it
+      if(!document.getElementById("online-panel")?.classList.contains("hidden"))renderOnlineList();
+    })
     .subscribe(async s=>{if(s==="SUBSCRIBED")await presenceChan.track({uid:currentUserId,username:currentProfile?.username});});
 }
 
 function trackUnread(msg){
+  if(msg.user_id===currentUserId)return;
   const t=msg.channel_id?"channel":msg.server_id?"server":msg.dm_id?"dm":"public";
   const id=msg.channel_id||msg.server_id||msg.dm_id||"public";
-  const key=`${t}:${id}`;if(key===getRoomKey(activeRoom)||msg.user_id===currentUserId)return;
+  const key=`${t}:${id}`;
+  if(key===getRoomKey(activeRoom))return;
   unreadCounts[key]=(unreadCounts[key]||0)+1;
-  document.querySelector(`.rail-server-icon[data-server-id="${msg.server_id}"]`)?.classList.add("unread");
-  if(!document.hasFocus()){const orig=document.title;let i=0;const ti=setInterval(()=>{document.title=i++%2===0?"💬 New message!":orig;if(i>6){clearInterval(ti);document.title=orig;}},700);}
+  // Badge on rail server icon
+  if(msg.server_id){
+    const railBtn=document.querySelector(`.rail-server-icon[data-server-id="${msg.server_id}"]`);
+    if(railBtn){
+      railBtn.classList.add("unread");
+      let pip=railBtn.querySelector(".rail-unread");
+      if(!pip){pip=document.createElement("span");pip.className="rail-unread";railBtn.appendChild(pip);}
+      const serverKey="server:"+msg.server_id;
+      unreadCounts[serverKey]=(unreadCounts[serverKey]||0)+1;
+      pip.textContent=unreadCounts[serverKey]>9?"9+":unreadCounts[serverKey];
+    }
+  }
+  // Badge on channel item
+  const chEl=document.querySelector(`[data-ch-id="${id}"]`);
+  if(chEl&&t==="channel"){
+    chEl.style.position="relative";
+    let badge=chEl.querySelector(".ch-unread-badge");
+    if(!badge){badge=document.createElement("span");badge.className="ch-unread-badge";chEl.appendChild(badge);}
+    badge.textContent=unreadCounts[key]>99?"99+":unreadCounts[key];
+  }
+  // Badge on DM item
+  const dmEl=document.querySelector(`[data-dm-id="${id}"]`);
+  if(dmEl&&t==="dm"){
+    dmEl.style.position="relative";
+    let badge=dmEl.querySelector(".ch-unread-badge");
+    if(!badge){badge=document.createElement("span");badge.className="ch-unread-badge";dmEl.appendChild(badge);}
+    badge.textContent=unreadCounts[key]>99?"99+":unreadCounts[key];
+  }
+  if(!document.hasFocus()){
+    const orig=document.title;let i=0;
+    const ti=setInterval(()=>{document.title=i++%2===0?"💬 New message!":orig;if(i>6){clearInterval(ti);document.title=orig;}},700);
+  }
 }
 
 async function markRoomRead(room){
   if(!currentUserId)return;
-  unreadCounts[getRoomKey(room)]=0;
-  document.querySelector(`.rail-server-icon[data-server-id="${room.serverId}"]`)?.classList.remove("unread");
-  try {
+  // Clear all unread for this room
+  const key=getRoomKey(room);
+  unreadCounts[key]=0;
+  if(room.serverId){
+    const serverKey="server:"+room.serverId;
+    // Only clear server unread if no other channels in this server have unread
+    const hasOtherUnread=Object.entries(unreadCounts).some(([k,v])=>k.startsWith("channel:")&&v>0&&k!==key);
+    if(!hasOtherUnread){
+      unreadCounts[serverKey]=0;
+      const railBtn=document.querySelector(`.rail-server-icon[data-server-id="${room.serverId}"]`);
+      railBtn?.classList.remove("unread");
+      railBtn?.querySelector(".rail-unread")?.remove();
+    }
+  }
+  try{
     await sb.from("last_read").upsert(
       {user_id:currentUserId,room_type:room.type,room_id:String(room.id),last_read_at:new Date().toISOString()},
       {onConflict:"user_id,room_type,room_id"}
     );
-  } catch(e) { console.warn("markRoomRead:",e); }
+  }catch(e){console.warn("markRoomRead:",e);}
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1144,9 +1513,10 @@ function updateUserChip(){
     await buildRail();
     await buildSidebar(null);
     switchRoom({type:"public",id:"public",name:"general",icon:"#",serverName:"360 Chat",serverId:null});
-    // Sync notification system with initial room (notifications.js loaded after us, so defer briefly)
     setTimeout(()=>window.ChatNotif?.onRoomSwitch(activeRoom),0);
     startPresence();
+    // Handle invite code in URL
+    await handleInviteCode();
     sb.auth.onAuthStateChange(async(_,session)=>{
       currentUserId=session?.user?.id||null;
       currentProfile=currentUserId?await getProfile(currentUserId):null;
