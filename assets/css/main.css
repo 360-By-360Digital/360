@@ -4,6 +4,17 @@
    ============================================================ */
 
 /* ============================================================
+   DIDACT GOTHIC — site-wide font
+   ============================================================ */
+@font-face {
+  font-family: "DidactGothic";
+  src: url("/assets/DidactGothic-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================
    ROOT VARIABLES
    ============================================================ */
 :root {
@@ -36,7 +47,7 @@ body.theme-mono     { --a: #6b7280; --a2: #9ca3af; }
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: "DidactGothic", "Inter", system-ui, sans-serif;
 }
 
 body {
@@ -353,7 +364,7 @@ body.dark .oauth-btn { background: rgba(255,255,255,.05); color: var(--txtd); }
   top: 12px; right: 12px;
   display: flex;
   gap: 10px;
-  z-index: 50;
+  z-index: 200;
 }
 .auth-btn {
   padding: 8px 14px;
