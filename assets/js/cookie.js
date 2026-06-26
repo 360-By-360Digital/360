@@ -19,7 +19,7 @@
       </div>
       <div class="cookie-actions">
         <button id="cookie-accept">Got it</button>
-        <a href="/privacypolicy.html" class="cookie-link">Privacy Policy</a>
+        <a href="/privacypolicy" class="cookie-link">Privacy Policy</a>
       </div>
     </div>
   `;

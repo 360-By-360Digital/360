@@ -1,14 +1,17 @@
 /* ============================================================
-   360 — MAIN.JS V.2.0.3
+   360 — MAIN.JS V.3.0.0
    User chip with Gravatar + initials fallback, full dropdown
    ============================================================ */
 
 //CHANGE THE FOLLOWING TO CHANGE ALL THE PAGE'S VERSION!!
-const version = "V.2.0.3";
+const version = "3.0.0";
 
 //CHANGES THE FOOTER IN ALL PAGES!!
 const _sidebarVer = document.getElementById("sidebar-ver");
-if (_sidebarVer) _sidebarVer.textContent = "© " + new Date().getFullYear() + " 360 INC. · " + version;
+if (_sidebarVer) _sidebarVer.textContent = "© " + new Date().getFullYear() + " 360 INC. · " + "v." + version;
+
+//Get's the current page's URL (Not including domain)
+let currentUrl = window.location.pathname + window.location.search + window.location.hash;
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -154,8 +157,10 @@ async function buildUserChip(user) {
      const confirmed = await confirmSignOut();
      if (!confirmed) return;
    
+     const returnTo = window.location.pathname + window.location.search;
      await supabaseClient.auth.signOut();
-     location.href = "/accounts?login&from=logout";
+     // Return to the same page — auth gates will show sign-in prompt if needed
+     location.href = returnTo;
    });
 }
 
@@ -278,8 +283,8 @@ function closeAuth() {
   if (authError) authError.textContent = "";
 }
 
-if (signInBtn) signInBtn.onclick = () => location.href = "/accounts.html?signin";
-if (signUpBtn) signUpBtn.onclick = () => location.href = "/accounts.html?signup";
+if (signInBtn) signInBtn.onclick = () => location.href = "/account?signin&from=" + currentURL;
+if (signUpBtn) signUpBtn.onclick = () => location.href = "/account?signup&from=" + currentURL;
 if (authCloseBtn) authCloseBtn.onclick = closeAuth;
 
 if (authPopup) {
@@ -304,8 +309,11 @@ if (authLoginBtn) {
     const password = authPassword?.value.trim();
     if (!email || !password) { if (authError) authError.textContent = "Email and password required."; return; }
     const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) { if (authError) authError.textContent = error.message; }
-    else { closeAuth(); updateAuthUI(); }
+    if (error) {
+      if (authError) authError.textContent = error.message.includes("Email not confirmed")
+        ? "Please confirm your email first — check your inbox."
+        : error.message;
+    } else { closeAuth(); updateAuthUI(); }
   };
 }
 
@@ -331,13 +339,14 @@ if (googleBtn) {
 
 if (signOutBtn) {
   signOutBtn.onclick = async () => {
+    const returnTo = window.location.pathname + window.location.search;
     await supabaseClient.auth.signOut();
-    location.href = "/accounts.html?login&from=logout";
+    location.href = returnTo;
   };
 }
 
 async function updateAuthUI() {
-  // accounts.html manages its own auth UI — skip the chip there
+  // /account manages its own auth UI — skip the chip there
   if (window.SKIP_AUTH_CHIP) return;
 
   const { data: { session } } = await supabaseClient.auth.getSession();
@@ -361,7 +370,7 @@ updateAuthUI();
 
 // React to auth state changes (e.g. OAuth redirect)
 supabaseClient.auth.onAuthStateChange((event, session) => {
-  // accounts.html manages its own auth UI — skip the chip there
+  // /account manages its own auth UI — skip the chip there
   if (window.SKIP_AUTH_CHIP) return;
   // INITIAL_SESSION is handled by updateAuthUI() above — skip it here
   // TOKEN_REFRESHED, USER_UPDATED etc. don't need a chip rebuild
