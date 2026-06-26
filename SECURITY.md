@@ -13,6 +13,8 @@ currently being supported with security updates.
 | 2.0.1   | :white_check_mark: |
 | 2.0.2   | :white_check_mark: |
 | 2.0.3   | :white_check_mark: |
+| 3.0     | :white_check_mark: |
+## As of now, all versions from 1.0 - 3.0 recieve security updates and are intended to forever.
 
 ## Reporting a Vulnerability
 
