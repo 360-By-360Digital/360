@@ -718,6 +718,7 @@
 
   </div>
 
+  <script>
   const PROXY = "https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/zone-groq-proxy";
   const MODEL = "llama-3.1-8b-instant";
 
@@ -1155,6 +1156,415 @@
 
   // Init converter
   updateUnitLists();
+  </script>
+
+  <script>
+  /* =============================================================
+     360 ZONE — GOOGLE CLASSROOM INTEGRATION
+  ============================================================= */
+
+  // ── Config ──────────────────────────────────────────────────
+  const GC_SCOPES = [
+    "https://www.googleapis.com/auth/classroom.courses.readonly",
+    "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
+    "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
+    "https://www.googleapis.com/auth/classroom.announcements.readonly",
+    "https://www.googleapis.com/auth/classroom.student-submissions.me.readonly",
+    "https://www.googleapis.com/auth/userinfo.profile",
+    "https://www.googleapis.com/auth/userinfo.email",
+  ].join(" ");
+
+  let gcToken       = null;
+  let gcTokenClient = null;
+  let gcCourses     = [];
+  let gcAllWork     = [];   // all coursework across courses
+  let gcAllAnnounce = [];
+  let gcUser        = null;
+
+  // Persist client ID across page loads
+  let gcClientId = localStorage.getItem("gc_client_id") || "";
+
+  function getClientId() { return localStorage.getItem("gc_client_id") || ""; }
+
+  // ── UI bootstrap ────────────────────────────────────────────
+  function gcInit() {
+    const savedId = getClientId();
+    if (savedId) document.getElementById("gc-client-id-input").value = savedId;
+    const savedToken = sessionStorage.getItem("gc_token");
+    if (savedToken) {
+      gcToken = savedToken;
+      gcShowDashboard();
+    }
+    if (savedId) gcInitTokenClient(savedId);
+  }
+
+  document.getElementById("gc-client-save-btn").addEventListener("click", () => {
+    const id = document.getElementById("gc-client-id-input").value.trim();
+    if (!id) { gcClientStatus("Please enter a Client ID", "red"); return; }
+    localStorage.setItem("gc_client_id", id);
+    gcClientStatus("✅ Client ID saved! Click 'Sign in with Google'.", "green");
+    gcInitTokenClient(id);
+  });
+
+  function gcClientStatus(msg, color) {
+    const el = document.getElementById("gc-client-status");
+    el.textContent = msg;
+    el.style.color = color === "red" ? "#ef4444" : "#10b981";
+  }
+
+  function gcInitTokenClient(clientId) {
+    if (!window.google?.accounts?.oauth2) {
+      // GIS not ready yet — retry
+      setTimeout(() => gcInitTokenClient(clientId), 800);
+      return;
+    }
+    gcTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: GC_SCOPES,
+      callback: (resp) => {
+        if (resp.error) { gcShowError("Auth failed: " + resp.error); return; }
+        gcToken = resp.access_token;
+        sessionStorage.setItem("gc_token", gcToken);
+        gcShowDashboard();
+      },
+    });
+  }
+
+  document.getElementById("gc-connect-btn").addEventListener("click", () => {
+    const id = getClientId();
+    if (!id) { gcClientStatus("Save your Client ID first.", "red"); return; }
+    if (!gcTokenClient) { gcInitTokenClient(id); setTimeout(() => gcTokenClient?.requestAccessToken(), 900); return; }
+    gcTokenClient.requestAccessToken({ prompt: "consent" });
+  });
+
+  document.getElementById("gc-disconnect-btn").addEventListener("click", () => {
+    if (gcToken) google.accounts.oauth2.revoke(gcToken, () => {});
+    gcToken = null;
+    sessionStorage.removeItem("gc_token");
+    gcCourses = []; gcAllWork = []; gcAllAnnounce = []; gcUser = null;
+    document.getElementById("gc-dashboard").style.display = "none";
+    document.getElementById("gc-connect-screen").style.display = "block";
+    document.getElementById("gc-unread-badge").style.display = "none";
+  });
+
+  // ── Dashboard ───────────────────────────────────────────────
+  function gcShowDashboard() {
+    document.getElementById("gc-connect-screen").style.display = "none";
+    document.getElementById("gc-dashboard").style.display = "block";
+    gcLoadAll();
+  }
+
+  function gcShowView(view, btn) {
+    ["overview","assignments","courses","announcements"].forEach(v => {
+      document.getElementById("gcv-" + v).style.display = v === view ? "block" : "none";
+    });
+    document.querySelectorAll(".gc-view-tab").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  }
+
+  function gcShowError(msg) {
+    document.getElementById("gc-overview-content").innerHTML =
+      `<div class="gc-err">⚠️ ${msg}. Try disconnecting and signing in again.</div>`;
+  }
+
+  // ── API helpers ──────────────────────────────────────────────
+  async function gcFetch(url) {
+    if (!gcToken) throw new Error("Not authenticated");
+    const res = await fetch("https://classroom.googleapis.com" + url, {
+      headers: { "Authorization": "Bearer " + gcToken }
+    });
+    if (res.status === 401) {
+      sessionStorage.removeItem("gc_token");
+      gcToken = null;
+      throw new Error("Session expired — please sign in again");
+    }
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+    return res.json();
+  }
+
+  async function gcFetchUser() {
+    const res = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: { "Authorization": "Bearer " + gcToken }
+    });
+    return res.json();
+  }
+
+  // ── Load everything ──────────────────────────────────────────
+  async function gcLoadAll() {
+    try {
+      // User info
+      const user = await gcFetchUser();
+      gcUser = user;
+      const initial = (user.name || user.email || "?")[0].toUpperCase();
+      document.getElementById("gc-user-initial").textContent = initial;
+      document.getElementById("gc-user-name").textContent = user.name || user.email || "Student";
+
+      // Courses
+      const coursesData = await gcFetch("/v1/courses?courseStates=ACTIVE&pageSize=50");
+      gcCourses = coursesData.courses || [];
+      document.getElementById("gc-stat-courses").textContent = gcCourses.length;
+
+      // Load coursework + announcements in parallel
+      const [workResults, announceResults] = await Promise.all([
+        Promise.all(gcCourses.map(c =>
+          gcFetch(`/v1/courses/${c.id}/courseWork?courseWorkStates=PUBLISHED&pageSize=100`)
+            .then(d => (d.courseWork || []).map(w => ({ ...w, courseName: c.name, courseSection: c.section })))
+            .catch(() => [])
+        )),
+        Promise.all(gcCourses.map(c =>
+          gcFetch(`/v1/courses/${c.id}/announcements?announcementStates=PUBLISHED&pageSize=20`)
+            .then(d => (d.announcements || []).map(a => ({ ...a, courseName: c.name })))
+            .catch(() => [])
+        )),
+      ]);
+
+      gcAllWork     = workResults.flat().sort((a, b) => gcDueMs(a) - gcDueMs(b));
+      gcAllAnnounce = announceResults.flat().sort((a, b) => new Date(b.creationTime) - new Date(a.creationTime));
+
+      // Stats
+      const now = Date.now();
+      const week = now + 7 * 24 * 60 * 60 * 1000;
+      const overdue = gcAllWork.filter(w => gcDueMs(w) < now && gcDueMs(w) > 0);
+      const dueSoon = gcAllWork.filter(w => gcDueMs(w) >= now && gcDueMs(w) <= week);
+      document.getElementById("gc-stat-due").textContent = dueSoon.length;
+      document.getElementById("gc-stat-overdue").textContent = overdue.length;
+
+      // Unread badge
+      if (overdue.length > 0) {
+        const badge = document.getElementById("gc-unread-badge");
+        badge.textContent = overdue.length;
+        badge.style.display = "inline";
+      }
+
+      gcRenderOverview(overdue, dueSoon);
+      gcRenderAllAssignments();
+      gcRenderCourses();
+      gcRenderAnnouncements();
+
+    } catch (e) {
+      gcShowError(e.message);
+    }
+  }
+
+  // ── Due date helpers ─────────────────────────────────────────
+  function gcDueMs(work) {
+    const d = work.dueDate;
+    const t = work.dueTime;
+    if (!d) return 0;
+    return new Date(d.year, d.month - 1, d.day, t?.hours || 23, t?.minutes || 59).getTime();
+  }
+
+  function gcDueLabel(work) {
+    const ms = gcDueMs(work);
+    if (!ms) return { text: "No due date", cls: "later" };
+    const now = Date.now();
+    const diff = ms - now;
+    const days = Math.floor(diff / 86400000);
+    const d = work.dueDate;
+    const dateStr = new Date(d.year, d.month - 1, d.day).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    if (diff < 0)         return { text: "Overdue · " + dateStr, cls: "overdue" };
+    if (days === 0)       return { text: "Due today",           cls: "today" };
+    if (days === 1)       return { text: "Due tomorrow",        cls: "soon" };
+    if (days <= 7)        return { text: "Due " + dateStr,      cls: "soon" };
+    return { text: "Due " + dateStr, cls: "later" };
+  }
+
+  function gcAssignmentClass(work) {
+    const ms = gcDueMs(work);
+    if (!ms) return "";
+    const diff = ms - Date.now();
+    if (diff < 0) return "overdue";
+    if (diff < 2 * 86400000) return "due-soon";
+    return "";
+  }
+
+  // ── Render functions ─────────────────────────────────────────
+  function gcAssignmentHTML(work) {
+    const due   = gcDueLabel(work);
+    const cls   = gcAssignmentClass(work);
+    const title = work.title || "Untitled";
+    const desc  = (work.description || "").slice(0, 200);
+    const link  = work.alternateLink || "#";
+    return `
+      <div class="gc-assignment ${cls}">
+        <div class="gc-assignment-top">
+          <div>
+            <div class="gc-assignment-course">${escHtmlGc(work.courseName || "Course")}</div>
+            <div class="gc-assignment-title">${escHtmlGc(title)}</div>
+            ${desc ? `<div class="gc-assignment-desc">${escHtmlGc(desc)}</div>` : ""}
+          </div>
+          <div class="gc-due-chip ${due.cls}">${due.text}</div>
+        </div>
+        <div class="gc-assignment-actions">
+          <button class="gc-action-btn" onclick="gcUseInZone('builder','${escHtmlGc(work.courseName || "")}','${escHtmlGc(title)}')">✨ Build Paragraph</button>
+          <button class="gc-action-btn" onclick="gcUseInZone('evidence','${escHtmlGc(work.courseName || "")}','${escHtmlGc(title)}')">🔍 Find Evidence</button>
+          <button class="gc-action-btn" onclick="gcAIAnalyze('${escHtmlGc(title)}','${escHtmlGc(desc)}')">🤖 AI Analyze</button>
+          ${link !== "#" ? `<a href="${escHtmlGc(link)}" target="_blank" rel="noopener" style="text-decoration:none;"><button class="gc-action-btn">↗ Open</button></a>` : ""}
+        </div>
+      </div>`;
+  }
+
+  function gcRenderOverview(overdue, dueSoon) {
+    const wrap = document.getElementById("gc-overview-content");
+    let html = "";
+
+    if (overdue.length) {
+      html += `<div class="gc-section-title">⚠️ Overdue <span class="gc-badge red">${overdue.length}</span></div>`;
+      html += overdue.map(gcAssignmentHTML).join("");
+    }
+
+    if (dueSoon.length) {
+      html += `<div class="gc-section-title">📅 Due This Week <span class="gc-badge">${dueSoon.length}</span></div>`;
+      html += dueSoon.map(gcAssignmentHTML).join("");
+    }
+
+    if (!overdue.length && !dueSoon.length) {
+      html = `<div style="text-align:center;padding:2rem;color:var(--sub);">
+        <div style="font-size:2.5rem;margin-bottom:.5rem;">✅</div>
+        <div style="font-weight:700;">All caught up!</div>
+        <div style="font-size:.85rem;margin-top:.25rem;">No assignments due this week.</div>
+      </div>`;
+    }
+
+    // Recent announcements preview
+    if (gcAllAnnounce.length) {
+      html += `<div class="gc-section-title">📢 Recent Announcements</div>`;
+      html += gcAllAnnounce.slice(0, 3).map(gcAnnouncementHTML).join("");
+    }
+
+    wrap.innerHTML = html;
+  }
+
+  function gcRenderAllAssignments() {
+    const wrap = document.getElementById("gc-assignments-content");
+    if (!gcAllWork.length) { wrap.innerHTML = `<div class="gc-loading">No assignments found.</div>`; return; }
+    const now = Date.now();
+    const overdue = gcAllWork.filter(w => gcDueMs(w) < now && gcDueMs(w) > 0);
+    const upcoming = gcAllWork.filter(w => gcDueMs(w) >= now || !gcDueMs(w));
+    let html = "";
+    if (overdue.length) {
+      html += `<div class="gc-section-title">⚠️ Overdue</div>` + overdue.map(gcAssignmentHTML).join("");
+    }
+    if (upcoming.length) {
+      html += `<div class="gc-section-title">📋 Upcoming (${upcoming.length})</div>` + upcoming.map(gcAssignmentHTML).join("");
+    }
+    wrap.innerHTML = html;
+  }
+
+  function gcRenderCourses() {
+    const grid = document.getElementById("gc-courses-grid");
+    if (!gcCourses.length) { grid.innerHTML = `<div class="gc-loading">No active courses.</div>`; return; }
+    const EMOJIS = ["📘","📗","📙","📕","📓","📔","📒","📃"];
+    grid.innerHTML = gcCourses.map((c, i) => {
+      const work = gcAllWork.filter(w => w.courseId === c.id || (w.courseName === c.name));
+      const now  = Date.now();
+      const due  = work.filter(w => gcDueMs(w) >= now).length;
+      return `
+        <div class="gc-course-card" onclick="gcFilterByCourse('${c.id}','${escHtmlGc(c.name)}')">
+          <div class="gc-course-emoji">${EMOJIS[i % EMOJIS.length]}</div>
+          <div class="gc-course-name">${escHtmlGc(c.name)}</div>
+          ${c.section ? `<div class="gc-course-section">${escHtmlGc(c.section)}</div>` : ""}
+          <div class="gc-course-meta">
+            ${due ? `<span class="gc-course-chip">${due} upcoming</span>` : `<span class="gc-course-chip">Up to date</span>`}
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  function gcAnnouncementHTML(a) {
+    const date = a.creationTime ? new Date(a.creationTime).toLocaleDateString(undefined, { month:"short", day:"numeric" }) : "";
+    return `
+      <div class="gc-announcement">
+        <div class="gc-announcement-course">${escHtmlGc(a.courseName || "")}</div>
+        <div class="gc-announcement-text">${escHtmlGc(a.text || "")}</div>
+        ${date ? `<div class="gc-announcement-time">${date}</div>` : ""}
+      </div>`;
+  }
+
+  function gcRenderAnnouncements() {
+    const wrap = document.getElementById("gc-announcements-content");
+    if (!gcAllAnnounce.length) { wrap.innerHTML = `<div class="gc-loading">No announcements.</div>`; return; }
+    wrap.innerHTML = gcAllAnnounce.map(gcAnnouncementHTML).join("");
+  }
+
+  // ── Course filter ────────────────────────────────────────────
+  function gcFilterByCourse(courseId, courseName) {
+    const filtered = gcAllWork.filter(w => w.courseId === courseId || w.courseName === courseName);
+    const wrap = document.getElementById("gc-assignments-content");
+    wrap.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
+        <button class="hbtn" onclick="gcShowView('assignments',document.querySelectorAll('.gc-view-tab')[1]);gcRenderAllAssignments()">← All courses</button>
+        <strong>${escHtmlGc(courseName)}</strong>
+      </div>` +
+      (filtered.length ? filtered.map(gcAssignmentHTML).join("") : "<div class='gc-loading'>No assignments for this course.</div>");
+    gcShowView("assignments", document.querySelectorAll(".gc-view-tab")[1]);
+  }
+
+  // ── Use in Zone actions ──────────────────────────────────────
+  function gcUseInZone(tool, course, title) {
+    const tabMap = { builder: 0, grammar: 1, evidence: 3 };
+    const tabs = document.querySelectorAll(".tab");
+    if (tabs[tabMap[tool]]) tabs[tabMap[tool]].click();
+
+    if (tool === "builder") {
+      const claimEl = document.getElementById("pClaim");
+      if (claimEl) claimEl.value = title;
+      const evEl = document.getElementById("pEvidence");
+      if (evEl) evEl.value = `Course: ${course}\nAssignment: ${title}\n\n[Paste your evidence or notes here]`;
+    } else if (tool === "grammar") {
+      const inp = document.getElementById("gIn");
+      if (inp) inp.value = `[Paste your draft for "${title}" here]`;
+    } else if (tool === "evidence") {
+      const claim = document.getElementById("eClaim");
+      if (claim) claim.value = title;
+      const chunks = document.getElementById("eChunks");
+      if (chunks) chunks.value = `[Paste evidence for "${title}" here, one per line]`;
+    }
+    document.querySelector(`#${tool}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // ── AI analyze assignment ────────────────────────────────────
+  async function gcAIAnalyze(title, description) {
+    const prompt = `A student has this assignment:
+Title: "${title}"
+${description ? `Description: "${description}"` : ""}
+
+Please:
+1. Summarize what is being asked in 1–2 sentences
+2. Suggest 3 strong thesis/claim ideas
+3. List 3 helpful approaches or steps to complete it
+4. Note any common mistakes to avoid
+
+Keep it concise and student-friendly.`;
+    const overviewWrap = document.getElementById("gc-overview-content");
+    const existingAnalysis = document.getElementById("gc-ai-analysis");
+    if (existingAnalysis) existingAnalysis.remove();
+    const box = document.createElement("div");
+    box.id = "gc-ai-analysis";
+    box.style.cssText = "margin-top:1rem;padding:16px;background:var(--bg);border:1px solid var(--accent);border-radius:12px;";
+    box.innerHTML = `<div style="font-size:.8rem;font-weight:800;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">🤖 AI Analysis — ${escHtmlGc(title)}</div><div style="color:var(--sub);font-size:.85rem;">Analyzing…</div>`;
+    overviewWrap.prepend(box);
+    box.scrollIntoView({ behavior: "smooth", block: "start" });
+    try {
+      const result = await ai(prompt);
+      box.innerHTML = `<div style="font-size:.8rem;font-weight:800;color:var(--accent);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;">🤖 AI Analysis — ${escHtmlGc(title)}</div><div style="font-size:.88rem;line-height:1.65;white-space:pre-wrap;color:var(--text);">${escHtmlGc(result)}</div><button style="margin-top:10px;padding:5px 14px;border-radius:999px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:.8rem;font-family:inherit;color:var(--sub);" onclick="this.closest('#gc-ai-analysis').remove()">Dismiss</button>`;
+    } catch (e) {
+      box.innerHTML = `<div class="gc-err">AI error: ${escHtmlGc(e.message)}</div>`;
+    }
+  }
+
+  // ── Utility ──────────────────────────────────────────────────
+  function escHtmlGc(s) {
+    return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+
+  // ── Auto-init when Classroom tab is clicked ──────────────────
+  document.getElementById("classroomTab").addEventListener("click", () => {
+    if (!document.getElementById("gc-connect-screen").dataset.inited) {
+      document.getElementById("gc-connect-screen").dataset.inited = "1";
+      gcInit();
+    }
+  });
   </script>
 </body>
 </html>
