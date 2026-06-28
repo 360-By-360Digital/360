@@ -19,7 +19,7 @@
 <body class="dc-body">
 <div class="cursor-dot"></div><div class="cursor-trail"></div><div class="cursor-crosshair"></div><div class="cursor-blob"></div>
 
-<!-- Platform-wide nav (slides in over the Discord layout; toggle lives in the rail) -->
+<!-- Platform-wide nav (slides in over the Discord layout) -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header"><div class="logo-mark"></div><button id="settingsBtn">⚙</button></div>
   <nav class="nav-list">
@@ -52,7 +52,7 @@
   <div class="settings-label" style="margin-top:20px;">Mode</div>
   <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
     <span style="font-size:14px;">Dark mode</span>
-    <input type="checkbox" id="darkToggle" />
+    <input type="checkbox" id="darkToggle"/>
   </label>
   <h3 style="margin-top:20px;">Cursor</h3>
   <div class="settings-label">Style</div>
@@ -66,59 +66,65 @@
   </div>
   <div class="cursor-color-row">
     <label>Cursor color</label>
-    <input type="color" id="cursorColorPicker" value="#3b82f6" />
+    <input type="color" id="cursorColorPicker" value="#3b82f6"/>
     <button id="cursorColorReset">Reset</button>
   </div>
 </div>
 
-<!-- main.js mounts the user-chip here; kept in the DOM as a fixed-position
-     anchor so it never falls back to appending onto <body> (which would
-     become an unwanted flex child of .dc-body and break the 3-panel layout).
-     Hidden in Discord mode since the rail's own avatar (railUser) already
-     covers identity/sign-in. -->
+<!-- auth-top-right: kept in DOM so main.js doesn't append chip onto <body> flex row -->
 <div class="auth-top-right">
   <button id="signInBtn" class="auth-btn">Sign In</button>
   <button id="signUpBtn" class="auth-btn">Sign Up</button>
   <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
 </div>
 
-<!-- Context menu -->
+<!-- ═══════════════════════════════════════════════════
+     OVERLAYS & PANELS (outside the 3-column layout)
+═══════════════════════════════════════════════════ -->
+
+<!-- Right-click context menu -->
 <div id="ctx-menu" class="ctx-menu hidden">
   <div class="ctx-item" id="ctx-reply">↩ Reply</div>
   <div class="ctx-item" id="ctx-react">😊 Add Reaction</div>
-  <div class="ctx-item" id="ctx-thread">🧵 Create Thread</div>
+  <div class="ctx-item" id="ctx-thread">🧵 Open Thread</div>
   <div class="ctx-item" id="ctx-pin">📌 Pin Message</div>
   <div class="ctx-item" id="ctx-copy">📋 Copy Text</div>
   <div class="ctx-sep"></div>
-  <div class="ctx-item danger" id="ctx-delete">🗑 Delete</div>
+  <div class="ctx-item danger" id="ctx-delete" style="display:none;">🗑 Delete</div>
 </div>
 
-<!-- Reaction picker (emoji quick-pick) -->
+<!-- Reaction emoji quick-pick -->
 <div id="reaction-picker" class="reaction-picker hidden"></div>
 
-<!-- Thread panel (slides in from right) -->
+<!-- Thread panel (fixed, slides from right) -->
 <div id="thread-panel" class="thread-panel hidden">
   <div class="thread-header">
-    <span class="thread-title">Thread</span>
-    <button id="thread-close">✕</button>
+    <span>🧵 Thread</span>
+    <button id="thread-close" title="Close">✕</button>
   </div>
   <div id="thread-root-msg" class="thread-root-msg"></div>
   <div id="thread-messages" class="thread-messages"></div>
   <div class="thread-input-row">
     <textarea id="thread-input" placeholder="Reply in thread…" rows="1" maxlength="2000"></textarea>
-    <button id="thread-send">↑</button>
+    <button id="thread-send" title="Send reply">↑</button>
   </div>
 </div>
 
 <!-- Pins panel -->
 <div id="pins-panel" class="pins-panel hidden">
-  <div class="pins-header"><span>📌 Pinned Messages</span><button id="pins-close">✕</button></div>
+  <div class="pins-header">
+    <span>📌 Pinned Messages</span>
+    <button id="pins-close" title="Close">✕</button>
+  </div>
   <div id="pins-list" class="pins-list"></div>
 </div>
 
 <!-- Members panel -->
 <div id="members-panel" class="members-panel hidden">
-  <div class="members-header"><span>Members</span><button id="members-close">✕</button></div>
+  <div class="members-header">
+    <span>👥 Members</span>
+    <button id="members-close" title="Close">✕</button>
+  </div>
   <div id="members-list" class="members-list"></div>
 </div>
 
@@ -136,14 +142,40 @@
   </div>
 </div>
 
-<!-- Create/Edit Server modal -->
+<!-- Lightbox -->
+<div id="lightbox" class="hidden">
+  <img id="lightbox-img" src="" alt=""/>
+  <button id="lightbox-close" title="Close">✕</button>
+</div>
+
+<!-- ── MODALS ──────────────────────────────────────── -->
+
+<!-- Create / Edit Server -->
 <div class="dc-modal-overlay hidden" id="serverModal">
   <div class="dc-modal">
-    <h3 id="serverModalTitle">Create Server</h3>
+    <h2 id="serverModalTitle">Create Server</h2>
+
+    <!-- Icon upload widget — JS also builds this via openServerModal(),
+         but the hidden file input must exist in DOM from the start -->
+    <div id="sm-icon-wrap" style="display:flex;align-items:flex-start;gap:16px;margin-bottom:18px;">
+      <div class="server-icon-preview" id="sm-icon-preview" title="Click to upload icon">
+        <span style="font-size:32px;">🌐</span>
+        <div class="icon-overlay">📷</div>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px;color:var(--dc-text);">Server Icon</div>
+        <div style="font-size:12px;color:var(--dc-muted);margin-bottom:8px;">Max 1 MB · JPG, PNG, GIF, WebP</div>
+        <input type="file" id="sm-icon-file" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;"/>
+        <label for="sm-icon-file" style="cursor:pointer;font-size:13px;color:var(--a);font-weight:600;padding:6px 12px;border:1.5px solid var(--a);border-radius:7px;">Upload Image</label>
+      </div>
+    </div>
+
     <div class="dc-field"><label>Server Name</label><input id="sm-name" maxlength="32" placeholder="My Server"/></div>
-    <div class="dc-field"><label>Icon Emoji</label><input id="sm-icon" maxlength="2" placeholder="🌐" style="width:60px;text-align:center;font-size:22px;"/></div>
     <div class="dc-field"><label>Description</label><input id="sm-desc" maxlength="120" placeholder="What's this server about?"/></div>
-    <div class="dc-field"><label>Passcode <span style="font-weight:400;font-size:11px;">(leave blank for public)</span></label><input id="sm-pass" type="password" placeholder="Optional passcode"/></div>
+    <div class="dc-field">
+      <label>Passcode <span style="font-weight:400;font-size:11px;">(leave blank for public)</span></label>
+      <input id="sm-pass" type="password" placeholder="Optional passcode"/>
+    </div>
     <p class="dc-modal-err" id="sm-err"></p>
     <div class="dc-modal-btns">
       <button class="dc-btn-sec" id="sm-cancel">Cancel</button>
@@ -152,12 +184,15 @@
   </div>
 </div>
 
-<!-- Join Server modal -->
+<!-- Join Server (passcode gate fallback modal) -->
 <div class="dc-modal-overlay hidden" id="joinModal">
   <div class="dc-modal">
-    <h3>Join Server</h3>
-    <p id="jm-desc" style="font-size:13px;color:var(--mut);margin-bottom:14px;"></p>
-    <div class="dc-field" id="jm-pass-wrap"><label>Passcode</label><input id="jm-pass" type="password"/></div>
+    <h2>Join Server</h2>
+    <p id="jm-desc" style="font-size:13px;color:var(--dc-muted);margin-bottom:14px;"></p>
+    <div class="dc-field" id="jm-pass-wrap">
+      <label>Passcode</label>
+      <input id="jm-pass" type="password"/>
+    </div>
     <p class="dc-modal-err" id="jm-err"></p>
     <div class="dc-modal-btns">
       <button class="dc-btn-sec" id="jm-cancel">Cancel</button>
@@ -166,11 +201,14 @@
   </div>
 </div>
 
-<!-- New DM modal -->
+<!-- New DM -->
 <div class="dc-modal-overlay hidden" id="dmModal">
   <div class="dc-modal">
-    <h3>New Direct Message</h3>
-    <div class="dc-field"><label>Email or @Username</label><input id="dm-target" placeholder="someone@example.com or @username"/></div>
+    <h2>New Direct Message</h2>
+    <div class="dc-field">
+      <label>Email or @Username</label>
+      <input id="dm-target" placeholder="someone@example.com or @username" autocomplete="off"/>
+    </div>
     <p class="dc-modal-err" id="dm-err"></p>
     <div class="dc-modal-btns">
       <button class="dc-btn-sec" id="dm-cancel">Cancel</button>
@@ -179,31 +217,34 @@
   </div>
 </div>
 
-<!-- Add Channel modal -->
+<!-- Add Channel -->
 <div class="dc-modal-overlay hidden" id="channelModal">
   <div class="dc-modal">
-    <h3>Add Channel</h3>
+    <h2>Add Channel</h2>
     <div class="dc-field"><label>Channel Name</label><input id="ch-name" placeholder="general" maxlength="32"/></div>
     <div class="dc-field"><label>Category</label><input id="ch-cat" placeholder="TEXT CHANNELS" maxlength="32"/></div>
-    <div class="dc-field"><label>Topic <span style="font-weight:400;font-size:11px;">(optional)</span></label><input id="ch-topic" placeholder="What's this channel for?" maxlength="120"/></div>
+    <div class="dc-field">
+      <label>Topic <span style="font-weight:400;font-size:11px;">(optional)</span></label>
+      <input id="ch-topic" placeholder="What's this channel for?" maxlength="120"/>
+    </div>
     <p class="dc-modal-err" id="ch-err"></p>
     <div class="dc-modal-btns">
       <button class="dc-btn-sec" id="ch-cancel">Cancel</button>
-      <button class="dc-btn-pri" id="ch-create">Create</button>
+      <button class="dc-btn-pri" id="ch-create">Create Channel</button>
     </div>
   </div>
 </div>
 
-<!-- Lightbox -->
-<div id="lightbox" class="hidden"><img id="lightbox-img" src="" alt=""/><button id="lightbox-close">✕</button></div>
-
-<!-- ── 3-PANEL DISCORD LAYOUT ─────────────────── -->
+<!-- ═══════════════════════════════════════════════════
+     3-PANEL DISCORD LAYOUT
+═══════════════════════════════════════════════════ -->
 <div class="dc-root">
 
-  <!-- 1. Server rail (left-most, narrow) -->
+  <!-- 1 · Server rail (leftmost, narrow) -->
   <div class="dc-rail" id="dcRail">
     <button class="sidebar-toggle" id="sidebarToggle" title="Menu">☰</button>
     <div class="rail-divider"></div>
+    <!-- Server icon buttons injected here by JS -->
     <div id="rail-servers"></div>
     <button class="rail-add-btn" id="railAddServer" title="Create or browse servers">＋</button>
     <div class="rail-divider"></div>
@@ -212,11 +253,11 @@
     <div class="rail-user" id="railUser" title="Your profile"></div>
   </div>
 
-  <!-- 2. Channel list -->
+  <!-- 2 · Channel sidebar -->
   <div class="dc-sidebar" id="dcSidebar">
     <div class="dc-sidebar-header" id="sidebarHeader">
       <span id="sb-server-name">360 Chat</span>
-      <button id="sb-server-menu" title="Server settings">⌄</button>
+      <button id="sb-server-menu" title="Server options">⌄</button>
     </div>
     <div class="dc-sidebar-body" id="sidebarBody"></div>
     <div class="dc-sidebar-footer">
@@ -231,10 +272,12 @@
     </div>
   </div>
 
-  <!-- 3. Main chat area -->
+  <!-- 3 · Main chat -->
   <div class="dc-main" id="dcMain">
+
+    <!-- Header -->
     <div class="dc-chat-header" id="dcChatHeader">
-      <button class="dc-mobile-back" id="dcMobileBack">←</button>
+      <button class="dc-mobile-back" id="dcMobileBack" title="Back">←</button>
       <span class="dc-ch-icon" id="hdrIcon">#</span>
       <div class="dc-ch-info">
         <span class="dc-ch-name" id="hdrName">general</span>
@@ -243,12 +286,17 @@
       <div class="dc-header-actions">
         <button class="dc-hdr-btn" id="btnPins" title="Pinned messages">📌</button>
         <button class="dc-hdr-btn" id="btnMembers" title="Members">👥</button>
-        <button class="dc-hdr-btn" id="notif-btn" title="Toggle push notifications">🔔 Notify</button>
-        <button class="dc-hdr-btn" id="dnd-toggle" title="Do Not Disturb">🔔 DnD Off</button>
-        <span class="dc-online-pill" id="onlinePill"><span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;"></span> <span id="onlineCount">0</span></span>
+        <button class="dc-hdr-btn" id="notif-btn" title="Toggle push notifications">🔔</button>
+        <button class="dc-hdr-btn" id="dnd-toggle" title="Do Not Disturb">🔕</button>
+        <!-- Online pill: click opens online users panel -->
+        <span class="dc-online-pill" id="onlinePill" title="See who's online">
+          <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0;"></span>
+          <span id="onlineCount">0</span>
+        </span>
       </div>
     </div>
 
+    <!-- Messages -->
     <div id="dc-messages" class="dc-messages"></div>
 
     <!-- Typing indicator -->
@@ -256,52 +304,67 @@
 
     <!-- Reply bar -->
     <div id="dc-reply-bar" class="dc-reply-bar hidden">
-      <span>Replying to <strong id="reply-author"></strong>: <em id="reply-preview"></em></span>
-      <button id="reply-cancel-btn">✕</button>
+      <span>↩ Replying to <strong id="reply-author"></strong>: <em id="reply-preview"></em></span>
+      <button id="reply-cancel-btn" title="Cancel reply">✕</button>
     </div>
 
-    <!-- Upload preview -->
+    <!-- File upload preview -->
     <div id="dc-upload-preview" class="dc-upload-preview hidden">
       <span id="up-icon">📎</span>
       <span id="up-name"></span>
-      <button id="up-cancel">✕</button>
+      <button id="up-cancel" title="Remove file">✕</button>
     </div>
-    <div class="dc-upload-bar hidden" id="dc-upload-bar"><div id="dc-upload-fill" class="dc-upload-fill"></div></div>
+    <div class="dc-upload-bar hidden" id="dc-upload-bar">
+      <div id="dc-upload-fill" class="dc-upload-fill"></div>
+    </div>
 
-    <!-- Input -->
+    <!-- Message input -->
     <div class="dc-input-area">
       <button class="dc-input-btn" id="attachBtn" title="Attach file">＋</button>
-      <input type="file" id="fileInput" style="display:none"/>
+      <input type="file" id="fileInput" style="display:none;"/>
       <div class="dc-input-box">
+        <!-- Slash command suggestions (injected above textarea by JS) -->
+        <!-- Mention popup -->
         <div id="dc-mention-popup" class="dc-mention-popup"></div>
         <textarea id="msgInput" rows="1" placeholder="Message #general…" maxlength="4000"></textarea>
       </div>
-      <button class="dc-input-btn" id="emojiBtn">😊</button>
+      <button class="dc-input-btn" id="emojiBtn" title="Emoji">😊</button>
       <div class="dc-emoji-picker hidden" id="dcEmojiPicker"></div>
-      <button class="dc-send-btn" id="sendBtn">↑</button>
+      <button class="dc-send-btn" id="sendBtn" title="Send (Enter)">↑</button>
     </div>
+
+    <!-- Input footer: markdown hints + translate -->
     <div class="dc-input-footer">
-      <span>Markdown: **bold** *italic* `code` · @mention · Enter to send · Shift+Enter newline</span>
+      <span>**bold** · *italic* · `code` · @mention · /commands · Enter to send · Shift+Enter for newline</span>
       <div style="display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0;">
         <span style="font-size:11px;opacity:.5;">Translate:</span>
         <select id="translateLang" style="font-size:11px;padding:2px 6px;border-radius:6px;border:1px solid var(--br);background:transparent;color:inherit;font-family:inherit;">
           <option value="">Off</option>
-          <option value="en">🇬🇧 EN</option><option value="es">🇪🇸 ES</option><option value="fr">🇫🇷 FR</option>
-          <option value="de">🇩🇪 DE</option><option value="ja">🇯🇵 JA</option><option value="ko">🇰🇷 KO</option>
-          <option value="zh">🇨🇳 ZH</option><option value="ar">🇸🇦 AR</option><option value="pt">🇧🇷 PT</option>
-          <option value="ru">🇷🇺 RU</option><option value="hi">🇮🇳 HI</option><option value="tr">🇹🇷 TR</option>
+          <option value="en">🇬🇧 EN</option>
+          <option value="es">🇪🇸 ES</option>
+          <option value="fr">🇫🇷 FR</option>
+          <option value="de">🇩🇪 DE</option>
+          <option value="ja">🇯🇵 JA</option>
+          <option value="ko">🇰🇷 KO</option>
+          <option value="zh">🇨🇳 ZH</option>
+          <option value="ar">🇸🇦 AR</option>
+          <option value="pt">🇧🇷 PT</option>
+          <option value="ru">🇷🇺 RU</option>
+          <option value="hi">🇮🇳 HI</option>
+          <option value="tr">🇹🇷 TR</option>
         </select>
       </div>
     </div>
-  </div>
-</div>
+
+  </div><!-- /.dc-main -->
+</div><!-- /.dc-root -->
 
 <audio id="clickSound" src="../click-sound.mp3" preload="auto"></audio>
 <audio id="notifSound" src="../click-sound.mp3" preload="auto"></audio>
-<script>window.SKIP_AUTH_CHIP = true;</script>
+
 <script>window.SKIP_AUTH_CHIP = true;</script>
 <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
 <script src="/assets/js/wide.js"></script>
 <script src="/assets/js/cookie.js"></script>
 <script src="/assets/js/cursor.js"></script>
