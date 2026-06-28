@@ -1200,6 +1200,8 @@
         : "⚠️ Could not load Classroom config: " + e.message;
     }
   }
+
+  function gcInitTokenClient(clientId) {
     if (!window.google?.accounts?.oauth2) {
       // GIS not ready yet — retry
       setTimeout(() => gcInitTokenClient(clientId), 800);
