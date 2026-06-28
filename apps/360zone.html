@@ -652,21 +652,11 @@
           See all your courses, upcoming assignments, and announcements — right inside 360 Zone.
           Use AI tools directly on your assignments without switching tabs.
         </div>
-        <button class="gc-connect-btn" id="gc-connect-btn">
+        <button class="gc-connect-btn" id="gc-connect-btn" disabled>
           <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          Sign in with Google
+          <span id="gc-connect-label">Loading…</span>
         </button>
-        <div class="gc-setup-note">
-          <strong>First time?</strong> Enter your Google OAuth Client ID below.<br/>
-          <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Create one free at Google Cloud Console</a>
-          (enable the Classroom API, then create an OAuth 2.0 Web Client ID).<br/>
-          Set <code>https://beta.360-search.com</code> as an Authorized JavaScript Origin.
-          <div class="gc-client-row">
-            <input class="gc-client-input" id="gc-client-id-input" placeholder="Paste your Client ID here…" />
-            <button class="gc-client-save" id="gc-client-save-btn">Save</button>
-          </div>
-          <div id="gc-client-status" style="margin-top:8px;font-size:.8rem;"></div>
-        </div>
+        <div id="gc-connect-error" class="gc-err" style="display:none;margin-top:1rem;"></div>
       </div>
     </div>
 
@@ -1177,42 +1167,39 @@
   let gcToken       = null;
   let gcTokenClient = null;
   let gcCourses     = [];
-  let gcAllWork     = [];   // all coursework across courses
+  let gcAllWork     = [];
   let gcAllAnnounce = [];
   let gcUser        = null;
 
-  // Persist client ID across page loads
-  let gcClientId = localStorage.getItem("gc_client_id") || "";
-
-  function getClientId() { return localStorage.getItem("gc_client_id") || ""; }
+  const GC_CONFIG_URL = "https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/classroom-config";
 
   // ── UI bootstrap ────────────────────────────────────────────
-  function gcInit() {
-    const savedId = getClientId();
-    if (savedId) document.getElementById("gc-client-id-input").value = savedId;
+  async function gcInit() {
+    // Check for an existing session token first
     const savedToken = sessionStorage.getItem("gc_token");
     if (savedToken) {
       gcToken = savedToken;
       gcShowDashboard();
+      return;
     }
-    if (savedId) gcInitTokenClient(savedId);
+
+    // Fetch the Client ID from the backend — no user input needed
+    try {
+      const res  = await fetch(GC_CONFIG_URL);
+      const data = await res.json();
+      if (!res.ok || !data.clientId) throw new Error(data.error || "Client ID not configured");
+      gcInitTokenClient(data.clientId);
+      document.getElementById("gc-connect-label").textContent = "Sign in with Google";
+      document.getElementById("gc-connect-btn").disabled = false;
+    } catch (e) {
+      document.getElementById("gc-connect-label").textContent = "Unavailable";
+      const errEl = document.getElementById("gc-connect-error");
+      errEl.style.display = "block";
+      errEl.textContent = e.message.includes("not configured")
+        ? "⚙️ Admin: add GOOGLE_CLASSROOM_CLIENT_ID to Supabase secrets to enable this feature."
+        : "⚠️ Could not load Classroom config: " + e.message;
+    }
   }
-
-  document.getElementById("gc-client-save-btn").addEventListener("click", () => {
-    const id = document.getElementById("gc-client-id-input").value.trim();
-    if (!id) { gcClientStatus("Please enter a Client ID", "red"); return; }
-    localStorage.setItem("gc_client_id", id);
-    gcClientStatus("✅ Client ID saved! Click 'Sign in with Google'.", "green");
-    gcInitTokenClient(id);
-  });
-
-  function gcClientStatus(msg, color) {
-    const el = document.getElementById("gc-client-status");
-    el.textContent = msg;
-    el.style.color = color === "red" ? "#ef4444" : "#10b981";
-  }
-
-  function gcInitTokenClient(clientId) {
     if (!window.google?.accounts?.oauth2) {
       // GIS not ready yet — retry
       setTimeout(() => gcInitTokenClient(clientId), 800);
@@ -1231,9 +1218,7 @@
   }
 
   document.getElementById("gc-connect-btn").addEventListener("click", () => {
-    const id = getClientId();
-    if (!id) { gcClientStatus("Save your Client ID first.", "red"); return; }
-    if (!gcTokenClient) { gcInitTokenClient(id); setTimeout(() => gcTokenClient?.requestAccessToken(), 900); return; }
+    if (!gcTokenClient) return;
     gcTokenClient.requestAccessToken({ prompt: "consent" });
   });
 
