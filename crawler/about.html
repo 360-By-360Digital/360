@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>360SearchBot</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:#0a0f18;
+    color:#edf2ff;
+    line-height:1.7;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+    padding:60px 24px;
+}
+
+h1{
+    font-size:48px;
+    margin-bottom:8px;
+}
+
+.subtitle{
+    color:#8ca2d8;
+    margin-bottom:40px;
+}
+
+.card{
+    background:#111827;
+    border:1px solid #273349;
+    border-radius:16px;
+    padding:28px;
+    margin-bottom:24px;
+}
+
+h2{
+    margin-bottom:16px;
+    color:#7cc8ff;
+}
+
+code{
+    background:#1b2739;
+    padding:3px 7px;
+    border-radius:6px;
+    font-family:Consolas,monospace;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:16px;
+}
+
+th,td{
+    padding:12px;
+    border-bottom:1px solid #273349;
+    text-align:left;
+}
+
+a{
+    color:#7cc8ff;
+    text-decoration:none;
+}
+
+a:hover{
+    text-decoration:underline;
+}
+
+footer{
+    margin-top:50px;
+    color:#7d8da9;
+    font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>360SearchBot</h1>
+
+<p class="subtitle">
+Official crawler for the 360 Search project.
+</p>
+
+<div class="card">
+<h2>What is 360SearchBot?</h2>
+
+<p>
+360SearchBot is an automated web crawler that discovers and indexes publicly
+accessible web pages for use in the 360 Search search engine.
+</p>
+
+<p style="margin-top:15px;">
+The crawler downloads HTML pages, extracts searchable text and metadata, and
+stores information used to provide search results. It is designed to crawl
+responsibly and avoid unnecessary repeat requests.
+</p>
+
+</div>
+
+<div class="card">
+
+<h2>User Agent</h2>
+
+<p>
+
+<code>
+360SearchBot
+</code>
+
+</p>
+
+<table>
+
+<tr>
+<th>Purpose</th>
+<td>Web Search Indexing</td>
+</tr>
+
+<tr>
+<th>Supports</th>
+<td>HTML Pages</td>
+</tr>
+
+<tr>
+<th>Follows</th>
+<td>Public hyperlinks</td>
+</tr>
+
+<tr>
+<th>Indexes</th>
+<td>Titles, descriptions, visible page text, and links</td>
+</tr>
+
+</table>
+
+</div>
+
+<div class="card">
+
+<h2>robots.txt</h2>
+
+<p>
+360SearchBot respects <code>robots.txt</code>. To block crawling entirely,
+add the following to your site's robots.txt file:
+</p>
+
+<pre style="margin-top:20px;background:#09111d;padding:18px;border-radius:10px;overflow:auto;">
+User-agent: 360SearchBot
+Disallow: /
+</pre>
+
+<p style="margin-top:18px;">
+To block all crawlers:
+</p>
+
+<pre style="margin-top:12px;background:#09111d;padding:18px;border-radius:10px;overflow:auto;">
+User-agent: *
+Disallow: /
+</pre>
+
+</div>
+
+<div class="card">
+
+<h2>Contact</h2>
+
+<p>
+Questions or concerns about crawling?
+</p>
+
+<p style="margin-top:15px;">
+Email:
+<a href="mailto:help@360-search.com">
+help@360-search.com
+</a>
+</p>
+
+</div>
+
+<div class="card">
+
+<h2>About 360 Search</h2>
+
+<p>
+360 Search is an independent search engine project focused on discovering,
+indexing, and organizing publicly available information to make it easier to
+find useful content across the web.
+</p>
+
+</div>
+
+<footer>
+
+© 2026 360 Search
+
+</footer>
+
+</div>
+
+</body>
+</html>
