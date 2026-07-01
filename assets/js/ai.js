@@ -19,6 +19,9 @@
   const fpCancel = document.getElementById("fp-cancel");
   const sidebarToggleBtn = document.getElementById("ai-chat-sidebar-toggle");
   const aiSidebar = document.getElementById("ai-sidebar");
+  // Sidebar overlays on mobile (see ai.html's max-width:760px rule) —
+  // start collapsed there so it doesn't block the chat on first load.
+  if (aiSidebar && window.innerWidth <= 760) aiSidebar.classList.add("collapsed");
   const newChatBtn = document.getElementById("new-chat-btn");
 
   const SB_URL = "https://wiswfpfsjiowtrdyqpxy.supabase.co";
@@ -649,6 +652,29 @@
   }
 
   on(newChatBtn, "click", startNewChat);
+
+  /* ── seed conversation from search.html's "Continue this conversation"
+     handoff link (?q=...&a=...) — makes the AI tab feel like Gemini's
+     "continue in full chat" flow instead of starting over from scratch ── */
+  (() => {
+    const params = new URLSearchParams(location.search);
+    const seedQ = params.get("q");
+    const seedA = params.get("a");
+    if (!seedQ || !seedA) return;
+    try {
+      const decodedA = decodeURIComponent(escape(atob(seedA)));
+      appendUserBubble(seedQ);
+      appendAssistantBubble(decodedA);
+      history.push({ role: "user", content: seedQ });
+      history.push({ role: "assistant", content: decodedA });
+      const url = new URL(location.href);
+      url.searchParams.delete("q");
+      url.searchParams.delete("a");
+      window.history.replaceState(null, "", url.toString());
+    } catch (e) {
+      console.error("Failed to seed conversation from handoff:", e);
+    }
+  })();
 
   function showToast(msg) {
     const t = document.createElement("div");
