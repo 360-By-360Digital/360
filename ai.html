@@ -142,6 +142,22 @@
     .ai-topbar { padding-left: 80px; }
     @media (max-width: 600px) { .ai-topbar { padding-left: 60px; } }
 
+    /* ── Mobile: sidebar has no breakpoint by default and permanently eats
+       240px of a ~375px viewport, crushing the actual chat area. On small
+       screens it now overlays on top of the chat instead of sitting beside
+       it, and starts collapsed. ── */
+    @media (max-width: 760px) {
+      #ai-sidebar {
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        z-index: 60;
+        width: 240px;
+        box-shadow: 2px 0 24px rgba(0,0,0,.35);
+      }
+      #ai-sidebar.collapsed { width: 0; box-shadow: none; }
+      .ai-shell { overflow: visible; }
+    }
+
     .ai-topbar-title {
       font-size: 14px;
       font-weight: 600;
@@ -618,7 +634,7 @@
         </button>
         <div class="ai-topbar-title">360 AI</div>
         <div class="ai-topbar-right">
-          <span class="ai-model-badge" id="model-badge">✦ Claude Opus · OpenRouter</span>
+          <span class="ai-model-badge" id="model-badge">Powered by Claude Opus 4.5</span>
           <a href="/apps" class="auth-btn" style="text-decoration:none;font-size:12px;">Apps</a>
         </div>
       </div>
@@ -629,12 +645,12 @@
           <div class="wl-title">360 AI</div>
           <div class="wl-sub">Powered by Claude Opus on OpenRouter. Ask anything, paste images, upload files, write code.</div>
           <div class="wl-chips">
-            <div class="wl-chip" data-prompt="Explain how the internet works in simple terms">🌐 How the internet works</div>
-            <div class="wl-chip" data-prompt="Write a Python function to reverse a linked list">🐍 Reverse a linked list</div>
-            <div class="wl-chip" data-prompt="What are the best ways to learn a new language fast?">📚 Learn a language fast</div>
-            <div class="wl-chip" data-prompt="Debug this code for me and explain what was wrong">🐛 Debug my code</div>
-            <div class="wl-chip" data-prompt="Write a short creative story about a time traveler">✍️ Creative story</div>
-            <div class="wl-chip" data-prompt="What is the difference between machine learning and AI?">🤖 ML vs AI</div>
+            <div class="wl-chip" data-prompt="Explain how the internet works in simple terms">Explain how the internet works</div>
+            <div class="wl-chip" data-prompt="Write a Python function to reverse a linked list">Reverse a linked list</div>
+            <div class="wl-chip" data-prompt="What are the best ways to learn a new language fast?">Help me learn a language fast</div>
+            <div class="wl-chip" data-prompt="Debug this code for me and explain what was wrong">Debug my code</div>
+            <div class="wl-chip" data-prompt="Write a short creative story about a time traveler">Let's write a creative story</div>
+            <div class="wl-chip" data-prompt="What is the difference between machine learning and AI?">🤖 Machine Learning vs AI</div>
           </div>
         </div>
       </div>
