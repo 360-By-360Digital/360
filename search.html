@@ -1303,6 +1303,111 @@
     }
 
     /* ─────────────────────────────────
+       SPEED TEST
+       Real measurement (no fake numbers): ping via small round-trips,
+       download/upload via Cloudflare's public, keyless __down/__up
+       endpoints (the same ones speed.cloudflare.com itself uses — safe
+       to call cross-origin from any site).
+    ───────────────────────────────── */
+    let speedTestRunning = false;
+
+    function renderSpeedTestCard() {
+      knowledgePanel.classList.add('active');
+      knowledgePanel.innerHTML = `
+        <div class="kp-calc" id="speedtest-card">
+          <div class="kp-calc-icon">Internet Speed Test</div>
+          <div id="speedtest-body" style="margin-top:10px;">
+            <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:14px;">
+              <div style="flex:1;text-align:center;">
+                <div id="st-ping" style="font-size:22px;font-weight:700;">–</div>
+                <div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;">Ping (ms)</div>
+              </div>
+              <div style="flex:1;text-align:center;">
+                <div id="st-download" style="font-size:22px;font-weight:700;">–</div>
+                <div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;">Download (Mbps)</div>
+              </div>
+              <div style="flex:1;text-align:center;">
+                <div id="st-upload" style="font-size:22px;font-weight:700;">–</div>
+                <div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;">Upload (Mbps)</div>
+              </div>
+            </div>
+            <div id="st-status" style="font-size:13px;color:var(--mut);margin-bottom:10px;">Uses real network traffic — click to begin.</div>
+            <button id="st-start-btn" style="padding:9px 18px;border-radius:10px;border:none;background:var(--a);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Start Test</button>
+          </div>
+        </div>`;
+      const btn = document.getElementById('st-start-btn');
+      if (btn) btn.addEventListener('click', runSpeedTest);
+    }
+
+    async function measurePing() {
+      const times = [];
+      for (let i = 0; i < 4; i++) {
+        const t0 = performance.now();
+        try {
+          await fetch(`https://speed.cloudflare.com/__down?bytes=0&cachebust=${Date.now()}_${i}`, { cache: 'no-store' });
+          times.push(performance.now() - t0);
+        } catch(e) {}
+      }
+      times.sort((a,b) => a-b);
+      // Drop the first (TCP/TLS warmup) and take the median of what's left.
+      const rest = times.slice(1);
+      if (!rest.length) return null;
+      return rest[Math.floor(rest.length / 2)];
+    }
+
+    async function measureDownload() {
+      const bytes = 20_000_000; // 20MB
+      const t0 = performance.now();
+      const res = await fetch(`https://speed.cloudflare.com/__down?bytes=${bytes}&cachebust=${Date.now()}`, { cache: 'no-store' });
+      const buf = await res.arrayBuffer();
+      const seconds = (performance.now() - t0) / 1000;
+      const mbps = (buf.byteLength * 8) / seconds / 1_000_000;
+      return mbps;
+    }
+
+    async function measureUpload() {
+      const bytes = 8_000_000; // 8MB
+      const data = new Uint8Array(bytes);
+      crypto.getRandomValues(data.subarray(0, Math.min(65536, bytes))); // seed a chunk, rest can be zero — server doesn't care about content
+      const t0 = performance.now();
+      await fetch(`https://speed.cloudflare.com/__up`, { method: 'POST', body: data, cache: 'no-store' });
+      const seconds = (performance.now() - t0) / 1000;
+      return (bytes * 8) / seconds / 1_000_000;
+    }
+
+    async function runSpeedTest() {
+      if (speedTestRunning) return;
+      speedTestRunning = true;
+      const btn = document.getElementById('st-start-btn');
+      const status = document.getElementById('st-status');
+      const pingEl = document.getElementById('st-ping');
+      const dlEl = document.getElementById('st-download');
+      const ulEl = document.getElementById('st-upload');
+      if (btn) { btn.disabled = true; btn.textContent = 'Testing…'; btn.style.opacity = '0.6'; }
+
+      try {
+        if (status) status.textContent = 'Measuring ping…';
+        const ping = await measurePing();
+        if (pingEl) pingEl.textContent = ping !== null ? Math.round(ping) : '—';
+
+        if (status) status.textContent = 'Measuring download speed…';
+        const dl = await measureDownload();
+        if (dlEl) dlEl.textContent = dl.toFixed(1);
+
+        if (status) status.textContent = 'Measuring upload speed…';
+        const ul = await measureUpload();
+        if (ulEl) ulEl.textContent = ul.toFixed(1);
+
+        if (status) status.textContent = 'Test complete.';
+      } catch(e) {
+        if (status) status.textContent = 'Test failed — check your connection and try again.';
+      } finally {
+        speedTestRunning = false;
+        if (btn) { btn.disabled = false; btn.textContent = 'Run Again'; btn.style.opacity = '1'; }
+      }
+    }
+
+    /* ─────────────────────────────────
        UNIT CONVERTER
        "10 km to miles", "5kg in lbs", "100 f to c" — pure math, no API,
        so it's instant and can never fail/timeout.
@@ -1493,6 +1598,14 @@
       const myToken = ++kpToken; // guards against a slow earlier request clobbering a newer one
       if (!q?.trim()) { knowledgePanel.classList.remove('active'); knowledgePanel.innerHTML = ''; return; }
 
+      // "speed test" / "internet speed test" — real, no fake numbers.
+      // Doesn't auto-run (bandwidth tests use real data and shouldn't fire
+      // on every keystroke); shows a Start button instead, Google-style.
+      if (/^(internet |wifi |network )?speed\s*test$|^test my (internet |network )?speed$/i.test(q.trim())) {
+        renderSpeedTestCard();
+        return;
+      }
+
       // Math expressions get an instant calculator card — no need to hit
       // Wikipedia/DuckDuckGo/Wikidata for "2+2".
       const calc = tryCalculate(q);
@@ -1501,6 +1614,37 @@
       // "10 km to miles" style queries — pure math, instant, no API needed.
       const conv = tryUnitConvert(q);
       if (conv) { renderUnitConvert(conv); return; }
+
+      // "100 usd to eur" — real live rates via server-side proxy (the
+      // frontend never calls the currency API directly, same CORS-safety
+      // pattern as the DuckDuckGo instant-answer proxy).
+      const currencyMatch = q.trim().match(/^([\d.,]+)\s*([a-z]{3})\s+(?:to|in)\s+([a-z]{3})\s*\??$/i);
+      if (currencyMatch) {
+        const CURRENCY_CODES = new Set(['usd','eur','gbp','jpy','cad','aud','chf','cny','inr','mxn','brl','krw','sgd','nzd','sek','nok','dkk','pln','try','zar','hkd','thb','ils','aed']);
+        const from = currencyMatch[2].toLowerCase(), to = currencyMatch[3].toLowerCase();
+        if (CURRENCY_CODES.has(from) && CURRENCY_CODES.has(to)) {
+          const amount = parseFloat(currencyMatch[1].replace(/,/g, ''));
+          knowledgePanel.classList.add('active');
+          knowledgePanel.innerHTML = `<div class="kp-skel-line" style="width:50%;height:22px;"></div><div class="kp-skel-line" style="width:30%"></div>`;
+          try {
+            const res = await fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/currency-convert?from=${from}&to=${to}&amount=${amount}`, { headers: SUPABASE_FN_HEADERS });
+            const data = await res.json();
+            if (myToken !== kpToken) return;
+            if (!data.error && data.result !== undefined) {
+              knowledgePanel.innerHTML = `
+                <div class="kp-calc">
+                  <div class="kp-calc-icon">Currency · Live rate ${escHtml(data.date || '')}</div>
+                  <div class="kp-calc-expr">${escHtml(amount.toString())} ${from.toUpperCase()} =</div>
+                  <div class="kp-calc-result">${data.result.toFixed(2)} <span style="font-size:18px;font-weight:700;">${to.toUpperCase()}</span></div>
+                </div>`;
+              return;
+            }
+          } catch (e) {}
+          if (myToken !== kpToken) return;
+          knowledgePanel.classList.remove('active');
+          knowledgePanel.innerHTML = '';
+        }
+      }
 
       // "define X" / "what does X mean" — try the dictionary before falling
       // through to the Wikipedia/Wikidata bio-panel flow.
@@ -1841,9 +1985,20 @@
         seenIndexHrefs.add(key);
         let hostname = '';
         try { hostname = new URL(r.url).hostname.replace('www.', ''); } catch(e) {}
-        indexCards.push({ title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: '' });
+        // r._score is the backend's blended relevance score (cosine
+        // similarity + full-text rank + PageRank authority), roughly
+        // 0-0.6 for real matches after calibration. GCSE results carry no
+        // numeric score of their own, but their array order already IS
+        // Google's relevance ranking, so we assign a comparable synthetic
+        // score by position (starts at 1.0, decays per rank) and sort the
+        // two lists together — instead of always forcing our results
+        // first, which was overriding Google's own ranking outright even
+        // when its top pick was clearly more relevant.
+        indexCards.push({ title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: r.thumb || '', _score: r._score ?? 0.3 });
       });
-      const merged = [...indexCards, ...results];
+
+      const gcseScored = results.map((r, i) => ({ ...r, _score: Math.max(0.05, 1 - i * 0.09) }));
+      const merged = [...indexCards, ...gcseScored].sort((a, b) => b._score - a._score);
 
       renderWebResults(merged, countText, currentPage, totalPages);
     }
@@ -2519,7 +2674,19 @@
       const card = aiPanel.querySelector('.ai-response-card');
 
       function showAnswer(text) {
-        card.innerHTML = `<div class="ai-response-label">${AI_ICON} AI Answer</div><div class="ai-response-text">${renderMarkdown(text)}</div>`;
+        // UTF-8-safe base64 handoff of the Q&A pair to ai.html, so
+        // "Continue conversation" opens the real multi-turn chat app
+        // (ai.html/ai.js — it already has full conversation history,
+        // persistence, and follow-up support) already seeded with this
+        // exchange as the first turn, instead of starting over from
+        // scratch like clicking a fresh link would.
+        let handoffUrl = '';
+        try {
+          const b64 = btoa(unescape(encodeURIComponent(text)));
+          handoffUrl = `ai.html?q=${encodeURIComponent(q)}&a=${encodeURIComponent(b64)}`;
+        } catch(e) {}
+        card.innerHTML = `<div class="ai-response-label">${AI_ICON} AI Answer</div><div class="ai-response-text">${renderMarkdown(text)}</div>
+          ${handoffUrl ? `<a href="${escHtml(handoffUrl)}" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:9px 16px;border-radius:10px;background:var(--a);color:#fff;text-decoration:none;font-size:13px;font-weight:600;">Continue this conversation →</a>` : ''}`;
       }
 
       try {
@@ -2596,7 +2763,7 @@
       } else if (state.tab === 'shopping') {
         run360Search(q, 'shopping');
       } else {
-        // Web tab: fetch 360 index first, then GCSE fills the rest
+        // Web tab: fetch 360 index first, then GCSE fills the rest.
         fetch360IndexResults(q);
         waitForGcseAndSearch(q, state.tab);
       }
@@ -2753,9 +2920,18 @@
         }
         const data = await res.json();
         if (data.error) throw new Error(data.error);
+        // Guard against stale responses: if the user switched tabs while
+        // this request was in flight (e.g. News takes longer than a
+        // follow-up Shopping request), the older response must not
+        // overwrite whatever the newer, currently-active tab is showing.
+        // This was the cause of "shopping switches to news after a few
+        // seconds" — a late-arriving News response with no staleness
+        // check at all would blindly render over the Shopping results.
+        if (state.tab !== tab) return;
         if (tab === 'news') renderNewsResults(data.news || []);
         else if (tab === 'shopping') renderShoppingResults(data.shopping || []);
       } catch(e) {
+        if (state.tab !== tab) return;
         resultsArea.innerHTML = `<div class="state-box"><div class="big-icon">⚠️</div><h3>Failed to load ${tab}</h3><p>${escHtml(String(e.message || e))}</p></div>`;
       }
     }
@@ -2783,31 +2959,110 @@
       resultsArea.innerHTML = html;
     }
 
+    let lastShoppingProducts = [];
+
+    function debounce(fn, ms) {
+      let t;
+      return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
+
+    function parsePriceNum(str) {
+      const m = String(str || '').match(/[\d,]+\.?\d*/);
+      return m ? parseFloat(m[0].replace(/,/g, '')) : null;
+    }
+
+    function shoppingCardHtml(p, i) {
+      return `<div class="result-card" style="animation-delay:${i*0.03}s;padding:14px;display:flex;flex-direction:column;gap:8px;">
+        ${p.thumb ? `<img src="${escHtml(p.thumb)}" alt="${escHtml(p.title)}" loading="lazy" onerror="this.remove()" style="width:100%;height:140px;object-fit:contain;border-radius:8px;background:rgba(0,0,0,0.05);">` : ''}
+        <div style="font-size:13px;font-weight:600;line-height:1.4;flex:1">${escHtml(p.title)}</div>
+        ${p.price ? `<div style="font-size:15px;font-weight:700;color:var(--a)">${escHtml(p.price)}</div>` : ''}
+        ${p.source ? `<div style="font-size:11px;color:var(--mut)">${escHtml(p.source)}</div>` : ''}
+        ${(p.rating !== null && p.rating !== undefined) ? `<div style="font-size:11px;color:var(--mut)">⭐ ${p.rating}${p.reviews ? ` (${p.reviews})` : ''}</div>` : ''}
+        ${p.desc ? `<div style="font-size:12px;color:var(--mut);line-height:1.4">${escHtml(p.desc.slice(0,100))}</div>` : ''}
+        <a href="${escHtml(p.url)}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--a);text-decoration:none;font-weight:600;margin-top:auto">View →</a>
+      </div>`;
+    }
+
+    function applyShoppingFilters() {
+      const sortSel = document.getElementById('shop-sort');
+      const minEl = document.getElementById('shop-min-price');
+      const maxEl = document.getElementById('shop-max-price');
+      const grid = document.getElementById('shop-grid');
+      const countEl = document.getElementById('shop-result-count');
+      if (!grid) return;
+
+      const min = minEl && minEl.value !== '' ? parseFloat(minEl.value) : null;
+      const max = maxEl && maxEl.value !== '' ? parseFloat(maxEl.value) : null;
+
+      let list = lastShoppingProducts.filter(p => {
+        const priceNum = parsePriceNum(p.price);
+        if (min !== null && (priceNum === null || priceNum < min)) return false;
+        if (max !== null && (priceNum === null || priceNum > max)) return false;
+        return true;
+      });
+
+      const sort = sortSel ? sortSel.value : 'relevance';
+      if (sort === 'price-asc' || sort === 'price-desc') {
+        list = list.slice().sort((a, b) => {
+          const pa = parsePriceNum(a.price), pb = parsePriceNum(b.price);
+          if (pa === null && pb === null) return 0;
+          if (pa === null) return 1; // no-price items sort last regardless of direction
+          if (pb === null) return -1;
+          return sort === 'price-asc' ? pa - pb : pb - pa;
+        });
+      } else if (sort === 'rating') {
+        list = list.slice().sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1));
+      }
+
+      if (countEl) countEl.textContent = `${list.length} of ${lastShoppingProducts.length} results`;
+      grid.innerHTML = list.length
+        ? list.map((p, i) => shoppingCardHtml(p, i)).join('')
+        : `<div style="grid-column:1/-1;padding:24px;text-align:center;color:var(--mut);">No products match this price range.</div>`;
+    }
+
     function renderShoppingResults(products) {
       if (!products.length) { renderNoResults(); return; }
-      let html = `<div class="results-info">${escHtml(products.length + ' shopping results')}</div>`;
-      html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:6px;">`;
-      products.forEach((p, i) => {
-        html += `<div class="result-card" style="animation-delay:${i*0.03}s;padding:14px;display:flex;flex-direction:column;gap:8px;">
-          ${p.thumb ? `<img src="${escHtml(p.thumb)}" alt="${escHtml(p.title)}" loading="lazy" onerror="this.remove()" style="width:100%;height:140px;object-fit:contain;border-radius:8px;background:rgba(0,0,0,0.05);">` : ''}
-          <div style="font-size:13px;font-weight:600;line-height:1.4;flex:1">${escHtml(p.title)}</div>
-          ${p.price ? `<div style="font-size:15px;font-weight:700;color:var(--a)">${escHtml(p.price)}</div>` : ''}
-          ${p.source ? `<div style="font-size:11px;color:var(--mut)">${escHtml(p.source)}</div>` : ''}
-          ${(p.rating !== null && p.rating !== undefined) ? `<div style="font-size:11px;color:var(--mut)">⭐ ${p.rating}${p.reviews ? ` (${p.reviews})` : ''}</div>` : ''}
-          ${p.desc ? `<div style="font-size:12px;color:var(--mut);line-height:1.4">${escHtml(p.desc.slice(0,100))}</div>` : ''}
-          <a href="${escHtml(p.url)}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--a);text-decoration:none;font-weight:600;margin-top:auto">View →</a>
-        </div>`;
-      });
+      lastShoppingProducts = products;
+
+      const hasPrices = products.some(p => parsePriceNum(p.price) !== null);
+      const hasRatings = products.some(p => p.rating !== null && p.rating !== undefined);
+
+      let html = `<div class="results-info" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;">
+        <span id="shop-result-count">${products.length} shopping results</span>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+          ${hasPrices ? `
+            <input id="shop-min-price" type="number" placeholder="Min $" style="width:80px;padding:6px 8px;border-radius:8px;border:1px solid var(--glass-border);background:transparent;color:inherit;font-size:12px;">
+            <span style="color:var(--mut);font-size:12px;">–</span>
+            <input id="shop-max-price" type="number" placeholder="Max $" style="width:80px;padding:6px 8px;border-radius:8px;border:1px solid var(--glass-border);background:transparent;color:inherit;font-size:12px;">
+          ` : ''}
+          <select id="shop-sort" style="padding:6px 10px;border-radius:8px;border:1px solid var(--glass-border);background:transparent;color:inherit;font-size:12px;">
+            <option value="relevance">Sort: Relevance</option>
+            ${hasPrices ? `<option value="price-asc">Price: Low to High</option><option value="price-desc">Price: High to Low</option>` : ''}
+            ${hasRatings ? `<option value="rating">Highest Rated</option>` : ''}
+          </select>
+        </div>
+      </div>`;
+      html += `<div id="shop-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:12px;">`;
+      html += products.map((p, i) => shoppingCardHtml(p, i)).join('');
       html += `</div>`;
       resultsArea.innerHTML = html;
+
+      const sortSel = document.getElementById('shop-sort');
+      const minEl = document.getElementById('shop-min-price');
+      const maxEl = document.getElementById('shop-max-price');
+      if (sortSel) sortSel.addEventListener('change', applyShoppingFilters);
+      if (minEl) minEl.addEventListener('input', debounce(applyShoppingFilters, 300));
+      if (maxEl) maxEl.addEventListener('input', debounce(applyShoppingFilters, 300));
     }
 
-    function renderNoResults() { 
-      resultsArea.innerHTML = ` <div class="state-box"> <div class="big-icon">🔎</div>
-      <h3>No results found</h3> 
-      <p>Try different keywords or check your spelling</p> </div>`; 
+    function renderNoResults() {
+      resultsArea.innerHTML = `
+        <div class="state-box">
+          <div class="big-icon">🔎</div>
+          <h3>No results found</h3>
+          <p>Try different keywords or check your spelling</p>
+        </div>`;
     }
-
 
     function renderWebResults(results, countText, currentPage, totalPages) {
       if (!results.length) { renderNoResults(); return; }
