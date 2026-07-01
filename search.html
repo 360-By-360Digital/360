@@ -55,6 +55,13 @@
       opacity: 0;
       pointer-events: none;
       z-index: -1;
+      /* A transform on this ancestor makes it the containing block for any
+         position:fixed descendants Google's widget injects (autosuggest
+         boxes, "Explore further" / related-product cards, etc). Without
+         this, fixed-position children ignore left:-9999px entirely because
+         fixed positioning is relative to the viewport, not this container —
+         which is how stray Google cards were leaking into view. */
+      transform: translateZ(0);
     }
 
     /* ── Page layout — NO background set ── */
@@ -1078,6 +1085,14 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         Images
       </div>
+      <div class="results-tab" data-tab="news">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>
+        News
+      </div>
+      <div class="results-tab" data-tab="shopping">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Shopping
+      </div>
       <div class="results-tab" data-tab="ai">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 5 5"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
         AI
@@ -1155,6 +1170,19 @@
     };
 
     /* ─────────────────────────────────
+       SUPABASE EDGE FUNCTION AUTH
+       Same project anon key main.js uses for supabaseClient — Supabase
+       Edge Functions reject requests with no apikey/Authorization header
+       by default, so every fetch() to *.supabase.co/functions/v1/* needs
+       this attached.
+    ───────────────────────────────── */
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM";
+    const SUPABASE_FN_HEADERS = {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    };
+
+    /* ─────────────────────────────────
        ELEMENT REFS
     ───────────────────────────────── */
     const input       = document.getElementById('custom-search-input');
@@ -1188,9 +1216,16 @@
           loadKnowledgePanel(q);
           state.page = 1;
           scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        } else if (t === 'news') {
+          showResultsArea(true);
+          run360Search(q, 'news');
+        } else if (t === 'shopping') {
+          showResultsArea(true);
+          run360Search(q, 'shopping');
         } else {
           showResultsArea(true);
           loadKnowledgePanel(q);
+          fetch360IndexResults(q);
           waitForGcseAndSearch(q, t);
         }
       }
@@ -1564,11 +1599,43 @@
       }
     }
 
+    let gcseTimeoutId = null;
     function waitForGcseAndSearch(q, tab) {
       if (state.gcseReady) {
+        clearTimeout(gcseTimeoutId);
         triggerGcseSearch(q, tab);
       } else {
         state.pendingSearch = { q, tab };
+        // GCSE is a Google ads-supported widget and commonly gets blocked by
+        // ad blockers / privacy extensions / network policy. Without a
+        // timeout, a blocked widget leaves the Web tab spinning forever even
+        // though we already have working 360 Index + web results fetched.
+        clearTimeout(gcseTimeoutId);
+        gcseTimeoutId = setTimeout(() => {
+          if (!state.gcseReady && state.pendingSearch && state.pendingSearch.q === q && state.tab === tab) {
+            useIndexFallbackForWeb(q);
+          }
+        }, 6000);
+      }
+    }
+
+    /* ─────────────────────────────────
+       FALLBACK: render index/web results directly when the GCSE widget
+       never becomes ready (blocked script, network policy, etc.)
+    ───────────────────────────────── */
+    function useIndexFallbackForWeb(q) {
+      state.pendingSearch = null;
+      if (edgeWebFallback && edgeWebFallback.web && edgeWebFallback.web.length) {
+        const mapped = edgeWebFallback.web.map(r => ({ href: r.url, title: r.title, snippet: r.desc, thumb: r.thumb }));
+        const note = edgeWebFallback.countText || '';
+        renderWebResults(mapped, note, 1, 1);
+      } else {
+        resultsArea.innerHTML = `
+          <div class="state-box">
+            <div class="big-icon">⚠️</div>
+            <h3>Web search unavailable</h3>
+            <p>Our search widget couldn't load — this is often caused by an ad blocker or content-blocking extension. Try disabling it for this site, or use the News / Shopping / AI tabs.</p>
+          </div>`;
       }
     }
 
@@ -1580,6 +1647,7 @@
       if (gcseInput) {
         clearInterval(gcseCheckInterval);
         state.gcseReady = true;
+        clearTimeout(gcseTimeoutId);
         if (state.pendingSearch) {
           triggerGcseSearch(state.pendingSearch.q, state.pendingSearch.tab);
           state.pendingSearch = null;
@@ -1692,7 +1760,19 @@
       const resultEls = gcseContainer.querySelectorAll('.gsc-webResult.gsc-result');
       if (!resultEls.length) {
         const noResults = gcseContainer.querySelector('.gs-no-results-result, .gsc-no-results-result');
-        if (noResults) { renderNoResults(); return; }
+        const indexOnly = (edgeWebFallback?.web || []).filter(r => r._from360);
+        if (noResults) {
+          if (indexOnly.length) {
+            const merged = indexOnly.map(r => {
+              let hostname = ''; try { hostname = new URL(r.url).hostname.replace('www.', ''); } catch(e) {}
+              return { title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: '' };
+            });
+            renderWebResults(merged, '', 1, 1);
+          } else {
+            renderNoResults();
+          }
+          return;
+        }
         return; // still loading
       }
 
@@ -1734,7 +1814,23 @@
       });
 
       const { countText, currentPage, totalPages } = getGcsePaginationInfo(gcseContainer);
-      renderWebResults(results, countText, currentPage, totalPages);
+
+      // Merge in crawled-index results, same shape as GCSE results, so they
+      // render as identical cards in the same single list — not a separate
+      // styled section.
+      const indexResults = (edgeWebFallback?.web || []).filter(r => r._from360);
+      const merged = [...results];
+      const seenIndexHrefs = new Set(results.map(r => (r.href||'').replace(/\/$/,'').toLowerCase()));
+      indexResults.forEach(r => {
+        const key = (r.url||'').replace(/\/$/,'').toLowerCase();
+        if (seenIndexHrefs.has(key)) return;
+        seenIndexHrefs.add(key);
+        let hostname = '';
+        try { hostname = new URL(r.url).hostname.replace('www.', ''); } catch(e) {}
+        merged.unshift({ title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: '' });
+      });
+
+      renderWebResults(merged, countText, currentPage, totalPages);
     }
 
     function scrapeImageResults(gcseContainer) {
@@ -1751,7 +1847,9 @@
 
       Promise.allSettled(
         starts.map(s =>
-          fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/image-search?q=${encodeURIComponent(state.query)}&start=${s}&safe=${state.safeSearch === false ? 'off' : 'active'}`)
+          fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/image-search?q=${encodeURIComponent(state.query)}&start=${s}&safe=${state.safeSearch === false ? 'off' : 'active'}`, {
+            headers: SUPABASE_FN_HEADERS,
+          })
             .then(r => r.json())
         )
       ).then(responses => {
@@ -1849,7 +1947,9 @@
       }
 
       const reqToken = q;
-      fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/autocomplete?q=${encodeURIComponent(q)}`)
+      fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/autocomplete?q=${encodeURIComponent(q)}`, {
+        headers: SUPABASE_FN_HEADERS,
+      })
         .then(r => r.json())
         .then(data => {
           // Stale response guard — a slower earlier request shouldn't clobber
@@ -2098,6 +2198,10 @@
       if (state.query) {
         if (t === 'images') {
           scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        } else if (t === 'news') {
+          run360Search(state.query, 'news');
+        } else if (t === 'shopping') {
+          run360Search(state.query, 'shopping');
         } else {
           waitForGcseAndSearch(state.query, t);
         }
@@ -2406,7 +2510,7 @@
       try {
         const resp = await fetch('https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/search-ai', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...SUPABASE_FN_HEADERS },
           body: JSON.stringify({ message: q }),
           signal: aiAbortController.signal,
         });
@@ -2472,7 +2576,13 @@
       loadKnowledgePanel(q);
       if (state.tab === 'images') {
         scrapeImageResults(document.getElementById('gcse-hidden-container'));
+      } else if (state.tab === 'news') {
+        run360Search(q, 'news');
+      } else if (state.tab === 'shopping') {
+        run360Search(q, 'shopping');
       } else {
+        // Web tab: fetch 360 index first, then GCSE fills the rest
+        fetch360IndexResults(q);
         waitForGcseAndSearch(q, state.tab);
       }
     }
@@ -2581,6 +2691,100 @@
       aiPanel.innerHTML = '';
       aiPanel.classList.remove('active');
       resultsArea.style.display = '';
+    }
+
+    /* ─────────────────────────────────
+       360 INDEX — fetch crawled results, merge into the same result list
+       as GCSE (see scrapeWebResults) instead of a separate DOM node, since
+       inserting a sibling into #results-layout (a strict 320px/1fr grid
+       meant for #knowledge-panel + #custom-results-area) broke the layout
+       into a mismatched narrow/wide split.
+    ───────────────────────────────── */
+    const EDGE_SEARCH = 'https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/search';
+    let edgeWebFallback = null; // full last web-tab response, used to merge into GCSE results and as a fallback if GCSE never loads
+
+    async function fetch360IndexResults(q) {
+      try {
+        const res = await fetch(EDGE_SEARCH, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...SUPABASE_FN_HEADERS },
+          body: JSON.stringify({ q, tab: 'web', safe: state.safeSearch ? 'moderate' : 'off' })
+        });
+        const data = await res.json();
+        edgeWebFallback = data;
+        // If GCSE already finished rendering before this resolved, re-merge
+        // now so index results still show up without a full reload.
+        if (state.tab === 'web' && !state.pendingSearch) scrapeAndRender();
+      } catch(e) {
+        edgeWebFallback = null;
+      }
+    }
+
+    /* ─────────────────────────────────
+       NEWS + SHOPPING via 360 edge function
+    ───────────────────────────────── */
+    async function run360Search(q, tab) {
+      showLoading();
+      try {
+        const res = await fetch(EDGE_SEARCH, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...SUPABASE_FN_HEADERS },
+          body: JSON.stringify({ q, tab })
+        });
+        if (!res.ok) {
+          let detail = '';
+          try { detail = (await res.json()).error || ''; } catch(e) { try { detail = await res.text(); } catch(e2) {} }
+          throw new Error(`Edge function returned ${res.status}${detail ? ': ' + detail : ''}`);
+        }
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        if (tab === 'news') renderNewsResults(data.news || []);
+        else if (tab === 'shopping') renderShoppingResults(data.shopping || []);
+      } catch(e) {
+        resultsArea.innerHTML = `<div class="state-box"><div class="big-icon">⚠️</div><h3>Failed to load ${tab}</h3><p>${escHtml(String(e.message || e))}</p></div>`;
+      }
+    }
+
+    function renderNewsResults(articles) {
+      if (!articles.length) { renderNoResults(); return; }
+      let html = `<div class="results-info">${escHtml(articles.length + ' news articles')}</div>`;
+      articles.forEach((a, i) => {
+        const delay = i * 0.03;
+        html += `<div class="result-card" style="animation-delay:${delay}s">
+          <div class="result-card-inner">
+            ${a.thumb ? `<img class="result-thumbnail" src="${escHtml(a.thumb)}" alt="" loading="lazy" onerror="this.remove()" style="width:90px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
+            <div class="result-card-text">
+              <div class="result-site-row">
+                <img class="result-favicon" src="${escHtml(a.favicon||'')}" alt="" loading="lazy" onerror="this.style.display='none'"/>
+                <span class="result-site-name">${escHtml(a.source)}</span>
+                ${a.age ? `<span style="color:var(--mut);font-size:11px;margin-left:auto">${escHtml(a.age)}</span>` : ''}
+              </div>
+              <a class="result-title" href="${escHtml(a.url)}" target="_blank" rel="noopener noreferrer">${escHtml(a.title)}</a>
+              ${a.desc ? `<div class="result-snippet">${escHtml(a.desc)}</div>` : ''}
+            </div>
+          </div>
+        </div>`;
+      });
+      resultsArea.innerHTML = html;
+    }
+
+    function renderShoppingResults(products) {
+      if (!products.length) { renderNoResults(); return; }
+      let html = `<div class="results-info">${escHtml(products.length + ' shopping results')}</div>`;
+      html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:6px;">`;
+      products.forEach((p, i) => {
+        html += `<div class="result-card" style="animation-delay:${i*0.03}s;padding:14px;display:flex;flex-direction:column;gap:8px;">
+          ${p.thumb ? `<img src="${escHtml(p.thumb)}" alt="${escHtml(p.title)}" loading="lazy" onerror="this.remove()" style="width:100%;height:140px;object-fit:contain;border-radius:8px;background:rgba(0,0,0,0.05);">` : ''}
+          <div style="font-size:13px;font-weight:600;line-height:1.4;flex:1">${escHtml(p.title)}</div>
+          ${p.price ? `<div style="font-size:15px;font-weight:700;color:var(--a)">${escHtml(p.price)}</div>` : ''}
+          ${p.source ? `<div style="font-size:11px;color:var(--mut)">${escHtml(p.source)}</div>` : ''}
+          ${(p.rating !== null && p.rating !== undefined) ? `<div style="font-size:11px;color:var(--mut)">⭐ ${p.rating}${p.reviews ? ` (${p.reviews})` : ''}</div>` : ''}
+          ${p.desc ? `<div style="font-size:12px;color:var(--mut);line-height:1.4">${escHtml(p.desc.slice(0,100))}</div>` : ''}
+          <a href="${escHtml(p.url)}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--a);text-decoration:none;font-weight:600;margin-top:auto">View →</a>
+        </div>`;
+      });
+      html += `</div>`;
+      resultsArea.innerHTML = html;
     }
 
     function renderNoResults() {
