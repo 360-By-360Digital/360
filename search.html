@@ -1543,7 +1543,14 @@
           bestTitle
             ? fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(bestTitle)}`)
             : Promise.resolve(null),
-          fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1&skip_disambig=1`),
+          // DuckDuckGo's api.duckduckgo.com does not reliably send CORS
+          // headers, so calling it directly from the browser fails with a
+          // console CORS error on every search (it degraded silently in the
+          // UI, but was still a real broken network call). Routed through
+          // our ddg-instant edge function, which proxies it server-side.
+          fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/ddg-instant?q=${encodeURIComponent(q)}`, {
+            headers: SUPABASE_FN_HEADERS,
+          }),
           bestTitle ? fetchWikidataFacts(bestTitle, myToken) : Promise.resolve([]),
         ]);
         if (myToken !== kpToken) return; // a newer search started while we were waiting
@@ -1817,18 +1824,26 @@
 
       // Merge in crawled-index results, same shape as GCSE results, so they
       // render as identical cards in the same single list — not a separate
-      // styled section.
+      // styled section. indexResults arrives from the backend already
+      // ordered best-first by the blended score (cosine similarity + full-
+      // text rank + PageRank authority, see search_crawled_pages). Building
+      // this as a single ordered block instead of unshifting one-by-one in
+      // a loop matters: unshift-in-a-forEach silently reverses the list,
+      // which was putting our LOWEST-ranked, lowest-authority index result
+      // at the very top and the actual best (highest PageRank/relevance)
+      // match at the bottom — exactly backwards from what PageRank is for.
       const indexResults = (edgeWebFallback?.web || []).filter(r => r._from360);
-      const merged = [...results];
       const seenIndexHrefs = new Set(results.map(r => (r.href||'').replace(/\/$/,'').toLowerCase()));
+      const indexCards = [];
       indexResults.forEach(r => {
         const key = (r.url||'').replace(/\/$/,'').toLowerCase();
         if (seenIndexHrefs.has(key)) return;
         seenIndexHrefs.add(key);
         let hostname = '';
         try { hostname = new URL(r.url).hostname.replace('www.', ''); } catch(e) {}
-        merged.unshift({ title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: '' });
+        indexCards.push({ title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: '' });
       });
+      const merged = [...indexCards, ...results];
 
       renderWebResults(merged, countText, currentPage, totalPages);
     }
