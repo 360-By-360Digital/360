@@ -2803,13 +2803,16 @@
     }
 
     function renderNoResults() {
-      resultsArea.innerHTML = `
-        <div class="state-box">
-          <div class="big-icon">🔎</div>
-          <h3>No results found</h3>
-          <p>Try different keywords or check your spelling</p>
-        </div>`;
-    }
+  resultsArea.innerHTML = `
+    <div class="state-box">
+      <div class="big-icon" style="width: 120px; height: 120px; margin: 0 auto;">
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 800 800' width='100%25' height='100%25'><defs><linearGradient id='f' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%23d6d6d6'/><stop offset='50%25' stop-color='%23aaaaaa'/><stop offset='100%25' stop-color='%23444444'/></linearGradient><linearGradient id='h' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%232a2a2a'/><stop offset='100%25' stop-color='%23141414'/></linearGradient><radialGradient id='g' cx='40%25' cy='40%25' r='60%25'><stop offset='0%25' stop-color='%23e0f2fe' stop-opacity='0.6'/><stop offset='100%25' stop-color='%237dd3fc' stop-opacity='0.5'/></radialGradient><filter id='b'><feGaussianBlur stdDeviation='8'/></filter><mask id='m'><circle cx='360' cy='360' r='190' fill='%23fff'/></mask></defs><path d='M485 485 L675 675 C690 690, 715 690, 730 675 C745 660, 745 635, 730 620 L540 430 Z' fill='url(%23h)'/><circle cx='360' cy='360' r='210' fill='url(%23f)'/><circle cx='360' cy='360' r='190' fill='url(%23g)'/><g mask='url(%23m)'><circle cx='360' cy='360' r='190' fill='%23fff' opacity='0.7' filter='url(%23b)'/><path d='M240 420 Q340 320 480 340' fill='none' stroke='%23e0f2fe' stroke-width='40' stroke-linecap='round' opacity='0.5'/></g><path d='M200 220 A170 170 0 0 1 500 290' fill='none' stroke='%23fff' stroke-width='4' opacity='0.6'/></svg>" alt="Foggy Magnifying Glass" style="width: 100%; height: auto;">
+      </div>
+      <h3>No results found</h3>
+      <p>Try different keywords or check your spelling</p>
+    </div>`;
+}
+
 
     function renderWebResults(results, countText, currentPage, totalPages) {
       if (!results.length) { renderNoResults(); return; }
