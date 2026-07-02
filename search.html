@@ -1594,6 +1594,52 @@
     }
 
 
+    /* ─────────────────────────────────
+       KNOWLEDGE PANEL — query-shape gate
+       Decides whether a query looks like a genuine single-entity/
+       definition lookup (person, place, thing, concept) worth trying
+       Wikipedia/DDG for, vs. task/troubleshooting/comparison/navigational
+       queries that should just go straight to web results — matching how
+       Google actually decides when to surface a knowledge panel.
+    ───────────────────────────────── */
+    const KP_SITE_NAMES = new Set(['reddit','youtube','gmail','amazon','netflix','github','instagram','twitter','facebook','tiktok','spotify','discord','twitch','linkedin','pinterest','whatsapp','telegram','outlook','yahoo','ebay','walmart','target','craigslist','wikipedia','google']);
+    const KP_EXCLUDE_PATTERNS = [
+      /\b(how (do|can|to)|why (is|does|do|are|isn'?t|doesn'?t)|fix|troubleshoot|error|not working|won'?t|doesn'?t work)\b/i,
+      /\bvs\.?\b|\bversus\b|\bor\b.*\bor\b/i, // comparisons ("X vs Y", "X or Y or Z")
+      /\b(login|sign in|sign up|download|coupon|deal|discount|price|buy|cheap|near me|reddit|reviews?)\b/i,
+      /\brecipe\b/i, // recipes want web/shopping results, not an entity bio panel
+      /[?].*[?]/, // multiple question marks — compound/rambling question
+      /^(is|are|do|does|can|will|should|was|were)\b/i, // yes/no questions rarely have a single-entity answer
+    ];
+    function looksLikeEntityQuery(q) {
+      const trimmed = q.trim();
+      const words = trimmed.split(/\s+/);
+      if (words.length > 7) return false; // long-form questions/sentences aren't entity lookups
+      const lower = trimmed.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+      if (KP_SITE_NAMES.has(lower)) return false; // bare site name — user wants to navigate there, not read about it
+      return !KP_EXCLUDE_PATTERNS.some(re => re.test(trimmed));
+    }
+
+    /* ─────────────────────────────────
+       KNOWLEDGE PANEL — result relevance gate
+       Even for queries that pass the shape check above, Wikipedia's fuzzy
+       search can still return a barely-related "closest available" page
+       for genuinely obscure/misspelled queries. Require the returned
+       title to actually share meaningful vocabulary with the query before
+       trusting it, instead of rendering whatever came back.
+    ───────────────────────────────── */
+    const KP_STOPWORDS = new Set(['a','an','the','is','are','was','were','of','in','on','at','to','for','and','or','what','who','where','when']);
+    function kpTitleRelevant(query, title) {
+      if (!title) return false;
+      const sig = s => new Set(s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 1 && !KP_STOPWORDS.has(w)));
+      const qWords = sig(query);
+      const tWords = sig(title);
+      if (!qWords.size) return true;
+      let overlap = 0;
+      qWords.forEach(w => { if (tWords.has(w) || [...tWords].some(t => t.startsWith(w) || w.startsWith(t))) overlap++; });
+      return overlap / qWords.size >= 0.4;
+    }
+
     async function loadKnowledgePanel(q) {
       const myToken = ++kpToken; // guards against a slow earlier request clobbering a newer one
       if (!q?.trim()) { knowledgePanel.classList.remove('active'); knowledgePanel.innerHTML = ''; return; }
@@ -1664,6 +1710,20 @@
         // through to the normal knowledge-panel flow below as a backstop.
       }
 
+      // ── Should this query even attempt an entity/definition panel? ──
+      // Wikipedia's search API always returns SOME top hit for any string
+      // (it's fuzzy full-text search), so without this gate the panel was
+      // firing for nearly every query — including troubleshooting
+      // questions, comparisons, and navigational searches — often showing
+      // a confidently wrong "closest available" article. Google is far
+      // more selective: it only shows a knowledge panel for queries that
+      // actually look like a single-entity/definition lookup.
+      if (!looksLikeEntityQuery(q)) {
+        knowledgePanel.classList.remove('active');
+        knowledgePanel.innerHTML = '';
+        return;
+      }
+
       knowledgePanel.classList.add('active');
       knowledgePanel.innerHTML = `
         <div class="kp-skel-img"></div>
@@ -1714,6 +1774,17 @@
         // Genuinely nothing to show — hide rather than render a panel with
         // the raw query as a fake title and an empty body.
         if (!title && !desc && !related.length && !facts.length) {
+          knowledgePanel.classList.remove('active');
+          knowledgePanel.innerHTML = '';
+          return;
+        }
+
+        // Confidence gate: Wikipedia's search is fuzzy and always returns
+        // SOME top hit, even for queries with no real match — only trust
+        // it if the returned title actually shares vocabulary with what
+        // was searched. Wikidata facts (keyed off the same bestTitle) are
+        // gated by the same check since they'd be equally wrong.
+        if (title && !kpTitleRelevant(q, title)) {
           knowledgePanel.classList.remove('active');
           knowledgePanel.innerHTML = '';
           return;
@@ -2373,6 +2444,10 @@
         } else if (t === 'shopping') {
           run360Search(state.query, 'shopping');
         } else {
+          // Switching to Web tab was missing this — only a fresh search
+          // triggered it, so tab-switching alone never merged in the
+          // crawled index, only GCSE's own results.
+          fetch360IndexResults(state.query);
           waitForGcseAndSearch(state.query, t);
         }
       }
