@@ -7,8 +7,8 @@
 
 /* ── WIDE MODE VARIABLES ── */
 body.wide-mode {
-  --wide-blur:        blur(28px) saturate(180%);
-  --wide-blur-sm:     blur(14px) saturate(150%);
+  --wide-blur:        blur(20px) saturate(160%);
+  --wide-blur-sm:     blur(10px) saturate(140%);
   --wide-glass:       rgba(255, 255, 255, 0.14);
   --wide-glass-mid:   rgba(255, 255, 255, 0.26);
   --wide-glass-high:  rgba(255, 255, 255, 0.46);
@@ -47,7 +47,8 @@ body.wide-mode::before {
     radial-gradient(ellipse 72% 56% at 14% 18%,  rgba(59, 130, 246, 0.18) 0%, transparent 65%),
     radial-gradient(ellipse 58% 72% at 86% 80%,  rgba(6, 182, 212, 0.15)  0%, transparent 65%),
     radial-gradient(ellipse 50% 44% at 50% 50%,  rgba(139, 92, 246, 0.09) 0%, transparent 70%);
-  animation: wideAmbient 18s ease-in-out infinite alternate;
+  animation: wideAmbient 28s ease-in-out infinite alternate;
+  will-change: transform, opacity;
 }
 
 body.wide-mode.dark::before {
@@ -339,21 +340,24 @@ body.wide-mode #img-lightbox {
 }
 
 /* ── TRANSITION SMOOTHING ──
-   Apply a gentle cross-fade when wide mode activates / deactivates */
-body,
-body .sidebar,
-body .settings-panel,
-body .result-card,
-body .game-card,
-body .chat-left,
-body .chat-header,
-body .logo-main,
-body .clock-pill,
-body .weather-chip,
-body .auth-box,
-body .search-bar-strip,
-body #search-form,
-body .custom-search-form {
+   Apply a gentle cross-fade when wide mode activates / deactivates.
+   IMPORTANT: this must stay scoped under body.wide-mode — without
+   that scope it permanently overrides .sidebar / .settings-panel
+   transitions on every page, even when wide mode is off. */
+body.wide-mode,
+body.wide-mode .sidebar,
+body.wide-mode .settings-panel,
+body.wide-mode .result-card,
+body.wide-mode .game-card,
+body.wide-mode .chat-left,
+body.wide-mode .chat-header,
+body.wide-mode .logo-main,
+body.wide-mode .clock-pill,
+body.wide-mode .weather-chip,
+body.wide-mode .auth-box,
+body.wide-mode .search-bar-strip,
+body.wide-mode #search-form,
+body.wide-mode .custom-search-form {
   transition:
     background 0.35s ease,
     border-color 0.35s ease,
