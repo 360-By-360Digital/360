@@ -127,6 +127,14 @@ body.dark .nav-item { color: var(--txtd); }
 }
 body.dark .sidebar-footer { color: var(--mutd); }
 
+/* The sidebar's contents are injected by main.js into a single
+   <span id="sidebar-slot">. display:contents makes the span itself
+   disappear from layout so its children (sidebar-header, nav-list,
+   sidebar-footer) act as direct flex children of .sidebar again —
+   this is what keeps the footer pinned to the bottom via margin-top:auto
+   instead of just trailing right after the nav list. */
+#sidebar-slot { display: contents; }
+
 /* ============================================================
    SIDEBAR TOGGLE
    ============================================================ */
@@ -177,7 +185,7 @@ body.dark .sidebar-footer { color: var(--mutd); }
   padding: 20px 16px;
   transform: translateX(100%);
   transition: transform .3s ease;
-  z-index: 65;
+  z-index: 220;
   overflow-y: auto;
 }
 body.dark .settings-panel { background: rgba(15,23,42,.98); }
