@@ -23,15 +23,15 @@
   // Always persist the current page as the redirect target so email-confirm links
   // and OAuth callbacks can always bounce back here, even across browser sessions.
   const thisPage = window.location.pathname + window.location.search;
-  if (!thisPage.startsWith('/account') && !thisPage.startsWith('/signin') && !thisPage.startsWith('/signup')) {
+  if (!thisPage.includes('signin.html') && !thisPage.includes('signup.html')) {
     sessionStorage.setItem('360_auth_redirect', thisPage);
   }
 
   // Override the global openAuth used by sendMessage, chat, etc.
   window.openAuth = function(mode) {
     const dest = mode === "signup"
-      ? "/account?signup&from=" + fromParam()
-      : "/account?signin&from=" + fromParam();
+      ? "signup.html?from=" + fromParam()
+      : "signin.html?from=" + fromParam();
     window.location.href = dest;
   };
 

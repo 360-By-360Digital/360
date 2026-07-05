@@ -6,16 +6,68 @@
 //CHANGE THE FOLLOWING TO CHANGE ALL THE PAGE'S VERSION!!
 const version = "3.0.0";
 
-//CHANGES THE FOOTER IN ALL PAGES!!
-const _sidebarVer = document.getElementById("sidebar-ver");
-if (_sidebarVer) _sidebarVer.textContent = "© " + new Date().getFullYear() + " 360Digital, Co. · " + "V." + version;
-
 //Get's the current page's URL (Not including domain)
 let currentUrl = window.location.pathname + window.location.search + window.location.hash;
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 const body = document.body;
+
+/* ============================================================
+   SIDEBAR — SINGLE SOURCE OF TRUTH
+   Every page just contains an empty <span id="sidebar-slot"></span>
+   inside its <aside class="sidebar" id="sidebar">. This function
+   builds the sidebar HTML (header, nav links, footer) and injects
+   it into that slot, so the sidebar can be changed here, once, for
+   every page on the site.
+
+   Extra page-specific nav items (e.g. "Accounts", "Report",
+   "360Mail") can be added by putting a JSON string in the slot's
+   data-extra attribute, e.g.:
+   <span id="sidebar-slot" data-extra='[{"label":"Report","href":"/report"}]'></span>
+   ============================================================ */
+const SIDEBAR_NAV_ITEMS = [
+  { label: "Home",          href: "/" },
+  { label: "AI",             href: "/ai" },
+  { label: "Weather",        href: "/weather" },
+  { label: "Translator",     href: "/translator" },
+  { label: "Stocks",         href: "/stocks" },
+  { label: "URL Shortener",  href: "/url-shortener" },
+  { label: "Chat",           href: "/chat" },
+  { label: "News",           href: "/news" },
+  { label: "Apps",           href: "/apps" },
+  { label: "Games",          href: "/games" }
+];
+
+function renderSidebar() {
+  const slot = document.getElementById("sidebar-slot");
+  if (!slot) return;
+
+  let extraItems = [];
+  if (slot.dataset.extra) {
+    try { extraItems = JSON.parse(slot.dataset.extra); } catch {}
+  }
+
+  const allItems = SIDEBAR_NAV_ITEMS.concat(extraItems);
+
+  const navHtml = allItems
+    .map(it => `<div class="nav-item" data-href="${it.href}">${it.label}</div>`)
+    .join("");
+
+  slot.innerHTML = `
+    <div class="sidebar-header">
+      <div class="logo-mark"></div>
+      <button id="settingsBtn">⚙</button>
+    </div>
+    <nav class="nav-list">${navHtml}</nav>
+    <div class="sidebar-footer"><span id="sidebar-ver">Loading...</span></div>
+  `;
+
+  //CHANGES THE FOOTER IN ALL PAGES!!
+  const _sidebarVer = document.getElementById("sidebar-ver");
+  if (_sidebarVer) _sidebarVer.textContent = "© " + new Date().getFullYear() + " 360Digital, Co. · " + "V." + version;
+}
+renderSidebar();
 
 /* ============================================================
    SUPABASE CLIENT
@@ -283,8 +335,8 @@ function closeAuth() {
   if (authError) authError.textContent = "";
 }
 
-if (signInBtn) signInBtn.onclick = () => location.href = "/account?signin&from=" + currentURL;
-if (signUpBtn) signUpBtn.onclick = () => location.href = "/account?signup&from=" + currentURL;
+if (signInBtn) signInBtn.onclick = () => location.href = "signin.html?from=" + encodeURIComponent(currentUrl);
+if (signUpBtn) signUpBtn.onclick = () => location.href = "signup.html?from=" + encodeURIComponent(currentUrl);
 if (authCloseBtn) authCloseBtn.onclick = closeAuth;
 
 if (authPopup) {
