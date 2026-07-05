@@ -77,6 +77,12 @@
     localStorage.setItem(STORAGE_KEY, wideOn);
     applyState(wideOn);
 
+    /* Mutually exclusive with 360 Gallium — both re-skin the same
+       surfaces, so leave only one active at a time. */
+    if (wideOn && window.GalliumMode && window.GalliumMode.isOn) {
+      window.GalliumMode.disable();
+    }
+
     /* Sync track pill */
     const track = document.getElementById("wideTrack");
     if (track) track.classList.toggle("on", wideOn);
