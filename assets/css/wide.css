@@ -41,7 +41,7 @@ body.wide-mode::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
   background:
     radial-gradient(ellipse 72% 56% at 14% 18%,  rgba(59, 130, 246, 0.18) 0%, transparent 65%),
@@ -62,12 +62,6 @@ body.wide-mode.dark::before {
   33%  { opacity: 0.85; transform: scale(1.04) rotate(1deg); }
   66%  { opacity: 0.95; transform: scale(0.98) rotate(-1.5deg); }
   100% { opacity: 1; transform: scale(1.02) rotate(0.5deg); }
-}
-
-/* Ensure all page content sits above the ambient layer */
-body.wide-mode > *:not(style):not(script):not(.cursor-dot):not(.cursor-trail):not(.cursor-crosshair):not(.cursor-blob) {
-  position: relative;
-  z-index: 1;
 }
 
 /* ── SIDEBAR ── */
