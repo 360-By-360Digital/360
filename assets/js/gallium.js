@@ -1,18 +1,29 @@
 /* ============================================================
-   360 — GALLIUM.JS
+   360 — GALLIUM.JS  (performance pass [again])
    "360 Gallium" — deep Liquid Glass mode toggle.
 
+   v2 changes:
+   - Removed the injected SVG feDisplacementMap filter entirely.
+     It was applied to a viewport-sized, already-blurred layer —
+     expensive on every browser, brutal on integrated GPUs.
+   - Removed the document-wide `pointermove` listener that wrote
+     --glx/--gly onto <html> on every frame. That invalidated
+     style for every element referencing those variables across
+     the WHOLE page on every mouse move, which is a page-wide
+     recalculation, not a local one — the main JS-side cause of
+     the lag. The cursor-tracked gleam is now opt-in per element:
+     it only attaches to the small set of "hero" singleton
+     surfaces (logo pill, auth box, modal, profile popup) that
+     actually exist on the current page, and it writes the
+     variable on that element only, throttled.
+
    Same shape as wide.js on purpose (drop-in sibling, no HTML
-   changes required), but drives the specular gleam that tracks
-   the cursor, injects the SVG refraction filter used by the
-   ambient backdrop, and plays a "pour" ripple on activation
-   instead of Wide's flat shimmer.
+   changes required). Gallium and Wide both re-skin the same
+   surfaces with backdrop-filter + !important, so they are
+   mutually exclusive at runtime — turning one on turns the
+   other off.
 
-   Gallium and Wide both re-skin the same surfaces with
-   backdrop-filter + !important, so they are mutually exclusive
-   at runtime — turning one on turns the other off.
-
-   HOW TO USE:
+  @MINGZEW2 HOW TO USE:
    1. Add to <head> (after main.css, after wide.css):
         <link rel="stylesheet" href="/assets/css/gallium.css" />
 
@@ -27,6 +38,8 @@
   "use strict";
 
   const STORAGE_KEY = "360_gallium_mode";
+  const GLEAM_SELECTOR = ".logo-main, .auth-box, .modal-box, #profile-popup";
+  const GLEAM_THROTTLE_MS = 40; /* ~25fps — plenty smooth for a slow-moving highlight */
 
   /* ── Read persisted state ── */
   let galliumOn = localStorage.getItem(STORAGE_KEY) === "true";
@@ -35,64 +48,61 @@
   function applyState(on) {
     document.body.classList.toggle("gallium-mode", on);
     if (on) {
-      ensureWarpFilter();
-      startGleamTracking();
+      attachGleamListeners();
     } else {
-      stopGleamTracking();
+      detachGleamListeners();
     }
   }
 
   applyState(galliumOn);
 
-  /* ── SVG refraction filter used by the ambient backdrop ──
-     A very low-frequency turbulence + displacement map, applied
-     only to the fixed ambient layer (body.gallium-mode::before)
-     so the "light" behind the glass looks like it's bending
-     rather than just blurred. Cheap: one hidden 0x0 SVG node. */
-  function ensureWarpFilter() {
-    if (document.getElementById("_gallium_warp_svg")) return;
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("id", "_gallium_warp_svg");
-    svg.setAttribute("width", "0");
-    svg.setAttribute("height", "0");
-    svg.style.cssText = "position:absolute;overflow:hidden;pointer-events:none;";
-    svg.innerHTML = `
-      <filter id="galliumWarp" x="-20%" y="-20%" width="140%" height="140%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="7" result="n" />
-        <feDisplacementMap in="SourceGraphic" in2="n" scale="40" xChannelSelector="R" yChannelSelector="G" />
-      </filter>`;
-    document.body.appendChild(svg);
+  /* ── Cursor-reactive gleam, scoped to hero elements only ──
+     Attaches a lightweight mousemove listener directly to each
+     hero element present on the page (there are only ever 0-2 of
+     these), writing --glx/--gly onto that element specifically —
+     never onto <html> or <body> — so the browser only needs to
+     recompute style for that one element's subtree, not the
+     whole document. Throttled by timestamp, not rAF piling. */
+  let gleamEls = [];
+  let lastMove = 0;
+
+  function onHeroMove(e) {
+    const now = performance.now();
+    if (now - lastMove < GLEAM_THROTTLE_MS) return;
+    lastMove = now;
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width)  * 100;
+    const y = ((e.clientY - rect.top)  / rect.height) * 100;
+    el.style.setProperty("--glx", x.toFixed(1) + "%");
+    el.style.setProperty("--gly", y.toFixed(1) + "%");
   }
 
-  /* ── Mouse-reactive specular gleam ──
-     Sets --glx/--gly (percentages) on the root so every glass
-     surface's radial-gradient highlight reacts to one shared
-     light source, like reflections skating across a liquid
-     surface as the cursor moves. Throttled to rAF. */
-  let rafPending = false;
-  let lastEvent  = null;
-
-  function onPointerMove(e) {
-    lastEvent = e;
-    if (rafPending) return;
-    rafPending = true;
-    requestAnimationFrame(() => {
-      rafPending = false;
-      if (!lastEvent) return;
-      const x = (lastEvent.clientX / window.innerWidth)  * 100;
-      const y = (lastEvent.clientY / window.innerHeight) * 100;
-      document.documentElement.style.setProperty("--glx", x.toFixed(2) + "%");
-      document.documentElement.style.setProperty("--gly", y.toFixed(2) + "%");
+  function attachGleamListeners() {
+    detachGleamListeners();
+    gleamEls = Array.from(document.querySelectorAll(GLEAM_SELECTOR));
+    gleamEls.forEach(el => {
+      el.classList.add("gallium-gleam");
+      el.addEventListener("mousemove", onHeroMove, { passive: true });
     });
   }
 
-  function startGleamTracking() {
-    document.addEventListener("pointermove", onPointerMove, { passive: true });
+  function detachGleamListeners() {
+    gleamEls.forEach(el => {
+      el.classList.remove("gallium-gleam");
+      el.removeEventListener("mousemove", onHeroMove);
+    });
+    gleamEls = [];
   }
 
-  function stopGleamTracking() {
-    document.removeEventListener("pointermove", onPointerMove);
+  /* Hero elements (profile popup, modals) can be created after
+     initial load — re-scan lazily on click/DOM changes rather
+     than running an expensive observer callback constantly. */
+  function rescanGleamTargets() {
+    if (!galliumOn) return;
+    attachGleamListeners();
   }
+  document.addEventListener("click", rescanGleamTargets, { passive: true, capture: true });
 
   /* ── Build the settings toggle row ── */
   function injectToggle() {
@@ -113,7 +123,7 @@
         <div>
           <div style="font-size:13px;font-weight:600;color:var(--txt);">Enable 360 Gallium</div>
           <div style="font-size:11px;color:var(--mut);margin-top:2px;">
-            Deep Liquid Glass — refractive, cursor-lit, and alive
+            Deep Liquid Glass — refractive and cursor-lit
           </div>
         </div>
         <div class="gallium-toggle-track${galliumOn ? " on" : ""}" id="galliumTrack"></div>
@@ -153,8 +163,8 @@
     if (galliumOn) pourRipple();
   }
 
-  /* ── "Pour" ripple when activating — a soft droplet bloom from
-     the center of the viewport, standing in for Wide's shimmer ── */
+  /* ── "Pour" ripple when activating — a single 0.85s one-shot
+     animation, not continuous, so it costs nothing at rest ── */
   function pourRipple() {
     const el = document.createElement("div");
     el.className = "gallium-ripple";
@@ -205,13 +215,12 @@
         <div>
           <div style="font-size:14px;font-weight:500;">Enable 360 Gallium</div>
           <div style="font-size:12px;color:var(--mut);margin-top:2px;">
-            Deep Liquid Glass — refractive, cursor-lit, and alive. Replaces 360 Wide when on.
+            Deep Liquid Glass — refractive and cursor-lit. Replaces 360 Wide when on.
           </div>
         </div>
         <button class="st-toggle${galliumOn ? " on" : ""}" id="settingsGalliumToggle"></button>
       </div>`;
 
-    /* Insert right after the Wide card if it exists, else after Bob */
     const wideCard = [...prefPanel.querySelectorAll(".st-card")]
       .find(c => c.textContent.includes("360 Wide"));
     const bobCard = [...prefPanel.querySelectorAll(".st-card")]
