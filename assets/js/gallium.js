@@ -207,8 +207,19 @@
     const prefPanel = document.getElementById("panel-preference");
     if (!prefPanel) return;
 
+    const existingToggle = document.getElementById("settingsGalliumToggle");
+    if (existingToggle) {
+      existingToggle.classList.toggle("on", galliumOn);
+      existingToggle.addEventListener("click", function() {
+        toggle();
+        this.classList.toggle("on", galliumOn);
+      });
+      return;
+    }
+
     const card = document.createElement("div");
     card.className = "st-card";
+    card.id = "settingsGalliumCard";
     card.innerHTML = `
       <div class="st-card-title">360 Gallium</div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;">
