@@ -115,6 +115,20 @@
       box-shadow: 0 0 0 3px rgba(239,68,68,.12);
     }
 
+    .ac-email-row { display: flex; align-items: stretch; }
+    .ac-email-row input { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; }
+    .ac-email-suffix {
+      display: flex; align-items: center; white-space: nowrap;
+      padding: 0 13px; font-size: 14px;
+      border: 1.5px solid var(--br); border-left: none;
+      border-top-right-radius: 9px; border-bottom-right-radius: 9px;
+      background: rgba(148,163,184,.12); color: var(--mut);
+    }
+    body.dark .ac-email-suffix {
+      border-color: rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06); color: var(--mutd);
+    }
+
     .ac-hint { font-size: 11px; color: var(--mut); margin-top: 3px; min-height: 14px; }
     body.dark .ac-hint { color: var(--mutd); }
     .ac-hint.err { color: #ef4444; }
@@ -204,25 +218,7 @@
   <button id="installBtn" class="install-banner" style="display:none;">Install 360</button>
   <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
 
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <div class="logo-mark"></div>
-      <button id="settingsBtn">⚙</button>
-    </div>
-    <nav class="nav-list">
-      <div class="nav-item" data-href="/">Home</div>
-      <div class="nav-item" data-href="../ai">AI</div>
-      <div class="nav-item" data-href="../weather">Weather</div>
-      <div class="nav-item" data-href="../translator">Translator</div>
-      <div class="nav-item" data-href="../stocks">Stocks</div>
-      <div class="nav-item" data-href="../url-shortener">URL Shortener</div>
-      <div class="nav-item" data-href="../chat">Chat</div>
-      <div class="nav-item" data-href="../news">News</div>
-      <div class="nav-item" data-href="../apps">Apps</div>
-      <div class="nav-item" data-href="../games">Games</div>
-    </nav>
-    <div class="sidebar-footer"><span id="sidebar-ver">Loading...</span></div>
-  </aside>
+  <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
 
   <div class="overlay" id="overlay"></div>
 
@@ -282,7 +278,10 @@
 
       <div class="ac-field">
         <label>Email</label>
-        <input id="suEmail" type="email" placeholder="you@360-search.com" autocomplete="email" />
+        <div class="ac-email-row">
+          <input id="suEmail" type="text" placeholder="you" autocomplete="off" />
+          <span class="ac-email-suffix">@360-search.com</span>
+        </div>
       </div>
       <div class="ac-field">
         <label>Username</label>
@@ -417,7 +416,8 @@
     }
 
     async function doSignUp() {
-      const email    = suEmail.value.trim();
+      const emailLocal = suEmail.value.trim().toLowerCase().replace(/[^a-z0-9._-]/g, "");
+      const email    = emailLocal ? emailLocal + "@360-search.com" : "";
       const username = suUser.value.trim();
       const password = suPass.value;
       const confirm  = suConfirm.value;
