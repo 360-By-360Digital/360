@@ -370,5 +370,102 @@
 <script src="/assets/js/cursor.js"></script>
 <script src="/assets/js/chat.js"></script>
 <script src="/assets/js/notifications.js"></script>
+
+<script>
+/* ─────────────────────────────────────────────────────
+   CHAT PAGE — SIDEBAR PATCH
+   main.js's document click-outside handler closes the
+   nav sidebar whenever you click anywhere in the Discord
+   layout because it only whitelists .sidebar / .sidebar-toggle.
+   We patch it here so the entire .dc-root is whitelisted,
+   and we constrain the overlay so it doesn't grey-out
+   the whole chat interface.
+───────────────────────────────────────────────────── */
+(function patchChatSidebar() {
+  const sidebar        = document.querySelector('.sidebar');
+  const overlay        = document.querySelector('.overlay');
+  const settingsPanel  = document.querySelector('.settings-panel');
+  const toggle         = document.getElementById('sidebarToggle');
+
+  if (!sidebar || !overlay) return;
+
+  // ── 1. Constrain the overlay to only cover the sidebar area,
+  //       not the whole Discord layout, so it doesn't eat clicks.
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0; left: 0;
+    width: 220px; /* same as .sidebar width */
+    height: 100%;
+    background: rgba(0,0,0,.4);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .3s, visibility .3s;
+    z-index: 4999;
+  `;
+
+  function updateOverlay() {
+    const open = sidebar.classList.contains('open') || settingsPanel?.classList.contains('open');
+    overlay.style.opacity   = open ? '1' : '0';
+    overlay.style.visibility = open ? 'visible' : 'hidden';
+    overlay.style.pointerEvents = open ? 'auto' : 'none';
+    // Expand overlay to full screen when open so clicking outside closes it
+    overlay.style.width = open ? '100vw' : '220px';
+  }
+
+  // ── 2. Override the overlay click to close sidebar
+  //       (remove old listener by replacing the element, then re-add)
+  const newOverlay = overlay.cloneNode(true);
+  overlay.parentNode.replaceChild(newOverlay, overlay);
+  newOverlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    settingsPanel?.classList.remove('open');
+    updateOverlay();
+  });
+
+  // ── 3. Patch the document click-outside handler:
+  //       We can't remove the anonymous listener main.js added,
+  //       so instead we intercept it by stopping propagation on
+  //       all clicks inside .dc-root before they reach document.
+  const dcRoot = document.querySelector('.dc-root');
+  if (dcRoot) {
+    dcRoot.addEventListener('click', e => {
+      // Only stop propagation if the sidebar is currently open —
+      // otherwise normal chat interactions work fine.
+      if (sidebar.classList.contains('open') || settingsPanel?.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        settingsPanel?.classList.remove('open');
+        updateOverlay();
+        // Don't stop the event — let the chat UI still handle it
+      }
+    }, true); // capture phase so it runs before main.js's bubble handler
+  }
+
+  // ── 4. Also handle the modals area the same way
+  const modals = document.querySelectorAll('.dc-modal-overlay');
+  modals.forEach(m => {
+    m.addEventListener('click', e => {
+      // Modal clicks shouldn't close the nav sidebar
+      e.stopPropagation();
+    });
+  });
+
+  // ── 5. Re-wire the toggle button inside dc-rail
+  if (toggle) {
+    // main.js already bound a listener via .sidebar-toggle class selector —
+    // that still works. We just make sure updateOverlay is called correctly.
+    toggle.addEventListener('click', e => {
+      e.stopPropagation();
+      // main.js toggled .open already; sync our overlay
+      requestAnimationFrame(updateOverlay);
+    });
+  }
+
+  // ── 6. Ensure sidebar and overlay are high enough above dc layout
+  sidebar.style.zIndex  = '6000';
+  newOverlay.style.zIndex = '5999';
+  if (settingsPanel) settingsPanel.style.zIndex = '6000';
+})();
+</script>
 </body>
 </html>
