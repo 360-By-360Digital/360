@@ -759,4 +759,4 @@ if (installBtn) installBtn.onclick = () => deferredPrompt?.prompt();
   });
 })();
 
-console.log("%c360 V.2.0.3 — main.js loaded (user chip active)", "color:#4ade80;font-weight:bold;font-size:14px;");
+console.log("%c360 V.3.0.0 — main.js loaded.", "color:#4ade80;font-weight:bold;font-size:14px;");
