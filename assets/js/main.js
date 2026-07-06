@@ -1,6 +1,5 @@
 /* ============================================================
    360 — MAIN.JS V.3.0.0
-   User chip with Gravatar + initials fallback, full dropdown
    ============================================================ */
 
 //CHANGE THE FOLLOWING TO CHANGE ALL THE PAGE'S VERSION!!
