@@ -348,6 +348,18 @@
     const _fromParam = qs.match(/(?:^|&)from=([^&]*)/i);
     const _redirectTo = _fromParam ? decodeURIComponent(_fromParam[1]) || "/" : "/";
 
+    // Pre-fill username if arriving from the 360Mail claim page (?u=name)
+    const _uParam = qs.match(/(?:^|&)u=([^&]*)/i);
+    if (_uParam) {
+      const prefill = decodeURIComponent(_uParam[1] || "").slice(0, 32);
+      const suUserEl = document.getElementById("suUser");
+      if (prefill && suUserEl) {
+        suUserEl.value = prefill;
+        // Defer so the input listener below (which checks availability) is attached first
+        requestAnimationFrame(() => suUserEl.dispatchEvent(new Event("input")));
+      }
+    }
+
     // If already signed in, redirect away
     (async () => {
       const { data: { session } } = await sb.auth.getSession();
