@@ -1,12 +1,13 @@
 /* ============================================================
    360 — SEARCH FALLBACK V2
-   On error falls back to Vyntr.
+   Tries Google CSE first. On quota/error falls back to Vyntr.
    Results styled to match 360's glassmorphism UI exactly.
    ============================================================ */
 
 (function () {
-  const VYNTR_KEY = " ";
-  const VYNTR_URL = "https://vyntr.com/api/v1/search";
+  // Requests go through the vyntr-proxy Supabase edge function so the Vyntr
+  // API key stays server-side instead of shipping to every visitor's browser.
+  const VYNTR_URL = "https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/vyntr-proxy";
   let cseWorking = true;
   let vyntrActive = false;
 
@@ -88,7 +89,7 @@
 
     try {
       const res  = await fetch(`${VYNTR_URL}?q=${encodeURIComponent(query)}`, {
-        headers: { "Authorization": `Bearer ${VYNTR_KEY}`, "Accept": "application/json" }
+        headers: { "Accept": "application/json" }
       });
       if (!res.ok) throw new Error("Vyntr error " + res.status);
       const data = await res.json();

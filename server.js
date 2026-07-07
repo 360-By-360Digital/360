@@ -23,14 +23,20 @@ appRedirects.forEach((name) => {
 // Enable CORS
 app.use(cors());
 
-// Serve EVERYTHING in the root folder
-app.use(express.static(__dirname));
+// Serve EVERYTHING in the root folder.
+// `extensions: ["html"]` makes a request for e.g. /ai or /games/spaceGlider
+// resolve to ai.html / games/spaceGlider.html -- without this, every
+// extensionless link on the site (sidebar nav, game cards, etc.) silently
+// falls through to the SPA fallback below and just loads the homepage.
+app.use(express.static(__dirname, { extensions: ["html"] }));
 
 // Serve assets (html, css, js, images, etc.)
-app.use("/assets", express.static(path.join(__dirname, "assets")));
+app.use("/assets", express.static(path.join(__dirname, "assets"), { extensions: ["html"] }));
 
-// SPA fallback — ANY unknown route loads index.html
-app.get("*", (req, res) => {
+// SPA fallback — only for routes with no file extension, so a genuinely
+// missing page/asset doesn't get masked as a silent 200 (index.html).
+app.get("*", (req, res, next) => {
+  if (path.extname(req.path)) return next();
   res.sendFile(path.join(__dirname, "index.html"));
 });
 

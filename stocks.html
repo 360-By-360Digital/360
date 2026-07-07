@@ -610,7 +610,8 @@
   ───────────────────────────────────────────────────── */
 
   const PROXY      = "https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/stocks-proxy";
-  const ALPHA_KEY  = "I3B9DMLF3EUUP0MY";
+  // Alpha Vantage calls always go through the stocks-proxy edge function now --
+  // the API key used to be hardcoded here and shipped to every visitor's browser.
 
   // CoinGecko IDs for crypto tickers
   const CRYPTO_IDS = {
@@ -756,7 +757,7 @@
   /* ── 52-week fetch for stocks ── */
   async function fetch52Week(ticker, currentPrice) {
     try {
-      const url = `https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY&symbol=${ticker}&apikey=${ALPHA_KEY}`;
+      const url = `${PROXY}?fn=TIME_SERIES_WEEKLY&symbol=${encodeURIComponent(ticker)}`;
       const res = await fetch(url);
       const data = await res.json();
       const ts = data["Weekly Time Series"];
@@ -833,7 +834,7 @@
       "1Y": { fn: "TIME_SERIES_WEEKLY", sliceKey: "Weekly Time Series", count: 52 },
     };
     const { fn, sliceKey, count } = periodMap[period];
-    const url  = `https://www.alphavantage.co/query?function=${fn}&symbol=${ticker}&outputsize=compact&apikey=${ALPHA_KEY}`;
+    const url  = `${PROXY}?fn=${encodeURIComponent(fn)}&symbol=${encodeURIComponent(ticker)}&outputsize=compact`;
     const res  = await fetch(url);
     const data = await res.json();
     const ts   = data[sliceKey];

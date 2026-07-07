@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>360 — Games</title>
+  <link rel="icon" type="image/png" href="../favicon-32x32.png" />
+  <link rel="manifest" href="../manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/wide.css" />
+  <link rel="stylesheet" href="/assets/css/gallium.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+  <link rel="stylesheet" href="/assets/css/cursor.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ===============================
+       MINESWEEPER FULL STYLES
+    =============================== */
+
+    .minesweeper-container {
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+      text-align: center;
+    }
+
+    /* Top bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .top-actions button {
+      margin-left: 6px;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .controls input {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--br);
+      background: rgba(255,255,255,.6);
+      color: var(--txt);
+      font-size: 13px;
+      width: 70px;
+      text-align: center;
+    }
+
+    body.dark .controls input {
+      background: rgba(15,23,42,.7);
+      color: var(--txtd);
+    }
+
+    .controls input:focus { outline: none; border-color: var(--a); }
+
+    #startGame {
+      padding: 6px 16px;
+      border-radius: 6px;
+      border: none;
+      background: linear-gradient(110deg, var(--a), var(--a2));
+      color: #050816;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* ---- Custom Dropdown ---- */
+    .custom-select-wrapper {
+      position: relative;
+      user-select: none;
+    }
+
+    .custom-select-trigger {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 30px 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--br);
+      background: rgba(255,255,255,.6);
+      color: var(--txt);
+      font-size: 13px;
+      min-width: 148px;
+      cursor: pointer;
+      position: relative;
+      white-space: nowrap;
+      transition: border-color .15s;
+      font-family: inherit;
+    }
+
+    body.dark .custom-select-trigger {
+      background: rgba(15,23,42,.7);
+      color: var(--txtd);
+    }
+
+    .custom-select-trigger::after {
+      content: '▾';
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--mut);
+      font-size: 11px;
+      pointer-events: none;
+      transition: transform .2s;
+    }
+
+    .custom-select-wrapper.open .custom-select-trigger { border-color: var(--a); }
+
+    .custom-select-wrapper.open .custom-select-trigger::after {
+      transform: translateY(-50%) rotate(180deg);
+    }
+
+    .custom-select-options {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      min-width: 100%;
+      background: rgba(255,255,255,.97);
+      border: 1px solid var(--br);
+      border-radius: 8px;
+      overflow: hidden;
+      z-index: 200;
+      box-shadow: 0 8px 24px rgba(0,0,0,.15);
+      animation: msDropIn .15s ease;
+    }
+
+    body.dark .custom-select-options {
+      background: rgba(9,9,22,.97);
+      border-color: rgba(255,255,255,.12);
+    }
+
+    @keyframes msDropIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .custom-select-wrapper.open .custom-select-options { display: block; }
+
+    .custom-option {
+      padding: 9px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--br);
+      color: var(--txt);
+      transition: background .1s, color .1s;
+      font-family: inherit;
+    }
+
+    body.dark .custom-option { color: var(--txtd); border-color: rgba(255,255,255,.07); }
+    .custom-option:last-child { border-bottom: none; }
+    .custom-option:hover { background: rgba(59,130,246,.08); color: var(--a); }
+    .custom-option.selected { color: var(--a); background: rgba(59,130,246,.07); font-weight: 600; }
+
+    .custom-option .opt-desc {
+      font-size: 10px;
+      color: var(--mut);
+      margin-left: auto;
+    }
+    body.dark .custom-option .opt-desc { color: var(--mutd); }
+
+    /* Custom size inputs */
+    .custom-inputs {
+      display: none;
+      gap: 6px;
+      align-items: center;
+    }
+    .custom-inputs.visible { display: flex; }
+
+    /* Info bar */
+    .info-bar {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 10px 0;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    /* Board */
+    .board {
+      display: grid;
+      gap: 4px;
+      justify-content: center;
+      margin-top: 10px;
+      overflow-x: auto;
+      padding: 4px;
+      contain: layout paint style;
+    }
+
+    /* Cells */
+    .cell {
+      width: 32px;
+      height: 32px;
+      background: rgba(255,255,255,.6);
+      border: 1px solid var(--br);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 13px;
+      user-select: none;
+      transition: transform 0.15s ease, filter 0.15s ease, border-color 0.15s ease;
+      will-change: transform;
+    }
+
+    body.dark .cell {
+      background: #1f2937;
+      border-color: #374151;
+    }
+
+    .cell:hover:not(.revealed) {
+      transform: scale(1.05);
+      filter: brightness(1.08);
+      border-color: var(--a);
+    }
+
+    .cell.revealed {
+      background: #e5e7eb;
+      color: #111;
+      cursor: default;
+      border-color: #d1d5db;
+    }
+
+    body.dark .cell.revealed {
+      background: #374151;
+      color: #f9fafb;
+      border-color: #4b5563;
+    }
+
+    .cell.mine {
+      background: #fee2e2 !important;
+      border-color: #ef4444 !important;
+    }
+
+    body.dark .cell.mine {
+      background: rgba(239,68,68,.25) !important;
+      border-color: #ef4444 !important;
+    }
+
+    .cell.flagged {
+      background: rgba(251,191,36,.15);
+      border-color: #f59e0b;
+    }
+
+    /* Number colors */
+    .cell.revealed[data-count="1"] { color: #2563eb; }
+    .cell.revealed[data-count="2"] { color: #16a34a; }
+    .cell.revealed[data-count="3"] { color: #dc2626; }
+    .cell.revealed[data-count="4"] { color: #7c3aed; }
+    .cell.revealed[data-count="5"] { color: #b45309; }
+    .cell.revealed[data-count="6"] { color: #0891b2; }
+    .cell.revealed[data-count="7"] { color: #374151; }
+    .cell.revealed[data-count="8"] { color: #111827; }
+    body.dark .cell.revealed[data-count="7"] { color: #9ca3af; }
+    body.dark .cell.revealed[data-count="8"] { color: #d1d5db; }
+
+    /* Animations */
+    .cell.pop { animation: msPop 0.2s ease; }
+
+    @keyframes msPop {
+      0%   { transform: scale(0.6); opacity: 0.5; }
+      60%  { transform: scale(1.1); }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+
+    /* Hint highlight */
+    .cell.safe-hint {
+      outline: 3px solid #22c55e;
+      outline-offset: 1px;
+      animation: msPulse 1s infinite;
+    }
+
+    @keyframes msPulse {
+      0%,100% { outline-color: #22c55e; box-shadow: 0 0 6px #22c55e; }
+      50%      { outline-color: #4ade80; box-shadow: 0 0 12px #4ade80; }
+    }
+
+    /* Heatmap */
+    .cell.heat-low  { background: rgba(34,197,94,0.45)  !important; }
+    .cell.heat-mid  { background: rgba(234,179,8,0.45)  !important; }
+    .cell.heat-high { background: rgba(239,68,68,0.55)  !important; }
+
+    /* Status */
+    .status {
+      margin-top: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      min-height: 28px;
+    }
+
+    .meta-row {
+      margin-top: 8px;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--mut);
+    }
+
+    /* Leaderboard */
+    .leaderboard {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .leaderboard h3 {
+      margin-bottom: 8px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .leaderboard ul {
+      list-style: none;
+      padding: 0;
+      display: inline-flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 240px;
+    }
+
+    .leaderboard li {
+      padding: 6px 14px;
+      font-size: 13px;
+      background: rgba(255,255,255,.5);
+      border: 1px solid var(--br);
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    body.dark .leaderboard li { background: rgba(255,255,255,.05); }
+
+    .lb-rank { color: var(--mut); font-weight: 700; min-width: 28px; }
+    .lb-time { color: var(--a);   font-weight: 700; }
+    .lb-diff { color: var(--mut); font-size: 11px; text-transform: capitalize; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .cell { width: 26px; height: 26px; font-size: 11px; border-radius: 5px; }
+      .board { gap: 3px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor-dot"></div>
+  <div class="cursor-trail"></div>
+  <div class="cursor-crosshair"></div>
+  <div class="cursor-blob"></div>
+
+  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-mark"></div>
+      <button id="settingsBtn">⚙</button>
+    </div>
+    <nav class="nav-list">
+      <div class="nav-item" data-href="../">Home</div>
+      <div class="nav-item" data-href="../ai.html">AI</div>
+      <div class="nav-item" data-href="../weather.html">Weather</div>
+      <div class="nav-item" data-href="../translator.html">Translator</div>
+      <div class="nav-item" data-href="../stocks.html">Stocks</div>
+      <div class="nav-item" data-href="../url-shortener.html">URL Shortener</div>
+      <div class="nav-item" data-href="../chat.html">Chat</div>
+      <div class="nav-item" data-href="../news.html">News</div>
+      <div class="nav-item" data-href="../apps.html">Apps</div>
+      <div class="nav-item active" data-href="../games.html">Games</div>
+    </nav>
+    <div class="sidebar-footer">© 2026 360 INC. · V.2.0.3</div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="settings-panel" id="settingsPanel">
+    <h3>Appearance</h3>
+    <div class="settings-label">Theme</div>
+    <div class="theme-swatches">
+      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+    </div>
+    <div class="settings-label" style="margin-top:20px;">Mode</div>
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <span style="font-size:14px;">Dark mode</span>
+      <input type="checkbox" id="darkToggle" />
+    </label>
+    <h3 style="margin-top:20px;">Cursor</h3>
+    <div class="settings-label">Style</div>
+    <div class="cursor-options">
+      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+    </div>
+    <div class="cursor-color-row">
+      <label>Cursor color</label>
+      <input type="color" id="cursorColorPicker" value="#3b82f6" />
+      <button id="cursorColorReset">Reset</button>
+    </div>
+  </div>
+
+  <div id="auth-popup" class="auth-popup hidden">
+    <div class="auth-box">
+      <h2>Account</h2>
+      <input id="auth-email" type="email" placeholder="Email" />
+      <input id="auth-password" type="password" placeholder="Password" />
+      <button id="auth-login-btn">Log In</button>
+      <button id="auth-signup-btn">Sign Up</button>
+      <button id="github-login" class="oauth-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span>Sign in with GitHub</span>
+      </button>
+      <button id="google-login" class="oauth-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        <span>Sign in with Google</span>
+      </button>
+      <p id="auth-error" class="auth-error"></p>
+      <button id="auth-close-btn" class="close-btn">Close</button>
+    </div>
+  </div>
+
+  <div class="games-page">
+    <div class="minesweeper-container">
+
+      <div class="top-bar">
+        <h1>Minesweeper</h1>
+        <div class="top-actions">
+          <button id="restartBtn">🔄</button>
+          <button id="pauseBtn">⏸</button>
+          <button id="hintBtn">💡</button>
+          <button id="heatmapBtn">🌡️</button>
+          <button id="replayBtn">🎥</button>
+        </div>
+      </div>
+
+      <div class="controls">
+
+        <!-- Custom dropdown replacing native <select> -->
+        <div class="custom-select-wrapper" id="diffWrapper">
+          <div class="custom-select-trigger" id="diffTrigger">
+            <span id="diffLabel">🟢 Easy</span>
+          </div>
+          <div class="custom-select-options" id="diffOptions">
+            <div class="custom-option selected" data-value="easy">
+              <span>🟢</span><span>Easy</span><span class="opt-desc">8×8 · 10 mines</span>
+            </div>
+            <div class="custom-option" data-value="medium">
+              <span>🟡</span><span>Medium</span><span class="opt-desc">12×12 · 25 mines</span>
+            </div>
+            <div class="custom-option" data-value="hard">
+              <span>🔴</span><span>Hard</span><span class="opt-desc">16×16 · 50 mines</span>
+            </div>
+            <div class="custom-option" data-value="daily">
+              <span>📅</span><span>Daily</span><span class="opt-desc">Same seed today</span>
+            </div>
+            <div class="custom-option" data-value="custom">
+              <span>⚙️</span><span>Custom</span><span class="opt-desc">Set your own</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shown only when "custom" is selected -->
+        <div class="custom-inputs" id="customInputs">
+          <input id="customRows"  type="number" placeholder="Rows"  min="4" max="30" value="10" />
+          <input id="customCols"  type="number" placeholder="Cols"  min="4" max="50" value="10" />
+          <input id="customMines" type="number" placeholder="Mines" min="1"          value="15" />
+        </div>
+
+        <button id="startGame">▶ Start</button>
+      </div>
+
+      <div class="info-bar">
+        <span>💣 <span id="mineCount">—</span></span>
+        <span>🚩 <span id="flagCount">0</span></span>
+        <span>⏱ <span id="timer">0</span>s</span>
+        <span>🔥 <span id="streak">0</span></span>
+      </div>
+
+      <div id="board" class="board"></div>
+
+      <div id="status" class="status"></div>
+      <div class="meta-row">
+        <span>⚡ Spawn: <span id="spawnMs">—</span>ms</span>
+        <span>🧠 Mode: <span id="assistMode">Classic</span></span>
+      </div>
+
+      <div class="leaderboard">
+        <h3>🏆 Global Top Times</h3>
+        <ul id="leaderboardList"><li style="justify-content:center;color:var(--mut);">Loading…</li></ul>
+      </div>
+
+    </div>
+  </div>
+
+  <audio id="clickSound" src="../click-sound.mp3" preload="auto"></audio>
+
+  <script>
+    /* =====================================================
+       SUPABASE — same client main.js also creates, but
+       main.js runs after so we init here to be safe.
+    ===================================================== */
+    const supabaseClient = supabase.createClient(
+      "https://wiswfpfsjiowtrdyqpxy.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM"
+    );
+
+    /* =====================================================
+       CUSTOM DROPDOWN
+    ===================================================== */
+    const diffWrapper  = document.getElementById('diffWrapper');
+    const diffTrigger  = document.getElementById('diffTrigger');
+    const diffLabel    = document.getElementById('diffLabel');
+    const diffOptions  = document.getElementById('diffOptions');
+    const customInputs = document.getElementById('customInputs');
+    let selectedDiff   = 'easy';
+
+    diffTrigger.addEventListener('click', e => {
+      e.stopPropagation();
+      diffWrapper.classList.toggle('open');
+    });
+
+    /* Close on outside click */
+    document.addEventListener('click', () => diffWrapper.classList.remove('open'));
+
+    diffOptions.querySelectorAll('.custom-option').forEach(opt => {
+      opt.addEventListener('click', e => {
+        e.stopPropagation();
+        diffOptions.querySelectorAll('.custom-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        selectedDiff = opt.dataset.value;
+        const icon = opt.querySelector('span:first-child').textContent;
+        const name = opt.querySelectorAll('span')[1].textContent;
+        diffLabel.textContent = icon + ' ' + name;
+        diffWrapper.classList.remove('open');
+        customInputs.classList.toggle('visible', selectedDiff === 'custom');
+      });
+    });
+
+    /* =====================================================
+       GAME STATE
+    ===================================================== */
+    const boardEl         = document.getElementById('board');
+    const statusEl        = document.getElementById('status');
+    const timerEl         = document.getElementById('timer');
+    const leaderboardList = document.getElementById('leaderboardList');
+
+    let grid, rows, cols, mines;
+    let flags = 0, gameOver = false, firstClick = true;
+    let timerVal = 0, interval = null;
+    let paused = false;
+    let moves = [], replayMoves = [];
+    let seedRandom = Math.random;
+    let streak = 0;
+    let useAssist = false;
+
+    const difficulties = {
+      easy:   { r: 8,  c: 8,  m: 10  },
+      medium: { r: 12, c: 12, m: 25  },
+      hard:   { r: 16, c: 16, m: 50  },
+    };
+
+    /* =====================================================
+       SEEDED RNG
+    ===================================================== */
+    function seededRandom(seed) {
+      return function () {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+      };
+    }
+
+    function getDailySeed() {
+      return new Date().toISOString().slice(0, 10)
+        .split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    }
+
+    /* =====================================================
+       START GAME
+    ===================================================== */
+    function startGame() {
+      const diff = selectedDiff;
+
+      if (diff === 'daily') {
+        seedRandom = seededRandom(getDailySeed());
+        ({ r: rows, c: cols, m: mines } = difficulties.medium);
+      } else if (diff === 'custom') {
+        rows  = Math.max(4,  Math.min(30, +document.getElementById('customRows').value  || 10));
+        cols  = Math.max(4,  Math.min(50, +document.getElementById('customCols').value  || 10));
+        mines = Math.max(1,  Math.min(rows * cols - 9, +document.getElementById('customMines').value || 15));
+        seedRandom = Math.random;
+      } else {
+        seedRandom = Math.random;
+        ({ r: rows, c: cols, m: mines } = difficulties[diff]);
+      }
+
+      boardEl.innerHTML = '';
+      boardEl.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
+
+      grid = []; flags = 0; gameOver = false; firstClick = true;
+      moves = []; timerVal = 0; paused = false;
+
+      statusEl.textContent = '';
+      document.getElementById('flagCount').textContent = 0;
+      document.getElementById('mineCount').textContent = mines;
+      timerEl.textContent = 0;
+      document.getElementById('assistMode').textContent = useAssist ? 'Assist' : 'Classic';
+
+      clearInterval(interval);
+      interval = setInterval(() => {
+        if (!gameOver && !paused) {
+          timerVal++;
+          timerEl.textContent = timerVal;
+        }
+      }, 1000);
+
+      const t0 = performance.now();
+      const frag = document.createDocumentFragment();
+      for (let r = 0; r < rows; r++) {
+        grid[r] = [];
+        for (let c = 0; c < cols; c++) {
+          const el = document.createElement('div');
+          el.className = 'cell';
+          el.dataset.r = r;
+          el.dataset.c = c;
+          frag.appendChild(el);
+          grid[r][c] = { mine: false, revealed: false, flagged: false, count: 0, el };
+        }
+      }
+      boardEl.appendChild(frag);
+      document.getElementById('spawnMs').textContent = Math.round(performance.now() - t0);
+
+      loadGlobalScores();
+    }
+
+    document.getElementById('startGame').addEventListener('click', startGame);
+    document.getElementById('restartBtn').addEventListener('click', startGame);
+
+    /* =====================================================
+       MINE PLACEMENT & COUNTS
+    ===================================================== */
+    function placeMines(sr, sc) {
+      const blocked = new Set();
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const rr = sr + dr;
+          const cc = sc + dc;
+          if (grid[rr]?.[cc]) blocked.add(rr * cols + cc);
+        }
+      }
+      const candidates = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const idx = r * cols + c;
+          if (!blocked.has(idx)) candidates.push(idx);
+        }
+      }
+      for (let i = candidates.length - 1; i > 0; i--) {
+        const j = Math.floor(seedRandom() * (i + 1));
+        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+      }
+      const toPlace = Math.min(mines, candidates.length);
+      for (let i = 0; i < toPlace; i++) {
+        const idx = candidates[i];
+        const r = Math.floor(idx / cols);
+        const c = idx % cols;
+        grid[r][c].mine = true;
+      }
+    }
+
+    function calcCounts() {
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (grid[r][c].mine) continue;
+          let n = 0;
+          for (let dr = -1; dr <= 1; dr++)
+            for (let dc = -1; dc <= 1; dc++)
+              if (grid[r + dr]?.[c + dc]?.mine) n++;
+          grid[r][c].count = n;
+        }
+      }
+    }
+
+    /* =====================================================
+       CLICK / FLAG / REVEAL
+    ===================================================== */
+    function clickCell(r, c) {
+      if (gameOver || paused) return;
+      document.getElementById('clickSound')?.play().catch(() => {});
+      if (firstClick) {
+        placeMines(r, c);
+        calcCounts();
+        firstClick = false;
+      }
+      moves.push({ t: 'reveal', r, c, time: timerVal });
+      reveal(r, c);
+    }
+
+    function reveal(r, c) {
+      const start = grid[r]?.[c];
+      if (!start || start.revealed || start.flagged) return;
+      if (start.mine) {
+        start.revealed = true;
+        start.el.textContent = '💣';
+        start.el.classList.add('mine', 'revealed', 'pop');
+        endGame(false);
+        return;
+      }
+      const queue = [[r, c]];
+      while (queue.length) {
+        const [rr, cc] = queue.pop();
+        const cell = grid[rr]?.[cc];
+        if (!cell || cell.revealed || cell.flagged) continue;
+        cell.revealed = true;
+        cell.el.classList.add('revealed', 'pop');
+        if (cell.count) {
+          cell.el.textContent = cell.count;
+          cell.el.dataset.count = cell.count;
+          continue;
+        }
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            const nr = rr + dr;
+            const nc = cc + dc;
+            const next = grid[nr]?.[nc];
+            if (next && !next.revealed && !next.flagged && !next.mine) queue.push([nr, nc]);
+          }
+        }
+      }
+      checkWin();
+    }
+
+    function flagCell(r, c) {
+      const cell = grid[r][c];
+      if (cell.revealed || gameOver) return;
+      cell.flagged = !cell.flagged;
+      cell.el.textContent = cell.flagged ? '🚩' : '';
+      cell.el.classList.toggle('flagged', cell.flagged);
+      flags += cell.flagged ? 1 : -1;
+      document.getElementById('flagCount').textContent = flags;
+      moves.push({ t: 'flag', r, c, time: timerVal });
+    }
+
+    /* =====================================================
+       WIN / LOSE
+    ===================================================== */
+    function checkWin() {
+      const safe = grid.flat().filter(c => !c.mine && c.revealed).length;
+      if (safe === rows * cols - mines) endGame(true);
+    }
+
+    async function endGame(win) {
+      gameOver = true;
+      clearInterval(interval);
+
+      /* Reveal all mines */
+      grid.flat().forEach(c => {
+        if (c.mine) {
+          c.el.textContent = '💣';
+          c.el.classList.add('mine', 'revealed');
+        }
+      });
+
+      replayMoves = [...moves];
+
+      if (win) {
+        streak++;
+        document.getElementById('streak').textContent = streak;
+        statusEl.textContent = '🎉 You win! ' + timerVal + 's';
+
+        /* Save score to Supabase minesweeper_scores table */
+        try {
+          const { data: { user } } = await supabaseClient.auth.getUser();
+          const scoreRow = { time: timerVal, difficulty: selectedDiff };
+          if (user) scoreRow.user_id = user.id;
+
+          const { error } = await supabaseClient
+            .from('minesweeper_scores')
+            .insert(scoreRow);
+
+          if (error) console.warn('Score insert error:', error.message);
+        } catch (e) {
+          console.warn('Score save failed:', e);
+        }
+      } else {
+        streak = 0;
+        document.getElementById('streak').textContent = streak;
+        statusEl.textContent = '💀 Game Over';
+      }
+
+      loadGlobalScores();
+    }
+
+    /* =====================================================
+       LEADERBOARD — reads from minesweeper_scores table
+    ===================================================== */
+    async function loadGlobalScores() {
+      try {
+        const { data, error } = await supabaseClient
+          .from('minesweeper_scores')
+          .select('time, difficulty')
+          .order('time', { ascending: true })
+          .limit(7);
+
+        if (error) throw error;
+
+        if (!data || !data.length) {
+          leaderboardList.innerHTML =
+            '<li style="justify-content:center;color:var(--mut);">No scores yet — be the first!</li>';
+          return;
+        }
+
+        leaderboardList.innerHTML = data.map((s, i) => `
+          <li>
+            <span class="lb-rank">#${i + 1}</span>
+            <span class="lb-time">${s.time}s</span>
+            <span class="lb-diff">${s.difficulty || '—'}</span>
+          </li>`).join('');
+
+      } catch (e) {
+        console.warn('Leaderboard load error:', e);
+        leaderboardList.innerHTML =
+          '<li style="justify-content:center;color:var(--mut);">Could not load scores</li>';
+      }
+    }
+
+    /* =====================================================
+       AI — routes through the existing MineSweeper_AI
+       Supabase Edge Function which calls Anthropic
+    ===================================================== */
+    function exportState() {
+      return grid.map(row => row.map(c => ({
+        revealed: c.revealed,
+        flagged:  c.flagged,
+        count:    c.count,
+        mine:     c.revealed ? c.mine : null   /* only expose mine status for revealed cells */
+      })));
+    }
+
+    async function callAI(prompt) {
+      try {
+        const res = await fetch(
+          'https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/MineSweeper_AI',
+          {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ message: prompt })
+          }
+        );
+        const d = await res.json();
+        return d.reply || '';
+      } catch (e) {
+        console.warn('AI call failed:', e);
+        return '';
+      }
+    }
+
+    /* Hint button — highlights safest cell to click */
+    document.getElementById('hintBtn').addEventListener('click', async () => {
+      if (!grid || firstClick) {
+        statusEl.textContent = '⚠️ Start the game first!';
+        return;
+      }
+      /* Clear any previous hints */
+      grid.flat().forEach(c => c.el.classList.remove('safe-hint'));
+      statusEl.textContent = '🤖 Thinking…';
+
+      const reply = await callAI(
+`You are an expert Minesweeper solver. Analyse the board state and identify the single safest unrevealed cell to click.
+Return ONLY valid JSON with no markdown, no explanation, no code block:
+{"row": <number>, "col": <number>, "reason": "<one short sentence>"}
+
+Board is ${rows} rows × ${cols} cols. Each cell has: revealed (bool), flagged (bool), count (number of adjacent mines, only set when revealed), mine (only true/false when revealed).
+
+Board state:
+${JSON.stringify(exportState())}`
+      );
+
+      try {
+        /* Strip any accidental markdown fences */
+        const clean = reply.replace(/```[a-z]*/gi, '').replace(/```/g, '').trim();
+        const m = JSON.parse(clean);
+
+        if (typeof m.row === 'number' && typeof m.col === 'number') {
+          const cell = grid[m.row]?.[m.col];
+          if (cell && !cell.revealed && !cell.flagged) {
+            cell.el.classList.add('safe-hint');
+            statusEl.textContent = '💡 ' + (m.reason || 'Safe cell highlighted');
+            setTimeout(() => cell.el.classList.remove('safe-hint'), 6000);
+          } else {
+            statusEl.textContent = '💡 ' + (m.reason || 'Hint received');
+          }
+        } else {
+          statusEl.textContent = '⚠️ AI hint failed — unexpected response';
+        }
+      } catch {
+        statusEl.textContent = '⚠️ AI hint failed';
+      }
+    });
+
+    /* Heatmap button — colours unrevealed cells by mine probability */
+    document.getElementById('heatmapBtn').addEventListener('click', async () => {
+      if (!grid || firstClick) {
+        statusEl.textContent = '⚠️ Start the game first!';
+        return;
+      }
+      /* Clear previous heatmap */
+      grid.flat().forEach(c => c.el.classList.remove('heat-low', 'heat-mid', 'heat-high'));
+      statusEl.textContent = '🌡️ Calculating probabilities…';
+
+      const reply = await callAI(
+`You are an expert Minesweeper probability solver. For every unrevealed, non-flagged cell estimate the probability (0–1) that it contains a mine.
+Return ONLY a valid JSON array with no markdown, no explanation:
+[{"row": <number>, "col": <number>, "prob": <0-1 float>}, ...]
+
+Board is ${rows} rows × ${cols} cols.
+Board state:
+${JSON.stringify(exportState())}`
+      );
+
+      try {
+        const clean = reply.replace(/```[a-z]*/gi, '').replace(/```/g, '').trim();
+        const arr = JSON.parse(clean);
+        arr.forEach(p => {
+          const c = grid[p.row]?.[p.col];
+          if (!c || c.revealed || c.flagged) return;
+          c.el.classList.add(
+            p.prob > 0.66 ? 'heat-high' :
+            p.prob > 0.33 ? 'heat-mid'  : 'heat-low'
+          );
+        });
+        statusEl.textContent = '🌡️ Heatmap ready  🟢 safe · 🟡 risky · 🔴 likely mine';
+      } catch {
+        statusEl.textContent = '⚠️ Heatmap failed';
+      }
+    });
+
+    /* =====================================================
+       PAUSE
+    ===================================================== */
+    document.getElementById('pauseBtn').addEventListener('click', () => {
+      if (gameOver) return;
+      paused = !paused;
+      statusEl.textContent = paused ? '⏸ Paused' : '';
+    });
+
+    boardEl.addEventListener('click', e => {
+      const cell = e.target.closest('.cell');
+      if (!cell) return;
+      clickCell(+cell.dataset.r, +cell.dataset.c);
+    });
+
+    boardEl.addEventListener('contextmenu', e => {
+      const cell = e.target.closest('.cell');
+      if (!cell) return;
+      e.preventDefault();
+      flagCell(+cell.dataset.r, +cell.dataset.c);
+    });
+
+    boardEl.addEventListener('dblclick', e => {
+      const cell = e.target.closest('.cell');
+      if (!cell || gameOver || paused) return;
+      const r = +cell.dataset.r;
+      const c = +cell.dataset.c;
+      const base = grid[r]?.[c];
+      if (!base?.revealed || !base.count) return;
+      let flaggedAround = 0;
+      const around = [];
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          const rr = r + dr;
+          const cc = c + dc;
+          const other = grid[rr]?.[cc];
+          if (!other) continue;
+          if (other.flagged) flaggedAround++;
+          else around.push([rr, cc]);
+        }
+      }
+      if (flaggedAround === base.count) around.forEach(([rr, cc]) => reveal(rr, cc));
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key.toLowerCase() === 'a') {
+        useAssist = !useAssist;
+        document.getElementById('assistMode').textContent = useAssist ? 'Assist' : 'Classic';
+        statusEl.textContent = useAssist ? '🧠 Assist mode on (press A to toggle)' : '🧹 Classic mode';
+      }
+      if (useAssist && e.key.toLowerCase() === 'f' && !gameOver && !paused) {
+        const target = grid.flat().find(c => !c.revealed && !c.flagged && !c.mine);
+        if (target) {
+          target.el.classList.add('safe-hint');
+          setTimeout(() => target.el.classList.remove('safe-hint'), 2000);
+          statusEl.textContent = '🧠 Quick-safe highlighted';
+        }
+      }
+    });
+
+    /* =====================================================
+       REPLAY
+    ===================================================== */
+    document.getElementById('replayBtn').addEventListener('click', async () => {
+      if (!replayMoves.length) {
+        statusEl.textContent = '⚠️ No replay available yet';
+        return;
+      }
+      const saved = [...replayMoves];
+      startGame();
+      /* Give the board one tick to finish rendering */
+      await new Promise(r => setTimeout(r, 60));
+      for (const m of saved) {
+        await new Promise(r => setTimeout(r, 160));
+        if (m.t === 'reveal') {
+          if (firstClick) { placeMines(m.r, m.c); calcCounts(); firstClick = false; }
+          reveal(m.r, m.c);
+        }
+        if (m.t === 'flag') flagCell(m.r, m.c);
+      }
+    });
+
+    /* =====================================================
+       INIT
+    ===================================================== */
+    startGame();
+  </script>
+
+  <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/wide.js"></script>
+  <script src="/assets/js/gallium.js"></script>
+  <script src="/assets/js/cookie.js"></script>
+  <script src="/assets/js/cursor.js"></script>
+
+</body>
+</html>
