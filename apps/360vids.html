@@ -629,6 +629,21 @@
           <button class="vids-action-btn" id="shareBtn">🔗 Share</button>
         </div>
         <div class="vids-watch-desc" id="watchDesc"></div>
+
+        <div id="commentsSection" style="margin-top:14px;">
+          <h4 style="font-size:14px;font-weight:700;margin:0 0 6px;">Comments</h4>
+          <div id="commentsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+          <div id="commentForm" style="display:flex;gap:8px;">
+            <input
+              type="text"
+              id="commentInput"
+              placeholder="Add a comment…"
+              style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--vid-border);font-size:13px;"
+              maxlength="300"
+            />
+            <button class="vids-action-btn" id="commentSubmitBtn">Post</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -690,6 +705,9 @@
     const grid         = document.getElementById('vidsGrid');
     const uploadOverlay= document.getElementById('uploadOverlay');
     const watchOverlay = document.getElementById('watchOverlay');
+    const commentsList = document.getElementById('commentsList');
+    const commentInput = document.getElementById('commentInput');
+    const commentSubmit = document.getElementById('commentSubmitBtn');
     const player       = document.getElementById('vidsPlayer');
     const toast        = document.getElementById('vidsToast');
     const avatarBtn    = document.getElementById('vids-avatar');
@@ -868,9 +886,47 @@
       watchOverlay.classList.add('open');
       document.body.style.overflow = 'hidden';
 
-      // Increment view count (fire and forget)
-      sb.from('vids').update({ views: (video.views||0) + 1 }).eq('id', id);
+      // Increment view count (fire and forget) -- atomic on the server now,
+      // so concurrent viewers can't clobber each other's count.
+      sb.rpc('increment_video_views', { p_id: id });
+
+      commentSubmit.disabled = true;
+      await loadComments(id);
+      commentSubmit.disabled = false;
     }
+
+    async function loadComments(videoId) {
+      commentsList.innerHTML = '<span style="font-size:12px;color:var(--vid-mut);">Loading comments…</span>';
+      const { data, error } = await sb
+        .from('comments').select('*').eq('video_id', videoId)
+        .order('created_at', { ascending: true });
+
+      if (error) { commentsList.innerHTML = '<span style="font-size:12px;color:#ef4444;">Failed to load.</span>'; return; }
+      if (!data.length) { commentsList.innerHTML = '<span style="font-size:12px;color:var(--vid-mut);">No comments yet. Be the first!</span>'; return; }
+
+      commentsList.innerHTML = data.map(c => `
+        <div style="font-size:13px;">
+          <strong>${escHtml(c.username||'User')}</strong>
+          <span style="color:var(--vid-mut);font-size:11px;"> · ${timeAgo(c.created_at)}</span>
+          <div>${escHtml(c.comment_text)}</div>
+        </div>`).join('');
+    }
+
+    commentSubmit.addEventListener('click', async () => {
+      if (!currentUser) { showToast('Sign in to comment.'); return; }
+      if (!currentVideo?.id) return;
+      const text = commentInput.value.trim();
+      if (!text) return;
+      commentSubmit.disabled = true;
+      const username = currentUser.email?.split('@')[0] || 'Anonymous';
+      const { error } = await sb.from('comments').insert({
+        video_id: currentVideo.id, user_id: currentUser.id, username, comment_text: text
+      });
+      if (error) { showToast('⚠️ Failed to post comment.'); commentSubmit.disabled = false; return; }
+      commentInput.value = '';
+      await loadComments(currentVideo.id);
+      commentSubmit.disabled = false;
+    });
 
     function closeWatch() {
       watchOverlay.classList.remove('open');
@@ -888,18 +944,16 @@
       if (!currentUser) { showToast('Sign in to like videos.'); return; }
       if (!currentVideo) return;
 
-      const likes = [...(currentVideo.likes || [])];
-      const idx = likes.indexOf(currentUser.id);
-      if (idx > -1) likes.splice(idx, 1); else likes.push(currentUser.id);
-
-      const { error } = await sb.from('vids').update({ likes }).eq('id', currentVideo.id);
+      // Atomic on the server -- no lost updates if two people like around
+      // the same time.
+      const { data: likes, error } = await sb.rpc('toggle_video_like', { p_id: currentVideo.id });
       if (error) { showToast('⚠️ Could not update like.'); return; }
 
       currentVideo.likes = likes;
-      const likedByMe = likes.includes(currentUser.id);
+      const likedByMe = (likes || []).includes(currentUser.id);
       const likeBtn = document.getElementById('likeBtn');
       likeBtn.className = 'vids-action-btn' + (likedByMe ? ' liked' : '');
-      document.getElementById('likeCount').textContent = likes.length;
+      document.getElementById('likeCount').textContent = (likes || []).length;
 
       // Update in allVideos
       const v = allVideos.find(v => v.id === currentVideo.id);
