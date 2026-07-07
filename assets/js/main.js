@@ -26,7 +26,7 @@ const body = document.body;
    <span id="sidebar-slot" data-extra='[{"label":"Report","href":"/report"}]'></span>
    ============================================================ */
 const SIDEBAR_NAV_ITEMS = [
-  { label: "Home",          href: "/" },
+  { label: "Home",           href: "/" },
   { label: "AI",             href: "/ai" },
   { label: "Weather",        href: "/weather" },
   { label: "Translator",     href: "/translator" },
