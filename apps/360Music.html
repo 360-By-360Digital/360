@@ -25,6 +25,12 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
+    @view-transition { navigation: auto; }
+    ::view-transition-old(root) { animation: vt-out .28s cubic-bezier(.4,0,.2,1) both; }
+    ::view-transition-new(root) { animation: vt-in .32s cubic-bezier(.2,0,.2,1) both; }
+    @keyframes vt-out { to { opacity: 0; transform: scale(.98) translateY(6px); } }
+    @keyframes vt-in { from { opacity: 0; transform: scale(1.02) translateY(-6px); } }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -562,6 +568,8 @@
     <div class="vids-topbar-left">
       <button class="vids-back-btn" onclick="window.location.href='apps.html'">← Apps</button>
       <div class="vids-logo">360<span>|</span>Music</div>
+      <a href="/apps/360vids.html" class="vids-back-btn" style="text-decoration:none;">🎬 Vids</a>
+      <a href="/apps/360Studio.html" class="vids-back-btn" style="text-decoration:none;">🎛️ Studio</a>
     </div>
 
     <div class="vids-search-wrap">
