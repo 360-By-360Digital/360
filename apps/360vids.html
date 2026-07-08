@@ -387,6 +387,61 @@
     .vids-player-wrap video {
       width: 100%; height: 100%; object-fit: contain;
     }
+    .vids-player-wrap:fullscreen video,
+    .vids-player-wrap:-webkit-full-screen video { object-fit: contain; background: #000; }
+    .vids-player-wrap:fullscreen,
+    .vids-player-wrap:-webkit-full-screen { aspect-ratio: unset; height: 100%; }
+
+    /* ── Custom player controls ── */
+    .vp-controls {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      padding: 10px 12px 8px;
+      background: linear-gradient(to top, rgba(0,0,0,.85), rgba(0,0,0,0));
+      opacity: 1; transition: opacity .25s ease;
+      pointer-events: all;
+    }
+    .vids-player-wrap.vp-idle .vp-controls { opacity: 0; pointer-events: none; }
+    .vids-player-wrap.vp-idle { cursor: none; }
+
+    .vp-seek {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+      border-radius: 999px; margin-bottom: 8px; cursor: pointer;
+      background: linear-gradient(to right, var(--vid-accent) var(--vp-progress, 0%), rgba(255,255,255,.35) var(--vp-progress, 0%));
+    }
+    .vp-seek::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+      background: var(--vid-accent); cursor: pointer; margin-top: -4px;
+      box-shadow: 0 0 0 3px rgba(59,130,246,.25);
+      transition: transform .12s ease;
+    }
+    .vp-seek:hover::-webkit-slider-thumb { transform: scale(1.25); }
+    .vp-seek::-moz-range-thumb {
+      width: 12px; height: 12px; border-radius: 50%; border: none;
+      background: var(--vid-accent); cursor: pointer;
+    }
+
+    .vp-row { display: flex; align-items: center; gap: 8px; }
+    .vp-btn {
+      background: none; border: none; color: #fff; font-size: 16px; cursor: pointer;
+      padding: 4px 6px; border-radius: 6px; transition: transform .12s ease, background .15s ease;
+      line-height: 1;
+    }
+    .vp-btn:hover { background: rgba(255,255,255,.14); }
+    .vp-btn:active { transform: scale(.88); }
+    .vp-volume {
+      width: 70px; height: 3px; accent-color: var(--vid-accent); cursor: pointer;
+    }
+    .vp-time {
+      color: #fff; font-size: 12px; font-variant-numeric: tabular-nums; opacity: .9;
+      white-space: nowrap;
+    }
+    .vp-spacer { flex: 1; }
+    .vp-speed {
+      background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.2);
+      border-radius: 6px; font-size: 11px; padding: 3px 4px; cursor: pointer;
+    }
+    .vp-speed option { color: #000; }
+
     .vids-watch-info { padding: 20px 24px; }
     .vids-watch-title {
       font-size: 18px; font-weight: 800; color: var(--vid-txt);
@@ -628,9 +683,30 @@
   <!-- ══ WATCH MODAL ══ -->
   <div class="vids-watch-overlay" id="watchOverlay">
     <div class="vids-watch-box">
-      <div class="vids-player-wrap">
+      <div class="vids-player-wrap" id="vidsPlayerWrap">
         <button class="vids-watch-close" id="watchCloseBtn">✕</button>
-        <video id="vidsPlayer" controls preload="metadata"></video>
+        <video id="vidsPlayer" preload="metadata" playsinline></video>
+
+        <div class="vp-controls" id="vpControls">
+          <input type="range" id="vpSeek" class="vp-seek" min="0" max="100" value="0" step="0.1" />
+          <div class="vp-row">
+            <button class="vp-btn" id="vpPlayPause" title="Play/Pause (space)">▶️</button>
+            <button class="vp-btn" id="vpMute" title="Mute (m)">🔊</button>
+            <input type="range" id="vpVolume" class="vp-volume" min="0" max="1" step="0.01" value="1" />
+            <span class="vp-time" id="vpTime">0:00 / 0:00</span>
+            <div class="vp-spacer"></div>
+            <select id="vpSpeed" class="vp-speed" title="Playback speed">
+              <option value="0.5">0.5x</option>
+              <option value="0.75">0.75x</option>
+              <option value="1" selected>1x</option>
+              <option value="1.25">1.25x</option>
+              <option value="1.5">1.5x</option>
+              <option value="2">2x</option>
+            </select>
+            <button class="vp-btn" id="vpPip" title="Picture in picture (p)">⧉</button>
+            <button class="vp-btn" id="vpFullscreen" title="Fullscreen (f)">⛶</button>
+          </div>
+        </div>
       </div>
       <div class="vids-watch-info">
         <div class="vids-watch-title" id="watchTitle"></div>
@@ -727,6 +803,113 @@
     const uploadStatus = document.getElementById('uploadStatus');
     const fileChosen   = document.getElementById('fileChosen');
     const submitBtn    = document.getElementById('submitUploadBtn');
+
+    // ── Custom video player (replaces native <video controls>) ──
+    const playerWrap  = document.getElementById('vidsPlayerWrap');
+    const vpControls  = document.getElementById('vpControls');
+    const vpPlayPause = document.getElementById('vpPlayPause');
+    const vpSeek      = document.getElementById('vpSeek');
+    const vpMute      = document.getElementById('vpMute');
+    const vpVolume    = document.getElementById('vpVolume');
+    const vpTime      = document.getElementById('vpTime');
+    const vpSpeed     = document.getElementById('vpSpeed');
+    const vpPip       = document.getElementById('vpPip');
+    const vpFullscreen = document.getElementById('vpFullscreen');
+
+    function fmtTime(s) {
+      if (!isFinite(s) || s < 0) s = 0;
+      const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+      return `${m}:${String(sec).padStart(2, '0')}`;
+    }
+
+    function updateSeekFill() {
+      const pct = player.duration ? (player.currentTime / player.duration) * 100 : 0;
+      vpSeek.style.setProperty('--vp-progress', pct + '%');
+    }
+
+    vpPlayPause.addEventListener('click', () => player.paused ? player.play() : player.pause());
+    player.addEventListener('play', () => { vpPlayPause.textContent = '⏸️'; });
+    player.addEventListener('pause', () => { vpPlayPause.textContent = '▶️'; });
+    player.addEventListener('ended', () => { vpPlayPause.textContent = '▶️'; });
+
+    player.addEventListener('loadedmetadata', () => {
+      vpSeek.max = player.duration || 0;
+      vpTime.textContent = `${fmtTime(0)} / ${fmtTime(player.duration)}`;
+    });
+    player.addEventListener('timeupdate', () => {
+      if (!seeking) vpSeek.value = player.currentTime;
+      vpTime.textContent = `${fmtTime(player.currentTime)} / ${fmtTime(player.duration)}`;
+      updateSeekFill();
+    });
+
+    let seeking = false;
+    vpSeek.addEventListener('input', () => { seeking = true; player.currentTime = +vpSeek.value; updateSeekFill(); });
+    vpSeek.addEventListener('change', () => { seeking = false; });
+
+    vpVolume.addEventListener('input', () => {
+      player.volume = +vpVolume.value;
+      player.muted = player.volume === 0;
+      vpMute.textContent = player.muted ? '🔇' : (player.volume < 0.5 ? '🔉' : '🔊');
+    });
+    vpMute.addEventListener('click', () => {
+      player.muted = !player.muted;
+      vpMute.textContent = player.muted ? '🔇' : (player.volume < 0.5 ? '🔉' : '🔊');
+    });
+
+    vpSpeed.addEventListener('change', () => { player.playbackRate = +vpSpeed.value; });
+
+    // Picture-in-picture -- hide the button entirely if unsupported instead
+    // of shipping a button that errors when clicked.
+    if (!document.pictureInPictureEnabled || player.disablePictureInPicture) {
+      vpPip.style.display = 'none';
+    } else {
+      vpPip.addEventListener('click', async () => {
+        try {
+          if (document.pictureInPictureElement) await document.exitPictureInPicture();
+          else await player.requestPictureInPicture();
+        } catch (e) { showToast('⚠️ Picture-in-picture unavailable.'); }
+      });
+    }
+
+    vpFullscreen.addEventListener('click', () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else if (playerWrap.requestFullscreen) {
+        playerWrap.requestFullscreen();
+      }
+    });
+    document.addEventListener('fullscreenchange', () => {
+      vpFullscreen.textContent = document.fullscreenElement ? '⤢' : '⛶';
+    });
+
+    // Auto-hide controls after inactivity while playing.
+    let hideTimer = null;
+    function showControlsTemporarily() {
+      playerWrap.classList.remove('vp-idle');
+      clearTimeout(hideTimer);
+      if (!player.paused) hideTimer = setTimeout(() => playerWrap.classList.add('vp-idle'), 2600);
+    }
+    playerWrap.addEventListener('mousemove', showControlsTemporarily);
+    playerWrap.addEventListener('mouseleave', () => { if (!player.paused) playerWrap.classList.add('vp-idle'); });
+    player.addEventListener('play', showControlsTemporarily);
+    player.addEventListener('pause', () => { playerWrap.classList.remove('vp-idle'); clearTimeout(hideTimer); });
+
+    // Keyboard shortcuts, only while the watch overlay is actually open so
+    // they don't hijack typing elsewhere on the page (e.g. the comment box).
+    window.addEventListener('keydown', (e) => {
+      if (!watchOverlay.classList.contains('open')) return;
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.code === 'Space') { e.preventDefault(); player.paused ? player.play() : player.pause(); }
+      else if (e.code === 'ArrowLeft') { player.currentTime = Math.max(0, player.currentTime - 5); }
+      else if (e.code === 'ArrowRight') { player.currentTime = Math.min(player.duration || 0, player.currentTime + 5); }
+      else if (e.code === 'ArrowUp') { e.preventDefault(); player.volume = Math.min(1, player.volume + 0.1); vpVolume.value = player.volume; }
+      else if (e.code === 'ArrowDown') { e.preventDefault(); player.volume = Math.max(0, player.volume - 0.1); vpVolume.value = player.volume; }
+      else if (e.key === 'f' || e.key === 'F') vpFullscreen.click();
+      else if (e.key === 'm' || e.key === 'M') vpMute.click();
+      else if (e.key === 'p' || e.key === 'P') vpPip.click();
+      showControlsTemporarily();
+    });
 
     // ── Toast helper ──
     function showToast(msg, dur = 2800) {
@@ -893,6 +1076,12 @@
 
       player.src = video.video_url;
       player.load();
+      player.playbackRate = 1;
+      vpSpeed.value = '1';
+      vpPlayPause.textContent = '▶️';
+      vpSeek.value = 0;
+      vpSeek.style.setProperty('--vp-progress', '0%');
+      playerWrap.classList.remove('vp-idle');
 
       watchOverlay.classList.add('open');
       document.body.style.overflow = 'hidden';
@@ -945,6 +1134,10 @@
       player.src = '';
       currentVideo = null;
       document.body.style.overflow = '';
+      clearTimeout(hideTimer);
+      playerWrap.classList.remove('vp-idle');
+      if (document.pictureInPictureElement === player) document.exitPictureInPicture().catch(() => {});
+      if (document.fullscreenElement === playerWrap) document.exitFullscreen().catch(() => {});
     }
 
     document.getElementById('watchCloseBtn').addEventListener('click', closeWatch);
