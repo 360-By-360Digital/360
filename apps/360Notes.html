@@ -710,10 +710,24 @@
 
       notesGrid.innerHTML = notes.map(n => noteCard(n)).join('');
       notesGrid.querySelectorAll('.notes-card').forEach(card => {
-        card.addEventListener('click', () => {
+        card.addEventListener('click', (e) => {
+          if (e.target.dataset.star) return; // handled below
           const id = card.dataset.id;
           const note = allNotes.find(nn => nn.id === id);
           if (note) openNote(note);
+        });
+      });
+      notesGrid.querySelectorAll('[data-star]').forEach(star => {
+        star.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = star.dataset.star;
+          const note = allNotes.find(nn => nn.id === id);
+          if (!note) return;
+          const is_favorite = !note.is_favorite;
+          const { error } = await sb.from('notes').update({ is_favorite }).eq('id', id);
+          if (error) { showToast('⚠️ Could not update favorite.'); return; }
+          note.is_favorite = is_favorite;
+          renderNotes();
         });
       });
     }
@@ -722,7 +736,10 @@
       const snippet = (n.body || '').slice(0, 160);
       return `
         <div class="notes-card" data-id="${n.id}">
-          <div class="notes-card-title">${escHtml(n.title || 'Untitled')}</div>
+          <div class="notes-card-title">
+            ${escHtml(n.title || 'Untitled')}
+            <span class="notes-card-star" data-star="${n.id}" title="${n.is_favorite ? 'Unfavorite' : 'Favorite'}" style="float:right;cursor:pointer;opacity:${n.is_favorite ? '1' : '.35'};">★</span>
+          </div>
           <div class="notes-card-snippet">
             ${escHtml(snippet)}${n.body && n.body.length > 160 ? '…' : ''}
           </div>
