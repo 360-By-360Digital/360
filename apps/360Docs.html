@@ -629,7 +629,17 @@
         padding: 16px;
       }
       .docs-rightbar {
-        display: none;
+        position: fixed;
+        top: 0; right: 0; bottom: 0;
+        width: 280px;
+        max-width: 85vw;
+        z-index: 200;
+        transform: translateX(100%);
+        transition: transform .22s ease;
+        box-shadow: -12px 0 30px rgba(0,0,0,.35);
+      }
+      .docs-rightbar.open {
+        transform: translateX(0);
       }
       .docs-modal-body {
         flex-direction: column;
@@ -745,7 +755,8 @@
           </div>
         </div>
 
-        <aside class="docs-rightbar">
+        <aside class="docs-rightbar" id="docsRightbar">
+          <button class="docs-pill-btn" id="rightbarCloseBtn" style="align-self:flex-end;">✕ Close</button>
           <div class="docs-right-section">
             <h4>Sharing</h4>
             <div class="docs-share-row">
@@ -1517,6 +1528,18 @@
     document.getElementById('commentModeBtn').addEventListener('click', () => {
       isCommentMode = !isCommentMode;
       showToast(isCommentMode ? 'Comment mode (future: highlight text to comment).' : 'Editing mode.');
+    });
+
+    // shareBtn previously had no click handler at all -- on desktop the
+    // sharing panel happened to always be visible in the layout so this went
+    // unnoticed, but on any window under 1000px wide the whole panel was
+    // `display:none` with no way to bring it back. Now it's a real toggle.
+    const rightbar = document.getElementById('docsRightbar');
+    document.getElementById('shareBtn').addEventListener('click', () => {
+      rightbar.classList.toggle('open');
+    });
+    document.getElementById('rightbarCloseBtn').addEventListener('click', () => {
+      rightbar.classList.remove('open');
     });
 
     // Sidebar view switching
