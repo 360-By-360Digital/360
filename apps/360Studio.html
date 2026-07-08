@@ -97,13 +97,18 @@
     .st-stat-num { font-size: 22px; font-weight: 800; }
     .st-stat-label { font-size: 12px; color: var(--vid-mut); margin-top: 2px; }
 
-    .st-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--vid-border); margin-bottom: 16px; }
+    .st-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--vid-border); margin-bottom: 16px; position: relative; }
+    .st-tab-indicator {
+      position: absolute; bottom: -1px; height: 2px; background: var(--vid-accent);
+      border-radius: 2px 2px 0 0;
+      transition: transform .28s cubic-bezier(.4,0,.2,1), width .28s cubic-bezier(.4,0,.2,1);
+    }
     .st-tab {
       padding: 10px 16px; font-size: 13px; font-weight: 700; color: var(--vid-mut);
-      cursor: pointer; border-bottom: 2px solid transparent; user-select: none;
+      cursor: pointer; user-select: none;
       transition: color .15s ease;
     }
-    .st-tab.active { color: var(--vid-accent); border-bottom-color: var(--vid-accent); }
+    .st-tab.active { color: var(--vid-accent); }
 
     .st-list { display: flex; flex-direction: column; gap: 10px; }
     .st-row {
@@ -200,9 +205,10 @@
 
         <div class="st-stats" id="stStats"></div>
 
-        <div class="st-tabs">
+        <div class="st-tabs" id="stTabs">
           <div class="st-tab active" data-tab="videos">🎬 Videos</div>
           <div class="st-tab" data-tab="music">🎵 Music</div>
+          <span class="st-tab-indicator" id="stTabIndicator"></span>
         </div>
 
         <div class="st-list" id="stList"></div>
@@ -214,6 +220,17 @@
   <div class="st-modal-overlay" id="stModalOverlay">
     <div class="st-modal">
       <h3 id="stModalTitle">Edit</h3>
+      <div class="st-field">
+        <label>Thumbnail</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div id="stEditThumbPreview" style="width:110px;height:62px;border-radius:8px;background:linear-gradient(135deg,var(--vid-accent),var(--vid-accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;overflow:hidden;flex-shrink:0;"></div>
+          <div>
+            <button class="st-btn" id="stEditThumbBtn" type="button">Change thumbnail</button>
+            <input type="file" id="stEditThumbFile" accept="image/*" style="display:none;" />
+            <div style="font-size:11px;color:var(--vid-mut);margin-top:4px;">JPG or PNG, up to a few MB.</div>
+          </div>
+        </div>
+      </div>
       <div class="st-field">
         <label>Title</label>
         <input type="text" id="stEditTitle" maxlength="120" />
@@ -264,6 +281,10 @@
     const editTitle     = document.getElementById('stEditTitle');
     const editDesc       = document.getElementById('stEditDesc');
     const editCategory   = document.getElementById('stEditCategory');
+    const editThumbPreview = document.getElementById('stEditThumbPreview');
+    const editThumbBtn     = document.getElementById('stEditThumbBtn');
+    const editThumbFile    = document.getElementById('stEditThumbFile');
+    let pendingThumbFile = null;
 
     function showToast(msg) {
       toast.textContent = msg;
@@ -382,7 +403,7 @@
       listEl.innerHTML = items.map((item, i) => {
         const plays = formatNum(item.views || 0);
         const likes = (item.likes || []).length;
-        const thumb = activeTab === 'music' && item.thumbnail_url
+        const thumb = item.thumbnail_url
           ? `<img src="${escHtml(item.thumbnail_url)}" alt="" />`
           : (activeTab === 'videos' ? '🎬' : '🎵');
         return `
@@ -432,14 +453,28 @@
         </svg>`;
     }
 
+    const stTabIndicator = document.getElementById('stTabIndicator');
+    function moveTabIndicator() {
+      const active = document.querySelector('.st-tab.active');
+      const tabs = document.getElementById('stTabs');
+      if (!active || !tabs) return;
+      const tabRect = active.getBoundingClientRect();
+      const wrapRect = tabs.getBoundingClientRect();
+      stTabIndicator.style.width = tabRect.width + 'px';
+      stTabIndicator.style.transform = `translateX(${tabRect.left - wrapRect.left}px)`;
+    }
+
     document.querySelectorAll('.st-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.st-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         activeTab = tab.dataset.tab;
+        moveTabIndicator();
         renderList();
       });
     });
+    window.addEventListener('resize', moveTabIndicator);
+    requestAnimationFrame(moveTabIndicator);
 
     listEl.addEventListener('click', async (e) => {
       const btn = e.target.closest('button[data-action]');
@@ -456,27 +491,52 @@
 
     function openEdit(kind, row) {
       editing = { kind, row };
+      pendingThumbFile = null;
       modalTitle.textContent = `Edit ${kind === 'videos' ? 'video' : 'track'}`;
       editTitle.value = row.title || '';
       editDesc.value = row.description || '';
       editCategory.value = row.category || 'Other';
+      editThumbPreview.innerHTML = row.thumbnail_url
+        ? `<img src="${escHtml(row.thumbnail_url)}" style="width:100%;height:100%;object-fit:cover;" />`
+        : (kind === 'videos' ? '🎬' : '🎵');
       modalOverlay.classList.add('open');
     }
     document.getElementById('stEditCancel').addEventListener('click', () => modalOverlay.classList.remove('open'));
     modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) modalOverlay.classList.remove('open'); });
+
+    editThumbBtn.addEventListener('click', () => editThumbFile.click());
+    editThumbFile.addEventListener('change', () => {
+      const file = editThumbFile.files[0];
+      if (!file) return;
+      pendingThumbFile = file;
+      editThumbPreview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="width:100%;height:100%;object-fit:cover;" />`;
+    });
 
     document.getElementById('stEditSave').addEventListener('click', async () => {
       if (!editing) return;
       const title = editTitle.value.trim();
       if (!title) { showToast('Title is required.'); return; }
       const table = editing.kind === 'videos' ? 'vids' : 'music_files';
+      const payload = { title, description: editDesc.value.trim(), category: editCategory.value };
+
+      if (pendingThumbFile) {
+        const ext = pendingThumbFile.name.split('.').pop() || 'png';
+        const path = `${currentUser.id}/thumb_${Date.now()}.${ext}`;
+        const { data: tData, error: tErr } = await sb.storage
+          .from('thumbnails')
+          .upload(path, pendingThumbFile, { cacheControl: '3600', upsert: false });
+        if (tErr) { showToast('⚠️ Thumbnail upload failed: ' + tErr.message); return; }
+        payload.thumbnail_url = sb.storage.from('thumbnails').getPublicUrl(tData.path).data.publicUrl;
+      }
+
       const { error } = await sb.from(table)
-        .update({ title, description: editDesc.value.trim(), category: editCategory.value })
+        .update(payload)
         .eq('id', editing.row.id)
         .eq('user_id', currentUser.id); // belt-and-suspenders; RLS already enforces this
       if (error) { showToast('⚠️ Could not save changes.'); return; }
       showToast('✅ Saved.');
       modalOverlay.classList.remove('open');
+      pendingThumbFile = null;
       await loadData();
       renderStats();
       renderList();
@@ -505,5 +565,6 @@
 
     initAuth();
   </script>
+  <script src="/assets/js/cursor.js"></script>
 </body>
 </html>
