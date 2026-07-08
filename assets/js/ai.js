@@ -1,7 +1,15 @@
 (() => {
   /* ── 360 AI — ai.js (scoped + safer) ─────────────────────────────────── */
 
-  const sb = window.supabaseClient || window.sb || null;
+  // main.js declares `const supabaseClient = supabase.createClient(...)` at
+  // the top level of a classic <script>. That does NOT create a
+  // window.supabaseClient property (only var/function declarations do), so
+  // window.supabaseClient / window.sb were always undefined here and every
+  // Supabase call below silently no-opped — this is why saved chats never
+  // loaded. Classic scripts do share one global lexical scope though, so
+  // the bare `supabaseClient` identifier from main.js is reachable here.
+  const sb = window.supabaseClient || window.sb ||
+    (typeof supabaseClient !== "undefined" ? supabaseClient : null);
 
   const aiInput = document.getElementById("ai-input");
   const aiSendBtn = document.getElementById("ai-send-btn");
@@ -19,9 +27,13 @@
   const fpCancel = document.getElementById("fp-cancel");
   const sidebarToggleBtn = document.getElementById("ai-chat-sidebar-toggle");
   const aiSidebar = document.getElementById("ai-sidebar");
+  const aiShell = document.querySelector(".ai-shell");
   // Sidebar overlays on mobile (see ai.html's max-width:760px rule) —
   // start collapsed there so it doesn't block the chat on first load.
-  if (aiSidebar && window.innerWidth <= 760) aiSidebar.classList.add("collapsed");
+  if (aiSidebar && window.innerWidth <= 760) {
+    aiSidebar.classList.add("collapsed");
+    aiShell?.classList.add("sidebar-collapsed");
+  }
   const newChatBtn = document.getElementById("new-chat-btn");
 
   const SB_URL = "https://wiswfpfsjiowtrdyqpxy.supabase.co";
@@ -59,6 +71,15 @@
     if (welcome) welcome.style.display = "flex";
   }
 
+  function clearMessages() {
+    // Removes rendered bubbles only, instead of wiping #ai-output's
+    // entire innerHTML — that used to permanently delete the
+    // #ai-welcome node from the DOM on the first new/loaded chat,
+    // so showWelcome() silently did nothing ever after.
+    if (!aiOutput) return;
+    aiOutput.querySelectorAll(".ai-bubble").forEach(el => el.remove());
+  }
+
   function safeFocus(el) {
     try { el?.focus(); } catch (_) {}
   }
@@ -79,13 +100,26 @@
     marked.setOptions({ breaks: true, gfm: true });
 
     const renderer = new marked.Renderer();
-    renderer.code = function (code, lang) {
-      const safeCode = String(code)
+    renderer.code = function (codeArg, langArg) {
+      // marked v5+ calls renderer.code(token) with a single
+      // { text, lang, escaped } object; older versions called
+      // renderer.code(code, infostring). Support both so a version
+      // bump can't silently turn code blocks into "[object Object]".
+      let codeText, lang;
+      if (codeArg && typeof codeArg === "object") {
+        codeText = codeArg.text ?? "";
+        lang = codeArg.lang ?? "";
+      } else {
+        codeText = codeArg;
+        lang = langArg;
+      }
+
+      const safeCode = String(codeText ?? "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
 
-      const label = lang || "code";
+      const label = (lang || "code").trim().split(/\s+/)[0];
       const id = "cb-" + Math.random().toString(36).slice(2, 8);
 
       return `
@@ -486,6 +520,7 @@
 
   on(sidebarToggleBtn, "click", () => {
     aiSidebar?.classList.toggle("collapsed");
+    aiShell?.classList.toggle("sidebar-collapsed", !!aiSidebar?.classList.contains("collapsed"));
   });
 
   /* ── autosave ────────────────────────────────────────────────────── */
@@ -602,7 +637,7 @@
     currentConvId = data.id;
     history = Array.isArray(data.messages) ? data.messages : [];
 
-    if (aiOutput) aiOutput.innerHTML = "";
+    clearMessages();
     if (!history.length) {
       showWelcome();
     } else {
@@ -649,7 +684,7 @@
   function startNewChat() {
     currentConvId = null;
     history = [];
-    if (aiOutput) aiOutput.innerHTML = "";
+    clearMessages();
     showWelcome();
     clearFile();
     loadConversations();
