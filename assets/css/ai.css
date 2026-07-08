@@ -14,8 +14,19 @@
 
 /* Local, theme-aware surface tokens. Everything below reads from
    these instead of hard-coded rgba() values, so the whole page
-   adapts automatically when body.dark is toggled. */
+   adapts automatically when body.dark is toggled.
+
+   IMPORTANT: main.css's :root only defines --bg/--txt/--mut once
+   and never redefines them for dark mode — body.dark instead sets
+   the body element's own background/color directly from --bgd/
+   --txtd. That means var(--bg)/var(--txt)/var(--mut) always
+   resolve to the light values anywhere else in the app. We
+   re-declare them locally, scoped to .ai-shell, so this page
+   (and only this page) gets a real light/dark switch. */
 .ai-shell {
+  --bg: #f3f4f7;
+  --txt: #111827;
+  --mut: #6b7280;
   --surface: rgba(255,255,255,.7);
   --surface-soft: rgba(17,24,39,.03);
   --hover: rgba(17,24,39,.06);
@@ -23,18 +34,25 @@
   --code-header: rgba(17,24,39,.05);
 }
 body.dark .ai-shell {
-  --surface: rgba(15,17,26,.75);
-  --surface-soft: rgba(255,255,255,.04);
-  --hover: rgba(255,255,255,.07);
+  --bg: #050509;
+  --txt: #e7e7ea;
+  --mut: #a3a7b3;
+  --surface: rgba(20,22,32,.7);
+  --surface-soft: rgba(255,255,255,.05);
+  --hover: rgba(255,255,255,.08);
   --code-bg: #0d1117;
-  --code-header: rgba(255,255,255,.06);
+  --code-header: rgba(255,255,255,.07);
 }
 
 .ai-shell {
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background: var(--bg);
+  /* transparent, not var(--bg): lets a custom background image set
+     on <body> (via Settings → Background) show through and be
+     blurred by the glass panels below, instead of being hidden
+     under a flat opaque fill. */
+  background: transparent;
   color: var(--txt);
   font-size: 14px;
 }
@@ -47,12 +65,18 @@ body.dark .ai-shell {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: var(--surface-soft);
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-right: 1px solid var(--br);
   transition: width .2s ease;
   overflow: hidden;
+  /* clears the site-wide fixed "☰ Menu" button (top:10px/left:10px,
+     ~30px tall) which floats above everything and would otherwise
+     sit on top of the "Chats / New" row below. */
+  padding-top: 46px;
 }
-#ai-sidebar.collapsed { width: 0; border-right: none; }
+#ai-sidebar.collapsed { width: 0; border-right: none; padding-top: 0; }
 
 .sb-head {
   display: flex;
@@ -147,7 +171,9 @@ body.dark .ai-shell {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 16px 0 80px;
+  padding: 0 16px;
+  padding-left: 80px; /* reserves room for the fixed global "☰ Menu"
+                          button when the chat sidebar is closed */
   border-bottom: 1px solid var(--br);
   background: var(--surface);
   backdrop-filter: blur(10px);
@@ -155,8 +181,46 @@ body.dark .ai-shell {
   flex-shrink: 0;
   position: relative;
   z-index: 10;
+  transition: padding-left .2s ease;
 }
+/* Sidebar open: it already occupies that top-left corner, so the
+   topbar no longer needs to reserve space for the fixed button. */
+.ai-shell:not(.sidebar-collapsed) .ai-topbar { padding-left: 20px; }
 @media (max-width: 600px) { .ai-topbar { padding-left: 60px; } }
+
+.ai-topbar-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.ai-topbar-left { justify-content: flex-start; }
+.ai-topbar-right { justify-content: flex-end; }
+
+.ai-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.ai-brand-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--a), #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+.ai-brand-text {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
 
 .icon-btn {
   display: flex;
@@ -174,11 +238,6 @@ body.dark .ai-shell {
 }
 .icon-btn:hover { opacity: 1; background: var(--hover); }
 
-.ai-topbar-title {
-  font-size: 14px;
-  font-weight: 600;
-  flex: 1;
-}
 .ai-model-badge {
   font-size: 11px;
   font-weight: 500;
@@ -188,11 +247,6 @@ body.dark .ai-shell {
   background: rgba(59,130,246,.08);
   color: var(--a);
   white-space: nowrap;
-}
-.ai-topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 .ai-topbar-link {
   display: flex;
