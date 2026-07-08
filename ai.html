@@ -15,507 +15,10 @@
   <link rel="stylesheet" href="/assets/css/gallium.css" />
   <link rel="stylesheet" href="/assets/css/responsive.css" />
   <link rel="stylesheet" href="/assets/css/cursor.css" />
+  <link rel="stylesheet" href="/assets/css/ai.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-SCZB3M2PNX"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SCZB3M2PNX');</script>
-  <style>
-    /* ── Reset & shell ── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; }
-
-    .ai-shell {
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-      background: var(--bg);
-      color: var(--txt);
-    }
-
-    /* ── Sidebar ── */
-    #ai-sidebar {
-      width: 240px;
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      background: rgba(148,163,184,.06);
-      border-right: 1px solid var(--br);
-      transition: width .22s ease;
-      overflow: hidden;
-    }
-    #ai-sidebar.collapsed { width: 0; border-right: none; }
-
-    .sb-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 12px 10px;
-      border-bottom: 1px solid var(--br);
-      flex-shrink: 0;
-    }
-    .sb-logo {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: .03em;
-      opacity: .9;
-      white-space: nowrap;
-    }
-    #new-chat-btn {
-      padding: 5px 10px;
-      border-radius: 8px;
-      border: 1px solid var(--br);
-      background: rgba(59,130,246,.12);
-      color: var(--a);
-      font-size: 12px;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    #new-chat-btn:hover { background: rgba(59,130,246,.22); }
-
-    #conv-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px 6px;
-    }
-    .conv-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 8px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 12px;
-      opacity: .8;
-      position: relative;
-    }
-    .conv-item:hover { background: rgba(148,163,184,.12); opacity: 1; }
-    .conv-item.active { background: rgba(59,130,246,.12); opacity: 1; }
-    .conv-item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .conv-del {
-      display: none;
-      border: none;
-      background: transparent;
-      color: var(--txt);
-      opacity: .5;
-      cursor: pointer;
-      font-size: 11px;
-      padding: 2px 4px;
-      border-radius: 4px;
-      flex-shrink: 0;
-    }
-    .conv-item:hover .conv-del { display: block; }
-    .conv-del:hover { opacity: 1; color: #ef4444; }
-    .conv-empty { font-size: 12px; opacity: .5; padding: 12px 8px; }
-
-    /* ── Main area ── */
-    .ai-main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-      position: relative;
-    }
-
-    /* ── Top bar ── */
-    .ai-topbar {
-      height: 48px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 0 14px;
-      border-bottom: 1px solid var(--br);
-      background: rgba(10,12,20,.92);
-      flex-shrink: 0;
-      position: relative;
-      z-index: 10;
-    }
-    #sidebar-toggle {
-      border: none;
-      background: transparent;
-      color: var(--txt);
-      cursor: pointer;
-      font-size: 16px;
-      opacity: .6;
-      padding: 4px 6px;
-      border-radius: 6px;
-    }
-    /* Give the main.js sidebar-toggle room — it sits at fixed top:10px left:10px z-index:70 */
-    .ai-topbar { padding-left: 80px; }
-    @media (max-width: 600px) { .ai-topbar { padding-left: 60px; } }
-
-    /* ── Mobile: sidebar has no breakpoint by default and permanently eats
-       240px of a ~375px viewport, crushing the actual chat area. On small
-       screens it now overlays on top of the chat instead of sitting beside
-       it, and starts collapsed. ── */
-    @media (max-width: 760px) {
-      #ai-sidebar {
-        position: fixed;
-        top: 0; left: 0; bottom: 0;
-        z-index: 60;
-        width: 240px;
-        box-shadow: 2px 0 24px rgba(0,0,0,.35);
-      }
-      #ai-sidebar.collapsed { width: 0; box-shadow: none; }
-      .ai-shell { overflow: visible; }
-    }
-
-    .ai-topbar-title {
-      font-size: 14px;
-      font-weight: 600;
-      flex: 1;
-    }
-    .ai-model-badge {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(59,130,246,.35);
-      background: rgba(59,130,246,.08);
-      color: var(--a);
-      white-space: nowrap;
-    }
-    .ai-topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* ── Messages ── */
-    #ai-output {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px 0;
-      scroll-behavior: smooth;
-    }
-
-    .ai-bubble {
-      max-width: 760px;
-      margin: 0 auto 4px;
-      padding: 10px 16px;
-      animation: fadeUp .18s ease;
-    }
-    @keyframes fadeUp { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
-
-    /* User bubble */
-    .ai-bubble.user {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-    }
-    .ai-bubble.user .bubble-inner {
-      background: rgba(59,130,246,.15);
-      border: 1px solid rgba(59,130,246,.25);
-      border-radius: 16px 16px 4px 16px;
-      padding: 10px 14px;
-      font-size: 14px;
-      max-width: 80%;
-      word-break: break-word;
-      white-space: pre-wrap;
-    }
-    .ai-bubble.user .attached-preview {
-      max-width: 260px;
-      border-radius: 10px;
-      overflow: hidden;
-      margin-bottom: 6px;
-    }
-    .ai-bubble.user .attached-preview img {
-      width: 100%;
-      display: block;
-      border-radius: 10px;
-    }
-    .ai-bubble.user .attached-file-link {
-      font-size: 12px;
-      background: rgba(148,163,184,.12);
-      border: 1px solid var(--br);
-      border-radius: 8px;
-      padding: 5px 10px;
-      margin-bottom: 6px;
-      color: var(--a);
-      text-decoration: none;
-      display: inline-block;
-    }
-
-    /* Assistant bubble */
-    .ai-bubble.assistant {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-    }
-    .ai-avatar {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-    .ai-bubble.assistant .bubble-inner {
-      flex: 1;
-      font-size: 14px;
-      line-height: 1.65;
-      min-width: 0;
-    }
-
-    /* Markdown styles inside assistant bubble */
-    .bubble-inner h1, .bubble-inner h2, .bubble-inner h3 {
-      margin: 16px 0 8px;
-      font-weight: 600;
-      line-height: 1.3;
-    }
-    .bubble-inner h1 { font-size: 1.3em; }
-    .bubble-inner h2 { font-size: 1.15em; }
-    .bubble-inner h3 { font-size: 1.05em; }
-    .bubble-inner p { margin: 6px 0; }
-    .bubble-inner ul, .bubble-inner ol { padding-left: 20px; margin: 6px 0; }
-    .bubble-inner li { margin: 3px 0; }
-    .bubble-inner strong { font-weight: 700; }
-    .bubble-inner em { font-style: italic; }
-    .bubble-inner a { color: var(--a); text-decoration: underline; }
-    .bubble-inner hr { border: none; border-top: 1px solid var(--br); margin: 14px 0; }
-    .bubble-inner table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
-    .bubble-inner th, .bubble-inner td { border: 1px solid var(--br); padding: 6px 10px; text-align: left; }
-    .bubble-inner th { background: rgba(148,163,184,.1); font-weight: 600; }
-    .bubble-inner blockquote { border-left: 3px solid var(--a); margin: 10px 0; padding: 4px 12px; opacity: .8; }
-
-    /* Inline code */
-    .bubble-inner code:not(pre code) {
-      background: rgba(148,163,184,.15);
-      border: 1px solid rgba(148,163,184,.2);
-      border-radius: 4px;
-      padding: 1px 5px;
-      font-size: .88em;
-      font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
-    }
-
-    /* Code blocks */
-    .code-block-wrap {
-      position: relative;
-      margin: 10px 0;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid rgba(148,163,184,.15);
-    }
-    .code-block-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 6px 12px;
-      background: rgba(15,23,42,.6);
-      font-size: 11px;
-      opacity: .8;
-    }
-    .code-block-lang { font-family: monospace; letter-spacing: .05em; }
-    .code-copy-btn {
-      border: none;
-      background: rgba(148,163,184,.15);
-      color: inherit;
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .code-copy-btn:hover { background: rgba(148,163,184,.3); }
-    .code-block-wrap pre {
-      margin: 0 !important;
-      border-radius: 0 !important;
-      max-height: 480px;
-      overflow: auto;
-    }
-    .code-block-wrap pre code { font-size: 13px !important; }
-
-    /* Thinking spinner */
-    .thinking {
-      display: flex;
-      gap: 5px;
-      align-items: center;
-      padding: 4px 0;
-      opacity: .6;
-    }
-    .thinking span {
-      width: 6px; height: 6px;
-      background: var(--a);
-      border-radius: 50%;
-      animation: bounce .9s infinite;
-    }
-    .thinking span:nth-child(2) { animation-delay: .15s; }
-    .thinking span:nth-child(3) { animation-delay: .3s; }
-    @keyframes bounce { 0%,80%,100%{transform:scale(.8)} 40%{transform:scale(1.2)} }
-
-    /* ── Image paste drop zone ── */
-    .ai-main.drag-over #ai-output::after {
-      content: '📎 Drop to attach';
-      position: fixed;
-      inset: 0;
-      background: rgba(59,130,246,.12);
-      border: 2px dashed var(--a);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--a);
-      z-index: 50;
-      pointer-events: none;
-    }
-
-    /* ── Input area ── */
-    .ai-input-area {
-      border-top: 1px solid var(--br);
-      padding: 10px 14px 12px;
-      background: rgba(255,255,255,.02);
-      flex-shrink: 0;
-    }
-
-    /* Attach preview */
-    #file-preview {
-      display: none;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 10px;
-      background: rgba(59,130,246,.08);
-      border: 1px solid rgba(59,130,246,.2);
-      border-radius: 8px;
-      margin-bottom: 8px;
-      font-size: 12px;
-      max-width: 760px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    #file-preview.show { display: flex; }
-    #fp-thumb img { max-height: 44px; border-radius: 6px; display: block; }
-    #fp-thumb .fp-icon { font-size: 22px; }
-    #fp-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .8; }
-    #fp-cancel { border: none; background: transparent; color: var(--txt); opacity: .5; cursor: pointer; font-size: 14px; }
-    #fp-cancel:hover { opacity: 1; }
-
-    .ai-input-row {
-      display: flex;
-      align-items: flex-end;
-      gap: 8px;
-      max-width: 760px;
-      margin: 0 auto;
-      background: rgba(148,163,184,.08);
-      border: 1px solid var(--br);
-      border-radius: 14px;
-      padding: 8px 10px;
-      transition: border-color .15s;
-    }
-    .ai-input-row:focus-within {
-      border-color: rgba(59,130,246,.5);
-      box-shadow: 0 0 0 2px rgba(59,130,246,.08);
-    }
-    #ai-input {
-      flex: 1;
-      border: none;
-      outline: none;
-      background: transparent;
-      color: var(--txt);
-      font-size: 14px;
-      resize: none;
-      max-height: 200px;
-      overflow-y: auto;
-      line-height: 1.5;
-      padding: 2px 0;
-    }
-    .ai-input-btns {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      flex-shrink: 0;
-    }
-    #ai-attach-btn {
-      border: none;
-      background: transparent;
-      color: var(--txt);
-      opacity: .55;
-      cursor: pointer;
-      font-size: 17px;
-      padding: 4px;
-      border-radius: 6px;
-    }
-    #ai-attach-btn:hover { opacity: 1; background: rgba(148,163,184,.12); }
-    #ai-send-btn {
-      border: none;
-      background: linear-gradient(135deg, var(--a), #8b5cf6);
-      color: #fff;
-      border-radius: 9px;
-      width: 34px;
-      height: 34px;
-      cursor: pointer;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: opacity .15s;
-    }
-    #ai-send-btn:hover { opacity: .88; }
-    #ai-send-btn:disabled { opacity: .35; cursor: default; }
-
-    .ai-input-hint {
-      text-align: center;
-      font-size: 11px;
-      opacity: .4;
-      margin-top: 6px;
-    }
-
-    /* ── Welcome screen ── */
-    #ai-welcome {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      gap: 12px;
-      text-align: center;
-      padding: 24px;
-      opacity: .9;
-    }
-    .wl-logo {
-      width: 56px; height: 56px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 26px;
-      margin-bottom: 4px;
-    }
-    .wl-title { font-size: 22px; font-weight: 700; }
-    .wl-sub { font-size: 14px; opacity: .6; max-width: 340px; line-height: 1.6; }
-    .wl-chips {
-      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-      margin-top: 6px; max-width: 460px;
-    }
-    .wl-chip {
-      padding: 7px 13px;
-      border-radius: 999px;
-      border: 1px solid var(--br);
-      background: rgba(148,163,184,.07);
-      font-size: 12px;
-      cursor: pointer;
-      transition: .15s;
-    }
-    .wl-chip:hover { background: rgba(59,130,246,.12); border-color: rgba(59,130,246,.35); color: var(--a); }
-
-    /* ── Toast ── */
-    .ai-toast {
-      position: fixed;
-      bottom: 80px; left: 50%;
-      transform: translateX(-50%);
-      background: rgba(15,23,42,.95);
-      color: #f5f5f5;
-      padding: 7px 16px;
-      border-radius: 999px;
-      font-size: 13px;
-      border: 1px solid rgba(255,255,255,.1);
-      pointer-events: none;
-      animation: toastIn .2s ease;
-      z-index: 999;
-    }
-    @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-  </style>
 </head>
 <body class="dark">
   <div class="cursor-dot"></div>
@@ -529,7 +32,7 @@
     <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
   </div>
 
-  <!-- ── 360 Navigation sidebar (required by main.js) ── -->
+  <!-- 360 navigation sidebar (required by main.js) -->
   <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
 
   <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
@@ -570,11 +73,11 @@
       <button id="bgResetBtn" class="settings-btn">Reset</button>
     </div>
     <h3 style="margin-top:25px;">Legal</h3>
-    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
-    <a href="/tos" class="legal-link">📜 Terms of Service</a>
+    <a href="/privacypolicy" class="legal-link">Privacy Policy</a>
+    <a href="/tos" class="legal-link">Terms of Service</a>
     <h3 style="margin-top:25px;">About</h3>
     <details class="about-dropdown">
-      <summary>ℹ️ What is 360?</summary>
+      <summary>What is 360?</summary>
       <p>360 is a next-generation search engine and digital workspace. Built by 360 Digital, Co.</p>
     </details>
   </div>
@@ -600,31 +103,39 @@
   </div>
 
   <div class="ai-shell">
-    <!-- Sidebar -->
+    <!-- Conversation sidebar -->
     <div id="ai-sidebar">
       <div class="sb-head">
-        <span class="sb-logo">💬 Chats</span>
-        <button id="new-chat-btn">+ New</button>
+        <span class="sb-logo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          Chats
+        </span>
+        <button id="new-chat-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New
+        </button>
       </div>
       <div id="conv-list"></div>
     </div>
 
-    <!-- Main -->
+    <!-- Main chat column -->
     <div class="ai-main" id="ai-main">
       <div class="ai-topbar">
-        <button id="ai-chat-sidebar-toggle" title="Toggle chat history" style="border:none;background:transparent;color:var(--txt);cursor:pointer;font-size:15px;opacity:.6;padding:4px 8px;border-radius:6px;margin-left:2px;">
-          💬
+        <button id="ai-chat-sidebar-toggle" class="icon-btn" title="Toggle chat history">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
         </button>
         <div class="ai-topbar-title">360 AI</div>
         <div class="ai-topbar-right">
           <span class="ai-model-badge" id="model-badge">Powered by Claude Opus 4.5</span>
-          <a href="/apps" class="auth-btn" style="text-decoration:none;font-size:12px;">Apps</a>
+          <a href="/apps" class="ai-topbar-link">Apps</a>
         </div>
       </div>
 
       <div id="ai-output">
         <div id="ai-welcome">
-          <div class="wl-logo">✦</div>
+          <div class="wl-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9z"/></svg>
+          </div>
           <div class="wl-title">360 AI</div>
           <div class="wl-sub">Powered by Claude Opus on OpenRouter. Ask anything, paste images, upload files, write code.</div>
           <div class="wl-chips">
@@ -633,7 +144,7 @@
             <div class="wl-chip" data-prompt="What are the best ways to learn a new language fast?">Help me learn a language fast</div>
             <div class="wl-chip" data-prompt="Debug this code for me and explain what was wrong">Debug my code</div>
             <div class="wl-chip" data-prompt="Write a short creative story about a time traveler">Let's write a creative story</div>
-            <div class="wl-chip" data-prompt="What is the difference between machine learning and AI?">🤖 Machine Learning vs AI</div>
+            <div class="wl-chip" data-prompt="What is the difference between machine learning and AI?">Machine learning vs AI</div>
           </div>
         </div>
       </div>
@@ -642,13 +153,19 @@
         <div id="file-preview">
           <div id="fp-thumb"></div>
           <span id="fp-name"></span>
-          <button id="fp-cancel">✕</button>
+          <button id="fp-cancel" title="Remove attachment">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
         <div class="ai-input-row">
           <textarea id="ai-input" rows="1" placeholder="Ask anything… (Ctrl+V to paste image)"></textarea>
           <div class="ai-input-btns">
-            <button id="ai-attach-btn" title="Attach file or image">📎</button>
-            <button id="ai-send-btn" title="Send (Enter)">↑</button>
+            <button id="ai-attach-btn" title="Attach file or image">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            </button>
+            <button id="ai-send-btn" title="Send (Enter)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+            </button>
           </div>
         </div>
         <div class="ai-input-hint">Enter to send · Shift+Enter for new line · Paste image with Ctrl+V</div>
