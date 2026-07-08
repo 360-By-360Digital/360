@@ -159,7 +159,8 @@
     } else if (file) {
       inner += `
         <a class="attached-file-link" href="${file.previewUrl || "#"}" target="_blank" rel="noopener noreferrer">
-          📎 ${escHtml(file.name || "file")}
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          ${escHtml(file.name || "file")}
         </a>
       `;
     }
@@ -184,7 +185,7 @@
 
     const avatar = document.createElement("div");
     avatar.className = "ai-avatar";
-    avatar.textContent = "✦";
+    avatar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9z"/></svg>`;
 
     const inner = document.createElement("div");
     inner.className = "bubble-inner";
@@ -220,7 +221,7 @@
     if (isImage && fileObj.previewUrl) {
       fpThumb.innerHTML = `<img src="${fileObj.previewUrl}" alt="preview" style="max-height:44px;border-radius:6px;" />`;
     } else {
-      fpThumb.innerHTML = `<span class="fp-icon">📎</span>`;
+      fpThumb.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>`;
     }
 
     fpName.textContent = fileObj.name || "file";
@@ -257,7 +258,7 @@
         pendingFile = { file, name, base64: dataUrl.split(",")[1], mimeType: "image/jpeg", previewUrl: dataUrl };
         updateFilePreview(pendingFile);
       };
-      img.onerror = () => { URL.revokeObjectURL(objUrl); showToast("⚠️ Could not read image"); };
+      img.onerror = () => { URL.revokeObjectURL(objUrl); showToast("Could not read image"); };
       img.src = objUrl;
     } else {
       const reader = new FileReader();
@@ -345,10 +346,10 @@
 
     const m = String(model).toLowerCase();
     const map = {
-      openrouter: "✦ Claude Opus · OpenRouter",
-      claude: "✦ Claude Sonnet · Direct",
-      groq: "⚡ Llama 3.3 · Groq",
-      gemini: "◆ Gemini · Google",
+      openrouter: "Claude Opus · OpenRouter",
+      claude: "Claude Sonnet · Direct",
+      groq: "Llama 3.3 · Groq",
+      gemini: "Gemini · Google",
     };
 
     for (const [key, label] of Object.entries(map)) {
@@ -451,7 +452,7 @@
       scheduleAutoSave();
     } catch (err) {
       if (thinkInner) {
-        thinkInner.innerHTML = `<span style="color:#ef4444;">⚠️ ${escHtml(err?.message || "Unknown error")}</span>`;
+        thinkInner.innerHTML = `<span style="color:#ef4444;">${escHtml(err?.message || "Unknown error")}</span>`;
       }
     } finally {
       isSending = false;
@@ -526,7 +527,7 @@
         currentConvId = data.id;
       }
 
-      if (!silent) showToast("💾 Saved");
+      if (!silent) showToast("Saved");
       loadConversations();
     } catch (_) {
       if (!silent) showToast("Save failed");
@@ -564,8 +565,11 @@
       const item = document.createElement("div");
       item.className = "conv-item" + (conv.id === currentConvId ? " active" : "");
       item.innerHTML = `
-        <span class="conv-item-title">💬 ${escHtml(conv.title)}</span>
-        <button class="conv-del" title="Delete">✕</button>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span class="conv-item-title">${escHtml(conv.title)}</span>
+        <button class="conv-del" title="Delete">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       `;
 
       on(item, "click", e => {
