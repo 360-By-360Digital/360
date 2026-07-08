@@ -15,6 +15,12 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
+    @view-transition { navigation: auto; }
+    ::view-transition-old(root) { animation: vt-out .28s cubic-bezier(.4,0,.2,1) both; }
+    ::view-transition-new(root) { animation: vt-in .32s cubic-bezier(.2,0,.2,1) both; }
+    @keyframes vt-out { to { opacity: 0; transform: scale(.98) translateY(6px); } }
+    @keyframes vt-in { from { opacity: 0; transform: scale(1.02) translateY(-6px); } }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -79,11 +85,15 @@
     .st-header h1 { font-size: 22px; font-weight: 800; }
     .st-header p { color: var(--vid-mut); font-size: 13px; }
 
+    @keyframes st-fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
     .st-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
     .st-stat {
       background: var(--vid-card); border: 1px solid var(--vid-border); border-radius: 12px;
-      padding: 14px 16px;
+      padding: 14px 16px; animation: st-fade-up .35s ease both;
+      transition: transform .18s ease, box-shadow .18s ease;
     }
+    .st-stat:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0,0,0,.12); }
     .st-stat-num { font-size: 22px; font-weight: 800; }
     .st-stat-label { font-size: 12px; color: var(--vid-mut); margin-top: 2px; }
 
@@ -91,6 +101,7 @@
     .st-tab {
       padding: 10px 16px; font-size: 13px; font-weight: 700; color: var(--vid-mut);
       cursor: pointer; border-bottom: 2px solid transparent; user-select: none;
+      transition: color .15s ease;
     }
     .st-tab.active { color: var(--vid-accent); border-bottom-color: var(--vid-accent); }
 
@@ -98,8 +109,11 @@
     .st-row {
       display: flex; align-items: center; gap: 14px;
       background: var(--vid-card); border: 1px solid var(--vid-border); border-radius: 12px;
-      padding: 10px 14px;
+      padding: 10px 14px; animation: st-fade-up .3s ease both;
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
     }
+    .st-row:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0,0,0,.14); border-color: var(--vid-accent); }
+    .st-row-sparkline { flex-shrink: 0; opacity: .85; }
     .st-row-thumb {
       width: 84px; height: 48px; border-radius: 8px; flex-shrink: 0;
       background: linear-gradient(135deg, var(--vid-accent), var(--vid-accent2));
@@ -114,8 +128,10 @@
     .st-btn {
       border: 1px solid var(--vid-border); background: transparent; color: var(--vid-txt);
       border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: transform .12s ease, background .15s ease;
     }
     .st-btn:hover { background: var(--vid-hover); }
+    .st-btn:active { transform: scale(.94); }
     .st-btn.danger { color: #ef4444; border-color: rgba(239,68,68,.35); }
     .st-btn.danger:hover { background: rgba(239,68,68,.08); }
 
@@ -225,8 +241,7 @@
   </div>
 
   <div class="st-toast" id="stToast"></div>
-  
-  <script src="/assets/js/cursor.js"></script>
+
   <script>
     const SUPABASE_URL  = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
@@ -364,25 +379,57 @@
         return;
       }
 
-      listEl.innerHTML = items.map(item => {
+      listEl.innerHTML = items.map((item, i) => {
         const plays = formatNum(item.views || 0);
         const likes = (item.likes || []).length;
         const thumb = activeTab === 'music' && item.thumbnail_url
           ? `<img src="${escHtml(item.thumbnail_url)}" alt="" />`
           : (activeTab === 'videos' ? '🎬' : '🎵');
         return `
-          <div class="st-row" data-id="${item.id}">
+          <div class="st-row" data-id="${item.id}" style="animation-delay:${Math.min(i * 40, 400)}ms;">
             <div class="st-row-thumb">${thumb}</div>
             <div class="st-row-body">
               <div class="st-row-title">${escHtml(item.title)}</div>
               <div class="st-row-meta">${escHtml(item.category || 'Other')} · ${plays} ${activeTab === 'videos' ? 'views' : 'plays'} · ${likes} likes · ${timeAgo(item.created_at)}</div>
             </div>
+            <div class="st-row-sparkline" id="spark-${item.id}"></div>
             <div class="st-row-actions">
               <button class="st-btn" data-action="edit" data-id="${item.id}">Edit</button>
               <button class="st-btn danger" data-action="delete" data-id="${item.id}">Delete</button>
             </div>
           </div>`;
       }).join('');
+
+      loadSparklines(items, kind === 'video' ? 'video' : 'music');
+    }
+
+    // Real 14-day view trend per item, backed by the content_views log table
+    // (not a decorative fake chart -- empty history just renders a flat line).
+    async function loadSparklines(items, kind) {
+      for (const item of items) {
+        const { data, error } = await sb.rpc('get_view_trend', { p_kind: kind, p_id: item.id, p_days: 14 });
+        const el = document.getElementById(`spark-${item.id}`);
+        if (!el) continue;
+        if (error || !data || !data.length) { el.innerHTML = ''; continue; }
+        el.innerHTML = sparklineSvg(data.map(d => d.views));
+      }
+    }
+
+    function sparklineSvg(values) {
+      const w = 70, h = 26, pad = 2;
+      const max = Math.max(1, ...values);
+      const stepX = (w - pad * 2) / Math.max(1, values.length - 1);
+      const pts = values.map((v, i) => {
+        const x = pad + i * stepX;
+        const y = h - pad - (v / max) * (h - pad * 2);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      const total = values.reduce((a, b) => a + b, 0);
+      const trendColor = total > 0 ? 'var(--vid-accent)' : 'var(--vid-mut)';
+      return `
+        <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+          <polyline points="${pts}" fill="none" stroke="${trendColor}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+        </svg>`;
     }
 
     document.querySelectorAll('.st-tab').forEach(tab => {
