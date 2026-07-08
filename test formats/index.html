@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-89NN1P6CEV');
+</script>
+ <meta name="google-site-verification" content="eaEEX-NyYfG-naI2kzpj6y1A4ikw-1MxrAkP6h-C8Ao" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>360</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="360" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon-32x32.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/wide.css" />
+  <link rel="stylesheet" href="/assets/css/gallium.css" />
+  <link rel="stylesheet" href="/assets/css/home.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+  <link rel="stylesheet" href="/assets/css/cursor.css" />
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    /* ── Search bar ── */
+    #search-form {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 600px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--br);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      overflow: visible; /* allow Bob canvas to peek out */
+      transition: box-shadow 0.2s, border-color 0.2s;
+      margin: 0 auto;
+      position: relative;
+    }
+    #search-form:focus-within {
+      border-color: var(--a);
+      box-shadow: 0 8px 32px rgba(59,130,246,0.18);
+    }
+    body.dark #search-form {
+      background: rgba(15,23,42,0.6);
+      border-color: rgba(255,255,255,0.15);
+    }
+    #search-input {
+      flex: 1;
+      padding: 14px 22px;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      color: var(--txt);
+      font-family: inherit;
+      caret-color: var(--a);
+      border-radius: 999px 0 0 999px;
+    }
+    body.dark #search-input { color: var(--txtd); }
+    #search-input::placeholder { color: var(--mut); }
+    body.dark #search-input::placeholder { color: var(--mutd); }
+
+    /* Bob canvas — floats above the right edge of the search bar */
+    #bob-canvas-wrap {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      flex-shrink: 0;
+      position: relative;
+    }
+    #bob-canvas-wrap.visible { display: flex; }
+    #bob-canvas { display: block; }
+
+    #search-btn {
+      flex-shrink: 0;
+      margin: 6px 8px 6px 0;
+      padding: 10px 22px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(120deg, var(--a), var(--a2));
+      color: #050816;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.2s;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+    #search-btn:hover { opacity: 0.85; }
+
+    /* Settings panel Bob section */
+    .settings-bob-section {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 12px;
+      background: rgba(148,163,184,.07);
+      border: 1px solid var(--br);
+    }
+    body.dark .settings-bob-section { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); }
+
+    .bob-toggle-row {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      cursor: pointer; user-select: none;
+    }
+    .bob-toggle-label { font-size: 13px; font-weight: 600; color: var(--txt); }
+    body.dark .bob-toggle-label { color: var(--txtd); }
+    .bob-toggle-sub { font-size: 11px; color: var(--mut); margin-top: 1px; }
+    body.dark .bob-toggle-sub { color: var(--mutd); }
+
+    .bob-track {
+      width: 38px; height: 22px;
+      background: rgba(148,163,184,.3);
+      border-radius: 999px; position: relative;
+      cursor: pointer; transition: background .25s;
+      flex-shrink: 0; border: none;
+    }
+    .bob-track::before {
+      content: "";
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 16px; height: 16px;
+      background: white; border-radius: 50%;
+      transition: transform .25s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .bob-track.on { background: var(--a); }
+    .bob-track.on::before { transform: translateX(16px); }
+  </style>
+</head>
+<body>
+
+ <!-- ── SPLASH ── -->
+<div id="splash">
+  <div class="splash-num" id="s3">3</div>
+  <div class="splash-num" id="s6">6</div>
+  <div class="splash-num" id="s0">0</div>
+</div>
+<style>
+  #splash { position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .65s ease; }
+  #splash.fade { opacity:0;pointer-events:none; }
+  .splash-num { font-family:"Segoe UI",system-ui,sans-serif;font-size:clamp(5rem,28vw,9rem);font-weight:900;color:#fff;letter-spacing:-.01em;line-height:1;opacity:0; }
+  @keyframes slideFromBottom { from{opacity:0;transform:translateY(110px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes slideFromTop    { from{opacity:0;transform:translateY(-110px)} to{opacity:1;transform:translateY(0)} }
+  .slide-up   { animation:slideFromBottom .52s cubic-bezier(.22,.68,0,1.1) forwards; }
+  .slide-down { animation:slideFromTop    .52s cubic-bezier(.22,.68,0,1.1) forwards; }
+</style>
+<script>
+  (function(){
+    const isPWA=window.matchMedia('(display-mode:standalone)').matches||window.navigator.standalone===true;
+    if(!isPWA){document.getElementById('splash')?.remove();return;}
+    const splash=document.getElementById("splash");
+    setTimeout(()=>document.getElementById("s3").classList.add("slide-up"),80);
+    setTimeout(()=>document.getElementById("s6").classList.add("slide-down"),210);
+    setTimeout(()=>document.getElementById("s0").classList.add("slide-up"),340);
+    setTimeout(()=>{splash.classList.add("fade");splash.addEventListener("transitionend",()=>splash.remove(),{once:true});},1250);
+  })();
+</script>
+
+  <div class="cursor-dot"></div>
+  <div class="cursor-trail"></div>
+  <div class="cursor-crosshair"></div>
+  <div class="cursor-blob"></div>
+
+  <div class="auth-top-right">
+    <button id="signInBtn" class="auth-btn">Sign In</button>
+    <button id="signUpBtn" class="auth-btn">Sign Up</button>
+    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+  </div>
+
+  <button id="installBtn" class="install-banner" style="display:none;">Install 360</button>
+  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+
+  <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="settings-panel" id="settingsPanel">
+    <h3>Appearance</h3>
+    <div class="settings-label">Theme</div>
+    <div class="theme-swatches">
+      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+    </div>
+    <div class="settings-label" style="margin-top:20px;">Mode</div>
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <span style="font-size:14px;">Dark mode</span>
+      <input type="checkbox" id="darkToggle" />
+    </label>
+    <h3 style="margin-top:20px;">Cursor</h3>
+    <div class="settings-label">Style</div>
+    <div class="cursor-options">
+      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+    </div>
+    <div class="cursor-color-row">
+      <label>Cursor color</label>
+      <input type="color" id="cursorColorPicker" value="#3b82f6" />
+      <button id="cursorColorReset">Reset</button>
+    </div>
+    <div class="temp-unit-box" style="margin-top:20px;">
+      Temp Unit: <span id="tempUnitLabel">°C</span>
+      <button id="tempUnitBtn">Switch</button>
+    </div>
+    <div class="settings-box" style="margin-top:20px;">
+      <div class="settings-label">Background Image</div>
+      <input type="file" id="bgUpload" accept="image/*" class="settings-input" />
+      <input type="text" id="bgUrlInput" placeholder="Paste image URL…" class="settings-input" />
+      <button id="bgUrlBtn" class="settings-btn">Apply URL</button>
+      <button id="bgResetBtn" class="settings-btn">Reset</button>
+    </div>
+
+    <!-- ── BOB TOGGLE in Settings ── -->
+    <h3 style="margin-top:25px;">Bob</h3>
+    <div class="settings-bob-section">
+      <div class="bob-toggle-row" id="bobToggleRow">
+        <div>
+          <div class="bob-toggle-label">Enable Bob</div>
+          <div class="bob-toggle-sub">Stick figure reacts as you type in the search bar</div>
+        </div>
+        <div class="bob-track" id="bobTrack"></div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:25px;">Legal</h3>
+    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
+    <a href="/tos" class="legal-link">📜 Terms of Service</a>
+    <h3 style="margin-top:25px;">About</h3>
+    <details class="about-dropdown">
+      <summary>ℹ️ What is 360?</summary>
+      <p>360 is a next-generation search engine and digital workspace. Search, chat, translate, check weather, monitor stocks, and interact with AI — all in one unified interface. Built by 360 Digital, Co.</p>
+    </details>
+  </div>
+
+  <div id="auth-popup" class="auth-popup hidden">
+    <div class="auth-box">
+      <h2>Account</h2>
+      <input id="auth-email" type="email" placeholder="Email" />
+      <input id="auth-password" type="password" placeholder="Password" />
+      <button id="auth-login-btn">Log In</button>
+      <button id="auth-signup-btn">Sign Up</button>
+      <button id="github-login" class="oauth-btn github">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span>Sign in with GitHub</span>
+      </button>
+      <button id="google-login" class="oauth-btn google">
+        <svg width="18" height="18" viewBox="0 0 24 24" style="flex-shrink:0"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        <span>Sign in with Google</span>
+      </button>
+      <p id="auth-error" class="auth-error"></p>
+      <button id="auth-close-btn" class="close-btn">Close</button>
+    </div>
+  </div>
+
+  <!-- HOME PAGE CONTENT -->
+  <div class="home-inner">
+    <br><br>
+    <div class="clock-pill" id="clock">--:--</div>
+    <div class="logo-main"><span>360</span></div>
+    <div class="weather-chip" id="weatherChip">--°C</div>
+
+    <!-- Search bar with Bob canvas slot -->
+    <div class="search-shell">
+      <form id="search-form" role="search" action="search" method="GET">
+        <input
+          id="search-input"
+          name="q"
+          type="text"
+          placeholder="Search with 360..."
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+        />
+        <!-- Bob sits here, between input and button -->
+        <div id="bob-canvas-wrap">
+          <canvas id="bob-canvas" width="32" height="32"></canvas>
+        </div>
+        <button id="search-btn" type="submit">Search</button>
+      </form>
+    </div>
+
+    <audio id="bgMusic" src="calm360.mp3" loop></audio>
+    <audio id="clickSound" src="click-sound.mp3" preload="auto"></audio>
+    <button id="musicToggle">Music: Off</button>
+  </div>
+
+  <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/auth-fix.js"></script>
+  <script src="/assets/js/wide.js"></script>
+  <script src="/assets/js/gallium.js"></script>
+  <script src="/assets/js/home.js"></script>
+  <script src="/assets/js/cookie.js"></script>
+  <script src="/assets/js/cursor.js"></script>
+
+  <!-- ── BOB SCRIPT ── -->
+  <script>
+  (function() {
+    const STORAGE_KEY = "360_bob_on";
+    const bobTrack    = document.getElementById("bobTrack");
+    const bobToggleRow = document.getElementById("bobToggleRow");
+    const bobCanvasWrap = document.getElementById("bob-canvas-wrap");
+    const bobCanvas   = document.getElementById("bob-canvas");
+    const searchInput = document.getElementById("search-input");
+
+    let bobOn = localStorage.getItem(STORAGE_KEY) === "true";
+    let bobRAF = null;
+    let bobFrame = 0;
+    let bobEnergy = 0;
+    let typingVelocity = 0;
+    let lastTypeTime = 0;
+    let lastCharCount = 0;
+
+    // Sync toggle visual
+    function syncTrack() {
+      bobTrack.classList.toggle("on", bobOn);
+      if (bobOn) {
+        bobCanvasWrap.classList.add("visible");
+        startBob();
+      } else {
+        bobCanvasWrap.classList.remove("visible");
+        stopBob();
+      }
+    }
+
+    // Toggle on click
+    bobToggleRow.addEventListener("click", () => {
+      bobOn = !bobOn;
+      localStorage.setItem(STORAGE_KEY, bobOn);
+      syncTrack();
+    });
+
+    // React to search input
+    searchInput.addEventListener("input", () => {
+      if (!bobOn) return;
+      const now = Date.now();
+      const dt = now - lastTypeTime;
+      const chars = Math.abs(searchInput.value.length - lastCharCount);
+      typingVelocity = Math.min((chars / Math.max(dt, 50)) * 1000, 25);
+      lastTypeTime = now;
+      lastCharCount = searchInput.value.length;
+      bobEnergy = Math.min(bobEnergy + typingVelocity * 0.15, 10);
+    });
+
+    function stopBob() {
+      if (bobRAF) { cancelAnimationFrame(bobRAF); bobRAF = null; }
+      const ctx = bobCanvas.getContext("2d");
+      ctx.clearRect(0, 0, 32, 32);
+    }
+
+    function startBob() {
+      if (bobRAF) return; // already running
+      bobFrame = 0; bobEnergy = 0; typingVelocity = 0;
+
+      const ctx = bobCanvas.getContext("2d");
+
+      function drawBob(frame, energy) {
+        ctx.clearRect(0, 0, 32, 32);
+        const t = frame * 0.12;
+        const isDark = document.body.classList.contains("dark");
+        const clr = isDark ? "#e5e7eb" : "#374151";
+        ctx.strokeStyle = clr;
+        ctx.fillStyle   = clr;
+        ctx.lineWidth   = 1.5;
+        ctx.lineCap     = "round";
+
+        const cx = 16, cy = 8;
+        const bounce = energy > 0 ? Math.sin(t * 3) * energy * 1.2 : 0;
+        const wobble = energy > 5 ? Math.sin(t * 7) * 2 : 0;
+        const shake  = energy > 7 ? (Math.random() - 0.5) * energy * 0.5 : 0;
+        const bx = cx + shake, by = cy + bounce * 0.3;
+
+        // head
+        ctx.beginPath(); ctx.arc(bx, by, 4, 0, Math.PI * 2); ctx.fill();
+
+        // body
+        const bodyTop = by + 4;
+        const bodyBot = by + 12 + Math.abs(bounce) * 0.2;
+        ctx.beginPath(); ctx.moveTo(bx, bodyTop); ctx.lineTo(bx, bodyBot); ctx.stroke();
+
+        // arms
+        const armSwing = energy > 0 ? Math.sin(t * 3) * Math.min(energy * 3, 30) : 0;
+        const armAlt   = energy > 7 ? Math.cos(t * 5) * 10 : 0;
+        ctx.save(); ctx.translate(bx, bodyTop + 3);
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-5+wobble, 5+armSwing); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo( 5+wobble, 5-armSwing+armAlt); ctx.stroke();
+        ctx.restore();
+
+        // legs
+        const legPhase = energy > 0 ? t * 3 : 0;
+        const legKick  = Math.min(energy * 4, 28);
+        ctx.save(); ctx.translate(bx, bodyBot);
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-3+Math.sin(legPhase)*legKick*0.4, 7+Math.cos(legPhase)*legKick*0.2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo( 3-Math.sin(legPhase)*legKick*0.4, 7-Math.cos(legPhase)*legKick*0.2); ctx.stroke();
+        ctx.restore();
+
+        // stars when hyper
+        if (energy > 6) {
+          const starCount = Math.floor(energy - 5);
+          for (let i = 0; i < starCount; i++) {
+            const angle = t * 2 + i * (Math.PI * 2 / starCount);
+            const r = 10 + energy * 0.5;
+            const sx = bx + Math.cos(angle) * r;
+            const sy = by - 2 + Math.sin(angle) * r * 0.5;
+            ctx.save(); ctx.translate(sx, sy);
+            ctx.fillStyle = "#f59e0b";
+            ctx.beginPath();
+            for (let j = 0; j < 5; j++) {
+              const a  = j * 1.2566 - Math.PI / 2;
+              const ra = j * 1.2566 - Math.PI / 2 + 0.6283;
+              if (j===0) ctx.moveTo(Math.cos(a)*2.5, Math.sin(a)*2.5);
+              else { ctx.lineTo(Math.cos(ra)*1.2, Math.sin(ra)*1.2); ctx.lineTo(Math.cos(a)*2.5, Math.sin(a)*2.5); }
+            }
+            ctx.closePath(); ctx.fill(); ctx.restore();
+          }
+        }
+      }
+
+      function tick() {
+        bobFrame++;
+        const now = Date.now();
+        if (now - lastTypeTime > 800) typingVelocity = Math.max(typingVelocity * 0.9, 0);
+        bobEnergy = Math.max(bobEnergy - 0.08, 0);
+        drawBob(bobFrame, bobEnergy);
+        bobRAF = requestAnimationFrame(tick);
+      }
+      tick();
+    }
+
+    // Init
+    syncTrack();
+  })();
+  </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyBkseE2U7bot9WnMLsCc89gYonhLSUHnPs",
+      authDomain: "search360-dev.firebaseapp.com",
+      projectId: "search360-dev",
+      storageBucket: "search360-dev.firebasestorage.app",
+      messagingSenderId: "936030276122",
+      appId: "1:936030276122:web:5877f7152f8f2411e0dfa3",
+      measurementId: "G-KYMVNB0F7M"
+    };
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+  </script>
+</body>
+</html>
