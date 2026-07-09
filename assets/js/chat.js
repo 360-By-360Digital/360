@@ -331,12 +331,12 @@ async function buildDMList(body){
       if(p.avatar_url){const img=document.createElement('img');img.src=p.avatar_url;av.appendChild(img);}
       else av.textContent=getInitials(p.username);
       const name=document.createElement('span'); name.textContent=p.username||'User';
+      item.appendChild(av); item.appendChild(name);
       const dk='dm:'+dm.id;
       if(unreadCounts[dk]>0){
         const badge=document.createElement('span'); badge.className='ch-unread-badge';
         badge.textContent=unreadCounts[dk]>99?'99+':String(unreadCounts[dk]); item.appendChild(badge);
       }
-      item.appendChild(av); item.appendChild(name);
       item.addEventListener('click',()=>switchRoom({type:'dm',id:dm.id,name:p.username,icon:'@',serverId:null,serverName:'Direct Messages',otherId:oid}));
       body.appendChild(item);
     });
@@ -617,7 +617,7 @@ async function fetchMessages(beforeDate){
     const prevH=win.scrollHeight;
     const saved={u:lastMsgUserId,d:lastMsgDate}; lastMsgUserId=null; lastMsgDate=null;
     const frag=document.createDocumentFragment();
-    msgs.forEach(m=>{const el=buildMsgEl(m);if(el)frag.appendChild(el);});
+    msgs.forEach(m=>{const el=buildMsgEl(m,frag);if(el)frag.appendChild(el);});
     win.insertBefore(frag,win.firstChild);
     lastMsgUserId=saved.u; lastMsgDate=saved.d; win.scrollTop=win.scrollHeight-prevH;
   } else {
@@ -649,7 +649,7 @@ function renderMessage(msg,isRealtime){
   maybeTranslateMessage(el,msg.text);
 }
 
-function buildMsgEl(msg){
+function buildMsgEl(msg,container){
   const r=activeRoom;
   if(r.type==='public'&&(msg.channel_id||msg.dm_id||msg.server_id)) return null;
   if(r.type==='channel'&&String(msg.channel_id)!==String(r.id)) return null;
@@ -658,7 +658,7 @@ function buildMsgEl(msg){
   if(msg.thread_id!=null) return null; // never show thread replies in main chat
   if(msgElMap.has(String(msg.id))) return null;
 
-  const win=document.getElementById('dc-messages');
+  const win=container||document.getElementById('dc-messages');
   const msgDate=formatDate(msg.created_at);
   if(msgDate!==lastMsgDate){
     const div=document.createElement('div'); div.className='dc-date-divider'; div.textContent=msgDate;
@@ -894,18 +894,33 @@ async function sendThreadMsg(){
 async function pinMsg(msg){
   if(!currentUserId) return;
   const r=activeRoom;
-  const{error}=await sb.from('pinned_messages').insert({
-    channel_id:r.type==='channel'?r.id:null,server_id:r.serverId||null,
-    message_id:msg.id,pinned_by:currentUserId
-  });
+  let payload;
+  if(r.type==='channel') payload={channel_id:r.id,dm_id:null,message_id:msg.id,pinned_by:currentUserId};
+  else if(r.type==='dm') payload={channel_id:null,dm_id:r.id,message_id:msg.id,pinned_by:currentUserId};
+  else { showToast("📌 Pinning isn't available in this room."); return; }
+  const{error}=await sb.from('pinned_messages').insert(payload);
   if(error){if(error.code==='23505')showToast('📌 Already pinned');else showToast('❌ '+error.message);return;}
   showToast('📌 Pinned!');
 }
 async function loadPins(){
   const list=document.getElementById('pins-list'); list.innerHTML=''; const r=activeRoom;
-  let q=sb.from('pinned_messages').select('*,messages(id,text,username)');
-  if(r.type==='channel') q=q.eq('channel_id',r.id); else if(r.serverId) q=q.eq('server_id',r.serverId);
-  const{data}=await q.order('created_at',{ascending:false});
+  let data;
+  if(r.type==='channel'){
+    const res=await sb.from('pinned_messages').select('*,messages(id,text,username)').eq('channel_id',r.id).order('created_at',{ascending:false});
+    data=res.data;
+  } else if(r.type==='dm'){
+    const res=await sb.from('pinned_messages').select('*').eq('dm_id',r.id).order('created_at',{ascending:false});
+    data=res.data||[];
+    if(data.length){
+      const ids=data.map(p=>p.message_id);
+      const{data:dmMsgs}=await sb.from('dm_messages').select('id,text,username').in('id',ids);
+      const byId={}; (dmMsgs||[]).forEach(m=>byId[m.id]=m);
+      data.forEach(p=>p.messages=byId[p.message_id]);
+    }
+  } else {
+    list.innerHTML=`<div style="padding:16px;text-align:center;font-size:13px;color:var(--dc-muted);">Pinning isn't available in this room.</div>`;
+    return;
+  }
   if(!data?.length){list.innerHTML=`<div style="padding:16px;text-align:center;font-size:13px;color:var(--dc-muted);">No pinned messages</div>`;return;}
   data.forEach(pin=>{
     const msg=pin.messages; const item=document.createElement('div'); item.className='pin-item';
