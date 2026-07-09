@@ -133,9 +133,13 @@
           <span class="ai-brand-text">360 AI</span>
         </div>
         <div class="ai-topbar-side ai-topbar-right">
-          <span class="ai-model-badge" id="model-badge">Powered by Claude Opus 4.5</span>
           <a href="/apps" class="ai-topbar-link">Apps</a>
         </div>
+      </div>
+
+      <div class="ai-conv-title-bar" id="conv-title-bar">
+        <input id="conv-title-input" class="conv-title-input" placeholder="Untitled chat" maxlength="80" />
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="conv-title-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
       </div>
 
       <div id="ai-output">
@@ -180,7 +184,7 @@
     </div>
   </div>
 
-  <input type="file" id="ai-file-input" style="display:none" accept="image/*,audio/*,.pdf,.doc,.docx,.txt,.md,.csv,.xls,.xlsx,.py,.js,.ts,.jsx,.tsx,.cpp,.c,.java,.go,.rs,.html,.css,.json,.yaml,.sql" />
+  <input type="file" id="ai-file-input" style="display:none" accept="*/*" />
 
   <script src="/assets/js/main.js"></script>
   <script src="/assets/js/auth-fix.js"></script>
