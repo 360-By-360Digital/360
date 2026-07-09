@@ -317,27 +317,38 @@ function addSidebarBtn(body,label,onClick){
 
 async function buildDMList(body){
   if(!currentUserId){addSidebarBtn(body,'Sign in to use DMs',()=>location.href='/account');return;}
-  const{data:dms}=await sb.from('direct_messages').select('*')
-    .or(`user_a.eq.${currentUserId},user_b.eq.${currentUserId}`).order('updated_at',{ascending:false});
-  if(!dms?.length){body.innerHTML=`<div style="padding:20px;font-size:13px;color:var(--dc-muted);text-align:center;">No DMs yet.</div>`;}
+  const{data:myRows}=await sb.from('dm_participants').select('dm_id').eq('user_id',currentUserId);
+  const dmIds=(myRows||[]).map(r=>r.dm_id);
+  if(!dmIds.length){body.innerHTML=`<div style="padding:20px;font-size:13px;color:var(--dc-muted);text-align:center;">No DMs yet.</div>`;}
   else{
-    const others=dms.map(dm=>dm.user_a===currentUserId?dm.user_b:dm.user_a);
-    const profiles=await Promise.all(others.map(id=>getProfile(id)));
-    dms.forEach((dm,i)=>{
-      const p=profiles[i]; const oid=others[i];
+    const{data:dms}=await sb.from('direct_messages').select('*').in('id',dmIds).order('updated_at',{ascending:false});
+    const{data:allParts}=await sb.from('dm_participants').select('dm_id,user_id').in('dm_id',dmIds);
+    const partsByDM={}; (allParts||[]).forEach(p=>{(partsByDM[p.dm_id]=partsByDM[p.dm_id]||[]).push(p.user_id);});
+    const otherIds=[...new Set((allParts||[]).map(p=>p.user_id).filter(id=>id!==currentUserId))];
+    const profiles=await Promise.all(otherIds.map(id=>getProfile(id)));
+    const profileById={}; otherIds.forEach((id,i)=>profileById[id]=profiles[i]);
+
+    (dms||[]).forEach(dm=>{
+      const others=(partsByDM[dm.id]||[]).filter(id=>id!==currentUserId);
+      const isGroup=dm.is_group||others.length>1;
       const item=document.createElement('div');
       item.className='dc-dm-item'+(activeRoom.id===dm.id?' active':''); item.dataset.dmId=dm.id;
       const av=document.createElement('div'); av.className='dc-dm-avatar';
-      if(p.avatar_url){const img=document.createElement('img');img.src=p.avatar_url;av.appendChild(img);}
-      else av.textContent=getInitials(p.username);
-      const name=document.createElement('span'); name.textContent=p.username||'User';
+      const label=dm.name||others.map(id=>profileById[id]?.username||'User').join(', ')||'DM';
+      if(isGroup){ av.textContent='👥'; }
+      else{
+        const p=profileById[others[0]];
+        if(p?.avatar_url){const img=document.createElement('img');img.src=p.avatar_url;av.appendChild(img);}
+        else av.textContent=getInitials(p?.username);
+      }
+      const name=document.createElement('span'); name.textContent=label;
       item.appendChild(av); item.appendChild(name);
       const dk='dm:'+dm.id;
       if(unreadCounts[dk]>0){
         const badge=document.createElement('span'); badge.className='ch-unread-badge';
         badge.textContent=unreadCounts[dk]>99?'99+':String(unreadCounts[dk]); item.appendChild(badge);
       }
-      item.addEventListener('click',()=>switchRoom({type:'dm',id:dm.id,name:p.username,icon:'@',serverId:null,serverName:'Direct Messages',otherId:oid}));
+      item.addEventListener('click',()=>switchRoom({type:'dm',id:dm.id,name:label,icon:isGroup?'👥':'@',serverId:null,serverName:'Direct Messages',otherId:isGroup?null:others[0],isGroup}));
       body.appendChild(item);
     });
   }
@@ -519,7 +530,7 @@ function switchRoom(room){
   unreadCounts[getRoomKey(room)]=0;
   document.querySelector(`[data-ch-id="${room.id}"] .ch-unread-badge`)?.remove();
   document.querySelector(`[data-dm-id="${room.id}"] .ch-unread-badge`)?.remove();
-  loadHistory(); markRoomRead(room);
+  loadHistory(); markRoomRead(room); updateComposerPermission();
   document.getElementById('dcSidebar')?.classList.remove('mobile-open');
 }
 
@@ -711,7 +722,8 @@ function buildMsgEl(msg,container){
 
   const actions=document.createElement('div'); actions.className='dc-msg-actions';
   [{i:'↩',t:'Reply',fn:()=>setReply(msg)},{i:'😊',t:'React',fn:ev=>openReactionPicker(msg.id,ev)},
-   {i:'🧵',t:'Thread',fn:()=>openThread(msg)},{i:'📌',t:'Pin',fn:()=>pinMsg(msg)}].forEach(a=>{
+   {i:'🧵',t:'Thread',fn:()=>openThread(msg)},{i:'📌',t:'Pin',fn:()=>pinMsg(msg)},
+   {i:'↪️',t:'Forward',fn:()=>openForwardModal(msg)}].forEach(a=>{
     const btn=document.createElement('button'); btn.className='dc-action-btn'; btn.title=a.t; btn.textContent=a.i;
     btn.addEventListener('click',ev=>{ev.stopPropagation();a.fn(ev);}); actions.appendChild(btn);
   });
@@ -803,6 +815,7 @@ document.getElementById('ctx-reply').onclick=()=>ctxTargetMsg&&setReply(ctxTarge
 document.getElementById('ctx-react').onclick=e=>ctxTargetMsg&&openReactionPicker(ctxTargetMsg.id,e);
 document.getElementById('ctx-thread').onclick=()=>ctxTargetMsg&&openThread(ctxTargetMsg);
 document.getElementById('ctx-pin').onclick=()=>ctxTargetMsg&&pinMsg(ctxTargetMsg);
+document.getElementById('ctx-forward').onclick=()=>ctxTargetMsg&&openForwardModal(ctxTargetMsg);
 document.getElementById('ctx-copy').onclick=()=>{
   const t=msgElMap.get(String(ctxTargetMsg?.id))?.querySelector('.dc-msg-text')?.textContent||'';
   navigator.clipboard.writeText(t).then(()=>showToast('📋 Copied!'));
@@ -886,6 +899,86 @@ async function sendThreadMsg(){
     server_id:activeRoom.serverId||null,
   });
   if(error){showToast('❌ '+error.message);inp.value=text;}
+}
+
+/* ══════════════════════════════════════════════════════
+   FORWARD MESSAGE
+══════════════════════════════════════════════════════ */
+let forwardTargetMsg=null;
+async function openForwardModal(msg){
+  if(!currentUserId) return;
+  forwardTargetMsg=msg;
+  document.getElementById('fwd-err').textContent='';
+  document.getElementById('fwd-search').value='';
+  await renderForwardList('');
+  openModal('forwardModal');
+}
+async function renderForwardList(filter){
+  const list=document.getElementById('fwd-list'); list.innerHTML='<div style="padding:10px;font-size:12px;color:var(--dc-muted);">Loading…</div>';
+  const targets=[];
+
+  const{data:memberships}=await sb.from('server_members').select('server_id').eq('user_id',currentUserId);
+  const serverIds=(memberships||[]).map(m=>m.server_id);
+  if(serverIds.length){
+    const{data:servers}=await sb.from('servers').select('id,name').in('id',serverIds);
+    const{data:chans}=await sb.from('channels').select('id,name,server_id').in('server_id',serverIds);
+    const serverById={}; (servers||[]).forEach(s=>serverById[s.id]=s);
+    (chans||[]).forEach(c=>targets.push({type:'channel',id:c.id,label:`#${c.name}`,sub:serverById[c.server_id]?.name||'',serverId:c.server_id,serverName:serverById[c.server_id]?.name}));
+  }
+  const{data:myRows}=await sb.from('dm_participants').select('dm_id').eq('user_id',currentUserId);
+  const dmIds=(myRows||[]).map(r=>r.dm_id);
+  if(dmIds.length){
+    const{data:dms}=await sb.from('direct_messages').select('*').in('id',dmIds);
+    const{data:allParts}=await sb.from('dm_participants').select('dm_id,user_id').in('dm_id',dmIds);
+    const partsByDM={}; (allParts||[]).forEach(p=>{(partsByDM[p.dm_id]=partsByDM[p.dm_id]||[]).push(p.user_id);});
+    const otherIds=[...new Set((allParts||[]).map(p=>p.user_id).filter(id=>id!==currentUserId))];
+    const profiles=await Promise.all(otherIds.map(id=>getProfile(id)));
+    const profileById={}; otherIds.forEach((id,i)=>profileById[id]=profiles[i]);
+    (dms||[]).forEach(dm=>{
+      const others=(partsByDM[dm.id]||[]).filter(id=>id!==currentUserId);
+      const label=dm.name||others.map(id=>profileById[id]?.username||'User').join(', ')||'DM';
+      targets.push({type:'dm',id:dm.id,label:'@'+label,sub:'Direct Message'});
+    });
+  }
+
+  const f=(filter||'').toLowerCase();
+  const filtered=targets.filter(t=>t.label.toLowerCase().includes(f)||t.sub.toLowerCase().includes(f));
+  if(!filtered.length){list.innerHTML='<div style="padding:10px;font-size:12px;color:var(--dc-muted);">No matches.</div>';return;}
+  list.innerHTML='';
+  filtered.forEach(t=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;cursor:pointer;';
+    row.onmouseenter=()=>row.style.background='var(--dc-ch-hover)'; row.onmouseleave=()=>row.style.background='';
+    row.innerHTML=`<span>${esc(t.label)}</span><span style="font-size:11px;color:var(--dc-muted);">${esc(t.sub)}</span>`;
+    row.onclick=()=>doForward(t);
+    list.appendChild(row);
+  });
+}
+document.getElementById('fwd-search').addEventListener('input',e=>renderForwardList(e.target.value));
+document.getElementById('fwd-cancel').onclick=()=>closeModal('forwardModal');
+async function doForward(target){
+  if(!forwardTargetMsg||!currentUserId) return;
+  const errEl=document.getElementById('fwd-err');
+  const original=forwardTargetMsg;
+  const text=`↪️ Forwarded from @${original.username||'Unknown'}\n${original.text||''}`;
+  const p=await getProfile(currentUserId);
+  try{
+    if(target.type==='channel'){
+      await sb.from('messages').insert({
+        user_id:currentUserId,username:p.username||'User',avatar_url:p.avatar_url||null,
+        tag:p.tag||null,role:p.role||'user',text,file_url:original.file_url||null,
+        channel_id:target.id,server_id:target.serverId
+      });
+    } else if(target.type==='dm'){
+      await sb.from('dm_messages').insert({
+        user_id:currentUserId,username:p.username||'User',avatar_url:p.avatar_url||null,
+        tag:p.tag||null,role:p.role||'user',text,file_url:original.file_url||null,dm_id:target.id
+      });
+      await sb.from('direct_messages').update({updated_at:new Date().toISOString()}).eq('id',target.id);
+    }
+  }catch(e){errEl.textContent='Forward failed: '+(e.message||'unknown error');return;}
+  closeModal('forwardModal'); forwardTargetMsg=null;
+  showToast(`↪️ Forwarded to ${target.label}`);
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1296,7 +1389,13 @@ async function startDMWith(emailOrUsername){
   if(profile.id===currentUserId){document.getElementById('dm-err').textContent="That's you!";return;}
   const{data:ex}=await sb.from('direct_messages').select('id').or(`and(user_a.eq.${currentUserId},user_b.eq.${profile.id}),and(user_a.eq.${profile.id},user_b.eq.${currentUserId})`).maybeSingle();
   let dmId;
-  if(ex){dmId=ex.id;}else{const{data:nd,error}=await sb.from('direct_messages').insert({user_a:currentUserId,user_b:profile.id}).select().single();if(error){document.getElementById('dm-err').textContent=error.message;return;}dmId=nd.id;}
+  if(ex){dmId=ex.id;}else{
+    const{data:nd,error}=await sb.from('direct_messages').insert({user_a:currentUserId,user_b:profile.id,created_by:currentUserId}).select().single();
+    if(error){document.getElementById('dm-err').textContent=error.message;return;}
+    dmId=nd.id;
+    const{error:pErr}=await sb.from('dm_participants').insert([{dm_id:dmId,user_id:currentUserId},{dm_id:dmId,user_id:profile.id}]);
+    if(pErr){document.getElementById('dm-err').textContent=pErr.message;return;}
+  }
   closeModal('dmModal'); showingDMs=true; setActiveServer(null); await buildSidebar(null);
   switchRoom({type:'dm',id:dmId,name:profile.username,icon:'@',serverId:null,serverName:'Direct Messages',otherId:profile.id});
 }
@@ -1373,6 +1472,7 @@ async function saveServer(server){
 function openAddChannelModal(server){
   document.getElementById('ch-name').value='';document.getElementById('ch-cat').value='TEXT CHANNELS';
   document.getElementById('ch-topic').value='';document.getElementById('ch-err').textContent='';
+  document.getElementById('ch-restricted').checked=false;
   document.getElementById('ch-create').dataset.serverId=server.id;openModal('channelModal');
 }
 document.getElementById('ch-cancel').onclick=()=>closeModal('channelModal');
@@ -1380,10 +1480,57 @@ document.getElementById('ch-create').onclick=async()=>{
   const sid=document.getElementById('ch-create').dataset.serverId;
   const name=document.getElementById('ch-name').value.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
   if(!name){document.getElementById('ch-err').textContent='Name required.';return;}
-  const{error}=await sb.from('channels').insert({name,server_id:sid,is_public:true,category:document.getElementById('ch-cat').value.trim()||'TEXT CHANNELS',topic:document.getElementById('ch-topic').value.trim()||null});
+  const{error}=await sb.from('channels').insert({name,server_id:sid,is_public:true,category:document.getElementById('ch-cat').value.trim()||'TEXT CHANNELS',topic:document.getElementById('ch-topic').value.trim()||null,restricted_post:document.getElementById('ch-restricted').checked});
   if(error){document.getElementById('ch-err').textContent=error.message;return;}
   closeModal('channelModal');const{data:s}=await sb.from('servers').select('*').eq('id',sid).maybeSingle();if(s)buildSidebar(s);
 };
+
+// ── Channel post-permission management (owner/admin only) ──
+async function manageChannelPosters(channelId,channelName){
+  const{data:ch}=await sb.from('channels').select('restricted_post').eq('id',channelId).maybeSingle();
+  const wantRestricted=confirm(`"#${channelName}" is currently ${ch?.restricted_post?'RESTRICTED':'open to everyone'}.\n\nOK = make it restricted (only allow-listed members can post)\nCancel = open it up to everyone`);
+  await sb.from('channels').update({restricted_post:wantRestricted}).eq('id',channelId);
+  if(wantRestricted){
+    const{data:existing}=await sb.from('channel_post_permissions').select('user_id').eq('channel_id',channelId);
+    const names=await Promise.all((existing||[]).map(async r=>(await getProfile(r.user_id))?.username));
+    const input=prompt('Usernames allowed to post here, comma separated:',names.filter(Boolean).join(', '));
+    if(input!==null){
+      await sb.from('channel_post_permissions').delete().eq('channel_id',channelId);
+      const usernames=input.split(',').map(s=>s.trim()).filter(Boolean);
+      for(const un of usernames){
+        const{data:p}=await sb.from('profiles').select('id').ilike('username',un).maybeSingle();
+        if(p) await sb.from('channel_post_permissions').insert({channel_id:channelId,user_id:p.id,granted_by:currentUserId});
+      }
+    }
+  }
+  showToast('✅ Channel permissions updated.');
+  await updateComposerPermission();
+}
+
+// Reflects whether the current user can actually post in the active channel
+// -- disables the composer with a clear reason instead of letting a message
+// silently fail against RLS.
+async function updateComposerPermission(){
+  const inputEl=document.getElementById('msgInput');
+  const permsBtn=document.getElementById('btnChanPerms');
+  if(activeRoom.type!=='channel'){
+    inputEl.disabled=false;inputEl.placeholder='Message #'+activeRoom.name+'…';
+    permsBtn.classList.add('hidden');
+    return;
+  }
+  const{data:ch}=await sb.from('channels').select('restricted_post').eq('id',activeRoom.id).maybeSingle();
+  const isAdmin=currentProfile?.role==='admin';
+  const{data:srv}=await sb.from('servers').select('owner_id').eq('id',activeRoom.serverId).maybeSingle();
+  const isOwner=srv?.owner_id===currentUserId;
+  permsBtn.classList.toggle('hidden',!(isAdmin||isOwner));
+  permsBtn.onclick=()=>manageChannelPosters(activeRoom.id,activeRoom.name);
+
+  if(!ch?.restricted_post){inputEl.disabled=false;inputEl.placeholder='Message #'+activeRoom.name+'…';return;}
+  const{data:perm}=await sb.from('channel_post_permissions').select('user_id').eq('channel_id',activeRoom.id).eq('user_id',currentUserId).maybeSingle();
+  const allowed=!!perm||isAdmin||isOwner;
+  inputEl.disabled=!allowed;
+  inputEl.placeholder=allowed?'Message #'+activeRoom.name+'…':'🔒 Only certain members can post in this channel';
+}
 
 /* ══════════════════════════════════════════════════════
    INVITE PANEL
@@ -1441,7 +1588,15 @@ async function handleInviteCode(){
 /* ══════════════════════════════════════════════════════
    MODALS
 ══════════════════════════════════════════════════════ */
-function openModal(id){document.getElementById(id)?.classList.remove('hidden');}
+function openModal(id){
+  document.getElementById(id)?.classList.remove('hidden');
+  if(id==='dmModal'){
+    pendingDMRecipients=[]; renderDMChips();
+    document.getElementById('dm-target').value='';
+    document.getElementById('dm-group-name').value='';
+    document.getElementById('dm-err').textContent='';
+  }
+}
 function closeModal(id){document.getElementById(id)?.classList.add('hidden');}
 document.getElementById('railAddServer').onclick=()=>{if(!currentUserId){location.href='/account';return;}openServerModal(null);};
 document.getElementById('sm-cancel').onclick=()=>closeModal('serverModal');
@@ -1451,8 +1606,51 @@ document.getElementById('railDMs').onclick=async()=>{
   document.getElementById('railDMs').classList.toggle('active',showingDMs);
 };
 document.getElementById('dm-cancel').onclick=()=>closeModal('dmModal');
-document.getElementById('dm-start').onclick=async()=>await startDMWith(document.getElementById('dm-target').value.trim());
-document.getElementById('dm-target').onkeydown=e=>{if(e.key==='Enter')document.getElementById('dm-start').click();};
+let pendingDMRecipients=[];
+function renderDMChips(){
+  const wrap=document.getElementById('dm-recipient-chips'); wrap.innerHTML='';
+  pendingDMRecipients.forEach((p,i)=>{
+    const chip=document.createElement('span');
+    chip.style.cssText='display:inline-flex;align-items:center;gap:6px;background:var(--dc-ch-hover);border-radius:999px;padding:4px 10px;font-size:12px;';
+    chip.innerHTML=`@${esc(p.username)} <button style="background:none;border:none;cursor:pointer;color:var(--dc-muted);font-size:12px;" data-i="${i}">✕</button>`;
+    chip.querySelector('button').onclick=()=>{pendingDMRecipients.splice(i,1);renderDMChips();};
+    wrap.appendChild(chip);
+  });
+  document.getElementById('dm-group-name-field').style.display=pendingDMRecipients.length>1?'':'none';
+}
+async function resolveUserByEmailOrUsername(q){
+  const{data:byEmail}=await sb.from('profiles').select('id,username,email').ilike('email',q).maybeSingle();
+  if(byEmail) return byEmail;
+  const un=q.replace(/^@/,'');
+  const{data:byUser}=await sb.from('profiles').select('id,username,email').ilike('username',un).maybeSingle();
+  return byUser||null;
+}
+async function addDMRecipient(){
+  const input=document.getElementById('dm-target'); const q=input.value.trim(); if(!q) return;
+  const errEl=document.getElementById('dm-err'); errEl.textContent='';
+  const profile=await resolveUserByEmailOrUsername(q);
+  if(!profile){errEl.textContent='No user found.';return;}
+  if(profile.id===currentUserId){errEl.textContent="That's you!";return;}
+  if(pendingDMRecipients.some(p=>p.id===profile.id)){input.value='';return;}
+  pendingDMRecipients.push(profile); input.value=''; renderDMChips();
+}
+document.getElementById('dm-target').onkeydown=e=>{if(e.key===','||e.key==='Enter'){e.preventDefault();addDMRecipient();}};
+document.getElementById('dm-start').onclick=async()=>{
+  await addDMRecipient(); // catch anything still sitting in the input
+  const errEl=document.getElementById('dm-err');
+  if(!pendingDMRecipients.length){errEl.textContent='Add at least one person.';return;}
+  if(pendingDMRecipients.length===1){await startDMWith(pendingDMRecipients[0].username);pendingDMRecipients=[];renderDMChips();return;}
+  const name=document.getElementById('dm-group-name').value.trim()||null;
+  const{data:dm,error}=await sb.from('direct_messages').insert({is_group:true,name,created_by:currentUserId}).select().single();
+  if(error){errEl.textContent=error.message;return;}
+  const rows=[currentUserId,...pendingDMRecipients.map(p=>p.id)].map(uid=>({dm_id:dm.id,user_id:uid}));
+  const{error:pErr}=await sb.from('dm_participants').insert(rows);
+  if(pErr){errEl.textContent=pErr.message;return;}
+  const groupLabel=name||pendingDMRecipients.map(p=>p.username).join(', ');
+  pendingDMRecipients=[]; renderDMChips();
+  closeModal('dmModal'); showingDMs=true; setActiveServer(null); await buildSidebar(null);
+  switchRoom({type:'dm',id:dm.id,name:groupLabel,icon:'@',serverId:null,serverName:'Direct Messages',isGroup:true});
+};
 document.getElementById('dcMobileBack').onclick=()=>document.getElementById('dcSidebar').classList.toggle('mobile-open');
 document.getElementById('sidebarToggle')?.addEventListener('click',()=>document.getElementById('dcSidebar').classList.toggle('mobile-open'));
 document.getElementById('jm-cancel')?.addEventListener('click',()=>closeModal('joinModal'));
