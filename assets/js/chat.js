@@ -80,10 +80,18 @@ function getInitials(n){if(!n)return'?';const p=n.trim().split(' ');return(p.len
 ─────────────────────────────────────────────────────── */
 function parseUTC(ts){
   if(!ts) return new Date();
-  // Already has timezone offset marker — parse directly
-  if(/Z$/i.test(ts) || /[+-]\d{2}:\d{2}$/.test(ts)) return new Date(ts);
-  // Supabase format: "2024-05-01 14:32:00.123" — treat as UTC
-  return new Date(ts.trim().replace(' ','T') + 'Z');
+  const iso = ts.trim().replace(' ','T');
+  // Match an explicit timezone marker that follows a real HH:MM:SS time
+  // component, so we don't confuse the date's own hyphens for a sign.
+  const m = iso.match(/^(.*T\d{2}:\d{2}:\d{2}(?:\.\d+)?)(Z|[+-]\d{2})(:?)(\d{2})?$/i);
+  if (m) {
+    if (/Z/i.test(m[2])) return new Date(iso);
+    // Normalize shorthand offsets like "+00" or "-0730" into "+00:00" --
+    // JS's Date parser rejects anything but a full colon-separated offset.
+    return new Date(m[1] + m[2] + ':' + (m[4] || '00'));
+  }
+  // No timezone info at all — Supabase's raw text format, which is UTC.
+  return new Date(iso + 'Z');
 }
 function formatTime(ts){
   return parseUTC(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
@@ -482,7 +490,12 @@ function switchRoom(room){
         removeMsgAndRegroup(String(p.old.id));
       });
   } else if(room.type==='dm'){
-    chan.on('postgres_changes',{event:'INSERT',schema:'public',table:'dm_messages',filter:`dm_id=eq.${room.id}`},p=>onIncoming(p.new));
+    chan
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'dm_messages',filter:`dm_id=eq.${room.id}`},p=>onIncoming(p.new))
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'dm_messages',filter:`dm_id=eq.${room.id}`},p=>{
+        if(p.new.deleted_at){ removeMsgAndRegroup(String(p.new.id)); return; }
+        const el=msgElMap.get(String(p.new.id)); if(el) patchMsgEl(el,p.new);
+      });
   } else if(room.type==='server'){
     chan.on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`server_id=eq.${room.id}`},p=>{
       if(p.new.thread_id!=null) return; onIncoming(p.new);
@@ -587,7 +600,7 @@ async function loadHistory(){
 async function fetchMessages(beforeDate){
   const LIMIT=50; let q;
   if(activeRoom.type==='dm')
-    q=sb.from('dm_messages').select('*').eq('dm_id',activeRoom.id);
+    q=sb.from('dm_messages').select('*').eq('dm_id',activeRoom.id).is('deleted_at',null);
   else if(activeRoom.type==='channel')
     q=sb.from('messages').select('*').eq('channel_id',activeRoom.id).is('deleted_at',null).is('thread_id',null);
   else if(activeRoom.type==='server')
@@ -1525,6 +1538,7 @@ function updateUserChip(){
     currentUserId=session?.user?.id||null;
     if(currentUserId) currentProfile=await getProfile(currentUserId);
     updateUserChip();
+    if(currentUserId) await seedUnreadCounts();
     await buildRail();
     await buildSidebar(null);
     switchRoom({type:'public',id:'public',name:'general',icon:'#',serverName:'360 Chat',serverId:null});
@@ -1535,7 +1549,35 @@ function updateUserChip(){
       currentUserId=session?.user?.id||null;
       currentProfile=currentUserId?await getProfile(currentUserId):null;
       if(currentUserId) profileCache[currentUserId]=currentProfile;
-      updateUserChip(); await buildRail();
+      updateUserChip();
+      if(currentUserId) await seedUnreadCounts();
+      await buildRail();
     });
   }catch(e){console.error('Chat init error:',e);}
 })();
+
+// Loads real unread backlog (messages since last_read_at, or all of it if
+// the room was never opened) so badges reflect reality on page load instead
+// of only counting messages that happen to arrive while the tab is open.
+async function seedUnreadCounts(){
+  try{
+    const{data,error}=await sb.rpc('get_unread_counts',{p_user_id:currentUserId});
+    if(error||!data) return;
+    for(const row of data){
+      const key=`${row.room_type}:${row.room_id}`;
+      unreadCounts[key]=Number(row.unread_count)||0;
+    }
+    // Roll channel counts up into their parent server key so the rail pip
+    // (which only knows about server:<id>) reflects the same backlog.
+    const{data:chans}=await sb.from('channels').select('id,server_id');
+    if(chans){
+      for(const c of chans){
+        const ck=`channel:${c.id}`;
+        if(unreadCounts[ck]>0){
+          const sk=`server:${c.server_id}`;
+          unreadCounts[sk]=(unreadCounts[sk]||0)+unreadCounts[ck];
+        }
+      }
+    }
+  }catch(e){console.error('seedUnreadCounts error:',e);}
+}
