@@ -217,6 +217,8 @@
       transition: transform .3s;
     }
     .vids-card:hover .vids-thumb img { transform: scale(1.03); }
+    .vids-card:hover .vids-hide-btn { opacity: 1; }
+    .vids-hide-btn:hover { background: rgba(220,38,38,.85) !important; }
     .vids-thumb-placeholder {
       width: 100%; height: 100%;
       display: flex; align-items: center; justify-content: center;
@@ -978,7 +980,21 @@
       if (error) { showToast('⚠️ Failed to load videos.'); grid.innerHTML = '<div class="vids-empty"><div class="vids-empty-icon">⚠️</div><h3>Error loading videos</h3><p>'+error.message+'</p></div>'; return; }
 
       allVideos = data || [];
+      if (currentUser) {
+        const { data: hidden } = await sb.from('hidden_content').select('content_id').eq('user_id', currentUser.id).eq('kind', 'video');
+        const hiddenIds = new Set((hidden || []).map(h => h.content_id));
+        allVideos = allVideos.filter(v => !hiddenIds.has(v.id));
+      }
       renderVideos();
+    }
+
+    async function hideVideo(id, cardEl) {
+      if (!currentUser) { showToast('Sign in to hide videos.'); return; }
+      const { error } = await sb.from('hidden_content').insert({ user_id: currentUser.id, kind: 'video', content_id: id });
+      if (error && error.code !== '23505') { showToast('⚠️ Could not hide.'); return; }
+      allVideos = allVideos.filter(v => v.id !== id);
+      cardEl?.remove();
+      showToast('🚫 Hidden — you won\'t see this again.');
     }
 
     // ── Filter ──
@@ -1001,7 +1017,16 @@
       }
       grid.innerHTML = vids.map(v => videoCard(v)).join('');
       grid.querySelectorAll('.vids-card').forEach(card => {
-        card.addEventListener('click', () => openWatch(card.dataset.id));
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.vids-hide-btn')) return;
+          openWatch(card.dataset.id);
+        });
+      });
+      grid.querySelectorAll('.vids-hide-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          hideVideo(btn.dataset.hideId, btn.closest('.vids-card'));
+        });
       });
     }
 
@@ -1039,6 +1064,7 @@
               ? `<img src="${escHtml(v.thumbnail_url)}" alt="${escHtml(v.title)}" loading="lazy" />`
               : `<div class="vids-thumb-placeholder">🎬</div>`}
             ${v.duration ? `<div class="vids-duration">${escHtml(v.duration)}</div>` : ''}
+            <button class="vids-hide-btn" data-hide-id="${v.id}" title="Not interested" style="position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:12px;cursor:pointer;opacity:0;transition:opacity .15s;">🚫</button>
           </div>
           <div class="vids-card-body">
             <div class="vids-card-title">${escHtml(v.title)}</div>

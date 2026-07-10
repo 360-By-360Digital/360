@@ -219,6 +219,9 @@
       transition: transform .3s;
     }
     .vids-card:hover .vids-thumb img { transform: scale(1.03); }
+    .vids-card:hover .vids-hide-btn, .vids-card:hover .vids-queue-btn { opacity: 1; }
+    .vids-hide-btn:hover { background: rgba(220,38,38,.85) !important; }
+    .vids-queue-btn:hover { background: rgba(59,130,246,.85) !important; }
     .vids-thumb-placeholder {
       width: 100%; height: 100%;
       display: flex; align-items: center; justify-content: center;
@@ -768,9 +771,13 @@
         <!-- custom controls -->
         <div id="customPlayerControls">
           <div style="display:flex;align-items:center;gap:10px;">
+            <button id="cpPrev" class="vids-action-btn" title="Previous">⏮</button>
             <button id="cpPlayPause" class="vids-action-btn">▶️</button>
+            <button id="cpNext" class="vids-action-btn" title="Next">⏭</button>
+            <button id="cpShuffle" class="vids-action-btn" title="Shuffle">🔀</button>
             <div id="cpTime" style="font-variant-numeric:tabular-nums;">0:00 / 0:00</div>
-            <select id="cpSpeed" style="margin-left:auto;padding:4px 8px;border-radius:8px;border:1px solid rgba(148,163,184,.6);background:#020617;color:#e5e7eb;font-size:12px;">
+            <button id="cpQueueToggle" class="vids-action-btn" style="margin-left:auto;" title="Up next">📋 Queue</button>
+            <select id="cpSpeed" style="padding:4px 8px;border-radius:8px;border:1px solid rgba(148,163,184,.6);background:#020617;color:#e5e7eb;font-size:12px;">
               <option value="0.75">0.75x</option>
               <option value="1" selected>1x</option>
               <option value="1.25">1.25x</option>
@@ -778,6 +785,7 @@
               <option value="2">2x</option>
             </select>
           </div>
+          <div id="cpQueuePanel" style="display:none;max-height:140px;overflow-y:auto;background:rgba(255,255,255,.03);border-radius:8px;padding:6px;margin:6px 0;font-size:12px;"></div>
           <input id="cpSeek" type="range" min="0" max="100" value="0"
                  style="width:100%;accent-color:#3b82f6;">
           <div style="display:flex;align-items:center;gap:8px;">
@@ -888,6 +896,87 @@
     const miniArtEmoji   = document.getElementById('miniArtEmoji');
 
     const cpPlayPause    = document.getElementById('cpPlayPause');
+    const cpPrev         = document.getElementById('cpPrev');
+    const cpNext         = document.getElementById('cpNext');
+    const cpShuffle      = document.getElementById('cpShuffle');
+    const cpQueueToggle  = document.getElementById('cpQueueToggle');
+    const cpQueuePanel   = document.getElementById('cpQueuePanel');
+
+    // Queue design principle (directly countering the #1 complaint about
+    // YouTube Music/Spotify: algorithms silently inject or reorder tracks
+    // you didn't ask for). Two queues, always visible, always user-built:
+    //  - manualQueue: tracks explicitly added via the ➕ button. Always
+    //    played next, in the order added.
+    //  - autoQueue: once manualQueue is empty, continues through whatever
+    //    list was actually on screen when you hit play -- never a
+    //    recommendation feed, just "the rest of what you were looking at."
+    let manualQueue = [];
+    let autoQueue = [];
+    let queueHistory = [];
+    let isShuffle = false;
+    let lastRenderedTracks = [];
+
+    function shuffleArr(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function addToQueue(id) {
+      const t = allTracks.find(x => x.id === id);
+      if (!t) return;
+      manualQueue.push(t);
+      showToast(`➕ Added "${t.title}" to queue`);
+      renderQueuePanel();
+    }
+
+    function buildAutoQueueFrom(startId) {
+      const list = lastRenderedTracks.length ? lastRenderedTracks : allTracks;
+      const idx = list.findIndex(t => t.id === startId);
+      let rest = idx > -1 ? list.slice(idx + 1) : [...list];
+      autoQueue = isShuffle ? shuffleArr(rest) : rest;
+    }
+
+    async function playNext() {
+      if (currentTrack) queueHistory.push(currentTrack.id);
+      const next = manualQueue.shift() || autoQueue.shift();
+      renderQueuePanel();
+      if (next) await openWatch(next.id, { fromQueue: true });
+      else showToast('Queue finished.');
+    }
+    async function playPrev() {
+      const prevId = queueHistory.pop();
+      if (prevId) await openWatch(prevId, { fromQueue: true });
+    }
+
+    function renderQueuePanel() {
+      const items = [...manualQueue.map(t => ({ t, tag: 'Next' })), ...autoQueue.slice(0, 15).map(t => ({ t, tag: '' }))];
+      if (!items.length) { cpQueuePanel.innerHTML = '<div style="opacity:.6;padding:6px;">Queue is empty.</div>'; return; }
+      cpQueuePanel.innerHTML = items.map(({ t, tag }) => `
+        <div style="display:flex;justify-content:space-between;padding:4px 6px;border-radius:6px;">
+          <span>${escHtml(t.title)}</span>
+          ${tag ? `<span style="opacity:.5;">${tag}</span>` : ''}
+        </div>`).join('');
+    }
+    cpQueueToggle.addEventListener('click', () => {
+      const open = cpQueuePanel.style.display !== 'none';
+      cpQueuePanel.style.display = open ? 'none' : 'block';
+      if (!open) renderQueuePanel();
+    });
+    cpNext.addEventListener('click', playNext);
+    cpPrev.addEventListener('click', playPrev);
+    cpShuffle.addEventListener('click', () => {
+      isShuffle = !isShuffle;
+      cpShuffle.style.opacity = isShuffle ? '1' : '.55';
+      cpShuffle.style.color = isShuffle ? '#3b82f6' : '';
+      if (currentTrack) buildAutoQueueFrom(currentTrack.id);
+      renderQueuePanel();
+      showToast(isShuffle ? '🔀 Shuffle on' : 'Shuffle off');
+    });
+    player.addEventListener('ended', playNext);
     const cpSeek         = document.getElementById('cpSeek');
     const cpVolume       = document.getElementById('cpVolume');
     const cpTime         = document.getElementById('cpTime');
@@ -1263,10 +1352,15 @@
     }
 
     // ── Watch overlay ─────────────────────────────────────────────────────────
-    async function openWatch(id) {
+    async function openWatch(id, opts) {
       const track = allTracks.find(t => t.id === id);
       if (!track) return;
       currentTrack = track;
+      if (!opts?.fromQueue) {
+        manualQueue = manualQueue.filter(t => t.id !== id);
+        buildAutoQueueFrom(id);
+      }
+      renderQueuePanel();
 
       document.getElementById('watchTitle').textContent  = track.title;
       document.getElementById('watchDesc').textContent   = track.description || 'No description.';
@@ -1500,6 +1594,8 @@
               ? `<img src="${escHtml(t.thumbnail_url)}" alt="${escHtml(t.title)}" loading="lazy" />`
               : `<div class="vids-thumb-placeholder">🎵</div>`}
             ${t.duration ? `<div class="vids-duration">${escHtml(t.duration)}</div>` : ''}
+            <button class="vids-hide-btn" data-hide-id="${t.id}" title="Not interested" style="position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:12px;cursor:pointer;opacity:0;transition:opacity .15s;">🚫</button>
+            <button class="vids-queue-btn" data-queue-id="${t.id}" title="Add to queue" style="position:absolute;top:6px;left:6px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:12px;cursor:pointer;opacity:0;transition:opacity .15s;">➕</button>
           </div>
           <div class="vids-card-body">
             <div class="vids-card-title">${escHtml(t.title)}</div>
@@ -1606,9 +1702,19 @@
         return;
       }
 
+      lastRenderedTracks = filtered;
       grid.innerHTML = filtered.map(t => trackCard(t)).join('');
       grid.querySelectorAll('.vids-card[data-id]').forEach(card => {
-        card.addEventListener('click', () => openWatch(card.dataset.id));
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.vids-hide-btn') || e.target.closest('.vids-queue-btn')) return;
+          openWatch(card.dataset.id);
+        });
+      });
+      grid.querySelectorAll('.vids-hide-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); hideTrack(btn.dataset.hideId, btn.closest('.vids-card')); });
+      });
+      grid.querySelectorAll('.vids-queue-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); addToQueue(btn.dataset.queueId); });
       });
     }
 
@@ -1626,8 +1732,23 @@
         return;
       }
       allTracks = data || [];
+      if (currentUser) {
+        const { data: hidden } = await sb.from('hidden_content').select('content_id').eq('user_id', currentUser.id).eq('kind', 'music');
+        const hiddenIds = new Set((hidden || []).map(h => h.content_id));
+        allTracks = allTracks.filter(t => !hiddenIds.has(t.id));
+      }
       renderTracks();
       await checkDeepLink();
+    }
+
+    async function hideTrack(id, cardEl) {
+      if (!currentUser) { showToast('Sign in to hide tracks.'); return; }
+      const { error } = await sb.from('hidden_content').insert({ user_id: currentUser.id, kind: 'music', content_id: id });
+      if (error && error.code !== '23505') { showToast('⚠️ Could not hide.'); return; }
+      allTracks = allTracks.filter(t => t.id !== id);
+      playQueue = playQueue.filter(t => t.id !== id);
+      cardEl?.remove();
+      showToast('🚫 Hidden — you won\'t see this again.');
     }
 
     async function checkDeepLink() {
