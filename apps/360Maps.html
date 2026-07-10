@@ -1,5 +1,5 @@
 <!-- ========================
-      360 Maps — v1.0.0
+      360 Maps — v3.0.0
 ========================== -->
 <!DOCTYPE html>
 <html lang="en">
@@ -8,7 +8,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-89NN1P6CEV');</script>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>360 — Maps</title>
+  <title>360 - Maps</title>
   <link rel="manifest" href="/manifest.json"/>
   <meta name="theme-color" content="#3b82f6"/>
   <link rel="icon" type="image/png" href="/favicon-32x32.png"/>
@@ -30,12 +30,12 @@
   <div class="cursor-crosshair"></div>
   <div class="cursor-blob"></div>
 
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+  <button class="sidebar-toggle" id="sidebarToggle">Menu</button>
 
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="logo-mark"></div>
-      <button id="settingsBtn">⚙</button>
+      <button id="settingsBtn">Settings</button>
     </div>
     <nav class="nav-list">
       <div class="nav-item" data-href="/">Home</div>
@@ -87,22 +87,22 @@
       <button id="cursorColorReset">Reset</button>
     </div>
     <div class="temp-unit-box" style="margin-top:20px;">
-      Temp Unit: <span id="tempUnitLabel">°C</span>
+      Temp Unit: <span id="tempUnitLabel">C</span>
       <button id="tempUnitBtn">Switch</button>
     </div>
     <div class="settings-box" style="margin-top:20px;">
       <div class="settings-label">Background Image</div>
       <input type="file" id="bgUpload" accept="image/*" class="settings-input"/>
-      <input type="text" id="bgUrlInput" placeholder="Paste image URL…" class="settings-input"/>
+      <input type="text" id="bgUrlInput" placeholder="Paste image URL..." class="settings-input"/>
       <button id="bgUrlBtn" class="settings-btn">Apply URL</button>
       <button id="bgResetBtn" class="settings-btn">Reset</button>
     </div>
     <h3 style="margin-top:25px;">Legal</h3>
-    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
-    <a href="/tos" class="legal-link">📜 Terms of Service</a>
+    <a href="/privacypolicy" class="legal-link">Privacy Policy</a>
+    <a href="/tos" class="legal-link">Terms of Service</a>
     <h3 style="margin-top:25px;">About</h3>
     <details class="about-dropdown">
-      <summary>ℹ️ What is 360?</summary>
+      <summary>What is 360?</summary>
       <p>360 is a next-generation search engine and digital workspace. Built by 360 Digital, Co.</p>
     </details>
   </div>
@@ -135,45 +135,48 @@
     </div>
   </div>
 
-  <!-- ══════════ PAGE ══════════ -->
-  <div class="maps-page">
-    <h2>🗺️ 360 Maps</h2>
+  <!-- ══════════ FULLSCREEN MAP ══════════ -->
+  <div id="mapsCanvas"></div>
 
-    <form class="maps-search-row" id="mapsSearchForm">
-      <input id="mapsSearchInput" placeholder="Search a place, address, or landmark…" autocomplete="off" />
-      <button type="submit" class="maps-btn">Search</button>
-      <button type="button" class="maps-btn" id="mapsSaveBtn">💾 Save Pin</button>
-    </form>
+  <!-- ══════════ FLOATING CONTROLS ══════════ -->
+  <div class="maps-controls">
 
-    <div class="maps-quick-row">
-      <button class="maps-btn-ghost" onclick="mapsLoadQuick('New York')">🗽 New York</button>
-      <button class="maps-btn-ghost" onclick="mapsLoadQuick('London')">🇬🇧 London</button>
-      <button class="maps-btn-ghost" onclick="mapsLoadQuick('Tokyo')">🇯🇵 Tokyo</button>
-      <button class="maps-btn-ghost" onclick="mapsLoadQuick('Dubai')">🇦🇪 Dubai</button>
-      <button class="maps-btn-ghost" onclick="mapsUseMyLocation()">📍 My Location</button>
+    <div class="maps-glass-card maps-search-card">
+      <form class="maps-search-row" id="mapsSearchForm" autocomplete="off">
+        <input id="mapsSearchInput" placeholder="Search a place, address, or landmark" autocomplete="off" />
+        <button type="submit" class="maps-btn">Search</button>
+      </form>
+      <div id="mapsSuggestDropdown"></div>
+      <div id="mapsStatus"></div>
+      <div id="mapsError"></div>
     </div>
 
-    <div id="mapsStatus"></div>
-    <div id="mapsError"></div>
-
-    <div class="maps-layout">
-      <div>
-        <div id="mapsCanvas"></div>
-        <div class="maps-info-card" id="mapsInfoCard">
-          <div class="maps-info-title" id="mapsInfoTitle">--</div>
-          <div class="maps-info-sub" id="mapsInfoSub">--</div>
-        </div>
-        <p style="font-size:12px;color:var(--mut);margin-top:8px;">Click anywhere on the map to drop a pin · Powered by OpenStreetMap & Nominatim</p>
+    <!-- Saved locations (default view) -->
+    <div class="maps-glass-card" id="mapsListCard">
+      <div class="maps-panel-title">Saved Locations</div>
+      <div class="maps-signin-notice" id="mapsSigninNotice" style="display:none;">
+        Sign in to save pins and access them from any device.
       </div>
+      <div class="maps-saved-list" id="mapsSavedList"></div>
+    </div>
 
-      <div class="maps-panel">
-        <div class="maps-panel-title"><span>📌 Saved Locations</span></div>
-        <div class="maps-signin-notice" id="mapsSigninNotice" style="display:none;">
-          Sign in to save pins and access them from any device.
-        </div>
-        <div class="maps-saved-list" id="mapsSavedList"></div>
+    <!-- Location detail (shown after search / pin drop) -->
+    <div class="maps-glass-card" id="mapsDetailCard" style="display:none;">
+      <div class="maps-back-row">
+        <button class="maps-btn-text" id="mapsBackBtn">Back to saved</button>
+      </div>
+      <div class="maps-detail-title" id="mapsDetailTitle">--</div>
+      <div class="maps-detail-coords" id="mapsDetailCoords">--</div>
+      <div class="maps-detail-actions">
+        <button class="maps-btn" id="mapsSaveBtn">Save</button>
+        <button class="maps-btn-outline" id="mapsDirectionsBtn">Directions</button>
+      </div>
+      <div class="maps-directions-box" id="mapsDirectionsBox">
+        <div class="maps-directions-row"><span>Distance</span><span id="mapsDirectionsDistance">--</span></div>
+        <div class="maps-directions-row"><span>Duration</span><span id="mapsDirectionsDuration">--</span></div>
       </div>
     </div>
+
   </div>
 
   <!-- Save modal -->
@@ -183,7 +186,7 @@
       <input id="mapsModalLabel" type="text" placeholder="Label (e.g. Mom's house)" />
       <textarea id="mapsModalNote" rows="2" placeholder="Note (optional)"></textarea>
       <div class="maps-modal-actions">
-        <button class="maps-btn-ghost" id="mapsModalCancel">Cancel</button>
+        <button class="maps-btn-outline" id="mapsModalCancel">Cancel</button>
         <button class="maps-btn" id="mapsModalSave">Save</button>
       </div>
     </div>
