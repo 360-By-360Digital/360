@@ -74,6 +74,7 @@
   <div class="ctx-item" id="ctx-react">😊 Add Reaction</div>
   <div class="ctx-item" id="ctx-thread">🧵 Open Thread</div>
   <div class="ctx-item" id="ctx-pin">📌 Pin Message</div>
+  <div class="ctx-item" id="ctx-forward">↪️ Forward Message</div>
   <div class="ctx-item" id="ctx-copy">📋 Copy Text</div>
   <div class="ctx-sep"></div>
   <div class="ctx-item danger" id="ctx-delete" style="display:none;">🗑 Delete</div>
@@ -190,15 +191,36 @@
 <!-- New DM -->
 <div class="dc-modal-overlay hidden" id="dmModal">
   <div class="dc-modal">
-    <h2>New Direct Message</h2>
+    <h2>New Message</h2>
     <div class="dc-field">
-      <label>Email or @Username</label>
+      <label>Add people (email or @username)</label>
       <input id="dm-target" placeholder="someone@example.com or @username" autocomplete="off"/>
+    </div>
+    <div id="dm-recipient-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 0;"></div>
+    <div class="dc-field" id="dm-group-name-field" style="display:none;">
+      <label>Group name (optional)</label>
+      <input id="dm-group-name" placeholder="e.g. Weekend crew" autocomplete="off"/>
     </div>
     <p class="dc-modal-err" id="dm-err"></p>
     <div class="dc-modal-btns">
       <button class="dc-btn-sec" id="dm-cancel">Cancel</button>
       <button class="dc-btn-pri" id="dm-start">Start Chat</button>
+    </div>
+  </div>
+</div>
+
+<!-- Forward message -->
+<div class="dc-modal-overlay hidden" id="forwardModal">
+  <div class="dc-modal">
+    <h2>Forward Message</h2>
+    <div class="dc-field">
+      <label>Search channels & DMs</label>
+      <input id="fwd-search" placeholder="Type to filter…" autocomplete="off"/>
+    </div>
+    <div id="fwd-list" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;margin-top:6px;"></div>
+    <p class="dc-modal-err" id="fwd-err"></p>
+    <div class="dc-modal-btns">
+      <button class="dc-btn-sec" id="fwd-cancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -212,6 +234,11 @@
     <div class="dc-field">
       <label>Topic <span style="font-weight:400;font-size:11px;">(optional)</span></label>
       <input id="ch-topic" placeholder="What's this channel for?" maxlength="120"/>
+    </div>
+    <div class="dc-field">
+      <label style="display:flex;align-items:center;gap:8px;font-weight:400;">
+        <input type="checkbox" id="ch-restricted" style="width:auto;" /> Restrict posting to specific members
+      </label>
     </div>
     <p class="dc-modal-err" id="ch-err"></p>
     <div class="dc-modal-btns">
@@ -270,6 +297,7 @@
         <span class="dc-ch-topic" id="hdrTopic"></span>
       </div>
       <div class="dc-header-actions">
+        <button class="dc-hdr-btn hidden" id="btnChanPerms" title="Manage who can post">🔒</button>
         <button class="dc-hdr-btn" id="btnPins" title="Pinned messages">📌</button>
         <button class="dc-hdr-btn" id="btnMembers" title="Members">👥</button>
         <button class="dc-hdr-btn" id="notif-btn" title="Toggle push notifications">🔔</button>
