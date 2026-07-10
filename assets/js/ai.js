@@ -1,6 +1,13 @@
 (() => {
   /* ── 360 AI — ai.js (scoped + safer) ─────────────────────────────────── */
-  
+
+  // main.js declares `const supabaseClient = supabase.createClient(...)` at
+  // the top level of a classic <script>. That does NOT create a
+  // window.supabaseClient property (only var/function declarations do), so
+  // window.supabaseClient / window.sb were always undefined here and every
+  // Supabase call below silently no-opped — this is why saved chats never
+  // loaded. Classic scripts do share one global lexical scope though, so
+  // the bare `supabaseClient` identifier from main.js is reachable here.
   const sb = window.supabaseClient || window.sb ||
     (typeof supabaseClient !== "undefined" ? supabaseClient : null);
 
@@ -28,7 +35,7 @@
   }
   const newChatBtn = document.getElementById("new-chat-btn");
   const convTitleBar = document.getElementById("conv-title-bar");
-  const convTitleInput = document.getElementById("conv-title-input");
+  const convTitleLabel = document.getElementById("conv-title-label");
 
   const SB_URL = "https://wiswfpfsjiowtrdyqpxy.supabase.co";
 
@@ -69,16 +76,9 @@
     convTitleBar?.classList.remove("show");
   }
 
-  function sizeTitleInput() {
-    if (!convTitleInput) return;
-    const len = (convTitleInput.value || convTitleInput.placeholder || "").length;
-    convTitleInput.style.width = Math.min(Math.max(len, 6), 60) + "ch";
-  }
-
   function setTitle(title, { save = false } = {}) {
     currentTitle = title || null;
-    if (convTitleInput) convTitleInput.value = currentTitle || "";
-    sizeTitleInput();
+    if (convTitleLabel) convTitleLabel.textContent = currentTitle || "Untitled chat";
     if (save) saveTitleOnly();
   }
 
@@ -405,20 +405,6 @@
     return sb.storage.from("ai-uploads").getPublicUrl(path).data?.publicUrl || null;
   }
 
-  on(convTitleInput, "input", () => {
-    sizeTitleInput();
-    currentTitle = convTitleInput.value.trim() || null;
-    clearTimeout(titleSaveTimer);
-    titleSaveTimer = setTimeout(saveTitleOnly, 700);
-  });
-  on(convTitleInput, "keydown", e => {
-    if (e.key === "Enter") { e.preventDefault(); convTitleInput.blur(); }
-  });
-  on(convTitleInput, "blur", () => {
-    clearTimeout(titleSaveTimer);
-    saveTitleOnly();
-  });
-
   /* ── talking to the backend ──────────────────────────────────────── */
 
   // Only {role, content} is ever sent as conversation memory. Earlier
@@ -640,10 +626,7 @@
       }
 
       currentTitle = title;
-      if (convTitleInput && document.activeElement !== convTitleInput) {
-        convTitleInput.value = title;
-        sizeTitleInput();
-      }
+      if (convTitleLabel) convTitleLabel.textContent = title;
 
       if (!silent) showToast("Saved");
       loadConversations();
@@ -664,24 +647,105 @@
     item.innerHTML = `
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
       <span class="conv-item-title">${escHtml(conv.title)}</span>
-      <button class="conv-del" title="Delete">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <button class="conv-menu-btn" title="More">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
       </button>
     `;
 
     on(item, "click", e => {
-      if (!e.target.closest(".conv-del")) {
+      if (!e.target.closest(".conv-menu-btn")) {
         loadConversation(conv.id);
       }
     });
 
-    const delBtn = item.querySelector(".conv-del");
-    on(delBtn, "click", e => {
+    const menuBtn = item.querySelector(".conv-menu-btn");
+    on(menuBtn, "click", e => {
       e.stopPropagation();
-      deleteConversation(conv.id);
+      openConvMenu(menuBtn, conv);
     });
 
     return item;
+  }
+
+  let openConvDropdown = null;
+
+  function closeConvMenu() {
+    openConvDropdown?.remove();
+    openConvDropdown = null;
+    document.querySelectorAll(".conv-menu-btn.open").forEach(b => b.classList.remove("open"));
+  }
+
+  function openConvMenu(btn, conv) {
+    if (openConvDropdown) { closeConvMenu(); return; }
+
+    const rect = btn.getBoundingClientRect();
+    const dd = document.createElement("div");
+    dd.className = "conv-dropdown";
+    dd.innerHTML = `
+      <button class="conv-dropdown-item" data-act="rename">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
+        Rename
+      </button>
+      <button class="conv-dropdown-item" data-act="duplicate">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Duplicate
+      </button>
+      <button class="conv-dropdown-item danger" data-act="delete">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        Delete
+      </button>
+    `;
+    document.body.appendChild(dd);
+
+    // Position after measuring so it stays on-screen (flips up if it
+    // would run off the bottom of the viewport).
+    const ddRect = dd.getBoundingClientRect();
+    let top = rect.bottom + 4;
+    if (top + ddRect.height > window.innerHeight - 8) top = rect.top - ddRect.height - 4;
+    let left = Math.min(rect.right - ddRect.width, window.innerWidth - ddRect.width - 8);
+    dd.style.top = Math.max(8, top) + "px";
+    dd.style.left = Math.max(8, left) + "px";
+
+    btn.classList.add("open");
+    openConvDropdown = dd;
+
+    on(dd, "click", e => {
+      e.stopPropagation();
+      const act = e.target.closest(".conv-dropdown-item")?.dataset.act;
+      closeConvMenu();
+      if (act === "rename") renameConversation(conv);
+      else if (act === "duplicate") duplicateConversation(conv);
+      else if (act === "delete") deleteConversation(conv.id);
+    });
+  }
+
+  on(document, "click", closeConvMenu);
+  on(window, "resize", closeConvMenu);
+  on(window, "scroll", closeConvMenu, true);
+
+  async function renameConversation(conv) {
+    const name = await showPrompt("Rename chat", conv.title || "");
+    if (name === null) return;
+    const title = name.trim().slice(0, 80) || "Untitled chat";
+
+    await sb.from("ai_conversations").update({ title }).eq("id", conv.id);
+    updateSidebarTitle(conv.id, title);
+    if (conv.id === currentConvId) setTitle(title);
+  }
+
+  async function duplicateConversation(conv) {
+    if (!sb || !currentUserId) return;
+    const { data } = await sb.from("ai_conversations").select("*").eq("id", conv.id).single();
+    if (!data) return;
+
+    await sb.from("ai_conversations").insert({
+      user_id: currentUserId,
+      title: (data.title || "Chat") + " (copy)",
+      messages: data.messages,
+      updated_at: new Date().toISOString(),
+    });
+
+    loadConversations();
   }
 
   async function loadConversations() {
@@ -845,6 +909,44 @@
       on(backdrop, "click", e => { if (e.target === backdrop) cleanup(false); });
       on(backdrop.querySelector(".ai-confirm-cancel"), "click", () => cleanup(false));
       on(backdrop.querySelector(".ai-confirm-ok"), "click", () => cleanup(true));
+    });
+  }
+
+  // Custom rename popup, replacing window.prompt(). Resolves with the
+  // trimmed text, or null if cancelled.
+  function showPrompt(title, initialValue) {
+    return new Promise(resolve => {
+      const backdrop = document.createElement("div");
+      backdrop.className = "ai-confirm-backdrop";
+      backdrop.innerHTML = `
+        <div class="ai-confirm-box">
+          <div class="ai-confirm-title">${escHtml(title)}</div>
+          <input class="ai-confirm-input" maxlength="80" />
+          <div class="ai-confirm-actions">
+            <button class="ai-confirm-cancel">Cancel</button>
+            <button class="ai-confirm-ok">Save</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(backdrop);
+
+      const input = backdrop.querySelector(".ai-confirm-input");
+      input.value = initialValue || "";
+      input.focus();
+      input.select();
+
+      const cleanup = (result) => {
+        backdrop.remove();
+        resolve(result);
+      };
+
+      on(backdrop, "click", e => { if (e.target === backdrop) cleanup(null); });
+      on(backdrop.querySelector(".ai-confirm-cancel"), "click", () => cleanup(null));
+      on(backdrop.querySelector(".ai-confirm-ok"), "click", () => cleanup(input.value));
+      on(input, "keydown", e => {
+        if (e.key === "Enter") { e.preventDefault(); cleanup(input.value); }
+        if (e.key === "Escape") { e.preventDefault(); cleanup(null); }
+      });
     });
   }
 
