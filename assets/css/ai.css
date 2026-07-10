@@ -1,11 +1,5 @@
 /* ============================================================
    360 AI — ai.css
-   Self-contained styles for /ai.html. Scoped under .ai-shell so
-   nothing here leaks onto other pages, and every selector that
-   also happens to be used by the older, unrelated rules in
-   main.css (#ai-output, .ai-bubble, #ai-input, #ai-send-btn …)
-   is deliberately re-declared in full here so this page renders
-   consistently regardless of load order.
    ============================================================ */
 
 .ai-shell, .ai-shell * , .ai-shell *::before, .ai-shell *::after {
@@ -238,16 +232,34 @@ body.dark .ai-shell {
 }
 .icon-btn:hover { opacity: 1; background: var(--hover); }
 
-.ai-model-badge {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(59,130,246,.3);
-  background: rgba(59,130,246,.08);
-  color: var(--a);
-  white-space: nowrap;
+.ai-conv-title-bar {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 16px 3px;
+  flex-shrink: 0;
 }
+.ai-conv-title-bar.show { display: flex; }
+.conv-title-pencil { opacity: .4; flex-shrink: 0; }
+.conv-title-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--txt);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  max-width: 420px;
+  width: auto;
+  min-width: 60px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  transition: background .15s;
+}
+.conv-title-input:hover { background: var(--hover); }
+.conv-title-input:focus { background: var(--surface-soft); }
+
 .ai-topbar-link {
   display: flex;
   align-items: center;
@@ -283,7 +295,7 @@ body.dark .ai-shell {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 24px 0 8px;
+  padding: 24px 0 0;
   scroll-behavior: smooth;
   background: transparent;
   border: none;
@@ -370,6 +382,9 @@ body.dark .ai-shell {
   color: #fff;
   flex-shrink: 0;
   margin-top: 2px;
+  /* Hidden per request, but visibility (not display:none) keeps its
+     box in the flex layout so the reply text doesn't shift left. */
+  visibility: hidden;
 }
 .ai-bubble.assistant .bubble-inner {
   flex: 1;
@@ -646,6 +661,40 @@ body.dark .ai-shell #ai-input::placeholder { color: var(--mutd); }
   transition: background .15s, border-color .15s, color .15s;
 }
 .wl-chip:hover { background: rgba(59,130,246,.1); border-color: rgba(59,130,246,.35); color: var(--a); }
+
+/* ── Custom confirm modal (replaces window.confirm) ── */
+.ai-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: aiToastIn .15s ease;
+}
+.ai-confirm-box {
+  width: 280px;
+  padding: 20px;
+  border-radius: 14px;
+  text-align: center;
+  background: #f3f4f7;
+  color: #111827;
+  border: 1px solid var(--br);
+  box-shadow: 0 20px 50px rgba(0,0,0,.25);
+}
+body.dark .ai-confirm-box { background: #101018; color: #e7e7ea; }
+.ai-confirm-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.ai-confirm-msg { font-size: 13px; opacity: .7; margin-bottom: 16px; }
+.ai-confirm-actions { display: flex; gap: 10px; justify-content: center; }
+.ai-confirm-actions button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ai-confirm-cancel { border: 1px solid var(--br); background: transparent; color: inherit; }
+.ai-confirm-ok { border: none; background: linear-gradient(135deg, var(--a), #8b5cf6); color: #fff; font-weight: 600; }
 
 /* ── Toast ── */
 .ai-toast {
