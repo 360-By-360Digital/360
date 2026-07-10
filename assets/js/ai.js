@@ -1,13 +1,6 @@
 (() => {
   /* ── 360 AI — ai.js (scoped + safer) ─────────────────────────────────── */
-
-  // main.js declares `const supabaseClient = supabase.createClient(...)` at
-  // the top level of a classic <script>. That does NOT create a
-  // window.supabaseClient property (only var/function declarations do), so
-  // window.supabaseClient / window.sb were always undefined here and every
-  // Supabase call below silently no-opped — this is why saved chats never
-  // loaded. Classic scripts do share one global lexical scope though, so
-  // the bare `supabaseClient` identifier from main.js is reachable here.
+  
   const sb = window.supabaseClient || window.sb ||
     (typeof supabaseClient !== "undefined" ? supabaseClient : null);
 
@@ -17,7 +10,6 @@
   const convList = document.getElementById("conv-list");
   const fileInput = document.getElementById("ai-file-input");
   const welcome = document.getElementById("ai-welcome");
-  const modelBadge = document.getElementById("model-badge");
   const aiMain = document.getElementById("ai-main");
 
   const attachBtn = document.getElementById("ai-attach-btn");
@@ -35,16 +27,20 @@
     aiShell?.classList.add("sidebar-collapsed");
   }
   const newChatBtn = document.getElementById("new-chat-btn");
+  const convTitleBar = document.getElementById("conv-title-bar");
+  const convTitleInput = document.getElementById("conv-title-input");
 
   const SB_URL = "https://wiswfpfsjiowtrdyqpxy.supabase.co";
 
   let history = [];
   let currentConvId = null;
   let currentUserId = null;
+  let currentTitle = null;
   let pendingFile = null;
   let isSending = false;
   let autoSaveTimer = null;
   let loadConvTimer = null;
+  let titleSaveTimer = null;
 
   function on(el, evt, handler, opts) {
     if (el) el.addEventListener(evt, handler, opts);
@@ -65,10 +61,44 @@
 
   function hideWelcome() {
     if (welcome) welcome.style.display = "none";
+    convTitleBar?.classList.add("show");
   }
 
   function showWelcome() {
     if (welcome) welcome.style.display = "flex";
+    convTitleBar?.classList.remove("show");
+  }
+
+  function sizeTitleInput() {
+    if (!convTitleInput) return;
+    const len = (convTitleInput.value || convTitleInput.placeholder || "").length;
+    convTitleInput.style.width = Math.min(Math.max(len, 6), 60) + "ch";
+  }
+
+  function setTitle(title, { save = false } = {}) {
+    currentTitle = title || null;
+    if (convTitleInput) convTitleInput.value = currentTitle || "";
+    sizeTitleInput();
+    if (save) saveTitleOnly();
+  }
+
+  async function saveTitleOnly() {
+    if (!sb || !currentUserId || !currentConvId) return;
+    const title = (currentTitle || "Untitled chat").slice(0, 80);
+    try {
+      await sb.from("ai_conversations").update({ title }).eq("id", currentConvId);
+      updateSidebarTitle(currentConvId, title);
+    } catch (_) {}
+  }
+
+  function updateSidebarTitle(id, title) {
+    // Patch the sidebar item's text directly instead of re-fetching /
+    // re-rendering the whole list, so renaming doesn't cause a flash.
+    if (!convList) return;
+    const item = [...convList.querySelectorAll(".conv-item")]
+      .find(el => el.dataset.convId === String(id));
+    const span = item?.querySelector(".conv-item-title");
+    if (span) span.textContent = title;
   }
 
   function clearMessages() {
@@ -375,25 +405,69 @@
     return sb.storage.from("ai-uploads").getPublicUrl(path).data?.publicUrl || null;
   }
 
-  function updateModelBadge(model) {
-    if (!modelBadge || !model) return;
+  on(convTitleInput, "input", () => {
+    sizeTitleInput();
+    currentTitle = convTitleInput.value.trim() || null;
+    clearTimeout(titleSaveTimer);
+    titleSaveTimer = setTimeout(saveTitleOnly, 700);
+  });
+  on(convTitleInput, "keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); convTitleInput.blur(); }
+  });
+  on(convTitleInput, "blur", () => {
+    clearTimeout(titleSaveTimer);
+    saveTitleOnly();
+  });
 
-    const m = String(model).toLowerCase();
-    const map = {
-      openrouter: "Claude Opus · OpenRouter",
-      claude: "Claude Sonnet · Direct",
-      groq: "Llama 3.3 · Groq",
-      gemini: "Gemini · Google",
-    };
+  /* ── talking to the backend ──────────────────────────────────────── */
 
-    for (const [key, label] of Object.entries(map)) {
-      if (m.includes(key)) {
-        modelBadge.textContent = label;
-        return;
-      }
+  // Only {role, content} is ever sent as conversation memory. Earlier
+  // versions forwarded the full local history objects — which also
+  // carry fileUrl/fileName/etc for our own UI — straight through as
+  // "memory". Once a file message entered history, every subsequent
+  // request re-sent that malformed shape, which every provider on the
+  // backend rejected, permanently breaking the rest of the chat with
+  // "All AI providers temporarily unavailable". Stripping down to the
+  // plain shape the backend actually expects fixes that for good.
+  function apiMemory(hist) {
+    return hist.map(m => ({ role: m.role, content: String(m.content ?? "") }));
+  }
+
+  const PROVIDERS_DOWN_RE = /all ai providers (are )?temporarily unavailable/i;
+
+  // Retries specifically on the "all providers down" response, up to
+  // 10 attempts total, with a short growing delay between tries. Any
+  // other failure (bad request, network error, etc.) still fails
+  // immediately instead of retrying pointlessly.
+  async function callChatEndpoint(body, attempt = 1) {
+    const MAX_ATTEMPTS = 10;
+
+    const res = await fetch(`${SB_URL}/functions/v1/ai-chatbot`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    let data = {};
+    try { data = await res.json(); } catch (_) { data = {}; }
+
+    const msg = String(data.error || data.reply || "");
+    const providersDown = PROVIDERS_DOWN_RE.test(msg);
+
+    if (providersDown && attempt < MAX_ATTEMPTS) {
+      await new Promise(r => setTimeout(r, 400 * attempt));
+      return callChatEndpoint(body, attempt + 1);
     }
 
-    modelBadge.textContent = model;
+    if (providersDown) {
+      throw new Error("AI providers are still unavailable after several attempts. Please try again in a bit.");
+    }
+
+    if (!res.ok) {
+      throw new Error(data.error || data.reply || res.statusText || "Request failed");
+    }
+
+    return { data, res };
   }
 
   /* ── send ────────────────────────────────────────────────────────── */
@@ -428,10 +502,21 @@
 
     const { inner: thinkInner } = appendAssistantBubble("", true);
 
+    const isFirstMessage = history.length === 0;
+
+    let backendMessage = prompt || "The user attached a file. Please analyze it.";
+    if (isFirstMessage) {
+      backendMessage +=
+        "\n\n(Separately, on a new final line of your reply, output exactly " +
+        "[[TITLE: a concise 3-6 word title for this conversation]] — this " +
+        "line will be extracted and hidden from the user, so do not " +
+        "reference it in your actual answer.)";
+    }
+
     try {
       const body = {
-        message: prompt || "The user attached a file. Please analyze it.",
-        memory: history,
+        message: backendMessage,
+        memory: apiMemory(history),
       };
 
       if (captured) {
@@ -442,27 +527,19 @@
         };
       }
 
-      const res = await fetch(`${SB_URL}/functions/v1/ai-chatbot`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const { data } = await callChatEndpoint(body);
 
-      let data = {};
-      try {
-        data = await res.json();
-      } catch (_) {
-        data = {};
+      let reply = data.reply || "No response.";
+
+      if (isFirstMessage) {
+        const m = reply.match(/\[\[TITLE:\s*(.+?)\]\]\s*$/i);
+        if (m) {
+          reply = reply.slice(0, m.index).trim();
+          setTitle(m[1].trim().replace(/["'.]+$/, ""));
+        } else {
+          setTitle((prompt || captured?.name || "Chat").slice(0, 50));
+        }
       }
-
-      if (!res.ok) {
-        throw new Error(data.error || data.reply || res.statusText || "Request failed");
-      }
-
-      const reply = data.reply || "No response.";
-
-      const modelUsed = res.headers.get("x-model-used");
-      if (modelUsed) updateModelBadge(modelUsed);
 
       if (thinkInner) {
         thinkInner.innerHTML = renderMarkdown(reply);
@@ -536,7 +613,7 @@
     const userMsgs = history.filter(m => m.role === "user");
     if (!userMsgs.length) return;
 
-    const title = (userMsgs[0]?.content || "Chat").slice(0, 50);
+    const title = (currentTitle || userMsgs[0]?.content || "Chat").slice(0, 80);
     const payload = {
       user_id: currentUserId,
       title,
@@ -562,6 +639,12 @@
         currentConvId = data.id;
       }
 
+      currentTitle = title;
+      if (convTitleInput && document.activeElement !== convTitleInput) {
+        convTitleInput.value = title;
+        sizeTitleInput();
+      }
+
       if (!silent) showToast("Saved");
       loadConversations();
     } catch (_) {
@@ -574,10 +657,35 @@
     loadConvTimer = setTimeout(loadConversations, 100);
   }
 
+  function buildConvItem(conv) {
+    const item = document.createElement("div");
+    item.className = "conv-item" + (conv.id === currentConvId ? " active" : "");
+    item.dataset.convId = String(conv.id);
+    item.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      <span class="conv-item-title">${escHtml(conv.title)}</span>
+      <button class="conv-del" title="Delete">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    `;
+
+    on(item, "click", e => {
+      if (!e.target.closest(".conv-del")) {
+        loadConversation(conv.id);
+      }
+    });
+
+    const delBtn = item.querySelector(".conv-del");
+    on(delBtn, "click", e => {
+      e.stopPropagation();
+      deleteConversation(conv.id);
+    });
+
+    return item;
+  }
+
   async function loadConversations() {
     if (!convList) return;
-
-    convList.innerHTML = "";
 
     if (!sb || !currentUserId) {
       convList.innerHTML = `<div class="conv-empty">Sign in to save chats</div>`;
@@ -591,36 +699,23 @@
       .order("updated_at", { ascending: false })
       .limit(60);
 
+    // Build the new list off-DOM first, then swap it in in one go.
+    // Clearing convList before this network request resolves (the old
+    // behavior) meant the sidebar rendered empty for a frame on every
+    // save/load/delete — the "glitch" — while this awaited. Building
+    // everything first and only touching the DOM once avoids that.
+    const frag = document.createDocumentFragment();
     if (!data?.length) {
-      convList.innerHTML = `<div class="conv-empty">No saved chats yet</div>`;
-      return;
+      const empty = document.createElement("div");
+      empty.className = "conv-empty";
+      empty.textContent = "No saved chats yet";
+      frag.appendChild(empty);
+    } else {
+      data.forEach(conv => frag.appendChild(buildConvItem(conv)));
     }
 
-    data.forEach(conv => {
-      const item = document.createElement("div");
-      item.className = "conv-item" + (conv.id === currentConvId ? " active" : "");
-      item.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        <span class="conv-item-title">${escHtml(conv.title)}</span>
-        <button class="conv-del" title="Delete">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      `;
-
-      on(item, "click", e => {
-        if (!e.target.classList.contains("conv-del")) {
-          loadConversation(conv.id);
-        }
-      });
-
-      const delBtn = item.querySelector(".conv-del");
-      on(delBtn, "click", e => {
-        e.stopPropagation();
-        deleteConversation(conv.id);
-      });
-
-      convList.appendChild(item);
-    });
+    convList.innerHTML = "";
+    convList.appendChild(frag);
   }
 
   async function loadConversation(id) {
@@ -636,6 +731,7 @@
 
     currentConvId = data.id;
     history = Array.isArray(data.messages) ? data.messages : [];
+    setTitle(data.title || null);
 
     clearMessages();
     if (!history.length) {
@@ -670,7 +766,8 @@
 
   async function deleteConversation(id) {
     if (!sb || !id) return;
-    if (!confirm("Delete this chat?")) return;
+    const ok = await showConfirm("Delete this chat?", "This can't be undone.");
+    if (!ok) return;
 
     await sb.from("ai_conversations").delete().eq("id", id);
 
@@ -684,6 +781,7 @@
   function startNewChat() {
     currentConvId = null;
     history = [];
+    setTitle(null);
     clearMessages();
     showWelcome();
     clearFile();
@@ -721,6 +819,33 @@
     t.textContent = msg;
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 2200);
+  }
+
+  function showConfirm(title, message) {
+    return new Promise(resolve => {
+      const backdrop = document.createElement("div");
+      backdrop.className = "ai-confirm-backdrop";
+      backdrop.innerHTML = `
+        <div class="ai-confirm-box">
+          <div class="ai-confirm-title">${escHtml(title)}</div>
+          <div class="ai-confirm-msg">${escHtml(message || "")}</div>
+          <div class="ai-confirm-actions">
+            <button class="ai-confirm-cancel">Cancel</button>
+            <button class="ai-confirm-ok">Delete</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(backdrop);
+
+      const cleanup = (result) => {
+        backdrop.remove();
+        resolve(result);
+      };
+
+      on(backdrop, "click", e => { if (e.target === backdrop) cleanup(false); });
+      on(backdrop.querySelector(".ai-confirm-cancel"), "click", () => cleanup(false));
+      on(backdrop.querySelector(".ai-confirm-ok"), "click", () => cleanup(true));
+    });
   }
 
   /* ── auth ────────────────────────────────────────────────────────── */
