@@ -80,10 +80,18 @@ function getInitials(n){if(!n)return'?';const p=n.trim().split(' ');return(p.len
 ─────────────────────────────────────────────────────── */
 function parseUTC(ts){
   if(!ts) return new Date();
-  // Already has timezone offset marker — parse directly
-  if(/Z$/i.test(ts) || /[+-]\d{2}:\d{2}$/.test(ts)) return new Date(ts);
-  // Supabase format: "2024-05-01 14:32:00.123" — treat as UTC
-  return new Date(ts.trim().replace(' ','T') + 'Z');
+  const iso = ts.trim().replace(' ','T');
+  // Match an explicit timezone marker that follows a real HH:MM:SS time
+  // component, so we don't confuse the date's own hyphens for a sign.
+  const m = iso.match(/^(.*T\d{2}:\d{2}:\d{2}(?:\.\d+)?)(Z|[+-]\d{2})(:?)(\d{2})?$/i);
+  if (m) {
+    if (/Z/i.test(m[2])) return new Date(iso);
+    // Normalize shorthand offsets like "+00" or "-0730" into "+00:00" --
+    // JS's Date parser rejects anything but a full colon-separated offset.
+    return new Date(m[1] + m[2] + ':' + (m[4] || '00'));
+  }
+  // No timezone info at all — Supabase's raw text format, which is UTC.
+  return new Date(iso + 'Z');
 }
 function formatTime(ts){
   return parseUTC(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
@@ -199,7 +207,7 @@ async function buildRail(){
   rail.appendChild(gen);
 
   const{data:allServers}=await sb.from('servers').select('*').order('name');
-  (allServers||[]).filter(s=>isAdminOrMod(currentProfile)||joinedServerIds.has(s.id)||!s.passcode)
+  (allServers||[]).filter(s=>isAdminOrMod(currentProfile)||joinedServerIds.has(s.id)||!s.has_passcode)
     .forEach(s=>{
       const btn=document.createElement('button');
       btn.className='rail-server-icon'+(activeServerId===s.id?' active':'');
@@ -309,27 +317,38 @@ function addSidebarBtn(body,label,onClick){
 
 async function buildDMList(body){
   if(!currentUserId){addSidebarBtn(body,'Sign in to use DMs',()=>location.href='/account');return;}
-  const{data:dms}=await sb.from('direct_messages').select('*')
-    .or(`user_a.eq.${currentUserId},user_b.eq.${currentUserId}`).order('updated_at',{ascending:false});
-  if(!dms?.length){body.innerHTML=`<div style="padding:20px;font-size:13px;color:var(--dc-muted);text-align:center;">No DMs yet.</div>`;}
+  const{data:myRows}=await sb.from('dm_participants').select('dm_id').eq('user_id',currentUserId);
+  const dmIds=(myRows||[]).map(r=>r.dm_id);
+  if(!dmIds.length){body.innerHTML=`<div style="padding:20px;font-size:13px;color:var(--dc-muted);text-align:center;">No DMs yet.</div>`;}
   else{
-    const others=dms.map(dm=>dm.user_a===currentUserId?dm.user_b:dm.user_a);
-    const profiles=await Promise.all(others.map(id=>getProfile(id)));
-    dms.forEach((dm,i)=>{
-      const p=profiles[i]; const oid=others[i];
+    const{data:dms}=await sb.from('direct_messages').select('*').in('id',dmIds).order('updated_at',{ascending:false});
+    const{data:allParts}=await sb.from('dm_participants').select('dm_id,user_id').in('dm_id',dmIds);
+    const partsByDM={}; (allParts||[]).forEach(p=>{(partsByDM[p.dm_id]=partsByDM[p.dm_id]||[]).push(p.user_id);});
+    const otherIds=[...new Set((allParts||[]).map(p=>p.user_id).filter(id=>id!==currentUserId))];
+    const profiles=await Promise.all(otherIds.map(id=>getProfile(id)));
+    const profileById={}; otherIds.forEach((id,i)=>profileById[id]=profiles[i]);
+
+    (dms||[]).forEach(dm=>{
+      const others=(partsByDM[dm.id]||[]).filter(id=>id!==currentUserId);
+      const isGroup=dm.is_group||others.length>1;
       const item=document.createElement('div');
       item.className='dc-dm-item'+(activeRoom.id===dm.id?' active':''); item.dataset.dmId=dm.id;
       const av=document.createElement('div'); av.className='dc-dm-avatar';
-      if(p.avatar_url){const img=document.createElement('img');img.src=p.avatar_url;av.appendChild(img);}
-      else av.textContent=getInitials(p.username);
-      const name=document.createElement('span'); name.textContent=p.username||'User';
+      const label=dm.name||others.map(id=>profileById[id]?.username||'User').join(', ')||'DM';
+      if(isGroup){ av.textContent='👥'; }
+      else{
+        const p=profileById[others[0]];
+        if(p?.avatar_url){const img=document.createElement('img');img.src=p.avatar_url;av.appendChild(img);}
+        else av.textContent=getInitials(p?.username);
+      }
+      const name=document.createElement('span'); name.textContent=label;
+      item.appendChild(av); item.appendChild(name);
       const dk='dm:'+dm.id;
       if(unreadCounts[dk]>0){
         const badge=document.createElement('span'); badge.className='ch-unread-badge';
         badge.textContent=unreadCounts[dk]>99?'99+':String(unreadCounts[dk]); item.appendChild(badge);
       }
-      item.appendChild(av); item.appendChild(name);
-      item.addEventListener('click',()=>switchRoom({type:'dm',id:dm.id,name:p.username,icon:'@',serverId:null,serverName:'Direct Messages',otherId:oid}));
+      item.addEventListener('click',()=>switchRoom({type:'dm',id:dm.id,name:label,icon:isGroup?'👥':'@',serverId:null,serverName:'Direct Messages',otherId:isGroup?null:others[0],isGroup}));
       body.appendChild(item);
     });
   }
@@ -346,7 +365,7 @@ async function browseSidebar(body){
       :`<span>${esc(s.icon||'🌐')}</span>`;
     item.innerHTML=ico+`<span>${esc(s.name)}</span>`+
       (joinedServerIds.has(s.id)?`<span style="margin-left:auto;font-size:11px;color:var(--a);">✓</span>`:
-       s.passcode?`<span style="margin-left:auto;font-size:11px;opacity:.5;">🔒</span>`:'');
+       s.has_passcode?`<span style="margin-left:auto;font-size:11px;opacity:.5;">🔒</span>`:'');
     item.addEventListener('click',()=>handleServerClick(s)); body.appendChild(item);
   });
 }
@@ -407,7 +426,7 @@ async function handleServerClick(server){
   if(!currentUserId){location.href='/account';return;}
   showingDMs=false; setActiveServer(server.id);
   if(joinedServerIds.has(server.id)||isAdminOrMod(currentProfile)) await enterServer(server);
-  else if(server.passcode){await buildSidebar(server); showPasscodeGate(server);}
+  else if(server.has_passcode){await buildSidebar(server); showPasscodeGate(server);}
   else{await joinServer(server.id); await enterServer(server);}
 }
 async function joinServer(serverId){
@@ -436,8 +455,10 @@ function showPasscodeGate(server){
   gate.querySelector('#gate-back').onclick=()=>{gate.remove();main.style.position='';};
   const tryUnlock=async()=>{
     const v=inp.value.trim(); if(!v){gate.querySelector('#gate-err').textContent='Enter the passcode.';return;}
-    if(v!==server.passcode){gate.querySelector('#gate-err').textContent='Wrong passcode.';inp.value='';inp.focus();return;}
-    await joinServer(server.id); gate.remove(); main.style.position=''; await enterServer(server); await buildRail();
+    const{data:ok,error}=await sb.rpc('join_server_with_passcode',{p_server_id:server.id,p_passcode:v});
+    if(error||!ok){gate.querySelector('#gate-err').textContent='Wrong passcode.';inp.value='';inp.focus();return;}
+    joinedServerIds.add(server.id);
+    gate.remove(); main.style.position=''; await enterServer(server); await buildRail();
   };
   gate.querySelector('#gate-btn').onclick=tryUnlock;
   inp.onkeydown=e=>{if(e.key==='Enter') tryUnlock();};
@@ -482,7 +503,12 @@ function switchRoom(room){
         removeMsgAndRegroup(String(p.old.id));
       });
   } else if(room.type==='dm'){
-    chan.on('postgres_changes',{event:'INSERT',schema:'public',table:'dm_messages',filter:`dm_id=eq.${room.id}`},p=>onIncoming(p.new));
+    chan
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'dm_messages',filter:`dm_id=eq.${room.id}`},p=>onIncoming(p.new))
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'dm_messages',filter:`dm_id=eq.${room.id}`},p=>{
+        if(p.new.deleted_at){ removeMsgAndRegroup(String(p.new.id)); return; }
+        const el=msgElMap.get(String(p.new.id)); if(el) patchMsgEl(el,p.new);
+      });
   } else if(room.type==='server'){
     chan.on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`server_id=eq.${room.id}`},p=>{
       if(p.new.thread_id!=null) return; onIncoming(p.new);
@@ -506,7 +532,7 @@ function switchRoom(room){
   unreadCounts[getRoomKey(room)]=0;
   document.querySelector(`[data-ch-id="${room.id}"] .ch-unread-badge`)?.remove();
   document.querySelector(`[data-dm-id="${room.id}"] .ch-unread-badge`)?.remove();
-  loadHistory(); markRoomRead(room);
+  loadHistory(); markRoomRead(room); updateComposerPermission();
   document.getElementById('dcSidebar')?.classList.remove('mobile-open');
 }
 
@@ -587,7 +613,7 @@ async function loadHistory(){
 async function fetchMessages(beforeDate){
   const LIMIT=50; let q;
   if(activeRoom.type==='dm')
-    q=sb.from('dm_messages').select('*').eq('dm_id',activeRoom.id);
+    q=sb.from('dm_messages').select('*').eq('dm_id',activeRoom.id).is('deleted_at',null);
   else if(activeRoom.type==='channel')
     q=sb.from('messages').select('*').eq('channel_id',activeRoom.id).is('deleted_at',null).is('thread_id',null);
   else if(activeRoom.type==='server')
@@ -604,7 +630,7 @@ async function fetchMessages(beforeDate){
     const prevH=win.scrollHeight;
     const saved={u:lastMsgUserId,d:lastMsgDate}; lastMsgUserId=null; lastMsgDate=null;
     const frag=document.createDocumentFragment();
-    msgs.forEach(m=>{const el=buildMsgEl(m);if(el)frag.appendChild(el);});
+    msgs.forEach(m=>{const el=buildMsgEl(m,frag);if(el)frag.appendChild(el);});
     win.insertBefore(frag,win.firstChild);
     lastMsgUserId=saved.u; lastMsgDate=saved.d; win.scrollTop=win.scrollHeight-prevH;
   } else {
@@ -636,7 +662,7 @@ function renderMessage(msg,isRealtime){
   maybeTranslateMessage(el,msg.text);
 }
 
-function buildMsgEl(msg){
+function buildMsgEl(msg,container){
   const r=activeRoom;
   if(r.type==='public'&&(msg.channel_id||msg.dm_id||msg.server_id)) return null;
   if(r.type==='channel'&&String(msg.channel_id)!==String(r.id)) return null;
@@ -645,7 +671,7 @@ function buildMsgEl(msg){
   if(msg.thread_id!=null) return null; // never show thread replies in main chat
   if(msgElMap.has(String(msg.id))) return null;
 
-  const win=document.getElementById('dc-messages');
+  const win=container||document.getElementById('dc-messages');
   const msgDate=formatDate(msg.created_at);
   if(msgDate!==lastMsgDate){
     const div=document.createElement('div'); div.className='dc-date-divider'; div.textContent=msgDate;
@@ -698,7 +724,8 @@ function buildMsgEl(msg){
 
   const actions=document.createElement('div'); actions.className='dc-msg-actions';
   [{i:'↩',t:'Reply',fn:()=>setReply(msg)},{i:'😊',t:'React',fn:ev=>openReactionPicker(msg.id,ev)},
-   {i:'🧵',t:'Thread',fn:()=>openThread(msg)},{i:'📌',t:'Pin',fn:()=>pinMsg(msg)}].forEach(a=>{
+   {i:'🧵',t:'Thread',fn:()=>openThread(msg)},{i:'📌',t:'Pin',fn:()=>pinMsg(msg)},
+   {i:'↪️',t:'Forward',fn:()=>openForwardModal(msg)}].forEach(a=>{
     const btn=document.createElement('button'); btn.className='dc-action-btn'; btn.title=a.t; btn.textContent=a.i;
     btn.addEventListener('click',ev=>{ev.stopPropagation();a.fn(ev);}); actions.appendChild(btn);
   });
@@ -790,6 +817,7 @@ document.getElementById('ctx-reply').onclick=()=>ctxTargetMsg&&setReply(ctxTarge
 document.getElementById('ctx-react').onclick=e=>ctxTargetMsg&&openReactionPicker(ctxTargetMsg.id,e);
 document.getElementById('ctx-thread').onclick=()=>ctxTargetMsg&&openThread(ctxTargetMsg);
 document.getElementById('ctx-pin').onclick=()=>ctxTargetMsg&&pinMsg(ctxTargetMsg);
+document.getElementById('ctx-forward').onclick=()=>ctxTargetMsg&&openForwardModal(ctxTargetMsg);
 document.getElementById('ctx-copy').onclick=()=>{
   const t=msgElMap.get(String(ctxTargetMsg?.id))?.querySelector('.dc-msg-text')?.textContent||'';
   navigator.clipboard.writeText(t).then(()=>showToast('📋 Copied!'));
@@ -876,23 +904,124 @@ async function sendThreadMsg(){
 }
 
 /* ══════════════════════════════════════════════════════
+   FORWARD MESSAGE
+══════════════════════════════════════════════════════ */
+let forwardTargetMsg=null;
+async function openForwardModal(msg){
+  if(!currentUserId) return;
+  forwardTargetMsg=msg;
+  document.getElementById('fwd-err').textContent='';
+  document.getElementById('fwd-search').value='';
+  await renderForwardList('');
+  openModal('forwardModal');
+}
+async function renderForwardList(filter){
+  const list=document.getElementById('fwd-list'); list.innerHTML='<div style="padding:10px;font-size:12px;color:var(--dc-muted);">Loading…</div>';
+  const targets=[];
+
+  const{data:memberships}=await sb.from('server_members').select('server_id').eq('user_id',currentUserId);
+  const serverIds=(memberships||[]).map(m=>m.server_id);
+  if(serverIds.length){
+    const{data:servers}=await sb.from('servers').select('id,name').in('id',serverIds);
+    const{data:chans}=await sb.from('channels').select('id,name,server_id').in('server_id',serverIds);
+    const serverById={}; (servers||[]).forEach(s=>serverById[s.id]=s);
+    (chans||[]).forEach(c=>targets.push({type:'channel',id:c.id,label:`#${c.name}`,sub:serverById[c.server_id]?.name||'',serverId:c.server_id,serverName:serverById[c.server_id]?.name}));
+  }
+  const{data:myRows}=await sb.from('dm_participants').select('dm_id').eq('user_id',currentUserId);
+  const dmIds=(myRows||[]).map(r=>r.dm_id);
+  if(dmIds.length){
+    const{data:dms}=await sb.from('direct_messages').select('*').in('id',dmIds);
+    const{data:allParts}=await sb.from('dm_participants').select('dm_id,user_id').in('dm_id',dmIds);
+    const partsByDM={}; (allParts||[]).forEach(p=>{(partsByDM[p.dm_id]=partsByDM[p.dm_id]||[]).push(p.user_id);});
+    const otherIds=[...new Set((allParts||[]).map(p=>p.user_id).filter(id=>id!==currentUserId))];
+    const profiles=await Promise.all(otherIds.map(id=>getProfile(id)));
+    const profileById={}; otherIds.forEach((id,i)=>profileById[id]=profiles[i]);
+    (dms||[]).forEach(dm=>{
+      const others=(partsByDM[dm.id]||[]).filter(id=>id!==currentUserId);
+      const label=dm.name||others.map(id=>profileById[id]?.username||'User').join(', ')||'DM';
+      targets.push({type:'dm',id:dm.id,label:'@'+label,sub:'Direct Message'});
+    });
+  }
+
+  const f=(filter||'').toLowerCase();
+  const filtered=targets.filter(t=>t.label.toLowerCase().includes(f)||t.sub.toLowerCase().includes(f));
+  if(!filtered.length){list.innerHTML='<div style="padding:10px;font-size:12px;color:var(--dc-muted);">No matches.</div>';return;}
+  list.innerHTML='';
+  filtered.forEach(t=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;cursor:pointer;';
+    row.onmouseenter=()=>row.style.background='var(--dc-ch-hover)'; row.onmouseleave=()=>row.style.background='';
+    row.innerHTML=`<span>${esc(t.label)}</span><span style="font-size:11px;color:var(--dc-muted);">${esc(t.sub)}</span>`;
+    row.onclick=()=>doForward(t);
+    list.appendChild(row);
+  });
+}
+document.getElementById('fwd-search').addEventListener('input',e=>renderForwardList(e.target.value));
+document.getElementById('fwd-cancel').onclick=()=>closeModal('forwardModal');
+async function doForward(target){
+  if(!forwardTargetMsg||!currentUserId) return;
+  const errEl=document.getElementById('fwd-err');
+  const original=forwardTargetMsg;
+  const text=`↪️ Forwarded from @${original.username||'Unknown'}\n${original.text||''}`;
+  const p=await getProfile(currentUserId);
+  try{
+    if(target.type==='channel'){
+      await sb.from('messages').insert({
+        user_id:currentUserId,username:p.username||'User',avatar_url:p.avatar_url||null,
+        tag:p.tag||null,role:p.role||'user',text,file_url:original.file_url||null,
+        channel_id:target.id,server_id:target.serverId
+      });
+    } else if(target.type==='dm'){
+      await sb.from('dm_messages').insert({
+        user_id:currentUserId,username:p.username||'User',avatar_url:p.avatar_url||null,
+        tag:p.tag||null,role:p.role||'user',text,file_url:original.file_url||null,dm_id:target.id
+      });
+      await sb.from('direct_messages').update({updated_at:new Date().toISOString()}).eq('id',target.id);
+    }
+  }catch(e){errEl.textContent='Forward failed: '+(e.message||'unknown error');return;}
+  closeModal('forwardModal'); forwardTargetMsg=null;
+  showToast(`↪️ Forwarded to ${target.label}`);
+}
+
+/* ══════════════════════════════════════════════════════
    PINS
 ══════════════════════════════════════════════════════ */
 async function pinMsg(msg){
   if(!currentUserId) return;
   const r=activeRoom;
-  const{error}=await sb.from('pinned_messages').insert({
-    channel_id:r.type==='channel'?r.id:null,server_id:r.serverId||null,
-    message_id:msg.id,pinned_by:currentUserId
-  });
+  let payload;
+  if(r.type==='channel') payload={channel_id:r.id,dm_id:null,message_id:msg.id,pinned_by:currentUserId};
+  else if(r.type==='dm') payload={channel_id:null,dm_id:r.id,message_id:msg.id,pinned_by:currentUserId};
+  else { showToast("📌 Pinning isn't available in this room."); return; }
+  const{error}=await sb.from('pinned_messages').insert(payload);
   if(error){if(error.code==='23505')showToast('📌 Already pinned');else showToast('❌ '+error.message);return;}
   showToast('📌 Pinned!');
 }
 async function loadPins(){
   const list=document.getElementById('pins-list'); list.innerHTML=''; const r=activeRoom;
-  let q=sb.from('pinned_messages').select('*,messages(id,text,username)');
-  if(r.type==='channel') q=q.eq('channel_id',r.id); else if(r.serverId) q=q.eq('server_id',r.serverId);
-  const{data}=await q.order('created_at',{ascending:false});
+  let data;
+  if(r.type==='channel'){
+    const res=await sb.from('pinned_messages').select('*').eq('channel_id',r.id).order('created_at',{ascending:false});
+    data=res.data||[];
+    if(data.length){
+      const ids=data.map(p=>p.message_id);
+      const{data:chMsgs}=await sb.from('messages').select('id,text,username').in('id',ids);
+      const byId={}; (chMsgs||[]).forEach(m=>byId[m.id]=m);
+      data.forEach(p=>p.messages=byId[p.message_id]);
+    }
+  } else if(r.type==='dm'){
+    const res=await sb.from('pinned_messages').select('*').eq('dm_id',r.id).order('created_at',{ascending:false});
+    data=res.data||[];
+    if(data.length){
+      const ids=data.map(p=>p.message_id);
+      const{data:dmMsgs}=await sb.from('dm_messages').select('id,text,username').in('id',ids);
+      const byId={}; (dmMsgs||[]).forEach(m=>byId[m.id]=m);
+      data.forEach(p=>p.messages=byId[p.message_id]);
+    }
+  } else {
+    list.innerHTML=`<div style="padding:16px;text-align:center;font-size:13px;color:var(--dc-muted);">Pinning isn't available in this room.</div>`;
+    return;
+  }
   if(!data?.length){list.innerHTML=`<div style="padding:16px;text-align:center;font-size:13px;color:var(--dc-muted);">No pinned messages</div>`;return;}
   data.forEach(pin=>{
     const msg=pin.messages; const item=document.createElement('div'); item.className='pin-item';
@@ -1268,7 +1397,13 @@ async function startDMWith(emailOrUsername){
   if(profile.id===currentUserId){document.getElementById('dm-err').textContent="That's you!";return;}
   const{data:ex}=await sb.from('direct_messages').select('id').or(`and(user_a.eq.${currentUserId},user_b.eq.${profile.id}),and(user_a.eq.${profile.id},user_b.eq.${currentUserId})`).maybeSingle();
   let dmId;
-  if(ex){dmId=ex.id;}else{const{data:nd,error}=await sb.from('direct_messages').insert({user_a:currentUserId,user_b:profile.id}).select().single();if(error){document.getElementById('dm-err').textContent=error.message;return;}dmId=nd.id;}
+  if(ex){dmId=ex.id;}else{
+    const{data:nd,error}=await sb.from('direct_messages').insert({user_a:currentUserId,user_b:profile.id,created_by:currentUserId}).select().single();
+    if(error){document.getElementById('dm-err').textContent=error.message;return;}
+    dmId=nd.id;
+    const{error:pErr}=await sb.from('dm_participants').insert([{dm_id:dmId,user_id:currentUserId},{dm_id:dmId,user_id:profile.id}]);
+    if(pErr){document.getElementById('dm-err').textContent=pErr.message;return;}
+  }
   closeModal('dmModal'); showingDMs=true; setActiveServer(null); await buildSidebar(null);
   switchRoom({type:'dm',id:dmId,name:profile.username,icon:'@',serverId:null,serverName:'Direct Messages',otherId:profile.id});
 }
@@ -1345,6 +1480,7 @@ async function saveServer(server){
 function openAddChannelModal(server){
   document.getElementById('ch-name').value='';document.getElementById('ch-cat').value='TEXT CHANNELS';
   document.getElementById('ch-topic').value='';document.getElementById('ch-err').textContent='';
+  document.getElementById('ch-restricted').checked=false;
   document.getElementById('ch-create').dataset.serverId=server.id;openModal('channelModal');
 }
 document.getElementById('ch-cancel').onclick=()=>closeModal('channelModal');
@@ -1352,10 +1488,57 @@ document.getElementById('ch-create').onclick=async()=>{
   const sid=document.getElementById('ch-create').dataset.serverId;
   const name=document.getElementById('ch-name').value.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
   if(!name){document.getElementById('ch-err').textContent='Name required.';return;}
-  const{error}=await sb.from('channels').insert({name,server_id:sid,is_public:true,category:document.getElementById('ch-cat').value.trim()||'TEXT CHANNELS',topic:document.getElementById('ch-topic').value.trim()||null});
+  const{error}=await sb.from('channels').insert({name,server_id:sid,is_public:true,category:document.getElementById('ch-cat').value.trim()||'TEXT CHANNELS',topic:document.getElementById('ch-topic').value.trim()||null,restricted_post:document.getElementById('ch-restricted').checked});
   if(error){document.getElementById('ch-err').textContent=error.message;return;}
   closeModal('channelModal');const{data:s}=await sb.from('servers').select('*').eq('id',sid).maybeSingle();if(s)buildSidebar(s);
 };
+
+// ── Channel post-permission management (owner/admin only) ──
+async function manageChannelPosters(channelId,channelName){
+  const{data:ch}=await sb.from('channels').select('restricted_post').eq('id',channelId).maybeSingle();
+  const wantRestricted=confirm(`"#${channelName}" is currently ${ch?.restricted_post?'RESTRICTED':'open to everyone'}.\n\nOK = make it restricted (only allow-listed members can post)\nCancel = open it up to everyone`);
+  await sb.from('channels').update({restricted_post:wantRestricted}).eq('id',channelId);
+  if(wantRestricted){
+    const{data:existing}=await sb.from('channel_post_permissions').select('user_id').eq('channel_id',channelId);
+    const names=await Promise.all((existing||[]).map(async r=>(await getProfile(r.user_id))?.username));
+    const input=prompt('Usernames allowed to post here, comma separated:',names.filter(Boolean).join(', '));
+    if(input!==null){
+      await sb.from('channel_post_permissions').delete().eq('channel_id',channelId);
+      const usernames=input.split(',').map(s=>s.trim()).filter(Boolean);
+      for(const un of usernames){
+        const{data:p}=await sb.from('profiles').select('id').ilike('username',un).maybeSingle();
+        if(p) await sb.from('channel_post_permissions').insert({channel_id:channelId,user_id:p.id,granted_by:currentUserId});
+      }
+    }
+  }
+  showToast('✅ Channel permissions updated.');
+  await updateComposerPermission();
+}
+
+// Reflects whether the current user can actually post in the active channel
+// -- disables the composer with a clear reason instead of letting a message
+// silently fail against RLS.
+async function updateComposerPermission(){
+  const inputEl=document.getElementById('msgInput');
+  const permsBtn=document.getElementById('btnChanPerms');
+  if(activeRoom.type!=='channel'){
+    inputEl.disabled=false;inputEl.placeholder='Message #'+activeRoom.name+'…';
+    permsBtn.classList.add('hidden');
+    return;
+  }
+  const{data:ch}=await sb.from('channels').select('restricted_post').eq('id',activeRoom.id).maybeSingle();
+  const isAdmin=currentProfile?.role==='admin';
+  const{data:srv}=await sb.from('servers').select('owner_id').eq('id',activeRoom.serverId).maybeSingle();
+  const isOwner=srv?.owner_id===currentUserId;
+  permsBtn.classList.toggle('hidden',!(isAdmin||isOwner));
+  permsBtn.onclick=()=>manageChannelPosters(activeRoom.id,activeRoom.name);
+
+  if(!ch?.restricted_post){inputEl.disabled=false;inputEl.placeholder='Message #'+activeRoom.name+'…';return;}
+  const{data:perm}=await sb.from('channel_post_permissions').select('user_id').eq('channel_id',activeRoom.id).eq('user_id',currentUserId).maybeSingle();
+  const allowed=!!perm||isAdmin||isOwner;
+  inputEl.disabled=!allowed;
+  inputEl.placeholder=allowed?'Message #'+activeRoom.name+'…':'🔒 Only certain members can post in this channel';
+}
 
 /* ══════════════════════════════════════════════════════
    INVITE PANEL
@@ -1413,7 +1596,15 @@ async function handleInviteCode(){
 /* ══════════════════════════════════════════════════════
    MODALS
 ══════════════════════════════════════════════════════ */
-function openModal(id){document.getElementById(id)?.classList.remove('hidden');}
+function openModal(id){
+  document.getElementById(id)?.classList.remove('hidden');
+  if(id==='dmModal'){
+    pendingDMRecipients=[]; renderDMChips();
+    document.getElementById('dm-target').value='';
+    document.getElementById('dm-group-name').value='';
+    document.getElementById('dm-err').textContent='';
+  }
+}
 function closeModal(id){document.getElementById(id)?.classList.add('hidden');}
 document.getElementById('railAddServer').onclick=()=>{if(!currentUserId){location.href='/account';return;}openServerModal(null);};
 document.getElementById('sm-cancel').onclick=()=>closeModal('serverModal');
@@ -1423,8 +1614,51 @@ document.getElementById('railDMs').onclick=async()=>{
   document.getElementById('railDMs').classList.toggle('active',showingDMs);
 };
 document.getElementById('dm-cancel').onclick=()=>closeModal('dmModal');
-document.getElementById('dm-start').onclick=async()=>await startDMWith(document.getElementById('dm-target').value.trim());
-document.getElementById('dm-target').onkeydown=e=>{if(e.key==='Enter')document.getElementById('dm-start').click();};
+let pendingDMRecipients=[];
+function renderDMChips(){
+  const wrap=document.getElementById('dm-recipient-chips'); wrap.innerHTML='';
+  pendingDMRecipients.forEach((p,i)=>{
+    const chip=document.createElement('span');
+    chip.style.cssText='display:inline-flex;align-items:center;gap:6px;background:var(--dc-ch-hover);border-radius:999px;padding:4px 10px;font-size:12px;';
+    chip.innerHTML=`@${esc(p.username)} <button style="background:none;border:none;cursor:pointer;color:var(--dc-muted);font-size:12px;" data-i="${i}">✕</button>`;
+    chip.querySelector('button').onclick=()=>{pendingDMRecipients.splice(i,1);renderDMChips();};
+    wrap.appendChild(chip);
+  });
+  document.getElementById('dm-group-name-field').style.display=pendingDMRecipients.length>1?'':'none';
+}
+async function resolveUserByEmailOrUsername(q){
+  const{data:byEmail}=await sb.from('profiles').select('id,username,email').ilike('email',q).maybeSingle();
+  if(byEmail) return byEmail;
+  const un=q.replace(/^@/,'');
+  const{data:byUser}=await sb.from('profiles').select('id,username,email').ilike('username',un).maybeSingle();
+  return byUser||null;
+}
+async function addDMRecipient(){
+  const input=document.getElementById('dm-target'); const q=input.value.trim(); if(!q) return;
+  const errEl=document.getElementById('dm-err'); errEl.textContent='';
+  const profile=await resolveUserByEmailOrUsername(q);
+  if(!profile){errEl.textContent='No user found.';return;}
+  if(profile.id===currentUserId){errEl.textContent="That's you!";return;}
+  if(pendingDMRecipients.some(p=>p.id===profile.id)){input.value='';return;}
+  pendingDMRecipients.push(profile); input.value=''; renderDMChips();
+}
+document.getElementById('dm-target').onkeydown=e=>{if(e.key===','||e.key==='Enter'){e.preventDefault();addDMRecipient();}};
+document.getElementById('dm-start').onclick=async()=>{
+  await addDMRecipient(); // catch anything still sitting in the input
+  const errEl=document.getElementById('dm-err');
+  if(!pendingDMRecipients.length){errEl.textContent='Add at least one person.';return;}
+  if(pendingDMRecipients.length===1){await startDMWith(pendingDMRecipients[0].username);pendingDMRecipients=[];renderDMChips();return;}
+  const name=document.getElementById('dm-group-name').value.trim()||null;
+  const{data:dm,error}=await sb.from('direct_messages').insert({is_group:true,name,created_by:currentUserId}).select().single();
+  if(error){errEl.textContent=error.message;return;}
+  const rows=[currentUserId,...pendingDMRecipients.map(p=>p.id)].map(uid=>({dm_id:dm.id,user_id:uid}));
+  const{error:pErr}=await sb.from('dm_participants').insert(rows);
+  if(pErr){errEl.textContent=pErr.message;return;}
+  const groupLabel=name||pendingDMRecipients.map(p=>p.username).join(', ');
+  pendingDMRecipients=[]; renderDMChips();
+  closeModal('dmModal'); showingDMs=true; setActiveServer(null); await buildSidebar(null);
+  switchRoom({type:'dm',id:dm.id,name:groupLabel,icon:'@',serverId:null,serverName:'Direct Messages',isGroup:true});
+};
 document.getElementById('dcMobileBack').onclick=()=>document.getElementById('dcSidebar').classList.toggle('mobile-open');
 document.getElementById('sidebarToggle')?.addEventListener('click',()=>document.getElementById('dcSidebar').classList.toggle('mobile-open'));
 document.getElementById('jm-cancel')?.addEventListener('click',()=>closeModal('joinModal'));
@@ -1433,8 +1667,10 @@ document.getElementById('jm-join')?.addEventListener('click',async()=>{
   const sid=document.getElementById('jm-join')?.dataset.serverId;if(!sid)return;
   const{data:server}=await sb.from('servers').select('*').eq('id',sid).maybeSingle();
   if(!server){if(err)err.textContent='Server not found.';return;}
-  if(server.passcode&&pass!==server.passcode){if(err)err.textContent='Wrong passcode.';return;}
-  closeModal('joinModal');await joinServer(server.id);await enterServer(server);
+  const{data:ok,error}=await sb.rpc('join_server_with_passcode',{p_server_id:sid,p_passcode:pass||null});
+  if(error||!ok){if(err)err.textContent='Wrong passcode.';return;}
+  joinedServerIds.add(sid);
+  closeModal('joinModal');await enterServer(server);
 });
 
 /* ══════════════════════════════════════════════════════
@@ -1525,6 +1761,7 @@ function updateUserChip(){
     currentUserId=session?.user?.id||null;
     if(currentUserId) currentProfile=await getProfile(currentUserId);
     updateUserChip();
+    if(currentUserId) await seedUnreadCounts();
     await buildRail();
     await buildSidebar(null);
     switchRoom({type:'public',id:'public',name:'general',icon:'#',serverName:'360 Chat',serverId:null});
@@ -1535,7 +1772,35 @@ function updateUserChip(){
       currentUserId=session?.user?.id||null;
       currentProfile=currentUserId?await getProfile(currentUserId):null;
       if(currentUserId) profileCache[currentUserId]=currentProfile;
-      updateUserChip(); await buildRail();
+      updateUserChip();
+      if(currentUserId) await seedUnreadCounts();
+      await buildRail();
     });
   }catch(e){console.error('Chat init error:',e);}
 })();
+
+// Loads real unread backlog (messages since last_read_at, or all of it if
+// the room was never opened) so badges reflect reality on page load instead
+// of only counting messages that happen to arrive while the tab is open.
+async function seedUnreadCounts(){
+  try{
+    const{data,error}=await sb.rpc('get_unread_counts',{p_user_id:currentUserId});
+    if(error||!data) return;
+    for(const row of data){
+      const key=`${row.room_type}:${row.room_id}`;
+      unreadCounts[key]=Number(row.unread_count)||0;
+    }
+    // Roll channel counts up into their parent server key so the rail pip
+    // (which only knows about server:<id>) reflects the same backlog.
+    const{data:chans}=await sb.from('channels').select('id,server_id');
+    if(chans){
+      for(const c of chans){
+        const ck=`channel:${c.id}`;
+        if(unreadCounts[ck]>0){
+          const sk=`server:${c.server_id}`;
+          unreadCounts[sk]=(unreadCounts[sk]||0)+unreadCounts[ck];
+        }
+      }
+    }
+  }catch(e){console.error('seedUnreadCounts error:',e);}
+}
