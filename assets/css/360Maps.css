@@ -1,57 +1,115 @@
 /* ============================================================
    360 MAPS — assets/css/360Maps.css
-   Scoped entirely under .maps-page / #mapsRoot so nothing here
-   leaks into or clashes with main.css, wide.css, weather.css, etc.
+   Fullscreen map with a floating glass control column on the left.
+   Scoped under .maps-* / #maps* so nothing here leaks into or
+   clashes with main.css, wide.css, or other page styles.
    ============================================================ */
 
-.maps-page {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 80px 20px 40px;
+:root {
+  --maps-glass-light-high: rgba(255,255,255,0.78);
+  --maps-glass-dark-high:  rgba(8,12,28,0.86);
+  --maps-glass-blur:       blur(18px) saturate(160%);
+  --maps-glass-border:     rgba(255,255,255,0.35);
+  --maps-glass-border-dk:  rgba(255,255,255,0.12);
+  --maps-glass-shadow:     0 8px 32px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.10);
+  --maps-glass-inset:      inset 0 1px 0 rgba(255,255,255,0.35);
+  --maps-glass-inset-dk:   inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
-.maps-page h2 {
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  background: linear-gradient(120deg, var(--a), var(--a2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+html, body.maps-lock {
+  overflow: hidden;
+  height: 100%;
 }
 
-/* ── Search row ── */
+/* ── Fullscreen map, sits behind everything ── */
+#mapsCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+/* Hide Leaflet chrome per request, keep layout space */
+.leaflet-control-attribution,
+.leaflet-control-zoom {
+  visibility: hidden;
+}
+
+/* ── Floating control column ── */
+.maps-controls {
+  position: fixed;
+  top: 88px;
+  left: 24px;
+  z-index: 10;
+  width: 340px;
+  max-width: calc(100vw - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .maps-controls {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+    top: 76px;
+  }
+}
+
+/* ── Shared glass card ── */
+.maps-glass-card {
+  background: var(--maps-glass-light-high);
+  backdrop-filter: var(--maps-glass-blur);
+  -webkit-backdrop-filter: var(--maps-glass-blur);
+  border: 1px solid var(--maps-glass-border);
+  border-radius: 18px;
+  box-shadow: var(--maps-glass-shadow), var(--maps-glass-inset);
+  padding: 14px;
+}
+body.dark .maps-glass-card {
+  background: var(--maps-glass-dark-high);
+  border-color: var(--maps-glass-border-dk);
+  box-shadow: var(--maps-glass-shadow), var(--maps-glass-inset-dk);
+}
+
+/* ── Search card ── */
+.maps-search-card {
+  position: relative;
+  padding: 10px;
+}
+
 .maps-search-row {
   display: flex;
-  gap: 10px;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .maps-search-row input {
   flex: 1;
-  min-width: 180px;
-  padding: 12px 16px;
+  min-width: 0;
+  padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid var(--br);
-  background: rgba(255,255,255,.08);
+  background: rgba(255,255,255,.35);
   color: var(--txt);
   font-size: 14px;
   outline: none;
   font-family: inherit;
-  backdrop-filter: blur(6px);
   transition: border-color .2s;
 }
-body.dark .maps-search-row input { color: var(--txtd); background: rgba(15,23,42,.4); }
+body.dark .maps-search-row input { color: var(--txtd); background: rgba(15,23,42,.45); }
 .maps-search-row input:focus { border-color: var(--a); }
 
 .maps-btn {
-  padding: 12px 20px;
+  padding: 12px 18px;
   border-radius: 12px;
   border: none;
   background: linear-gradient(110deg, var(--a), var(--a2));
   color: #050816;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   white-space: nowrap;
   font-family: inherit;
@@ -60,101 +118,123 @@ body.dark .maps-search-row input { color: var(--txtd); background: rgba(15,23,42
 .maps-btn:hover { opacity: .85; }
 .maps-btn:disabled { opacity: .5; cursor: not-allowed; }
 
-.maps-btn-ghost {
+.maps-btn-outline {
   padding: 10px 16px;
-  border-radius: 999px;
+  border-radius: 12px;
   border: 1px solid var(--br);
-  background: rgba(255,255,255,.06);
-  font-size: 12px;
+  background: rgba(255,255,255,.10);
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: .15s;
   color: var(--txt);
   font-family: inherit;
-  backdrop-filter: blur(6px);
+  transition: .15s;
 }
-body.dark .maps-btn-ghost { color: var(--txtd); }
-.maps-btn-ghost:hover { border-color: var(--a); background: rgba(59,130,246,.1); color: var(--a); }
+body.dark .maps-btn-outline { color: var(--txtd); }
+.maps-btn-outline:hover { border-color: var(--a); color: var(--a); }
 
-/* ── Quick actions ── */
-.maps-quick-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 18px;
-  flex-wrap: wrap;
+.maps-btn-text {
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mut);
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px 6px;
 }
+.maps-btn-text:hover { color: var(--a); }
+body.dark .maps-btn-text { color: var(--mutd); }
 
-/* ── Layout: map + side panel ── */
-.maps-layout {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 16px;
-  align-items: start;
-}
-@media (max-width: 820px) {
-  .maps-layout { grid-template-columns: 1fr; }
-}
-
-#mapsCanvas {
-  width: 100%;
-  height: 480px;
+/* ── Suggestions dropdown ── */
+#mapsSuggestDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 10px;
+  right: 10px;
+  background: var(--maps-glass-light-high);
+  backdrop-filter: var(--maps-glass-blur);
+  -webkit-backdrop-filter: var(--maps-glass-blur);
+  border: 1px solid var(--maps-glass-border);
   border-radius: 16px;
-  border: 1px solid var(--br);
+  box-shadow: var(--maps-glass-shadow), var(--maps-glass-inset);
+  z-index: 20;
   overflow: hidden;
-}
-
-.maps-info-card {
-  margin-top: 12px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid var(--br);
-  font-size: 13px;
   display: none;
 }
-body.dark .maps-info-card { background: rgba(15,23,42,.4); }
-.maps-info-card.show { display: block; }
-.maps-info-title { font-weight: 700; margin-bottom: 4px; font-size: 14px; }
-.maps-info-sub { color: var(--mut); }
-body.dark .maps-info-sub { color: var(--mutd); }
-.maps-info-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-
-/* ── Side panel: saved locations ── */
-.maps-panel {
-  border-radius: 16px;
-  border: 1px solid var(--br);
-  background: rgba(255,255,255,.06);
-  padding: 14px;
-  max-height: 560px;
-  display: flex;
-  flex-direction: column;
+body.dark #mapsSuggestDropdown {
+  background: var(--maps-glass-dark-high);
+  border-color: var(--maps-glass-border-dk);
+  box-shadow: var(--maps-glass-shadow), var(--maps-glass-inset-dk);
 }
-body.dark .maps-panel { background: rgba(15,23,42,.4); }
+#mapsSuggestDropdown.visible { display: block; }
 
-.maps-panel-title {
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 10px;
+.maps-suggest-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--txt);
+  transition: background .12s;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+body.dark .maps-suggest-item { border-bottom-color: rgba(255,255,255,0.06); color: var(--txtd); }
+.maps-suggest-item:last-child { border-bottom: none; }
+.maps-suggest-item:hover, .maps-suggest-item.active { background: rgba(59,130,246,0.10); }
+body.dark .maps-suggest-item:hover, body.dark .maps-suggest-item.active { background: rgba(59,130,246,0.16); }
+
+.maps-suggest-icon { flex-shrink: 0; color: var(--mut); display: flex; }
+body.dark .maps-suggest-icon { color: var(--mutd); }
+.maps-suggest-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.maps-suggest-remove {
+  flex-shrink: 0;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--mut);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .12s, background .12s;
+}
+.maps-suggest-item:hover .maps-suggest-remove { opacity: 1; }
+.maps-suggest-remove:hover { background: rgba(0,0,0,0.10); }
+.maps-suggest-section-label {
+  padding: 6px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--mut);
+}
+body.dark .maps-suggest-section-label { color: var(--mutd); }
+
+/* ── Saved locations card ── */
+.maps-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+.maps-saved-list {
+  max-height: 42vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .maps-panel-note {
   font-size: 12px;
   color: var(--mut);
   line-height: 1.4;
+  padding: 4px 2px;
 }
 body.dark .maps-panel-note { color: var(--mutd); }
-
-.maps-saved-list {
-  overflow-y: auto;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
-}
 
 .maps-saved-item {
   border: 1px solid var(--br);
@@ -162,13 +242,14 @@ body.dark .maps-panel-note { color: var(--mutd); }
   padding: 8px 10px;
   cursor: pointer;
   transition: border-color .15s, background .15s;
-  background: rgba(255,255,255,.03);
+  background: rgba(255,255,255,.10);
 }
-.maps-saved-item:hover { border-color: var(--a); background: rgba(59,130,246,.08); }
+body.dark .maps-saved-item { background: rgba(255,255,255,.04); }
+.maps-saved-item:hover { border-color: var(--a); background: rgba(59,130,246,.10); }
 .maps-saved-label { font-weight: 600; font-size: 13px; }
 .maps-saved-coords { font-size: 11px; color: var(--mut); margin-top: 2px; }
 body.dark .maps-saved-coords { color: var(--mutd); }
-.maps-saved-actions { display: flex; justify-content: flex-end; margin-top: 4px; }
+.maps-saved-actions { display: flex; justify-content: flex-end; margin-top: 2px; }
 .maps-saved-del {
   background: none;
   border: none;
@@ -179,6 +260,77 @@ body.dark .maps-saved-coords { color: var(--mutd); }
   padding: 2px 6px;
 }
 .maps-saved-del:hover { text-decoration: underline; }
+
+.maps-signin-notice {
+  font-size: 12px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px dashed var(--br);
+  color: var(--mut);
+}
+body.dark .maps-signin-notice { color: var(--mutd); }
+
+/* ── Detail card (shown when a place is searched / pinned) ── */
+.maps-detail-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.maps-detail-coords {
+  font-size: 12px;
+  color: var(--mut);
+  margin-bottom: 10px;
+}
+body.dark .maps-detail-coords { color: var(--mutd); }
+
+.maps-detail-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.maps-directions-box {
+  display: none;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--br);
+  background: rgba(255,255,255,.10);
+  font-size: 13px;
+}
+body.dark .maps-directions-box { background: rgba(255,255,255,.04); }
+.maps-directions-box.show { display: block; }
+.maps-directions-row { display: flex; justify-content: space-between; margin-top: 4px; }
+.maps-directions-row span:first-child { color: var(--mut); }
+body.dark .maps-directions-row span:first-child { color: var(--mutd); }
+
+.maps-back-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+/* ── Status / error ── */
+#mapsStatus {
+  font-size: 12px;
+  color: var(--mut);
+  margin-top: 8px;
+  padding: 0 2px;
+}
+body.dark #mapsStatus { color: var(--mutd); }
+
+#mapsError {
+  display: none;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(239,68,68,.10);
+  border: 1px solid rgba(239,68,68,.25);
+  color: #ef4444;
+  font-size: 12px;
+}
 
 /* ── Save modal ── */
 .maps-modal-overlay {
@@ -197,17 +349,22 @@ body.dark .maps-saved-coords { color: var(--mutd); }
   max-width: 90vw;
   border-radius: 16px;
   padding: 20px;
-  background: var(--bg, #0f172a);
-  border: 1px solid var(--br);
+  background: var(--maps-glass-light-high);
+  backdrop-filter: var(--maps-glass-blur);
+  -webkit-backdrop-filter: var(--maps-glass-blur);
+  border: 1px solid var(--maps-glass-border);
 }
-body:not(.dark) .maps-modal { background: #fff; }
-.maps-modal h3 { font-size: 16px; margin-bottom: 12px; }
+body.dark .maps-modal {
+  background: var(--maps-glass-dark-high);
+  border-color: var(--maps-glass-border-dk);
+}
+.maps-modal h3 { font-size: 15px; margin-bottom: 12px; font-weight: 700; }
 .maps-modal input, .maps-modal textarea {
   width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--br);
-  background: rgba(255,255,255,.06);
+  background: rgba(255,255,255,.15);
   color: var(--txt);
   font-family: inherit;
   font-size: 13px;
@@ -215,37 +372,21 @@ body:not(.dark) .maps-modal { background: #fff; }
   margin-bottom: 10px;
   resize: vertical;
 }
-body.dark .maps-modal input, body.dark .maps-modal textarea { color: var(--txtd); }
+body.dark .maps-modal input, body.dark .maps-modal textarea {
+  color: var(--txtd);
+  background: rgba(15,23,42,.4);
+}
 .maps-modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
-
-/* ── Error / status ── */
-#mapsError {
-  display: none;
-  padding: 12px 16px;
-  border-radius: 10px;
-  background: rgba(239,68,68,.08);
-  border: 1px solid rgba(239,68,68,.2);
-  color: #ef4444;
-  font-size: 13px;
-  margin-bottom: 16px;
-}
-#mapsStatus {
-  font-size: 12px;
-  color: var(--mut);
-  margin-bottom: 10px;
-}
-body.dark #mapsStatus { color: var(--mutd); }
-
-/* ── Sign-in notice ── */
-.maps-signin-notice {
-  font-size: 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px dashed var(--br);
-  color: var(--mut);
-}
-body.dark .maps-signin-notice { color: var(--mutd); }
 
 /* Leaflet popup readability in dark mode */
 body.dark .leaflet-popup-content-wrapper,
 body.dark .leaflet-popup-tip { background: #0f172a; color: #e5e7eb; }
+
+/* "You are here" dot marker */
+.maps-me-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 3px rgba(0,0,0,.15), 0 0 10px rgba(0,0,0,.35);
+}
