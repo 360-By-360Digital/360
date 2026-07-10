@@ -1,5 +1,11 @@
 /* ============================================================
    360 AI — ai.css
+   Self-contained styles for /ai.html. Scoped under .ai-shell so
+   nothing here leaks onto other pages, and every selector that
+   also happens to be used by the older, unrelated rules in
+   main.css (#ai-output, .ai-bubble, #ai-input, #ai-send-btn …)
+   is deliberately re-declared in full here so this page renders
+   consistently regardless of load order.
    ============================================================ */
 
 .ai-shell, .ai-shell * , .ai-shell *::before, .ai-shell *::after {
@@ -133,7 +139,8 @@ body.dark .ai-shell {
 .conv-item.active { background: rgba(59,130,246,.12); opacity: 1; }
 .conv-item.active svg { color: var(--a); opacity: 1; }
 .conv-item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.conv-del {
+
+.conv-menu-btn {
   display: none;
   align-items: center;
   justify-content: center;
@@ -145,9 +152,43 @@ body.dark .ai-shell {
   padding: 4px;
   border-radius: 5px;
   flex-shrink: 0;
+  position: relative;
 }
-.conv-item:hover .conv-del { display: flex; }
-.conv-del:hover { opacity: 1; color: #ef4444; background: rgba(239,68,68,.1); }
+.conv-item:hover .conv-menu-btn,
+.conv-menu-btn.open { display: flex; }
+.conv-menu-btn:hover, .conv-menu-btn.open { opacity: 1; background: var(--hover); }
+
+.conv-dropdown {
+  position: fixed;
+  min-width: 150px;
+  padding: 5px;
+  border-radius: 10px;
+  background: #f3f4f7;
+  border: 1px solid var(--br);
+  box-shadow: 0 12px 30px rgba(0,0,0,.18);
+  z-index: 200;
+  animation: aiConfirmScaleIn .12s ease;
+}
+body.dark .conv-dropdown { background: #16161f; }
+.conv-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--txt);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.conv-dropdown-item:hover { background: var(--hover); }
+.conv-dropdown-item.danger { color: #ef4444; }
+.conv-dropdown-item.danger:hover { background: rgba(239,68,68,.1); }
+.conv-dropdown-item svg { opacity: .8; flex-shrink: 0; }
+
 .conv-empty { font-size: 12px; opacity: .5; padding: 10px 9px; }
 
 /* ── Main column ── */
@@ -236,29 +277,20 @@ body.dark .ai-shell {
   display: none;
   align-items: center;
   justify-content: center;
-  gap: 7px;
   padding: 9px 16px 3px;
   flex-shrink: 0;
 }
 .ai-conv-title-bar.show { display: flex; }
-.conv-title-pencil { opacity: .4; flex-shrink: 0; }
-.conv-title-input {
-  border: none;
-  outline: none;
-  background: transparent;
-  color: var(--txt);
+.conv-title-label {
   font-size: 13px;
   font-weight: 600;
-  text-align: center;
+  color: var(--txt);
+  opacity: .75;
   max-width: 420px;
-  width: auto;
-  min-width: 60px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  transition: background .15s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.conv-title-input:hover { background: var(--hover); }
-.conv-title-input:focus { background: var(--surface-soft); }
 
 .ai-topbar-link {
   display: flex;
@@ -330,7 +362,7 @@ body.dark .ai-shell {
 .ai-bubble.user .bubble-inner {
   background: rgba(59,130,246,.12);
   border: 1px solid rgba(59,130,246,.22);
-  border-radius: 16px 16px 4px 16px;
+  border-radius: 0;
   padding: 10px 14px;
   font-size: 14px;
   max-width: 80%;
@@ -340,14 +372,14 @@ body.dark .ai-shell {
 }
 .ai-bubble.user .attached-preview {
   max-width: 260px;
-  border-radius: 10px;
+  border-radius: 0;
   overflow: hidden;
   margin-bottom: 6px;
 }
 .ai-bubble.user .attached-preview img {
   width: 100%;
   display: block;
-  border-radius: 10px;
+  border-radius: 0;
 }
 .ai-bubble.user .attached-file-link {
   display: inline-flex;
@@ -662,7 +694,7 @@ body.dark .ai-shell #ai-input::placeholder { color: var(--mutd); }
 }
 .wl-chip:hover { background: rgba(59,130,246,.1); border-color: rgba(59,130,246,.35); color: var(--a); }
 
-/* ── Custom confirm modal (replaces window.confirm) ── */
+/* ── Custom confirm / rename modal (replaces window.confirm/prompt) ── */
 .ai-confirm-backdrop {
   position: fixed;
   inset: 0;
@@ -671,7 +703,7 @@ body.dark .ai-shell #ai-input::placeholder { color: var(--mutd); }
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  animation: aiToastIn .15s ease;
+  animation: aiConfirmFadeIn .15s ease;
 }
 .ai-confirm-box {
   width: 280px;
@@ -682,10 +714,26 @@ body.dark .ai-shell #ai-input::placeholder { color: var(--mutd); }
   color: #111827;
   border: 1px solid var(--br);
   box-shadow: 0 20px 50px rgba(0,0,0,.25);
+  animation: aiConfirmScaleIn .15s ease;
 }
+@keyframes aiConfirmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes aiConfirmScaleIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
 body.dark .ai-confirm-box { background: #101018; color: #e7e7ea; }
 .ai-confirm-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
 .ai-confirm-msg { font-size: 13px; opacity: .7; margin-bottom: 16px; }
+.ai-confirm-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--br);
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  margin-bottom: 16px;
+  outline: none;
+}
+.ai-confirm-input:focus { border-color: var(--a); }
 .ai-confirm-actions { display: flex; gap: 10px; justify-content: center; }
 .ai-confirm-actions button {
   padding: 8px 14px;
