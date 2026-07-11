@@ -1,11 +1,9 @@
 /* ========================================================
    360 Maps — v3.0.0 client logic
-   Built on Leaflet + OpenStreetMap + Nominatim + OSRM. 
-   (I'm used to using that from weathermaps, the original inspiration of 360)
+   Built on Leaflet + OpenStreetMap + Nominatim + OSRM.
    No API keys, no per-request billing, no tracking sent to a
    third-party map vendor -- that's the actual differentiator
-   here, not trying to out-feature Google's satellite imagery. 
-   but this is tuff boiee.
+   here, not trying to out-feature Google's satellite imagery.
 ======================================================== */
 (function () {
   const SUPABASE_URL = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
@@ -40,15 +38,29 @@
    'mapsModalOverlay','mapsModalLabel','mapsModalNote','mapsModalCancel','mapsModalSave'
   ].forEach(id => els[id] = document.getElementById(id));
 
+  const TILE_LAYERS = {
+    standard: { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attr: '&copy; OpenStreetMap contributors', maxZoom: 19 },
+    dark:     { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', attr: '&copy; OpenStreetMap contributors &copy; CARTO', maxZoom: 19 },
+    satellite:{ url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr: 'Tiles &copy; Esri', maxZoom: 19 },
+    terrain:  { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attr: '&copy; OpenStreetMap contributors, SRTM | &copy; OpenTopoMap', maxZoom: 17 },
+  };
+  let tileLayer = null;
+  function setTileLayer(style) {
+    const cfg = TILE_LAYERS[style] || TILE_LAYERS.standard;
+    if (tileLayer) map.removeLayer(tileLayer);
+    tileLayer = L.tileLayer(cfg.url, { maxZoom: cfg.maxZoom, attribution: cfg.attr }).addTo(map);
+    document.body.classList.toggle('maps-dark-tiles', style === 'dark');
+    localStorage.setItem('360maps_tile_style', style);
+    document.querySelectorAll('.maps-layer-btn').forEach(b => b.classList.toggle('active', b.dataset.style === style));
+  }
+
   function initMap() {
     map = L.map('mapsCanvas', { zoomControl: false, attributionControl: true }).setView([20, 0], 3);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+    setTileLayer(localStorage.getItem('360maps_tile_style') || (document.body.classList.contains('dark') ? 'dark' : 'standard'));
 
     map.on('click', (e) => {
+      if (measuring) { addMeasurePoint(e.latlng); return; }
       selectLocation(e.latlng.lat, e.latlng.lng, null);
     });
 
