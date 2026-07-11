@@ -715,6 +715,8 @@
         <div class="vids-watch-meta" id="watchMeta"></div>
         <div class="vids-watch-actions">
           <button class="vids-action-btn" id="likeBtn">👍 <span id="likeCount">0</span></button>
+          <button class="vids-action-btn" id="dislikeBtn">👎 <span id="dislikeCount">0</span></button>
+          <button class="vids-action-btn" id="followBtn">＋ Follow</button>
           <button class="vids-action-btn" id="shareBtn">🔗 Share</button>
         </div>
         <div class="vids-watch-desc" id="watchDesc"></div>
@@ -787,6 +789,14 @@
     let currentVideo = null;
     let activeFilter = 'all';
     let activeView   = 'home';
+    let channelUserId = null, channelUsername = '';
+    function viewChannel(uid, uname) {
+      closeWatch();
+      channelUserId = uid; channelUsername = uname;
+      activeView = 'channel';
+      document.querySelectorAll('.vids-nav-item').forEach(i => i.classList.remove('active'));
+      fetchVideos();
+    }
     let searchQuery  = '';
     let selectedVideoFile = null;
 
@@ -970,6 +980,14 @@
         query = query.eq('user_id', currentUser.id);
       } else if (activeView === 'trending') {
         query = sb.from('vids').select('*').order('views', { ascending: false }).limit(30);
+      } else if (activeView === 'subscriptions') {
+        if (!currentUser) { renderAuthGate('see videos from creators you follow'); return; }
+        const { data: f } = await sb.from('follows').select('creator_id').eq('follower_id', currentUser.id);
+        const ids = (f || []).map(r => r.creator_id);
+        if (!ids.length) { allVideos = []; grid.innerHTML = `<div class="vids-empty"><div class="vids-empty-icon">🎧</div><h3>No subscriptions yet</h3><p>Follow creators to see their videos here.</p></div>`; return; }
+        query = query.in('user_id', ids);
+      } else if (activeView === 'channel' && channelUserId) {
+        query = query.eq('user_id', channelUserId);
       }
 
       if (searchQuery) {
@@ -1004,18 +1022,48 @@
     }
 
     // ── Render Videos ──
+    function wireChannelBanner() {
+      const btn = document.getElementById('channelFollowBtn');
+      if (!btn) return;
+      (async () => {
+        if (currentUser && btn.dataset.uid === currentUser.id) { btn.style.display = 'none'; return; }
+        const { count } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('creator_id', btn.dataset.uid);
+        let iFollow = false;
+        if (currentUser) {
+          const { data: f } = await sb.from('follows').select('creator_id').eq('follower_id', currentUser.id).eq('creator_id', btn.dataset.uid).maybeSingle();
+          iFollow = !!f;
+        }
+        btn.textContent = iFollow ? `✓ Following (${count||0})` : `＋ Follow (${count||0})`;
+        btn.className = 'vids-action-btn' + (iFollow ? ' liked' : '');
+      })();
+      btn.addEventListener('click', async () => {
+        if (!currentUser) { showToast('Sign in to follow creators.'); return; }
+        const { data: nowFollowing, error } = await sb.rpc('toggle_follow', { p_creator_id: btn.dataset.uid });
+        if (error) { showToast('⚠️ ' + error.message); return; }
+        showToast(nowFollowing ? '✓ Followed!' : 'Unfollowed');
+        wireChannelBanner();
+      });
+    }
+
     function renderVideos() {
       const vids = filteredVideos();
+      const banner = activeView === 'channel' && channelUserId
+        ? `<div class="vids-channel-banner" style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-bottom:8px;background:var(--vid-card,#111827);border-radius:12px;">
+             <div style="font-size:16px;font-weight:700;">📺 ${escHtml(channelUsername)}'s channel</div>
+             <button class="vids-action-btn" id="channelFollowBtn" data-uid="${escHtml(channelUserId)}">＋ Follow</button>
+           </div>` : '';
       if (!vids.length) {
-        grid.innerHTML = `
+        grid.innerHTML = banner + `
           <div class="vids-empty">
             <div class="vids-empty-icon">🎬</div>
             <h3>No videos here yet</h3>
             <p>Be the first to upload something!</p>
           </div>`;
+        wireChannelBanner();
         return;
       }
-      grid.innerHTML = vids.map(v => videoCard(v)).join('');
+      grid.innerHTML = banner + vids.map(v => videoCard(v)).join('');
+      wireChannelBanner();
       grid.querySelectorAll('.vids-card').forEach(card => {
         card.addEventListener('click', (e) => {
           if (e.target.closest('.vids-hide-btn')) return;
@@ -1093,12 +1141,36 @@
       const user = video.username || 'Anonymous';
       const views = formatNum((video.views || 0) + 1);
       document.getElementById('watchMeta').innerHTML =
-        `<span>${escHtml(user)}</span><span>·</span><span>${views} views</span><span>·</span><span>${ago}</span><span>·</span><span>${escHtml(video.category||'Other')}</span>`;
+        `<span class="vids-channel-link" data-uid="${escHtml(video.user_id)}" data-uname="${escHtml(user)}" style="cursor:pointer;text-decoration:underline;">${escHtml(user)}</span><span>·</span><span>${views} views</span><span>·</span><span>${ago}</span><span>·</span><span>${escHtml(video.category||'Other')}</span>`;
+      document.querySelector('.vids-channel-link')?.addEventListener('click', (e) => {
+        viewChannel(e.currentTarget.dataset.uid, e.currentTarget.dataset.uname);
+      });
 
       const likedByMe = currentUser && (video.likes||[]).includes(currentUser.id);
       const likeBtn = document.getElementById('likeBtn');
       likeBtn.className = 'vids-action-btn' + (likedByMe ? ' liked' : '');
       document.getElementById('likeCount').textContent = (video.likes||[]).length;
+
+      const dislikedByMe = currentUser && (video.dislikes||[]).includes(currentUser.id);
+      const dislikeBtn = document.getElementById('dislikeBtn');
+      dislikeBtn.className = 'vids-action-btn' + (dislikedByMe ? ' liked' : '');
+      document.getElementById('dislikeCount').textContent = (video.dislikes||[]).length;
+
+      const followBtn = document.getElementById('followBtn');
+      if (currentUser && video.user_id === currentUser.id) {
+        followBtn.style.display = 'none';
+      } else {
+        followBtn.style.display = '';
+        const { count } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('creator_id', video.user_id);
+        let iFollow = false;
+        if (currentUser) {
+          const { data: f } = await sb.from('follows').select('creator_id').eq('follower_id', currentUser.id).eq('creator_id', video.user_id).maybeSingle();
+          iFollow = !!f;
+        }
+        followBtn.textContent = iFollow ? `✓ Following (${count||0})` : `＋ Follow (${count||0})`;
+        followBtn.className = 'vids-action-btn' + (iFollow ? ' liked' : '');
+        followBtn.dataset.creatorId = video.user_id;
+      }
 
       player.src = video.video_url;
       player.load();
@@ -1178,16 +1250,41 @@
       // the same time.
       const { data: likes, error } = await sb.rpc('toggle_video_like', { p_id: currentVideo.id });
       if (error) { showToast('⚠️ Could not update like.'); return; }
+      await refreshLikeDislikeUI();
+    });
 
-      currentVideo.likes = likes;
-      const likedByMe = (likes || []).includes(currentUser.id);
-      const likeBtn = document.getElementById('likeBtn');
-      likeBtn.className = 'vids-action-btn' + (likedByMe ? ' liked' : '');
-      document.getElementById('likeCount').textContent = (likes || []).length;
+    document.getElementById('dislikeBtn').addEventListener('click', async () => {
+      if (!currentUser) { showToast('Sign in to react.'); return; }
+      if (!currentVideo) return;
+      const { error } = await sb.rpc('toggle_video_dislike', { p_id: currentVideo.id });
+      if (error) { showToast('⚠️ Could not update.'); return; }
+      await refreshLikeDislikeUI();
+    });
 
-      // Update in allVideos
+    async function refreshLikeDislikeUI() {
+      const { data: fresh } = await sb.from('vids').select('likes,dislikes').eq('id', currentVideo.id).maybeSingle();
+      if (!fresh) return;
+      currentVideo.likes = fresh.likes; currentVideo.dislikes = fresh.dislikes;
+      const likedByMe = (fresh.likes || []).includes(currentUser.id);
+      const dislikedByMe = (fresh.dislikes || []).includes(currentUser.id);
+      document.getElementById('likeBtn').className = 'vids-action-btn' + (likedByMe ? ' liked' : '');
+      document.getElementById('likeCount').textContent = (fresh.likes || []).length;
+      document.getElementById('dislikeBtn').className = 'vids-action-btn' + (dislikedByMe ? ' liked' : '');
+      document.getElementById('dislikeCount').textContent = (fresh.dislikes || []).length;
       const v = allVideos.find(v => v.id === currentVideo.id);
-      if (v) v.likes = likes;
+      if (v) { v.likes = fresh.likes; v.dislikes = fresh.dislikes; }
+    }
+
+    document.getElementById('followBtn').addEventListener('click', async (e) => {
+      if (!currentUser) { showToast('Sign in to follow creators.'); return; }
+      const creatorId = e.currentTarget.dataset.creatorId;
+      if (!creatorId) return;
+      const { data: nowFollowing, error } = await sb.rpc('toggle_follow', { p_creator_id: creatorId });
+      if (error) { showToast('⚠️ ' + error.message); return; }
+      const { count } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('creator_id', creatorId);
+      e.currentTarget.textContent = nowFollowing ? `✓ Following (${count||0})` : `＋ Follow (${count||0})`;
+      e.currentTarget.className = 'vids-action-btn' + (nowFollowing ? ' liked' : '');
+      showToast(nowFollowing ? '✓ Followed!' : 'Unfollowed');
     });
 
     // Share

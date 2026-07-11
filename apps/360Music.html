@@ -604,6 +604,9 @@
       <div class="vids-nav-item" data-view="albums">
         <span class="vids-nav-icon">📀</span> Albums
       </div>
+      <div class="vids-nav-item" data-view="playlists">
+        <span class="vids-nav-icon">📃</span> Playlists
+      </div>
       <div class="vids-nav-item" data-view="subscriptions">
         <span class="vids-nav-icon">🎧</span> Subscriptions
       </div>
@@ -801,6 +804,9 @@
         <div class="vids-watch-meta" id="watchMeta"></div>
         <div class="vids-watch-actions">
           <button class="vids-action-btn" id="likeBtn">👍 <span id="likeCount">0</span></button>
+          <button class="vids-action-btn" id="dislikeBtn">👎 <span id="dislikeCount">0</span></button>
+          <button class="vids-action-btn" id="followBtn">＋ Follow</button>
+          <button class="vids-action-btn" id="addToPlaylistBtn">📃 Add to Playlist</button>
           <button class="vids-action-btn" id="shareBtn">🔗 Share</button>
           <button class="vids-action-btn" id="downloadBtn">⬇️ Download</button>
         </div>
@@ -854,6 +860,7 @@
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
     let currentUser      = null;
+    let followedCreatorIds = new Set();
     let allTracks        = [];
     let allAlbums        = [];
     let currentTrack     = null;
@@ -1377,6 +1384,27 @@
       likeBtn.className = 'vids-action-btn' + (likedByMe ? ' liked' : '');
       document.getElementById('likeCount').textContent = (track.likes||[]).length;
 
+      const dislikedByMe = currentUser && (track.dislikes||[]).includes(currentUser.id);
+      const dislikeBtn = document.getElementById('dislikeBtn');
+      dislikeBtn.className = 'vids-action-btn' + (dislikedByMe ? ' liked' : '');
+      document.getElementById('dislikeCount').textContent = (track.dislikes||[]).length;
+
+      const followBtn = document.getElementById('followBtn');
+      if (currentUser && track.user_id === currentUser.id) {
+        followBtn.style.display = 'none';
+      } else {
+        followBtn.style.display = '';
+        const { count } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('creator_id', track.user_id);
+        let iFollow = false;
+        if (currentUser) {
+          const { data: f } = await sb.from('follows').select('creator_id').eq('follower_id', currentUser.id).eq('creator_id', track.user_id).maybeSingle();
+          iFollow = !!f;
+        }
+        followBtn.textContent = iFollow ? `✓ Following (${count||0})` : `＋ Follow (${count||0})`;
+        followBtn.className = 'vids-action-btn' + (iFollow ? ' liked' : '');
+        followBtn.dataset.creatorId = track.user_id;
+      }
+
       // Set album art in player
       setPlayerArt(track.thumbnail_url || null);
 
@@ -1414,18 +1442,48 @@
     document.getElementById('watchCloseBtn').addEventListener('click', closeWatch);
     watchOverlay.addEventListener('click', e => { if (e.target === watchOverlay) closeWatch(); });
 
-    // ── Like / Share / Download ───────────────────────────────────────────────
+    // ── Like / Dislike / Follow / Share / Download ─────────────────────────────
     document.getElementById('likeBtn').addEventListener('click', async () => {
       if (!currentUser) { showToast('Sign in to like tracks.'); return; }
       if (!currentTrack) return;
-      const { data: likes, error } = await sb.rpc('toggle_music_like', { p_id: currentTrack.id });
+      const { error } = await sb.rpc('toggle_music_like', { p_id: currentTrack.id });
       if (error) { showToast('⚠️ Could not update like.'); return; }
-      currentTrack.likes = likes;
-      const likedByMe = (likes || []).includes(currentUser.id);
+      await refreshLikeDislikeUI();
+    });
+
+    document.getElementById('dislikeBtn').addEventListener('click', async () => {
+      if (!currentUser) { showToast('Sign in to react.'); return; }
+      if (!currentTrack) return;
+      const { error } = await sb.rpc('toggle_music_dislike', { p_id: currentTrack.id });
+      if (error) { showToast('⚠️ Could not update.'); return; }
+      await refreshLikeDislikeUI();
+    });
+
+    async function refreshLikeDislikeUI() {
+      const { data: fresh } = await sb.from('music_files').select('likes,dislikes').eq('id', currentTrack.id).maybeSingle();
+      if (!fresh) return;
+      currentTrack.likes = fresh.likes; currentTrack.dislikes = fresh.dislikes;
+      const likedByMe = (fresh.likes || []).includes(currentUser.id);
+      const dislikedByMe = (fresh.dislikes || []).includes(currentUser.id);
       document.getElementById('likeBtn').className = 'vids-action-btn' + (likedByMe ? ' liked' : '');
-      document.getElementById('likeCount').textContent = (likes || []).length;
+      document.getElementById('likeCount').textContent = (fresh.likes || []).length;
+      document.getElementById('dislikeBtn').className = 'vids-action-btn' + (dislikedByMe ? ' liked' : '');
+      document.getElementById('dislikeCount').textContent = (fresh.dislikes || []).length;
       const t = allTracks.find(t => t.id === currentTrack.id);
-      if (t) t.likes = likes;
+      if (t) { t.likes = fresh.likes; t.dislikes = fresh.dislikes; }
+    }
+
+    document.getElementById('followBtn').addEventListener('click', async (e) => {
+      if (!currentUser) { showToast('Sign in to follow creators.'); return; }
+      const creatorId = e.currentTarget.dataset.creatorId;
+      if (!creatorId) return;
+      const { data: nowFollowing, error } = await sb.rpc('toggle_follow', { p_creator_id: creatorId });
+      if (error) { showToast('⚠️ ' + error.message); return; }
+      if (nowFollowing) followedCreatorIds.add(creatorId); else followedCreatorIds.delete(creatorId);
+      const { count } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('creator_id', creatorId);
+      e.currentTarget.textContent = nowFollowing ? `✓ Following (${count||0})` : `＋ Follow (${count||0})`;
+      e.currentTarget.className = 'vids-action-btn' + (nowFollowing ? ' liked' : '');
+      showToast(nowFollowing ? '✓ Followed!' : 'Unfollowed');
     });
 
     document.getElementById('shareBtn').addEventListener('click', () => {
@@ -1553,6 +1611,10 @@
     async function initAuth() {
       const { data: { session } } = await sb.auth.getSession();
       currentUser = session?.user ?? null;
+      if (currentUser) {
+        const { data: f } = await sb.from('follows').select('creator_id').eq('follower_id', currentUser.id);
+        followedCreatorIds = new Set((f||[]).map(r => r.creator_id));
+      }
       updateAvatar();
     }
     function updateAvatar() {
@@ -1642,6 +1704,144 @@
         </div>`).join('');
     }
 
+    let allPlaylists = [];
+    let currentPlaylistId = null;
+
+    async function fetchPlaylists() {
+      const { data, error } = await sb.from('playlists').select('*').order('updated_at', { ascending: false });
+      if (error) { console.warn(error); allPlaylists = []; return; }
+      allPlaylists = data || [];
+    }
+
+    async function canEditPlaylist(pl) {
+      if (!currentUser) return false;
+      if (pl.user_id === currentUser.id) return true;
+      if (pl.is_public_editable) return true;
+      const { data } = await sb.from('playlist_collaborators').select('user_id').eq('playlist_id', pl.id).eq('user_id', currentUser.id).maybeSingle();
+      return !!data;
+    }
+
+    function renderPlaylistsGrid() {
+      const newBtn = `<div class="vids-card" id="newPlaylistCard" style="display:flex;align-items:center;justify-content:center;cursor:pointer;min-height:120px;border:2px dashed rgba(148,163,184,.4);">
+        <div style="text-align:center;opacity:.8;"><div style="font-size:26px;">➕</div><div style="font-size:13px;">New Playlist</div></div>
+      </div>`;
+      if (!allPlaylists.length) {
+        grid.innerHTML = newBtn + `<div class="vids-empty"><div class="vids-empty-icon">📃</div><h3>No playlists yet</h3><p>Create one to start collecting tracks.</p></div>`;
+      } else {
+        grid.innerHTML = newBtn + allPlaylists.map(p => `
+          <div class="vids-card vids-playlist-card" data-pl-id="${p.id}" style="padding:14px;cursor:pointer;">
+            <div style="font-size:15px;font-weight:700;">${escHtml(p.title)}</div>
+            <div style="font-size:12px;opacity:.65;margin-top:4px;">by ${escHtml(p.username || 'User')}${p.is_public_editable ? ' · 🌐 anyone can add tracks' : ''}</div>
+          </div>`).join('');
+      }
+      document.getElementById('newPlaylistCard').addEventListener('click', createPlaylist);
+      grid.querySelectorAll('.vids-playlist-card').forEach(card => {
+        card.addEventListener('click', () => openPlaylist(card.dataset.plId));
+      });
+    }
+
+    async function createPlaylist() {
+      if (!currentUser) { showToast('Sign in to create playlists.'); return; }
+      const title = prompt('Playlist name:', 'My Playlist');
+      if (!title) return;
+      const { data, error } = await sb.from('playlists').insert({ user_id: currentUser.id, title, username: currentUser.email?.split('@')[0] }).select().single();
+      if (error) { showToast('⚠️ ' + error.message); return; }
+      showToast('✅ Playlist created.');
+      await fetchPlaylists(); renderPlaylistsGrid();
+      openPlaylist(data.id);
+    }
+
+    async function openPlaylist(id) {
+      currentPlaylistId = id;
+      const pl = allPlaylists.find(p => p.id === id) || (await sb.from('playlists').select('*').eq('id', id).maybeSingle()).data;
+      if (!pl) return;
+      const editable = await canEditPlaylist(pl);
+      showSkeletons();
+      const { data, error } = await sb.from('playlist_tracks').select('track_id, position, track:track_id(*)').eq('playlist_id', id).order('position', { ascending: true });
+      if (error) { showToast('⚠️ Failed to load playlist.'); return; }
+      const tracks = (data || []).map(r => r.track).filter(Boolean);
+      allTracks = tracks;
+
+      const isOwner = currentUser && pl.user_id === currentUser.id;
+      const banner = `<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-bottom:8px;background:var(--vid-card,#111827);border-radius:12px;">
+        <div>
+          <div style="font-size:16px;font-weight:700;">📃 ${escHtml(pl.title)}</div>
+          <div style="font-size:12px;opacity:.65;">by ${escHtml(pl.username||'User')} · ${tracks.length} track${tracks.length===1?'':'s'}${editable ? ' · you can edit this' : ''}</div>
+        </div>
+        ${isOwner ? `<button class="vids-action-btn" id="managePlaylistBtn">⚙️ Manage</button>` : ''}
+      </div>`;
+
+      if (!tracks.length) {
+        grid.innerHTML = banner + `<div class="vids-empty"><div class="vids-empty-icon">📃</div><h3>No tracks yet</h3><p>${editable ? 'Use "Add to Playlist" from any track to add one.' : 'This playlist is empty.'}</p></div>`;
+      } else {
+        grid.innerHTML = banner + tracks.map(t => `
+          <div class="vids-card" data-id="${t.id}" style="position:relative;">
+            <div class="vids-thumb">
+              ${t.thumbnail_url ? `<img src="${escHtml(t.thumbnail_url)}" alt="" loading="lazy" />` : `<div class="vids-thumb-placeholder">🎵</div>`}
+              ${editable ? `<button class="vids-hide-btn" data-remove-track="${t.id}" title="Remove from playlist" style="position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:12px;cursor:pointer;opacity:0;transition:opacity .15s;">✕</button>` : ''}
+            </div>
+            <div class="vids-card-info"><div class="vids-card-title">${escHtml(t.title)}</div><div class="vids-card-meta">${escHtml(t.username||'')}</div></div>
+          </div>`).join('');
+      }
+      document.getElementById('managePlaylistBtn')?.addEventListener('click', () => managePlaylist(pl));
+      grid.querySelectorAll('.vids-card[data-id]').forEach(card => {
+        card.addEventListener('click', (e) => { if (e.target.closest('[data-remove-track]')) return; openWatch(card.dataset.id); });
+      });
+      grid.querySelectorAll('[data-remove-track]').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await sb.from('playlist_tracks').delete().eq('playlist_id', id).eq('track_id', btn.dataset.removeTrack);
+          showToast('Removed from playlist.');
+          openPlaylist(id);
+        });
+      });
+    }
+
+    async function managePlaylist(pl) {
+      const makePublic = confirm(`"${pl.title}" is currently ${pl.is_public_editable ? 'PUBLIC (anyone can add tracks)' : 'private (only you + collaborators can add tracks)'}.\n\nOK = make it public-editable\nCancel = keep it private (collaborator-only)`);
+      await sb.from('playlists').update({ is_public_editable: makePublic }).eq('id', pl.id);
+      if (!makePublic) {
+        const { data: existing } = await sb.from('playlist_collaborators').select('user_id').eq('playlist_id', pl.id);
+        const { data: collabProfiles } = existing?.length
+          ? await sb.from('profiles').select('id,username').in('id', existing.map(r => r.user_id))
+          : { data: [] };
+        const names = (collabProfiles || []).map(p => p.username);
+        const input = prompt('Collaborator usernames (comma separated) who can add/remove tracks:', names.filter(Boolean).join(', '));
+        if (input !== null) {
+          await sb.from('playlist_collaborators').delete().eq('playlist_id', pl.id);
+          for (const un of input.split(',').map(s=>s.trim()).filter(Boolean)) {
+            const { data: p } = await sb.from('profiles').select('id').ilike('username', un).maybeSingle();
+            if (p) await sb.from('playlist_collaborators').insert({ playlist_id: pl.id, user_id: p.id, added_by: currentUser.id });
+          }
+        }
+      }
+      showToast('✅ Playlist settings updated.');
+      openPlaylist(pl.id);
+    }
+
+    // "Add to Playlist" from the now-playing panel
+    document.getElementById('addToPlaylistBtn').addEventListener('click', async () => {
+      if (!currentUser) { showToast('Sign in to use playlists.'); return; }
+      if (!currentTrack) return;
+      await fetchPlaylists();
+      const editableOnes = [];
+      for (const p of allPlaylists) if (await canEditPlaylist(p)) editableOnes.push(p);
+      if (!editableOnes.length) {
+        if (confirm('You have no editable playlists yet. Create one now?')) { await createPlaylist(); if (currentPlaylistId) await sb.from('playlist_tracks').insert({ playlist_id: currentPlaylistId, track_id: currentTrack.id, added_by: currentUser.id }); }
+        return;
+      }
+      const list = editableOnes.map((p,i)=>`${i+1}. ${p.title}`).join('\n');
+      const choice = prompt(`Add "${currentTrack.title}" to which playlist?\n${list}\n\nEnter a number, or 0 for a new playlist:`, '1');
+      if (choice === null) return;
+      const idx = parseInt(choice, 10);
+      if (idx === 0) { await createPlaylist(); if (currentPlaylistId) { await sb.from('playlist_tracks').insert({ playlist_id: currentPlaylistId, track_id: currentTrack.id, added_by: currentUser.id }); showToast('✅ Added.'); } return; }
+      const target = editableOnes[idx-1];
+      if (!target) { showToast('Invalid choice.'); return; }
+      const { error } = await sb.from('playlist_tracks').insert({ playlist_id: target.id, track_id: currentTrack.id, added_by: currentUser.id });
+      if (error && error.code !== '23505') { showToast('⚠️ ' + error.message); return; }
+      showToast(error ? 'Already in that playlist.' : `✅ Added to "${target.title}"`);
+    });
+
     async function fetchAlbums() {
       const { data, error } = await sb
         .from('albums').select('*').order('created_at', { ascending: false });
@@ -1681,6 +1881,7 @@
       if (activeView === 'trending') filtered.sort((a,b) => (b.views||0)-(a.views||0));
       else if (activeView === 'uploads' && currentUser) filtered = filtered.filter(t => t.user_id === currentUser.id);
       else if (activeView === 'liked'   && currentUser) filtered = filtered.filter(t => (t.likes||[]).includes(currentUser.id));
+      else if (activeView === 'subscriptions' && currentUser) filtered = filtered.filter(t => followedCreatorIds.has(t.user_id));
       else if (activeView === 'cat-gaming')       filtered = filtered.filter(t => t.category === 'Gaming');
       else if (activeView === 'cat-tech')         filtered = filtered.filter(t => t.category === 'Tech');
       else if (activeView === 'cat-education')    filtered = filtered.filter(t => t.category === 'Education');
@@ -1723,6 +1924,11 @@
       if (activeView === 'albums' || activeFilter === 'albums') {
         await fetchAlbums();
         renderAlbumsGrid();
+        return;
+      }
+      if (activeView === 'playlists') {
+        await fetchPlaylists();
+        renderPlaylistsGrid();
         return;
       }
       const { data, error } = await sb
