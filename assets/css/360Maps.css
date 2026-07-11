@@ -47,9 +47,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
   backdrop-filter: blur(12px);
   border-color: var(--maps-card-border) !important;
 }
-body.dark #mapsCanvas { filter: brightness(.92) invert(1) hue-rotate(180deg) saturate(0.9); }
-body.dark #mapsCanvas .leaflet-marker-icon,
-body.dark #mapsCanvas .leaflet-popup { filter: invert(1) hue-rotate(180deg); }
+body.dark #mapsCanvas { }
 
 /* ── Floating control stack ── */
 .maps-controls {
@@ -330,3 +328,76 @@ body.dark .maps-modal input, body.dark .maps-modal textarea { background: rgba(0
   .maps-glass-card { padding: 12px; }
   .maps-saved-list { max-height: 240px; }
 }
+
+/* ── Layer switcher ── */
+.maps-layer-switcher {
+  position: fixed; bottom: 24px; left: 24px; z-index: 500;
+  display: flex; gap: 6px;
+  background: var(--maps-card-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--maps-card-border);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: var(--maps-shadow);
+}
+.maps-layer-btn {
+  border: none; background: transparent; cursor: pointer;
+  font-size: 11px; font-weight: 700; color: var(--maps-muted);
+  padding: 7px 10px; border-radius: 8px;
+  transition: background .12s ease, color .12s ease;
+}
+.maps-layer-btn.active { background: var(--maps-accent); color: #fff; }
+.maps-layer-btn:not(.active):hover { background: rgba(59,130,246,.1); }
+
+/* ── Map action buttons (my location / fullscreen / measure) ── */
+.maps-fab-stack {
+  position: fixed; bottom: 24px; right: 16px; z-index: 500;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.maps-fab {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--maps-card-border);
+  background: var(--maps-card-bg);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--maps-shadow);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--maps-text);
+  transition: transform .12s ease;
+}
+.maps-fab:hover { transform: scale(1.06); }
+.maps-fab.active { background: var(--maps-accent); color: #fff; }
+
+/* ── Category chips (saved place picker) ── */
+.maps-cat-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.maps-cat-chip {
+  padding: 6px 10px; border-radius: 999px; font-size: 12px; cursor: pointer;
+  border: 1px solid var(--maps-card-border); background: rgba(255,255,255,.4); color: var(--maps-text);
+}
+body.dark .maps-cat-chip { background: rgba(0,0,0,.2); }
+.maps-cat-chip.active { background: var(--maps-accent); color: #fff; border-color: transparent; }
+
+/* ── Elevation / weather / nearby info strip ── */
+.maps-info-strip {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  font-size: 12px; color: var(--maps-muted);
+  margin: 8px 0 4px; padding-top: 8px; border-top: 1px solid var(--maps-card-border);
+}
+.maps-info-strip span b { color: var(--maps-text); }
+
+/* ── Nearby POI list ── */
+.maps-nearby-item { cursor: pointer; }
+
+/* ── Trip stop reorder buttons ── */
+.maps-reorder-btns { display: flex; flex-direction: column; gap: 2px; margin-right: 4px; }
+.maps-reorder-btns button {
+  border: none; background: none; color: var(--maps-muted); cursor: pointer;
+  font-size: 10px; line-height: 1; padding: 2px;
+}
+.maps-reorder-btns button:hover { color: var(--maps-accent); }
+
+/* ── Copy-coords button inline with coords ── */
+.maps-copy-coords { border: none; background: none; cursor: pointer; font-size: 12px; margin-left: 6px; opacity: .7; }
+.maps-copy-coords:hover { opacity: 1; }
