@@ -19,10 +19,20 @@
   let marker = null;
   let meMarker = null;
   let routeLine = null;
+  let traveledLine = null;
   let watchId = null;
+  let orientationHandler = null;
   let navActive = false;
   let currentUser = null;
   let currentPlace = null; // { lat, lon, label }
+
+  let mapHeading = 0;          // current compass rotation applied to the map (0 = north up)
+  let usingCompass = false;    // true once real device-orientation data has arrived
+  let travelHeading = 0;       // fallback heading derived from GPS movement
+  let lastPos = null;          // { lat, lon } of previous fix, for bearing fallback
+  let routeCoords = [];        // full [lat,lon] route geometry for the active nav
+  let navMode = "car";
+  let lastRerouteAt = 0;
 
   let suggestList = [];
   let suggestIdx = -1;
@@ -711,30 +721,139 @@
   /* ============================================================
      LIVE TRACKING DOT
      ============================================================ */
+  /* ============================================================
+     GEO MATH HELPERS
+     ============================================================ */
+  const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+  function haversine(a, b) {
+    const R = 6371000;
+    const dLat = (b.lat - a.lat) * D2R;
+    const dLon = (b.lon - a.lon) * D2R;
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * D2R) * Math.cos(b.lat * D2R) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+  }
+  function bearing(a, b) {
+    const y = Math.sin((b.lon - a.lon) * D2R) * Math.cos(b.lat * D2R);
+    const x = Math.cos(a.lat * D2R) * Math.sin(b.lat * D2R) -
+      Math.sin(a.lat * D2R) * Math.cos(b.lat * D2R) * Math.cos((b.lon - a.lon) * D2R);
+    return (Math.atan2(y, x) * R2D + 360) % 360;
+  }
+  function nearestRouteIndex(pos) {
+    let bestIdx = 0, bestDist = Infinity;
+    for (let i = 0; i < routeCoords.length; i++) {
+      const d = haversine(pos, { lat: routeCoords[i][0], lon: routeCoords[i][1] });
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    }
+    return { idx: bestIdx, dist: bestDist };
+  }
+
+  /* ============================================================
+     MAP / MARKER ROTATION (compass-facing navigation)
+     ============================================================ */
+  const mapsCanvasEl = document.getElementById("mapsCanvas");
+
+  function applyMapRotation(deg) {
+    mapHeading = deg;
+    mapsCanvasEl.style.transform = `rotate(${-deg}deg) scale(1.6)`;
+  }
+  function resetMapRotation() {
+    mapHeading = 0;
+    usingCompass = false;
+    mapsCanvasEl.style.transform = "";
+  }
+
+  function startCompass() {
+    if (orientationHandler) return;
+    orientationHandler = (e) => {
+      let heading = null;
+      if (typeof e.webkitCompassHeading === "number") {
+        heading = e.webkitCompassHeading; // iOS Safari: already 0-360, 0 = north
+      } else if (e.absolute && typeof e.alpha === "number") {
+        heading = (360 - e.alpha) % 360;
+      }
+      if (heading === null || Number.isNaN(heading)) return;
+      usingCompass = true;
+      if (navActive) applyMapRotation(heading);
+      updateMeMarkerRotation();
+    };
+    window.addEventListener("deviceorientationabsolute", orientationHandler, true);
+    window.addEventListener("deviceorientation", orientationHandler, true);
+  }
+  function stopCompass() {
+    if (!orientationHandler) return;
+    window.removeEventListener("deviceorientationabsolute", orientationHandler, true);
+    window.removeEventListener("deviceorientation", orientationHandler, true);
+    orientationHandler = null;
+  }
+  async function requestCompassPermission() {
+    try {
+      if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res === "granted") startCompass();
+      } else {
+        startCompass();
+      }
+    } catch {
+      startCompass();
+    }
+  }
+
+  /* ============================================================
+     LIVE "YOU ARE HERE" MARKER (Google-Maps-style facing arrow)
+     ============================================================ */
   function meIcon() {
     return L.divIcon({
-      className: "",
-      html: `<div class="maps-me-dot" style="background:${meColor()}"></div>`,
-      iconSize: [16, 16],
-      iconAnchor: [8, 8],
+      className: "maps-me-icon-wrap",
+      html: `<div class="maps-me-arrow" style="background:var(--bg,#1a73e8)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M12 2 5 21l7-4 7 4z"/></svg>
+      </div>`,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13],
     });
+  }
+  function updateMeMarkerRotation() {
+    if (!meMarker) return;
+    const el = meMarker.getElement();
+    if (!el) return;
+    const arrow = el.querySelector(".maps-me-arrow");
+    if (!arrow) return;
+    // When the map itself rotates to face-up, cancel that rotation so the
+    // arrow stays pointing straight up (forward). Otherwise, point the
+    // arrow toward the direction of travel on the static north-up map.
+    const deg = usingCompass ? mapHeading : travelHeading;
+    arrow.style.transform = `rotate(${deg}deg)`;
   }
   function updateMeMarker(lat, lon) {
     if (!meMarker) {
       meMarker = L.marker([lat, lon], { icon: meIcon(), zIndexOffset: 1000 }).addTo(map);
+      meMarker.on("add", updateMeMarkerRotation);
     } else {
-      meMarker.setIcon(meIcon());
       meMarker.setLatLng([lat, lon]);
     }
+    updateMeMarkerRotation();
     return { lat, lon };
   }
+
   function startWatching(onUpdate) {
     if (!navigator.geolocation) return;
     if (watchId !== null) navigator.geolocation.clearWatch(watchId);
     watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        const p = updateMeMarker(pos.coords.latitude, pos.coords.longitude);
-        if (onUpdate) onUpdate(p);
+        const here = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+
+        // Prefer real device heading (facing direction) when compass isn't
+        // driving rotation; else fall back to GPS course, else movement bearing.
+        if (!usingCompass) {
+          if (typeof pos.coords.heading === "number" && !Number.isNaN(pos.coords.heading)) {
+            travelHeading = pos.coords.heading;
+          } else if (lastPos && haversine(lastPos, here) > 3) {
+            travelHeading = bearing(lastPos, here);
+          }
+        }
+        lastPos = here;
+
+        updateMeMarker(here.lat, here.lon);
+        if (onUpdate) onUpdate(here);
       },
       () => { /* best-effort - live tracking just skips a beat on error */ },
       { enableHighAccuracy: true, maximumAge: 4000, timeout: 8000 }
@@ -785,7 +904,7 @@
   }
 
   /* ============================================================
-     NAVIGATION MODE (fullscreen directions + live tracking)
+     NAVIGATION MODE (fullscreen, facing-up rotation, live reroute)
      ============================================================ */
   async function startNavigation() {
     if (!currentPlace) return;
@@ -802,18 +921,49 @@
     );
   }
 
+  /* Draws the route split into a gray "already traveled" segment and a
+     colored "remaining" segment, based on the closest point on the route
+     to the current position. */
+  function drawRouteProgress(pos) {
+    if (!routeCoords.length) return;
+    const { idx } = nearestRouteIndex(pos);
+
+    if (traveledLine) map.removeLayer(traveledLine);
+    if (routeLine) map.removeLayer(routeLine);
+
+    const traveled = routeCoords.slice(0, idx + 1);
+    const remaining = routeCoords.slice(idx);
+
+    if (traveled.length > 1) {
+      traveledLine = L.polyline(traveled, { color: "#9aa0a6", weight: 6, opacity: 0.85 }).addTo(map);
+    }
+    if (remaining.length > 1) {
+      routeLine = L.polyline(remaining, { color: meColor(), weight: 6, opacity: 0.9 }).addTo(map);
+    }
+  }
+
+  async function fetchRoute(origin, mode, heading) {
+    const profile = (TRAVEL_MODES[mode] || TRAVEL_MODES.car).profile;
+    let bearingsParam = "";
+    if (typeof heading === "number" && !Number.isNaN(heading)) {
+      const h = Math.round(((heading % 360) + 360) % 360);
+      bearingsParam = `&bearings=${h},60;0,180`;
+    }
+    const url = `${OSRM}/route/v1/${profile}/${origin.lon},${origin.lat};${currentPlace.lon},${currentPlace.lat}?overview=full&geometries=geojson${bearingsParam}`;
+    const data = await fetchJson(url);
+    if (!data.routes || !data.routes.length) throw new Error("No route found");
+    return data.routes[0];
+  }
+
   async function requestRoute(origin, mode) {
     try {
-      const profile = (TRAVEL_MODES[mode] || TRAVEL_MODES.car).profile;
-      const url = `${OSRM}/route/v1/${profile}/${origin.lon},${origin.lat};${currentPlace.lon},${currentPlace.lat}?overview=full&geometries=geojson`;
-      const data = await fetchJson(url);
-      if (!data.routes || !data.routes.length) throw new Error("No route found");
-      const route = data.routes[0];
-
-      if (routeLine) map.removeLayer(routeLine);
-      const coords = route.geometry.coordinates.map((c) => [c[1], c[0]]);
-      routeLine = L.polyline(coords, { color: meColor(), weight: 6, opacity: 0.85 }).addTo(map);
-      map.fitBounds(routeLine.getBounds(), { padding: [60, 60] });
+      const heading = usingCompass ? mapHeading : travelHeading;
+      const route = await fetchRoute(origin, mode, heading);
+      routeCoords = route.geometry.coordinates.map((c) => [c[1], c[0]]);
+      if (traveledLine) { map.removeLayer(traveledLine); traveledLine = null; }
+      if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+      routeLine = L.polyline(routeCoords, { color: meColor(), weight: 6, opacity: 0.9 }).addTo(map);
+      if (!navActive) map.fitBounds(routeLine.getBounds(), { padding: [60, 60] });
 
       const km = (route.distance / 1000).toFixed(1);
       const mins = Math.round(route.duration / 60);
@@ -825,28 +975,57 @@
     }
   }
 
+  async function maybeReroute(pos) {
+    if (!navActive || !routeCoords.length) return;
+    const { dist } = nearestRouteIndex(pos);
+    const now = Date.now();
+    if (dist > 45 && now - lastRerouteAt > 8000) {
+      lastRerouteAt = now;
+      await requestRoute(pos, navMode);
+    }
+  }
+
   function enterNavMode(origin, mode) {
     navActive = true;
+    navMode = mode;
+    lastPos = origin;
     document.body.classList.add("maps-nav-fullscreen");
     mapsCard.classList.add("hidden");
     navBar.classList.add("show");
+    map.dragging.disable();
+    map.doubleClickZoom.disable();
     updateMeMarker(origin.lat, origin.lon);
-    requestRoute(origin, mode); // fetched once - route stays fixed once navigation starts
+    requestCompassPermission();
+    requestRoute(origin, mode);
     startWatching((pos) => {
-      // Only recenters the live dot; does NOT re-fetch or redraw the route.
-      map.panTo([pos.lat, pos.lon]);
+      drawRouteProgress(pos);
+      maybeReroute(pos);
+      if (usingCompass) {
+        // Map already rotates from the compass listener; just keep it centered.
+        map.setView([pos.lat, pos.lon], map.getZoom(), { animate: true });
+      } else {
+        map.panTo([pos.lat, pos.lon]);
+      }
     });
     map.setView([origin.lat, origin.lon], 17);
   }
 
   function exitNavMode() {
     navActive = false;
+    stopCompass();
+    resetMapRotation();
+    updateMeMarkerRotation();
+    map.dragging.enable();
+    map.doubleClickZoom.enable();
     document.body.classList.remove("maps-nav-fullscreen");
     mapsCard.classList.remove("hidden");
     navBar.classList.remove("show");
     if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+    if (traveledLine) { map.removeLayer(traveledLine); traveledLine = null; }
+    routeCoords = [];
   }
   navExitBtn.addEventListener("click", exitNavMode);
+
 
   /* ============================================================
      AUTH
