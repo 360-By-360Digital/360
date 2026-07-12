@@ -1,5 +1,6 @@
 /* ============================================================
    360 MAPS — assets/js/360Maps.js
+   Fully free stack, no API key / no billing required:
      - Map tiles:   OpenStreetMap
      - Search/geocoding: Nominatim (OpenStreetMap)
      - Directions:  OSRM public demo server
@@ -7,6 +8,7 @@
    ============================================================ */
 (function () {
   "use strict";
+  function run() {
 
   const RECENT_KEY = "360_maps_recent";
   const MAX_RECENT = 8;
@@ -155,6 +157,7 @@
       if (!res.ok) return null;
       const data = await res.json();
       return {
+        title: data.title || title,
         description: data.extract || null,
         photo: data.thumbnail ? data.thumbnail.source : (data.originalimage ? data.originalimage.source : null),
         url: data.content_urls && data.content_urls.desktop ? data.content_urls.desktop.page : null,
@@ -164,14 +167,60 @@
     }
   }
 
-  async function enrichWithWiki(nominatimResult) {
+  /* Nearby-article fallback: most addresses have no direct OSM wikipedia tag,
+     so search Wikipedia geographically around the coordinate as a best-effort
+     way to still surface a description and photo. */
+  async function fetchWikiNearby(lat, lon) {
+    try {
+      const url = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lon}&gsradius=300&gslimit=1&format=json&origin=*`;
+      const data = await fetchJson(url);
+      const hit = data.query && data.query.geosearch && data.query.geosearch[0];
+      if (!hit) return null;
+      return fetchWikiSummary(hit.title, "en");
+    } catch {
+      return null;
+    }
+  }
+
+  /* Second photo via Wikidata's P18 (image) claim, when OSM links a wikidata id */
+  async function fetchWikidataImage(qid) {
+    try {
+      const url = `https://www.wikidata.org/wiki/Special:EntityData/${qid}.json`;
+      const data = await fetchJson(url);
+      const entity = data.entities && data.entities[qid];
+      const claims = entity && entity.claims && entity.claims.P18;
+      const filename = claims && claims[0] && claims[0].mainsnak && claims[0].mainsnak.datavalue && claims[0].mainsnak.datavalue.value;
+      if (!filename) return null;
+      return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=480`;
+    } catch {
+      return null;
+    }
+  }
+
+  async function enrichWithWiki(nominatimResult, lat, lon) {
     const extratags = nominatimResult.extratags || {};
+    let summary = null;
+
     const wikipediaTag = extratags.wikipedia; // e.g. "en:Statue of Liberty"
-    if (!wikipediaTag) return null;
-    const [lang, ...rest] = wikipediaTag.split(":");
-    const title = rest.join(":");
-    if (!title) return null;
-    return fetchWikiSummary(title, lang);
+    if (wikipediaTag) {
+      const [lang, ...rest] = wikipediaTag.split(":");
+      const title = rest.join(":");
+      if (title) summary = await fetchWikiSummary(title, lang);
+    }
+
+    if (!summary) {
+      summary = await fetchWikiNearby(lat, lon);
+    }
+
+    const photos = [];
+    if (summary && summary.photo) photos.push(summary.photo);
+
+    if (extratags.wikidata) {
+      const secondPhoto = await fetchWikidataImage(extratags.wikidata);
+      if (secondPhoto && !photos.includes(secondPhoto)) photos.push(secondPhoto);
+    }
+
+    return { summary, photos };
   }
 
   /* ============================================================
@@ -239,28 +288,61 @@
 
     const nameDetails = result.namedetails || {};
     const address = result.address || {};
-    const name = nameDetails.name || address.amenity || address.building || result.display_name.split(",")[0];
+    const extratags = result.extratags || {};
+    const name = nameDetails.name || address.amenity || address.building || address.shop || result.display_name.split(",")[0];
     const typeLabel = (result.type || result.class || "").replace(/_/g, " ");
 
-    let wiki = null;
-    try { wiki = await enrichWithWiki(result); } catch { /* best effort */ }
+    let enrichment = null;
+    try { enrichment = await enrichWithWiki(result, lat, lon); } catch { /* best effort */ }
+    const wiki = enrichment && enrichment.summary;
+    const photos = (enrichment && enrichment.photos) || [];
 
-    const photosHtml = wiki && wiki.photo
-      ? `<div class="maps-detail-photos"><img src="${wiki.photo}" alt="${escapeHtml(name)}" loading="lazy"></div>`
+    const photosHtml = photos.length
+      ? `<div class="maps-detail-photos">${photos.map((u) => `<img src="${u}" alt="${escapeHtml(name)}" loading="lazy">`).join("")}</div>`
       : "";
 
     const descHtml = wiki && wiki.description
       ? `<div class="maps-detail-desc">${escapeHtml(wiki.description)}</div>`
       : "";
 
-    const websiteRaw = result.extratags && (result.extratags.website || result.extratags["contact:website"]);
+    const websiteRaw = extratags.website || extratags["contact:website"] || extratags["contact:facebook"];
     const siteHtml = websiteRaw
       ? `<div class="maps-detail-row">${icons.globe}<a href="${websiteRaw}" target="_blank" rel="noopener">${escapeHtml(websiteRaw.replace(/^https?:\/\//, ""))}</a></div>`
-      : (wiki && wiki.url ? `<div class="maps-detail-row">${icons.globe}<a href="${wiki.url}" target="_blank" rel="noopener">Wikipedia</a></div>` : "");
+      : (wiki && wiki.url ? `<div class="maps-detail-row">${icons.globe}<a href="${wiki.url}" target="_blank" rel="noopener">Wikipedia - ${escapeHtml(wiki.title || "")}</a></div>` : "");
 
-    const openingRaw = result.extratags && result.extratags.opening_hours;
+    const openingRaw = extratags.opening_hours;
     const hoursHtml = openingRaw
       ? `<div class="maps-detail-row">${icons.clock}<span>${escapeHtml(openingRaw)}</span></div>`
+      : "";
+
+    const phoneRaw = extratags.phone || extratags["contact:phone"];
+    const phoneHtml = phoneRaw
+      ? `<div class="maps-detail-row">${icons.globe}<a href="tel:${phoneRaw}">${escapeHtml(phoneRaw)}</a></div>`
+      : "";
+
+    // Address facts grid - always available from Nominatim, gives real
+    // structured information even when there's no Wikipedia article.
+    const factRows = [
+      ["Street", [address.house_number, address.road].filter(Boolean).join(" ")],
+      ["Neighborhood", address.neighbourhood || address.suburb],
+      ["City", address.city || address.town || address.village],
+      ["State / Region", address.state],
+      ["Postal code", address.postcode],
+      ["Country", address.country],
+    ].filter(([, v]) => !!v);
+
+    const extraFacts = [
+      ["Cuisine", extratags.cuisine],
+      ["Brand", extratags.brand || extratags.operator],
+      ["Wheelchair access", extratags.wheelchair],
+      ["Internet access", extratags.internet_access],
+    ].filter(([, v]) => !!v);
+
+    const allFacts = [...factRows, ...extraFacts];
+    const factsHtml = allFacts.length
+      ? `<div class="maps-detail-facts">${allFacts.map(([k, v]) => `
+          <div class="maps-fact"><span class="maps-fact-k">${escapeHtml(k)}</span><span class="maps-fact-v">${escapeHtml(String(v).replace(/_/g, " "))}</span></div>
+        `).join("")}</div>`
       : "";
 
     cardBody.innerHTML = `
@@ -275,7 +357,9 @@
         <div class="maps-detail-row">${icons.pin}<span>${escapeHtml(result.display_name)}</span></div>
         <div class="maps-detail-row"><span style="width:16px;display:inline-block;"></span><span>${lat.toFixed(5)}, ${lon.toFixed(5)}</span></div>
         ${hoursHtml}
+        ${phoneHtml}
         ${siteHtml}
+        ${factsHtml}
         <div class="maps-detail-actions">
           <button class="maps-btn" id="mapsDirectionsBtn">${icons.dir} Directions</button>
           <button class="maps-btn-outline" id="mapsSaveBtn">Save</button>
@@ -329,7 +413,7 @@
     }
     if (notice) notice.style.display = "none";
     try {
-      const { data, error } = await window.supabaseClient
+      const { data, error } = await supabaseClient
         .from("saved_locations")
         .select("*")
         .order("created_at", { ascending: false });
@@ -379,7 +463,7 @@
         const id = btn.getAttribute("data-del");
         btn.disabled = true;
         try {
-          const { error } = await window.supabaseClient.from("saved_locations").delete().eq("id", id);
+          const { error } = await supabaseClient.from("saved_locations").delete().eq("id", id);
           if (error) throw error;
           await loadSavedLocations();
         } catch (err) {
@@ -408,7 +492,7 @@
     if (!currentPlace) return;
     modalSave.disabled = true;
     try {
-      const { error } = await window.supabaseClient.from("saved_locations").insert({
+      const { error } = await supabaseClient.from("saved_locations").insert({
         user_id: currentUser.id,
         label,
         lat: currentPlace.lat,
@@ -579,19 +663,48 @@
   });
 
   /* ============================================================
-     MY LOCATION
+     GEOLOCATION (robust: high-accuracy first, falls back to
+     low-accuracy so it doesn't hang forever waiting for GPS lock)
      ============================================================ */
-  function useMyLocation() {
-    if (!navigator.geolocation) { showError("Geolocation isn't supported by this browser"); return; }
-    setStatus("Locating...");
+  function getPosition(onOk, onFail) {
+    if (!navigator.geolocation) { onFail("Geolocation isn't supported by this browser"); return; }
+
+    let settled = false;
+    const tryLowAccuracy = () => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { if (!settled) { settled = true; onOk(pos); } },
+        (err) => { if (!settled) { settled = true; onFail(geoErrorMessage(err)); } },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+      );
+    };
+
     navigator.geolocation.getCurrentPosition(
+      (pos) => { if (!settled) { settled = true; onOk(pos); } },
+      () => { if (!settled) tryLowAccuracy(); },
+      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+    );
+  }
+
+  function geoErrorMessage(err) {
+    if (!err) return "Couldn't get your location";
+    switch (err.code) {
+      case 1: return "Location access is blocked for this site. Check your browser's site settings and allow location.";
+      case 2: return "Your device couldn't determine a location right now. Try again in a moment.";
+      case 3: return "Location request timed out. Try again.";
+      default: return "Couldn't get your location - check location permissions";
+    }
+  }
+
+  /* ── My location ── */
+  function useMyLocation() {
+    setStatus("Locating...");
+    getPosition(
       (pos) => {
         setStatus("");
         selectRawLatLng(pos.coords.latitude, pos.coords.longitude);
         startWatching();
       },
-      () => { setStatus(""); showError("Couldn't get your location - check location permissions"); },
-      { enableHighAccuracy: true, timeout: 10000 }
+      (msg) => { setStatus(""); showError(msg); }
     );
   }
 
@@ -623,31 +736,76 @@
         const p = updateMeMarker(pos.coords.latitude, pos.coords.longitude);
         if (onUpdate) onUpdate(p);
       },
-      () => { /* best-effort */ },
-      { enableHighAccuracy: true, maximumAge: 4000 }
+      () => { /* best-effort - live tracking just skips a beat on error */ },
+      { enableHighAccuracy: true, maximumAge: 4000, timeout: 8000 }
     );
+  }
+
+  /* ============================================================
+     TRANSPORT MODE PICKER
+     ============================================================ */
+  const TRAVEL_MODES = {
+    car:      { label: "Car",     profile: "driving", icon: "M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11m-14 0h14m-14 0-1 5v3h2v-2h12v2h2v-3l-1-5M7.5 15.5h.01M16.5 15.5h.01" },
+    transit:  { label: "Transit", profile: "foot",    icon: "M4 16V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 11h16M8 21l-2-3m10 3 2-3M8 8h8" },
+    bike:     { label: "Bike",    profile: "cycling", icon: "M5 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm14 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM5 16l4-7h5l3 7M9 9 8 6h3" },
+    walk:     { label: "Walk",    profile: "foot",    icon: "M13 4a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM7 21l2-6 2 2 1 4M9 15l-1-5 3-2 3 3 3 1M11 10l1-3" },
+  };
+
+  function openModePicker() {
+    return new Promise((resolve) => {
+      const overlay = document.createElement("div");
+      overlay.className = "maps-modal-overlay show";
+      overlay.innerHTML = `
+        <div class="maps-modal maps-mode-modal">
+          <h3>Directions by</h3>
+          <div class="maps-mode-grid">
+            ${Object.entries(TRAVEL_MODES).map(([key, m]) => `
+              <button class="maps-mode-btn" data-mode="${key}">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${m.icon}"/></svg>
+                <span>${m.label}</span>
+              </button>
+            `).join("")}
+          </div>
+          <div class="maps-modal-actions">
+            <button class="maps-btn-outline" id="mapsModeCancel">Cancel</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+
+      function cleanup(result) {
+        overlay.remove();
+        resolve(result);
+      }
+      overlay.querySelectorAll("[data-mode]").forEach((btn) => {
+        btn.addEventListener("click", () => cleanup(btn.dataset.mode));
+      });
+      overlay.querySelector("#mapsModeCancel").addEventListener("click", () => cleanup(null));
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) cleanup(null); });
+    });
   }
 
   /* ============================================================
      NAVIGATION MODE (fullscreen directions + live tracking)
      ============================================================ */
-  function startNavigation() {
+  async function startNavigation() {
     if (!currentPlace) return;
-    if (!navigator.geolocation) { showError("Geolocation isn't supported by this browser"); return; }
+    const mode = await openModePicker();
+    if (!mode) return;
+
     setStatus("Getting your location...");
-    navigator.geolocation.getCurrentPosition(
+    getPosition(
       (pos) => {
         setStatus("");
-        enterNavMode({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        enterNavMode({ lat: pos.coords.latitude, lon: pos.coords.longitude }, mode);
       },
-      () => { setStatus(""); showError("Couldn't get your location - check location permissions"); },
-      { enableHighAccuracy: true, timeout: 10000 }
+      (msg) => { setStatus(""); showError(msg); }
     );
   }
 
-  async function requestRoute(origin) {
+  async function requestRoute(origin, mode) {
     try {
-      const url = `${OSRM}/route/v1/driving/${origin.lon},${origin.lat};${currentPlace.lon},${currentPlace.lat}?overview=full&geometries=geojson`;
+      const profile = (TRAVEL_MODES[mode] || TRAVEL_MODES.car).profile;
+      const url = `${OSRM}/route/v1/${profile}/${origin.lon},${origin.lat};${currentPlace.lon},${currentPlace.lat}?overview=full&geometries=geojson`;
       const data = await fetchJson(url);
       if (!data.routes || !data.routes.length) throw new Error("No route found");
       const route = data.routes[0];
@@ -655,32 +813,35 @@
       if (routeLine) map.removeLayer(routeLine);
       const coords = route.geometry.coordinates.map((c) => [c[1], c[0]]);
       routeLine = L.polyline(coords, { color: meColor(), weight: 6, opacity: 0.85 }).addTo(map);
-      if (!navActive) map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+      map.fitBounds(routeLine.getBounds(), { padding: [60, 60] });
 
       const km = (route.distance / 1000).toFixed(1);
       const mins = Math.round(route.duration / 60);
       navEta.textContent = `${mins} min`;
-      navSub.textContent = `${km} km - ${shortLabel(currentPlace.label) || "Destination"}`;
+      const modeNote = mode === "transit" ? " (walking route shown - live transit routing isn't available on the free routing engine used here)" : "";
+      navSub.textContent = `${km} km - ${shortLabel(currentPlace.label) || "Destination"}${modeNote}`;
     } catch (err) {
       showError("Couldn't get directions to that location");
     }
   }
 
-  function enterNavMode(origin) {
+  function enterNavMode(origin, mode) {
     navActive = true;
+    document.body.classList.add("maps-nav-fullscreen");
     mapsCard.classList.add("hidden");
     navBar.classList.add("show");
     updateMeMarker(origin.lat, origin.lon);
-    requestRoute(origin);
+    requestRoute(origin, mode); // fetched once - route stays fixed once navigation starts
     startWatching((pos) => {
-      map.setView([pos.lat, pos.lon], Math.max(map.getZoom(), 17));
-      if (navActive) requestRoute(pos);
+      // Only recenters the live dot; does NOT re-fetch or redraw the route.
+      map.panTo([pos.lat, pos.lon]);
     });
     map.setView([origin.lat, origin.lon], 17);
   }
 
   function exitNavMode() {
     navActive = false;
+    document.body.classList.remove("maps-nav-fullscreen");
     mapsCard.classList.remove("hidden");
     navBar.classList.remove("show");
     if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
@@ -692,11 +853,11 @@
      ============================================================ */
   async function initAuth() {
     showListView();
-    if (!window.supabaseClient) return;
-    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    if (typeof supabaseClient === "undefined" || !supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
     currentUser = session?.user ?? null;
     await loadSavedLocations();
-    window.supabaseClient.auth.onAuthStateChange((_event, sess) => {
+    supabaseClient.auth.onAuthStateChange((_event, sess) => {
       currentUser = sess?.user ?? null;
       loadSavedLocations();
     });
@@ -705,9 +866,14 @@
   /* ============================================================
      BOOT
      ============================================================ */
-  document.addEventListener("DOMContentLoaded", () => {
-    document.body.classList.add("maps-lock");
-    initMap();
-    initAuth();
-  });
+  document.body.classList.add("maps-lock");
+  initMap();
+  initAuth();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
 })();
