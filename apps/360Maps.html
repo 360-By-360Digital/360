@@ -1,5 +1,5 @@
 <!-- ========================
-      360 Maps — v4.0.0
+      360 Maps — v3.1.0
 ========================== -->
 <!DOCTYPE html>
 <html lang="en">
@@ -135,133 +135,34 @@
     </div>
   </div>
 
-  <!-- ══════════ FULLSCREEN MAP ══════════ -->
+  <!-- ══════════ FULLSCREEN MAP (Leaflet / OpenStreetMap) ══════════ -->
   <div id="mapsCanvas"></div>
 
-  <!-- ══════════ TOP FLOATING PANEL STACK ══════════ -->
-  <div class="maps-controls" id="mapsControls">
+  <!-- ══════════ NAVIGATION MODE TOP BAR ══════════ -->
+  <div class="maps-nav-bar" id="mapsNavBar">
+    <button class="maps-nav-exit" id="mapsNavExit" aria-label="Exit navigation">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="maps-nav-info">
+      <div class="maps-nav-eta" id="mapsNavEta">--</div>
+      <div class="maps-nav-sub" id="mapsNavSub">--</div>
+    </div>
+  </div>
 
-    <div class="maps-glass-card maps-search-card">
+  <!-- ══════════ SINGLE UNIFIED FLOATING CARD ══════════ -->
+  <div class="maps-card" id="mapsCard">
+    <div class="maps-search-wrap">
       <form class="maps-search-row" id="mapsSearchForm" autocomplete="off">
-        <input id="mapsSearchInput" placeholder="Search a place, address, or landmark  (press /)" autocomplete="off" />
-        <button type="submit" class="maps-btn">Search</button>
+        <button type="submit" class="maps-search-icon-btn" aria-label="Search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </button>
+        <input id="mapsSearchInput" placeholder="Search a place or address" autocomplete="off" />
       </form>
       <div id="mapsSuggestDropdown"></div>
       <div id="mapsStatus"></div>
       <div id="mapsError"></div>
-      <div class="maps-quickcats" id="mapsQuickCats">
-        <button class="maps-quickcat-btn" data-poi="restaurant">🍽️ Food</button>
-        <button class="maps-quickcat-btn" data-poi="cafe">☕ Coffee</button>
-        <button class="maps-quickcat-btn" data-poi="fuel">⛽ Gas</button>
-        <button class="maps-quickcat-btn" data-poi="atm">🏧 ATM</button>
-        <button class="maps-quickcat-btn" data-poi="hospital">🏥 Hospital</button>
-        <button class="maps-quickcat-btn" data-poi="park">🌳 Parks</button>
-      </div>
-      <div class="maps-tabs">
-        <button class="maps-tab active" data-tab="saved">📍 Saved</button>
-        <button class="maps-tab" data-tab="trips">🧳 Trips</button>
-        <button class="maps-tab" data-tab="nearby">🔎 Nearby</button>
-      </div>
     </div>
-
-    <!-- Saved locations (default view) -->
-    <div class="maps-glass-card maps-scroll-card" id="mapsListCard">
-      <div class="maps-panel-title-row">
-        <div class="maps-panel-title">Saved Locations</div>
-        <span class="maps-count-badge" id="mapsSavedCount"></span>
-      </div>
-      <div class="maps-signin-notice" id="mapsSigninNotice" style="display:none;">
-        Sign in to save pins and access them from any device.
-      </div>
-      <div class="maps-cat-filter-row" id="mapsCatFilterRow"></div>
-      <div class="maps-saved-list" id="mapsSavedList"></div>
-    </div>
-
-    <!-- Trips panel -->
-    <div class="maps-glass-card maps-scroll-card" id="mapsTripsCard" style="display:none;">
-      <div class="maps-panel-title">Trips</div>
-      <div id="mapsTripsList"></div>
-    </div>
-
-    <!-- Nearby search results -->
-    <div class="maps-glass-card maps-scroll-card" id="mapsNearbyCard" style="display:none;">
-      <div class="maps-panel-title">Nearby</div>
-      <div class="maps-nearby-hint" id="mapsNearbyHint">Pick a category above, or drop a pin first to search around it.</div>
-      <div id="mapsNearbyList"></div>
-    </div>
-
-    <!-- Location detail (shown after search / pin drop) -->
-    <div class="maps-glass-card" id="mapsDetailCard" style="display:none;">
-      <div class="maps-back-row">
-        <button class="maps-btn-text" id="mapsBackBtn">← Back</button>
-      </div>
-      <div class="maps-detail-title" id="mapsDetailTitle">--</div>
-      <div class="maps-detail-coords">
-        <span id="mapsDetailCoords">--</span>
-        <button class="maps-copy-coords" id="mapsCopyCoords" title="Copy coordinates">📋</button>
-      </div>
-
-      <div class="maps-info-strip" id="mapsInfoStrip">
-        <span>⛰️ <b id="mapsElevation">…</b></span>
-        <span>🌡️ <b id="mapsWeather">…</b></span>
-      </div>
-
-      <div class="maps-cat-row" id="mapsDetailCatRow"></div>
-
-      <div class="maps-detail-actions">
-        <button class="maps-btn" id="mapsSaveBtn">Save</button>
-        <button class="maps-btn-outline" id="mapsCompareBtn">Compare</button>
-        <button class="maps-btn-outline" id="mapsAddStopQuickBtn" style="display:none;">＋ Trip</button>
-      </div>
-
-      <div class="maps-mode-row" id="mapsModeRow">
-        <button class="maps-mode-btn active" data-mode="car">🚗 Drive</button>
-        <button class="maps-mode-btn" data-mode="bike">🚴 Bike</button>
-        <button class="maps-mode-btn" data-mode="foot">🚶 Walk</button>
-      </div>
-      <button class="maps-btn-outline" id="mapsDirectionsBtn" style="width:100%;">Get Directions</button>
-
-      <div class="maps-directions-box" id="mapsDirectionsBox">
-        <div class="maps-directions-row"><span>Distance</span><span id="mapsDirectionsDistance">--</span></div>
-        <div class="maps-directions-row"><span>Duration</span><span id="mapsDirectionsDuration">--</span></div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ══════════ LAYER SWITCHER ══════════ -->
-  <div class="maps-layer-switcher" id="mapsLayerSwitcher">
-    <button class="maps-layer-btn active" data-style="standard" title="Standard">🗺️</button>
-    <button class="maps-layer-btn" data-style="dark" title="Dark">🌙</button>
-    <button class="maps-layer-btn" data-style="satellite" title="Satellite">🛰️</button>
-    <button class="maps-layer-btn" data-style="terrain" title="Terrain">⛰️</button>
-  </div>
-
-  <!-- ══════════ FLOATING ACTION BUTTONS ══════════ -->
-  <div class="maps-fab-stack">
-    <button class="maps-fab" id="mapsMeasureBtn" title="Measure distance (M)">📏</button>
-    <button class="maps-fab" id="mapsFullscreenBtn" title="Fullscreen (F)">⛶</button>
-    <button class="maps-fab" id="mapsLocateBtn" title="My location">🎯</button>
-  </div>
-
-  <!-- Measure tool readout -->
-  <div class="maps-measure-readout" id="mapsMeasureReadout" style="display:none;">
-    <span id="mapsMeasureText">Click points on the map to measure. Double-click to finish.</span>
-    <button class="maps-btn-text" id="mapsMeasureClear">Clear</button>
-    <button class="maps-btn-text" id="mapsMeasureDone">Done</button>
-  </div>
-
-  <!-- Compare panel -->
-  <div class="maps-modal-overlay" id="mapsCompareOverlay">
-    <div class="maps-modal">
-      <h3>Compare distance</h3>
-      <p style="font-size:13px;color:var(--maps-muted);margin:0 0 10px;">Pick a saved place to measure the straight-line distance from your selected pin.</p>
-      <select id="mapsCompareSelect" class="maps-modal-select"></select>
-      <div id="mapsCompareResult" class="maps-compare-result"></div>
-      <div class="maps-modal-actions">
-        <button class="maps-btn-outline" id="mapsCompareCancel">Close</button>
-      </div>
-    </div>
+    <div class="maps-card-body" id="mapsCardBody"></div>
   </div>
 
   <!-- Save modal -->
@@ -270,8 +171,6 @@
       <h3>Save this location</h3>
       <input id="mapsModalLabel" type="text" placeholder="Label (e.g. Mom's house)" />
       <textarea id="mapsModalNote" rows="2" placeholder="Note (optional)"></textarea>
-      <div class="maps-panel-title" style="margin-top:4px;">Category</div>
-      <div class="maps-cat-row" id="mapsModalCatRow"></div>
       <div class="maps-modal-actions">
         <button class="maps-btn-outline" id="mapsModalCancel">Cancel</button>
         <button class="maps-btn" id="mapsModalSave">Save</button>
