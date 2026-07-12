@@ -1,843 +1,1103 @@
-/* ========================================================
-   360 Maps — v4.0.0 client logic
-   Built entirely on free, keyless services:
-   OpenStreetMap / CARTO / Esri / OpenTopoMap tiles, Nominatim
-   geocoding, OSRM + FOSSGIS routing, Overpass POI search,
-   Open-Elevation, Open-Meteo. No tracking, no ads, no billing.
-======================================================== */
+/* ============================================================
+   360 MAPS — assets/js/360Maps.js
+   Fully free stack, no API key / no billing required:
+     - Map tiles:   OpenStreetMap
+     - Search/geocoding: Nominatim (OpenStreetMap)
+     - Directions:  OSRM public demo server
+     - Photos/description for landmarks: Wikipedia REST API
+   ============================================================ */
 (function () {
-  const SUPABASE_URL = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
-  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  "use strict";
+  function run() {
 
-  // ── Shared state ──
-  let map, marker, routeLine;
+  const RECENT_KEY = "360_maps_recent";
+  const MAX_RECENT = 8;
+  const NOMINATIM = "https://nominatim.openstreetmap.org";
+  const OSRM = "https://router.project-osrm.org";
+
+  let map = null;
+  let marker = null;
+  let meMarker = null;
+  let routeLine = null;
+  let traveledLine = null;
+  let watchId = null;
+  let orientationHandler = null;
+  let navActive = false;
   let currentUser = null;
-  let savedPlaces = [];
-  let selected = null;              // { lat, lng, label, address }
-  let myPosition = null;            // [lat, lng]
-  let myAccuracyCircle = null;
-  let suggestTimer = null, lastSuggestId = 0;
-  let travelMode = 'car';           // car | bike | foot
-  let activeCatFilter = 'all';
-  let activeTrip = null;
-  let tripStopMarkers = [];
-  let measuring = false;
-  let measurePoints = [];
-  let measureLine = null, measureMarkers = [];
-  let nearbyMarkers = [];
-  let lastPoiTag = null;
+  let currentPlace = null; // { lat, lon, label }
 
-  const CATS = [
-    { id: 'home', icon: '🏠', label: 'Home' },
-    { id: 'work', icon: '💼', label: 'Work' },
-    { id: 'food', icon: '🍽️', label: 'Food' },
-    { id: 'shopping', icon: '🛍️', label: 'Shopping' },
-    { id: 'nature', icon: '🌳', label: 'Nature' },
-    { id: 'favorite', icon: '⭐', label: 'Favorite' },
-    { id: 'other', icon: '📍', label: 'Other' },
-  ];
-  const POI_TAGS = {
-    restaurant: 'amenity=restaurant', cafe: 'amenity=cafe', fuel: 'amenity=fuel',
-    atm: 'amenity=atm', hospital: 'amenity=hospital', park: 'leisure=park',
+  let mapHeading = 0;          // current compass rotation applied to the map (0 = north up)
+  let usingCompass = false;    // true once real device-orientation data has arrived
+  let travelHeading = 0;       // fallback heading derived from GPS movement
+  let lastPos = null;          // { lat, lon } of previous fix, for bearing fallback
+  let routeCoords = [];        // full [lat,lon] route geometry for the active nav
+  let navMode = "car";
+  let lastRerouteAt = 0;
+
+  let suggestList = [];
+  let suggestIdx = -1;
+  let suggestTimer = null;
+  let lastQuery = "";
+
+  const $ = (s) => document.querySelector(s);
+
+  const searchForm    = $("#mapsSearchForm");
+  const searchInput   = $("#mapsSearchInput");
+  const dropdown      = $("#mapsSuggestDropdown");
+  const errorBox      = $("#mapsError");
+  const statusBox     = $("#mapsStatus");
+
+  const mapsCard      = $("#mapsCard");
+  const cardBody       = $("#mapsCardBody");
+
+  const modalOverlay   = $("#mapsModalOverlay");
+  const modalLabel     = $("#mapsModalLabel");
+  const modalNote      = $("#mapsModalNote");
+  const modalSave      = $("#mapsModalSave");
+  const modalCancel    = $("#mapsModalCancel");
+
+  const navBar          = $("#mapsNavBar");
+  const navExitBtn       = $("#mapsNavExit");
+  const navEta             = $("#mapsNavEta");
+  const navSub              = $("#mapsNavSub");
+
+  /* ── helpers ── */
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = "block";
+    setTimeout(() => { errorBox.style.display = "none"; }, 4500);
+  }
+  function setStatus(msg) { statusBox.textContent = msg || ""; }
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+  }
+  function shortLabel(label) { return label ? label.split(",")[0] : "Dropped pin"; }
+  function meColor() {
+    const c = getComputedStyle(document.body).getPropertyValue("--cursor-color").trim();
+    return c || "#1a73e8";
+  }
+  async function fetchJson(url) {
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error("Request failed");
+    return res.json();
+  }
+
+  const icons = {
+    pin: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-7.58 7-12A7 7 0 0 0 5 10c0 4.42 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>`,
+    clock: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`,
+    search: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>`,
+    x: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
+    back: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>`,
+    globe: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg>`,
+    close: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
+    dir: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>`,
   };
-  const POI_ICON = { restaurant: '🍽️', cafe: '☕', fuel: '⛽', atm: '🏧', hospital: '🏥', park: '🌳' };
 
-  const RECENTS_KEY = '360maps_recent_searches';
-  function getRecents() { try { return JSON.parse(localStorage.getItem(RECENTS_KEY) || '[]'); } catch { return []; } }
-  function pushRecent(entry) {
-    let r = getRecents().filter(x => x.label !== entry.label);
-    r.unshift(entry); r = r.slice(0, 8);
-    localStorage.setItem(RECENTS_KEY, JSON.stringify(r));
+  /* ── recent searches ── */
+  function getRecent() {
+    try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; }
+  }
+  function addRecent(item) {
+    let list = getRecent().filter((r) => r.label.toLowerCase() !== item.label.toLowerCase());
+    list.unshift(item);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, MAX_RECENT)));
+  }
+  function removeRecent(label) {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(getRecent().filter((r) => r.label !== label)));
   }
 
-  const els = {};
-  ['mapsSearchForm','mapsSearchInput','mapsSuggestDropdown','mapsStatus','mapsError','mapsQuickCats',
-   'mapsListCard','mapsSigninNotice','mapsSavedList','mapsSavedCount','mapsCatFilterRow',
-   'mapsTripsCard','mapsTripsList','mapsNearbyCard','mapsNearbyList','mapsNearbyHint',
-   'mapsDetailCard','mapsBackBtn','mapsDetailTitle','mapsDetailCoords','mapsCopyCoords',
-   'mapsInfoStrip','mapsElevation','mapsWeather','mapsDetailCatRow',
-   'mapsSaveBtn','mapsCompareBtn','mapsAddStopQuickBtn','mapsModeRow',
-   'mapsDirectionsBtn','mapsDirectionsBox','mapsDirectionsDistance','mapsDirectionsDuration',
-   'mapsCompareOverlay','mapsCompareSelect','mapsCompareResult','mapsCompareCancel',
-   'mapsModalOverlay','mapsModalLabel','mapsModalNote','mapsModalCatRow','mapsModalCancel','mapsModalSave',
-   'mapsLayerSwitcher','mapsMeasureBtn','mapsFullscreenBtn','mapsLocateBtn',
-   'mapsMeasureReadout','mapsMeasureText','mapsMeasureClear','mapsMeasureDone',
-  ].forEach(id => els[id] = document.getElementById(id));
-
-  function esc(s) { return (s ?? '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  function fmtCoord(lat, lng) { return `${lat.toFixed(5)}, ${lng.toFixed(5)}`; }
-  window.addEventListener('offline', () => setStatus("⚠️ You're offline — search and directions need a connection."));
-  window.addEventListener('online', () => setStatus(''));
-  function haversineKm(lat1, lon1, lat2, lon2) {
-    const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  }
-  function catMeta(id) { return CATS.find(c => c.id === id) || CATS[CATS.length - 1]; }
-
-  let toastEl = null;
-  function toast(msg) {
-    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'maps-toast'; document.body.appendChild(toastEl); }
-    toastEl.textContent = msg; toastEl.classList.add('show');
-    setTimeout(() => toastEl.classList.remove('show'), 2200);
-  }
-  function setStatus(m) { els.mapsStatus.textContent = m || ''; }
-  function setError(m) { els.mapsError.textContent = m || ''; }
-  function openAuthPopup() { document.getElementById('auth-popup')?.classList.remove('hidden'); }
-
-  /* ════════════════════════════════════════════════════
-     MAP + TILE LAYERS
-  ════════════════════════════════════════════════════ */
-  const TILE_LAYERS = {
-    standard: { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attr: '&copy; OpenStreetMap contributors', maxZoom: 19 },
-    dark:     { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', attr: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19 },
-    satellite:{ url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr: 'Tiles &copy; Esri', maxZoom: 19 },
-    terrain:  { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attr: '&copy; OpenStreetMap, SRTM | &copy; OpenTopoMap', maxZoom: 17 },
-  };
-  let tileLayer = null;
-  function setTileLayer(style) {
-    const cfg = TILE_LAYERS[style] || TILE_LAYERS.standard;
-    if (tileLayer) map.removeLayer(tileLayer);
-    tileLayer = L.tileLayer(cfg.url, { maxZoom: cfg.maxZoom, attribution: cfg.attr }).addTo(map);
-    localStorage.setItem('360maps_tile_style', style);
-    els.mapsLayerSwitcher.querySelectorAll('.maps-layer-btn').forEach(b => b.classList.toggle('active', b.dataset.style === style));
-  }
-  els.mapsLayerSwitcher.querySelectorAll('.maps-layer-btn').forEach(btn => {
-    btn.addEventListener('click', () => setTileLayer(btn.dataset.style));
-  });
-
+  /* ============================================================
+     MAP SETUP
+     ============================================================ */
   function initMap() {
-    map = L.map('mapsCanvas', { zoomControl: false, attributionControl: true }).setView([20, 0], 3);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-    setTileLayer(localStorage.getItem('360maps_tile_style') || (document.body.classList.contains('dark') ? 'dark' : 'standard'));
+    map = L.map("mapsCanvas", { zoomControl: true, attributionControl: true }).setView([20, 0], 3);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19,
+    }).addTo(map);
 
-    map.on('click', (e) => {
-      if (measuring) { addMeasurePoint(e.latlng); return; }
-      selectLocation(e.latlng.lat, e.latlng.lng, null);
-    });
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        myPosition = [pos.coords.latitude, pos.coords.longitude];
-        if (!currentUser) map.setView(myPosition, 12);
-        renderSavedList();
-      }, () => {}, { timeout: 5000 });
-    }
-  }
-
-  /* ════════════════════════════════════════════════════
-     LOCATION SELECTION + DETAIL CARD
-  ════════════════════════════════════════════════════ */
-  function showDetail() {
-    els.mapsListCard.style.display = 'none';
-    els.mapsTripsCard.style.display = 'none';
-    els.mapsNearbyCard.style.display = 'none';
-    els.mapsDetailCard.style.display = '';
-    els.mapsDirectionsBox.style.display = 'none';
-  }
-  function showTab(tab) {
-    els.mapsDetailCard.style.display = 'none';
-    els.mapsListCard.style.display = tab === 'saved' ? '' : 'none';
-    els.mapsTripsCard.style.display = tab === 'trips' ? '' : 'none';
-    els.mapsNearbyCard.style.display = tab === 'nearby' ? '' : 'none';
-    document.querySelectorAll('.maps-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-    if (tab === 'trips') loadTrips();
-    if (routeLine && tab !== 'trips') { map.removeLayer(routeLine); routeLine = null; }
-  }
-  document.querySelectorAll('.maps-tab').forEach(btn => btn.addEventListener('click', () => showTab(btn.dataset.tab)));
-
-  function selectLocation(lat, lng, label, address) {
-    selected = { lat, lng, label, address, category: null };
-    if (marker) map.removeLayer(marker);
-    marker = L.marker([lat, lng]).addTo(map);
-    map.flyTo([lat, lng], Math.max(map.getZoom(), 14), { duration: 0.6 });
-
-    els.mapsDetailTitle.textContent = label || address || 'Locating…';
-    document.getElementById('mapsDetailCoords').textContent = fmtCoord(lat, lng);
-    renderDetailCatRow(null);
-    els.mapsAddStopQuickBtn.style.display = activeTrip ? '' : 'none';
-    showDetail();
-    fetchElevationAndWeather(lat, lng);
-    if (label) pushRecent({ lat, lng, label, address });
-    else reverseGeocode(lat, lng);
-  }
-
-  async function reverseGeocode(lat, lng) {
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`, { headers: { 'Accept-Language': navigator.language || 'en' } });
-      const d = await res.json();
-      if (selected && selected.lat === lat && selected.lng === lng && !selected.label) {
-        const name = d.display_name ? d.display_name.split(',')[0] : 'Dropped pin';
-        selected.label = name; selected.address = d.display_name;
-        els.mapsDetailTitle.textContent = name;
+    // Drop a pin only on a genuine tap/click - not at the end of a drag.
+    // Leaflet's own click-after-drag suppression isn't reliable on every
+    // input device, so distance + time are measured manually here.
+    let downPoint = null;
+    let downTime = 0;
+    map.on("mousedown", (e) => { downPoint = e.containerPoint; downTime = Date.now(); });
+    map.on("mouseup", (e) => {
+      if (!downPoint) return;
+      const dist = downPoint.distanceTo(e.containerPoint);
+      const elapsed = Date.now() - downTime;
+      downPoint = null;
+      if (dist < 8 && elapsed < 600) {
+        selectRawLatLng(e.latlng.lat, e.latlng.lng);
       }
-    } catch (e) {
-      if (selected && !selected.label) els.mapsDetailTitle.textContent = 'Dropped pin';
-    }
-  }
-
-  function renderDetailCatRow(activeId) {
-    els.mapsDetailCatRow.innerHTML = CATS.map(c => `<span class="maps-cat-chip mini${activeId===c.id?' active':''}">${c.icon}</span>`).join('');
-  }
-
-  els.mapsCopyCoords.addEventListener('click', () => {
-    if (!selected) return;
-    navigator.clipboard.writeText(fmtCoord(selected.lat, selected.lng)).then(() => toast('📋 Coordinates copied')).catch(() => {});
-  });
-
-  async function fetchElevationAndWeather(lat, lng) {
-    els.mapsElevation.textContent = '…'; els.mapsWeather.textContent = '…';
-    fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`)
-      .then(r => r.json())
-      .then(d => { const m = d?.results?.[0]?.elevation; els.mapsElevation.textContent = (m != null) ? `${Math.round(m)} m` : '—'; })
-      .catch(() => { els.mapsElevation.textContent = '—'; });
-
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`)
-      .then(r => r.json())
-      .then(d => {
-        const w = d?.current_weather;
-        if (!w) { els.mapsWeather.textContent = '—'; return; }
-        els.mapsWeather.textContent = `${Math.round(w.temperature)}°C, ${weatherLabel(w.weathercode)}`;
-      })
-      .catch(() => { els.mapsWeather.textContent = '—'; });
-  }
-  function weatherLabel(code) {
-    const map = { 0:'Clear', 1:'Mostly clear', 2:'Partly cloudy', 3:'Overcast', 45:'Fog', 48:'Fog',
-      51:'Drizzle', 61:'Rain', 63:'Rain', 65:'Heavy rain', 71:'Snow', 73:'Snow', 75:'Heavy snow',
-      80:'Showers', 95:'Storms' };
-    return map[code] || 'Unknown';
-  }
-
-  els.mapsBackBtn.addEventListener('click', () => showTab(document.querySelector('.maps-tab.active')?.dataset.tab || 'saved'));
-
-  /* ════════════════════════════════════════════════════
-     SEARCH (Nominatim, debounced autocomplete + recents)
-  ════════════════════════════════════════════════════ */
-  els.mapsSearchInput.addEventListener('focus', () => {
-    if (els.mapsSearchInput.value.trim()) return;
-    const recents = getRecents();
-    if (!recents.length) return;
-    els.mapsSuggestDropdown.innerHTML = `<div class="maps-suggest-label">Recent</div>` + recents.map((r, i) => `
-      <div class="maps-suggest-item" data-recent="${i}">
-        <div class="maps-suggest-main">🕐 ${esc(r.label)}</div>
-        <div class="maps-suggest-sub">${esc(r.address || '')}</div>
-      </div>`).join('');
-    els.mapsSuggestDropdown.querySelectorAll('[data-recent]').forEach(el => {
-      el.addEventListener('click', () => {
-        const r = recents[+el.dataset.recent];
-        els.mapsSearchInput.value = r.label;
-        els.mapsSuggestDropdown.innerHTML = '';
-        selectLocation(r.lat, r.lng, r.label, r.address);
-      });
     });
-  });
-  els.mapsSearchInput.addEventListener('blur', () => setTimeout(() => { els.mapsSuggestDropdown.innerHTML = ''; }, 150));
-  els.mapsSearchInput.addEventListener('input', () => {
-    clearTimeout(suggestTimer);
-    const q = els.mapsSearchInput.value.trim();
-    if (q.length < 3) { els.mapsSuggestDropdown.innerHTML = ''; return; }
-    suggestTimer = setTimeout(() => fetchSuggestions(q), 300);
-  });
+  }
 
-  async function fetchSuggestions(q) {
-    const myId = ++lastSuggestId;
+  function placeMarker(lat, lon) {
+    if (marker) { map.removeLayer(marker); marker = null; }
+    marker = L.marker([lat, lon]).addTo(map);
+  }
+  function focusMap(lat, lon, zoom) {
+    map.setView([lat, lon], Math.max(map.getZoom(), zoom || 15));
+  }
+
+  /* ============================================================
+     GEOCODING (Nominatim) — used for both search and reverse lookup
+     ============================================================ */
+  async function nominatimSearch(query, limit) {
+    const url = `${NOMINATIM}/search?format=jsonv2&addressdetails=1&extratags=1&namedetails=1&limit=${limit || 5}&q=${encodeURIComponent(query)}`;
+    return fetchJson(url);
+  }
+  async function nominatimReverse(lat, lon) {
+    const url = `${NOMINATIM}/reverse?format=jsonv2&addressdetails=1&extratags=1&lat=${lat}&lon=${lon}`;
+    return fetchJson(url);
+  }
+
+  /* Structured full-address search: tries the raw query, and if that comes
+     back empty (common for oddly formatted full addresses), retries with
+     Nominatim's structured "street" style query as a fallback. */
+  async function robustSearch(query) {
+    let results = await nominatimSearch(query, 5);
+    if (results && results.length) return results;
+
+    // Fallback: strip extra punctuation / retry without limit narrowing
+    const cleaned = query.replace(/[,]{2,}/g, ",").trim();
+    if (cleaned !== query) {
+      results = await nominatimSearch(cleaned, 5);
+      if (results && results.length) return results;
+    }
+    throw new Error("Couldn't find that place");
+  }
+
+  /* ============================================================
+     WIKIPEDIA (photos + description for landmarks, best-effort)
+     ============================================================ */
+  async function fetchWikiSummary(title, lang) {
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&q=${encodeURIComponent(q)}`, { headers: { 'Accept-Language': navigator.language || 'en' } });
+      const url = `https://${lang || "en"}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      if (!res.ok) return null;
       const data = await res.json();
-      if (myId !== lastSuggestId) return;
-      if (!data.length) { els.mapsSuggestDropdown.innerHTML = ''; return; }
-      els.mapsSuggestDropdown.innerHTML = data.map((r, i) => `
-        <div class="maps-suggest-item" data-i="${i}">
-          <div class="maps-suggest-main">${suggestIcon(r)} ${esc(shortLabel(r))}</div>
-          <div class="maps-suggest-sub">${esc(r.display_name)}</div>
-        </div>`).join('');
-      els.mapsSuggestDropdown.querySelectorAll('[data-i]').forEach(el => {
-        el.addEventListener('click', () => {
-          const r = data[+el.dataset.i];
-          els.mapsSearchInput.value = shortLabel(r);
-          els.mapsSuggestDropdown.innerHTML = '';
-          selectLocation(+r.lat, +r.lon, shortLabel(r), r.display_name);
-        });
-      });
-    } catch (e) {}
-  }
-  function shortLabel(r) { return r.display_name.split(',')[0]; }
-  function suggestIcon(r) {
-    const cls = r.class, type = r.type;
-    if (cls === 'place' && ['city','town','village','hamlet'].includes(type)) return '🏙️';
-    if (cls === 'amenity') {
-      if (type === 'restaurant' || type === 'fast_food') return '🍽️';
-      if (type === 'cafe') return '☕';
-      if (type === 'fuel') return '⛽';
-      if (type === 'hospital') return '🏥';
-      if (type === 'school' || type === 'university') return '🎓';
-      return '📍';
+      return {
+        title: data.title || title,
+        description: data.extract || null,
+        photo: data.thumbnail ? data.thumbnail.source : (data.originalimage ? data.originalimage.source : null),
+        url: data.content_urls && data.content_urls.desktop ? data.content_urls.desktop.page : null,
+      };
+    } catch {
+      return null;
     }
-    if (cls === 'tourism') return '🎡';
-    if (cls === 'shop') return '🛍️';
-    if (cls === 'natural' || cls === 'leisure') return '🌳';
-    if (cls === 'highway') return '🛣️';
-    if (cls === 'building') return '🏢';
-    return '📍';
   }
 
-  els.mapsSearchForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    els.mapsSuggestDropdown.innerHTML = '';
-    const q = els.mapsSearchInput.value.trim();
-    if (!q) return;
-    setError(''); setStatus('Searching…');
+  /* Nearby-article fallback: most addresses have no direct OSM wikipedia tag,
+     so search Wikipedia geographically around the coordinate as a best-effort
+     way to still surface a description and photo. */
+  async function fetchWikiNearby(lat, lon) {
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&q=${encodeURIComponent(q)}`, { headers: { 'Accept-Language': navigator.language || 'en' } });
-      const data = await res.json();
-      setStatus('');
-      if (!data.length) { setError('No results found.'); return; }
-      const r = data[0];
-      selectLocation(+r.lat, +r.lon, shortLabel(r), r.display_name);
-    } catch (e) { setStatus(''); setError('Search failed — check your connection.'); }
-  });
+      const url = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lon}&gsradius=300&gslimit=1&format=json&origin=*`;
+      const data = await fetchJson(url);
+      const hit = data.query && data.query.geosearch && data.query.geosearch[0];
+      if (!hit) return null;
+      return fetchWikiSummary(hit.title, "en");
+    } catch {
+      return null;
+    }
+  }
 
-  /* ════════════════════════════════════════════════════
-     QUICK NEARBY CATEGORIES (Overpass API)
-  ════════════════════════════════════════════════════ */
-  els.mapsQuickCats.querySelectorAll('.maps-quickcat-btn').forEach(btn => {
-    btn.addEventListener('click', () => runNearbySearch(btn.dataset.poi));
-  });
-
-  async function runNearbySearch(tag) {
-    lastPoiTag = tag;
-    const center = selected ? [selected.lat, selected.lng] : (myPosition || map.getCenter());
-    const [lat, lng] = Array.isArray(center) ? center : [center.lat, center.lng];
-    showTab('nearby');
-    els.mapsNearbyHint.textContent = `Searching for ${tag} near ${selected ? esc(selected.label || 'pin') : 'your view'}…`;
-    els.mapsNearbyList.innerHTML = '';
-    nearbyMarkers.forEach(m => map.removeLayer(m)); nearbyMarkers = [];
-
-    const filter = POI_TAGS[tag];
-    const query = `[out:json][timeout:25];(node[${filter.split('=').map((s,i)=>i===0?s:`"${s}"`).join('=')}](around:2000,${lat},${lng});); out body 25;`;
+  /* Second photo via Wikidata's P18 (image) claim, when OSM links a wikidata id */
+  async function fetchWikidataImage(qid) {
     try {
-      const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(query) });
-      const data = await res.json();
-      const results = (data.elements || []).filter(el => el.tags?.name);
-      if (!results.length) { els.mapsNearbyHint.textContent = 'No results nearby. Try a different area or category.'; return; }
-      els.mapsNearbyHint.textContent = `${results.length} result${results.length===1?'':'s'} within 2 km:`;
-      results.sort((a,b) => haversineKm(lat,lng,a.lat,a.lon) - haversineKm(lat,lng,b.lat,b.lon));
-      els.mapsNearbyList.innerHTML = results.map((r, i) => `
-        <div class="maps-saved-item maps-nearby-item" data-i="${i}">
-          <div class="maps-saved-icon">${POI_ICON[tag] || '📍'}</div>
-          <div class="maps-saved-info">
-            <div class="maps-saved-name">${esc(r.tags.name)}</div>
-            <div class="maps-saved-sub">${haversineKm(lat,lng,r.lat,r.lon).toFixed(2)} km away</div>
-          </div>
-        </div>`).join('');
-      results.forEach(r => nearbyMarkers.push(L.circleMarker([r.lat, r.lon], { radius: 6, color: '#06b6d4', fillOpacity: .8 }).addTo(map)));
-      els.mapsNearbyList.querySelectorAll('[data-i]').forEach(el => {
-        el.addEventListener('click', () => {
-          const r = results[+el.dataset.i];
-          selectLocation(r.lat, r.lon, r.tags.name, r.tags['addr:street'] ? `${r.tags['addr:housenumber']||''} ${r.tags['addr:street']}` : '');
-        });
-      });
-    } catch (e) {
-      els.mapsNearbyHint.textContent = 'Nearby search failed — check your connection.';
+      const url = `https://www.wikidata.org/wiki/Special:EntityData/${qid}.json`;
+      const data = await fetchJson(url);
+      const entity = data.entities && data.entities[qid];
+      const claims = entity && entity.claims && entity.claims.P18;
+      const filename = claims && claims[0] && claims[0].mainsnak && claims[0].mainsnak.datavalue && claims[0].mainsnak.datavalue.value;
+      if (!filename) return null;
+      return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=480`;
+    } catch {
+      return null;
     }
   }
 
-  /* ════════════════════════════════════════════════════
-     SAVED PLACES (categorized, filterable)
-  ════════════════════════════════════════════════════ */
-  els.mapsSaveBtn.addEventListener('click', () => {
-    if (!currentUser) { openAuthPopup(); return; }
-    if (!selected) return;
-    els.mapsModalLabel.value = selected.label || '';
-    els.mapsModalNote.value = '';
-    renderModalCatRow('other');
-    els.mapsModalOverlay.classList.add('open');
-    els.mapsModalLabel.focus();
-  });
-  els.mapsModalCancel.addEventListener('click', () => els.mapsModalOverlay.classList.remove('open'));
-  els.mapsModalOverlay.addEventListener('click', e => { if (e.target === els.mapsModalOverlay) els.mapsModalOverlay.classList.remove('open'); });
+  async function enrichWithWiki(nominatimResult, lat, lon) {
+    const extratags = nominatimResult.extratags || {};
+    let summary = null;
 
-  let modalCatSelection = 'other';
-  function renderModalCatRow(active) {
-    modalCatSelection = active;
-    els.mapsModalCatRow.innerHTML = CATS.map(c => `<button type="button" class="maps-cat-chip${c.id===active?' active':''}" data-cat="${c.id}">${c.icon} ${c.label}</button>`).join('');
-    els.mapsModalCatRow.querySelectorAll('[data-cat]').forEach(btn => {
-      btn.addEventListener('click', () => { modalCatSelection = btn.dataset.cat; renderModalCatRow(modalCatSelection); });
-    });
-  }
-
-  els.mapsModalSave.addEventListener('click', async () => {
-    if (!currentUser || !selected) return;
-    const name = els.mapsModalLabel.value.trim() || selected.label || 'Saved place';
-    const note = els.mapsModalNote.value.trim();
-    const { data, error } = await sb.from('maps_saved_places').insert({
-      user_id: currentUser.id, name, lat: selected.lat, lng: selected.lng,
-      address: selected.address || null, notes: note || null,
-      icon: catMeta(modalCatSelection).icon, category: modalCatSelection
-    }).select().single();
-    if (error) { setError('Could not save: ' + error.message); return; }
-    savedPlaces.unshift(data);
-    els.mapsModalOverlay.classList.remove('open');
-    renderSavedList();
-    toast('📍 Saved!');
-  });
-
-  async function loadSavedPlaces() {
-    if (!currentUser) { savedPlaces = []; els.mapsSigninNotice.style.display = ''; renderSavedList(); return; }
-    els.mapsSigninNotice.style.display = 'none';
-    const { data, error } = await sb.from('maps_saved_places').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-    if (!error) savedPlaces = data || [];
-    renderSavedList();
-  }
-
-  function renderCatFilterRow() {
-    const cats = ['all', ...new Set(savedPlaces.map(p => p.category || 'other'))];
-    els.mapsCatFilterRow.innerHTML = cats.map(id => {
-      const meta = id === 'all' ? { icon: '🗂️', label: 'All' } : catMeta(id);
-      return `<button class="maps-cat-chip${activeCatFilter===id?' active':''}" data-filter="${id}">${meta.icon} ${meta.label}</button>`;
-    }).join('');
-    els.mapsCatFilterRow.querySelectorAll('[data-filter]').forEach(btn => {
-      btn.addEventListener('click', () => { activeCatFilter = btn.dataset.filter; renderSavedList(); });
-    });
-  }
-
-  function renderSavedList() {
-    els.mapsSavedCount.textContent = savedPlaces.length ? String(savedPlaces.length) : '';
-    renderCatFilterRow();
-    const list = activeCatFilter === 'all' ? savedPlaces : savedPlaces.filter(p => (p.category || 'other') === activeCatFilter);
-    if (!list.length) {
-      els.mapsSavedList.innerHTML = currentUser ? `<div class="maps-empty">No saved places${activeCatFilter!=='all'?' in this category':' yet'}. Search or click the map, then hit Save.</div>` : '';
-      return;
+    const wikipediaTag = extratags.wikipedia; // e.g. "en:Statue of Liberty"
+    if (wikipediaTag) {
+      const [lang, ...rest] = wikipediaTag.split(":");
+      const title = rest.join(":");
+      if (title) summary = await fetchWikiSummary(title, lang);
     }
-    els.mapsSavedList.innerHTML = list.map(p => {
-      const dist = myPosition ? `${haversineKm(myPosition[0], myPosition[1], p.lat, p.lng).toFixed(1)} km away` : '';
-      return `
-        <div class="maps-saved-item" data-id="${p.id}">
-          <div class="maps-saved-icon">${esc(p.icon || catMeta(p.category).icon)}</div>
-          <div class="maps-saved-info">
-            <div class="maps-saved-name">${esc(p.name)}</div>
-            <div class="maps-saved-sub">${esc(p.notes || p.address || '')}${dist ? ' · ' + dist : ''}</div>
-          </div>
-          <button class="maps-saved-del" data-del="${p.id}" title="Remove">✕</button>
-        </div>`;
-    }).join('');
-    els.mapsSavedList.querySelectorAll('.maps-saved-item').forEach(el => {
-      el.addEventListener('click', (e) => {
-        if (e.target.closest('.maps-saved-del')) return;
-        const p = savedPlaces.find(x => x.id === el.dataset.id);
-        if (p) selectLocation(p.lat, p.lng, p.name, p.address);
-      });
-    });
-    els.mapsSavedList.querySelectorAll('.maps-saved-del').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        await sb.from('maps_saved_places').delete().eq('id', btn.dataset.del);
-        savedPlaces = savedPlaces.filter(p => p.id !== btn.dataset.del);
-        renderSavedList();
-      });
-    });
-  }
 
-  /* ════════════════════════════════════════════════════
-     COMPARE DISTANCE
-  ════════════════════════════════════════════════════ */
-  els.mapsCompareBtn.addEventListener('click', () => {
-    if (!selected) return;
-    if (!savedPlaces.length) { toast('Save a few places first to compare distances.'); return; }
-    els.mapsCompareSelect.innerHTML = savedPlaces.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
-    els.mapsCompareResult.textContent = '';
-    els.mapsCompareOverlay.classList.add('open');
-    updateCompareResult();
-  });
-  els.mapsCompareSelect.addEventListener('change', updateCompareResult);
-  function updateCompareResult() {
-    const p = savedPlaces.find(x => x.id === els.mapsCompareSelect.value);
-    if (!p || !selected) return;
-    const km = haversineKm(selected.lat, selected.lng, p.lat, p.lng);
-    els.mapsCompareResult.innerHTML = `<b>${km.toFixed(2)} km</b> straight-line distance (${(km*0.621371).toFixed(2)} mi)`;
-  }
-  els.mapsCompareCancel.addEventListener('click', () => els.mapsCompareOverlay.classList.remove('open'));
-  els.mapsCompareOverlay.addEventListener('click', e => { if (e.target === els.mapsCompareOverlay) els.mapsCompareOverlay.classList.remove('open'); });
-
-  /* ════════════════════════════════════════════════════
-     DIRECTIONS (multi-modal, with graceful fallback)
-  ════════════════════════════════════════════════════ */
-  els.mapsModeRow.querySelectorAll('.maps-mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      els.mapsModeRow.querySelectorAll('.maps-mode-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      travelMode = btn.dataset.mode;
-      if (els.mapsDirectionsBox.style.display !== 'none') fetchDirections();
-    });
-  });
-
-  els.mapsDirectionsBtn.addEventListener('click', async () => {
-    if (!selected) return;
-    if (!myPosition) {
-      setError('Enable location access to get directions.');
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((pos) => { myPosition = [pos.coords.latitude, pos.coords.longitude]; fetchDirections(); }, () => setError('Location permission denied.'));
-      }
-      return;
+    if (!summary) {
+      summary = await fetchWikiNearby(lat, lon);
     }
-    fetchDirections();
-  });
 
-  async function fetchDirections() {
-    setError(''); setStatus('Getting directions…');
-    const alt = 'alternatives=true&';
-    const profileUrls = {
-      car:  [`https://routing.openstreetmap.de/routed-car/route/v1/driving/${myPosition[1]},${myPosition[0]};${selected.lng},${selected.lat}?${alt}overview=full&geometries=geojson`,
-             `https://router.project-osrm.org/route/v1/driving/${myPosition[1]},${myPosition[0]};${selected.lng},${selected.lat}?${alt}overview=full&geometries=geojson`],
-      bike: [`https://routing.openstreetmap.de/routed-bike/route/v1/bike/${myPosition[1]},${myPosition[0]};${selected.lng},${selected.lat}?overview=full&geometries=geojson`,
-             `https://router.project-osrm.org/route/v1/driving/${myPosition[1]},${myPosition[0]};${selected.lng},${selected.lat}?overview=full&geometries=geojson`],
-      foot: [`https://routing.openstreetmap.de/routed-foot/route/v1/foot/${myPosition[1]},${myPosition[0]};${selected.lng},${selected.lat}?overview=full&geometries=geojson`,
-             `https://router.project-osrm.org/route/v1/driving/${myPosition[1]},${myPosition[0]};${selected.lng},${selected.lat}?overview=full&geometries=geojson`],
-    };
-    const urls = profileUrls[travelMode] || profileUrls.car;
-    let routes = null, usedFallback = false;
-    for (let i = 0; i < urls.length; i++) {
-      try {
-        const res = await fetch(urls[i]);
-        const data = await res.json();
-        if (data.routes?.length) { routes = data.routes; usedFallback = i > 0; break; }
-      } catch (e) {}
+    const photos = [];
+    if (summary && summary.photo) photos.push(summary.photo);
+
+    if (extratags.wikidata) {
+      const secondPhoto = await fetchWikidataImage(extratags.wikidata);
+      if (secondPhoto && !photos.includes(secondPhoto)) photos.push(secondPhoto);
     }
-    setStatus('');
-    if (!routes) { setError('No route found.'); return; }
-    if (usedFallback && travelMode !== 'car') setStatus('Showing driving route — bike/walk routing unavailable right now.');
-    drawRoute(routes[0]);
-    renderRouteAlternatives(routes);
+
+    return { summary, photos };
   }
 
-  function drawRoute(route) {
-    if (routeLine) map.removeLayer(routeLine);
-    routeLine = L.geoJSON(route.geometry, { style: { color: '#3b82f6', weight: 5, opacity: .85 } }).addTo(map);
-    map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
-    const km = (route.distance / 1000).toFixed(1);
-    const mins = Math.round(route.duration / 60);
-    els.mapsDirectionsDistance.textContent = `${km} km`;
-    els.mapsDirectionsDuration.textContent = mins < 60 ? `${mins} min` : `${Math.floor(mins/60)}h ${mins%60}m`;
-    els.mapsDirectionsBox.style.display = '';
-  }
+  /* ============================================================
+     PLACE SELECTION / DETAIL RENDERING
+     ============================================================ */
+  async function selectRawLatLng(lat, lon) {
+    hideDropdown();
+    placeMarker(lat, lon);
+    focusMap(lat, lon, 16);
+    currentPlace = { lat, lon, label: null };
+    renderDetailLoading();
 
-  function renderRouteAlternatives(routes) {
-    let altBox = document.getElementById('mapsRouteAlts');
-    if (!altBox) {
-      altBox = document.createElement('div');
-      altBox.id = 'mapsRouteAlts';
-      altBox.className = 'maps-route-alts';
-      els.mapsDirectionsBox.appendChild(altBox);
-    }
-    if (routes.length < 2) { altBox.innerHTML = ''; return; }
-    altBox.innerHTML = routes.map((r, i) => `
-      <button class="maps-alt-btn${i===0?' active':''}" data-alt="${i}">
-        ${i===0?'⭐ ':''}${(r.distance/1000).toFixed(1)} km · ${Math.round(r.duration/60)} min
-      </button>`).join('');
-    altBox.querySelectorAll('[data-alt]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        altBox.querySelectorAll('.maps-alt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        drawRoute(routes[+btn.dataset.alt]);
-      });
-    });
-  }
-
-  /* ════════════════════════════════════════════════════
-     MEASURE TOOL
-  ════════════════════════════════════════════════════ */
-  els.mapsMeasureBtn.addEventListener('click', () => { measuring ? stopMeasuring() : startMeasuring(); });
-  function startMeasuring() {
-    measuring = true; measurePoints = [];
-    els.mapsMeasureBtn.classList.add('active');
-    els.mapsMeasureReadout.style.display = 'flex';
-    els.mapsMeasureText.textContent = 'Click points on the map to measure. Double-click to finish.';
-    if (measureLine) { map.removeLayer(measureLine); measureLine = null; }
-    measureMarkers.forEach(m => map.removeLayer(m)); measureMarkers = [];
-    map.doubleClickZoom.disable();
-    map.once('dblclick', () => stopMeasuring());
-  }
-  function stopMeasuring() {
-    measuring = false;
-    els.mapsMeasureBtn.classList.remove('active');
-    els.mapsMeasureReadout.style.display = 'none';
-    map.doubleClickZoom.enable();
-  }
-  function addMeasurePoint(latlng) {
-    measurePoints.push(latlng);
-    measureMarkers.push(L.circleMarker(latlng, { radius: 5, color: '#f59e0b', fillOpacity: 1 }).addTo(map));
-    if (measureLine) map.removeLayer(measureLine);
-    if (measurePoints.length > 1) {
-      measureLine = L.polyline(measurePoints, { color: '#f59e0b', weight: 4, dashArray: '6 6' }).addTo(map);
-      let total = 0;
-      for (let i = 1; i < measurePoints.length; i++) total += haversineKm(measurePoints[i-1].lat, measurePoints[i-1].lng, measurePoints[i].lat, measurePoints[i].lng);
-      els.mapsMeasureText.textContent = `Total: ${total.toFixed(2)} km (${(total*0.621371).toFixed(2)} mi) — ${measurePoints.length} points`;
+    try {
+      const r = await nominatimReverse(lat, lon);
+      await renderFromNominatim(r, lat, lon);
+    } catch {
+      renderBareDetail(null, lat, lon);
     }
   }
-  els.mapsMeasureClear.addEventListener('click', () => {
-    measurePoints = [];
-    if (measureLine) { map.removeLayer(measureLine); measureLine = null; }
-    measureMarkers.forEach(m => map.removeLayer(m)); measureMarkers = [];
-    els.mapsMeasureText.textContent = 'Click points on the map to measure. Double-click to finish.';
-  });
-  els.mapsMeasureDone.addEventListener('click', stopMeasuring);
 
-  /* ════════════════════════════════════════════════════
-     FULLSCREEN + MY LOCATION
-  ════════════════════════════════════════════════════ */
-  els.mapsFullscreenBtn.addEventListener('click', () => {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(()=>{});
-    else document.exitFullscreen?.();
-  });
-  document.addEventListener('fullscreenchange', () => {
-    els.mapsFullscreenBtn.classList.toggle('active', !!document.fullscreenElement);
-    setTimeout(() => map.invalidateSize(), 200);
-  });
-
-  els.mapsLocateBtn.addEventListener('click', () => {
-    if (!navigator.geolocation) { toast('Location not available.'); return; }
-    els.mapsLocateBtn.textContent = '…';
-    navigator.geolocation.getCurrentPosition((pos) => {
-      myPosition = [pos.coords.latitude, pos.coords.longitude];
-      els.mapsLocateBtn.textContent = '🎯';
-      map.flyTo(myPosition, 15, { duration: 0.7 });
-      if (myAccuracyCircle) map.removeLayer(myAccuracyCircle);
-      myAccuracyCircle = L.circle(myPosition, { radius: pos.coords.accuracy, color: '#3b82f6', fillOpacity: .1 }).addTo(map);
-      renderSavedList();
-    }, () => { els.mapsLocateBtn.textContent = '🎯'; toast('Could not get your location.'); }, { enableHighAccuracy: true });
-  });
-
-  /* ════════════════════════════════════════════════════
-     KEYBOARD SHORTCUTS
-  ════════════════════════════════════════════════════ */
-  const LAYER_CYCLE = ['standard', 'dark', 'satellite', 'terrain'];
-  window.addEventListener('keydown', (e) => {
-    if (['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) {
-      if (e.key === 'Escape') document.activeElement.blur();
-      return;
-    }
-    if (e.key === '/') { e.preventDefault(); els.mapsSearchInput.focus(); }
-    else if (e.key === 'm' || e.key === 'M') els.mapsMeasureBtn.click();
-    else if (e.key === 'f' || e.key === 'F') els.mapsFullscreenBtn.click();
-    else if (e.key === 'l' || e.key === 'L') {
-      const cur = localStorage.getItem('360maps_tile_style') || 'standard';
-      setTileLayer(LAYER_CYCLE[(LAYER_CYCLE.indexOf(cur) + 1) % LAYER_CYCLE.length]);
-    }
-    else if (e.key === 'Escape') { els.mapsSuggestDropdown.innerHTML = ''; if (measuring) stopMeasuring(); }
-  });
-
-  /* ════════════════════════════════════════════════════
-     TRIPS — collaborative multi-stop route planning
-  ════════════════════════════════════════════════════ */
-  let allTrips = [];
-
-  async function loadTrips() {
-    if (!currentUser) { els.mapsTripsList.innerHTML = `<div class="maps-signin-notice">Sign in to plan trips.</div>`; return; }
-    const { data: mine } = await sb.from('maps_trips').select('*').eq('user_id', currentUser.id);
-    const { data: collabRows } = await sb.from('maps_trip_collaborators').select('trip_id').eq('user_id', currentUser.id);
-    const collabIds = (collabRows || []).map(r => r.trip_id);
-    let collabTrips = [];
-    if (collabIds.length) { const { data } = await sb.from('maps_trips').select('*').in('id', collabIds); collabTrips = data || []; }
-    allTrips = [...(mine || []), ...collabTrips];
-    renderTripsList();
+  async function selectFromResult(result) {
+    const lat = parseFloat(result.lat);
+    const lon = parseFloat(result.lon);
+    hideDropdown();
+    placeMarker(lat, lon);
+    focusMap(lat, lon, 16);
+    currentPlace = { lat, lon, label: result.display_name };
+    renderDetailLoading();
+    await renderFromNominatim(result, lat, lon);
+    addRecent({ label: result.display_name, lat, lon });
   }
 
-  function renderTripsList() {
-    const newBtn = `<div class="maps-saved-item" id="newTripBtn"><div class="maps-saved-icon">➕</div><div class="maps-saved-info"><div class="maps-saved-name">New trip</div></div></div>`;
-    els.mapsTripsList.innerHTML = newBtn + (allTrips.length ? allTrips.map(t => `
-      <div class="maps-saved-item" data-trip-id="${t.id}">
-        <div class="maps-saved-icon">🧳</div>
-        <div class="maps-saved-info"><div class="maps-saved-name">${esc(t.title)}</div>
-        <div class="maps-saved-sub">${t.is_public_editable ? '🌐 anyone can edit' : ''}</div></div>
-      </div>`).join('') : `<div class="maps-empty">No trips yet.</div>`);
-    document.getElementById('newTripBtn').addEventListener('click', createTrip);
-    els.mapsTripsList.querySelectorAll('[data-trip-id]').forEach(el => el.addEventListener('click', () => openTrip(el.dataset.tripId)));
-  }
-
-  async function createTrip() {
-    if (!currentUser) return;
-    const title = prompt('Trip name:', 'My trip');
-    if (!title) return;
-    const { data, error } = await sb.from('maps_trips').insert({ user_id: currentUser.id, title }).select().single();
-    if (error) { setError(error.message); return; }
-    toast('✅ Trip created.');
-    await loadTrips();
-    openTrip(data.id);
-  }
-
-  async function canEditTrip(trip) {
-    if (!currentUser) return false;
-    if (trip.user_id === currentUser.id) return true;
-    if (trip.is_public_editable) return true;
-    const { data } = await sb.from('maps_trip_collaborators').select('user_id').eq('trip_id', trip.id).eq('user_id', currentUser.id).maybeSingle();
-    return !!data;
-  }
-
-  async function openTrip(id) {
-    let trip = allTrips.find(t => t.id === id);
-    if (!trip) { const { data } = await sb.from('maps_trips').select('*').eq('id', id).maybeSingle(); trip = data; }
-    if (!trip) { setError('Trip not found.'); return; }
-    activeTrip = trip;
-    const editable = await canEditTrip(trip);
-    const { data: stops } = await sb.from('maps_trip_stops').select('*').eq('trip_id', id).order('position', { ascending: true });
-    const isOwner = currentUser && trip.user_id === currentUser.id;
-
-    tripStopMarkers.forEach(m => map.removeLayer(m)); tripStopMarkers = [];
-    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
-    (stops || []).forEach((s, i) => tripStopMarkers.push(L.marker([s.lat, s.lng]).addTo(map).bindTooltip(`${i+1}. ${s.name}`)));
-    if (stops?.length) map.fitBounds(L.latLngBounds(stops.map(s => [s.lat, s.lng])), { padding: [50, 50] });
-
-    els.mapsTripsList.innerHTML = `
-      <div class="maps-back-row"><button class="maps-btn-text" id="tripBackBtn">← All trips</button></div>
-      <div class="maps-detail-title">${esc(trip.title)}</div>
-      <div class="maps-detail-coords">${(stops||[]).length} stop${(stops||[]).length===1?'':'s'}${editable ? ' · you can edit' : ''}</div>
-      <div class="maps-detail-actions" style="margin-bottom:10px;flex-wrap:wrap;">
-        ${editable ? `<button class="maps-btn" id="addStopBtn">＋ Add current pin</button>` : ''}
-        <button class="maps-btn-outline" id="shareTripBtn">🔗 Share</button>
-        ${(stops||[]).length >= 2 ? `<button class="maps-btn-outline" id="routeTripBtn">Route</button><button class="maps-btn-outline" id="gpxTripBtn">⬇ GPX</button>` : ''}
-        ${isOwner ? `<button class="maps-btn-outline" id="manageTripBtn">⚙️</button>` : ''}
+  function renderDetailLoading() {
+    cardBody.innerHTML = `
+      <div class="maps-back-row">
+        <button class="maps-btn-text" id="mapsBackBtn">${icons.back} Back</button>
       </div>
-      <div class="maps-saved-list">
-        ${(stops||[]).map((s, i) => `
-          <div class="maps-saved-item" data-stop-id="${s.id}">
-            ${editable ? `<div class="maps-reorder-btns"><button data-up="${s.id}" ${i===0?'disabled':''}>▲</button><button data-down="${s.id}" ${i===(stops.length-1)?'disabled':''}>▼</button></div>` : ''}
-            <div class="maps-saved-icon">${i+1}</div>
-            <div class="maps-saved-info"><div class="maps-saved-name">${esc(s.name)}</div><div class="maps-saved-sub">${esc(s.notes||'')}</div></div>
-            ${editable ? `<button class="maps-saved-del" data-remove-stop="${s.id}">✕</button>` : ''}
-          </div>`).join('')}
-      </div>`;
-
-    document.getElementById('tripBackBtn').addEventListener('click', () => { activeTrip = null; renderTripsList(); });
-    document.getElementById('addStopBtn')?.addEventListener('click', async () => {
-      if (!selected) { toast('Search or click the map to pick a spot first.'); return; }
-      await sb.from('maps_trip_stops').insert({ trip_id: id, name: selected.label || selected.address || 'Stop', lat: selected.lat, lng: selected.lng, added_by: currentUser.id, position: (stops||[]).length });
-      openTrip(id);
-    });
-    document.getElementById('shareTripBtn').addEventListener('click', () => {
-      const url = `${location.origin}${location.pathname}?trip=${trip.share_code}`;
-      navigator.clipboard.writeText(url).then(() => toast('🔗 Trip link copied!')).catch(() => toast(url));
-    });
-    document.getElementById('routeTripBtn')?.addEventListener('click', () => routeTripStops(stops));
-    document.getElementById('gpxTripBtn')?.addEventListener('click', () => exportTripGPX(trip, stops));
-    document.getElementById('manageTripBtn')?.addEventListener('click', () => manageTrip(trip));
-    els.mapsTripsList.querySelectorAll('[data-remove-stop]').forEach(btn => btn.addEventListener('click', async () => { await sb.from('maps_trip_stops').delete().eq('id', btn.dataset.removeStop); openTrip(id); }));
-    els.mapsTripsList.querySelectorAll('[data-up]').forEach(btn => btn.addEventListener('click', () => reorderStop(stops, btn.dataset.up, -1, id)));
-    els.mapsTripsList.querySelectorAll('[data-down]').forEach(btn => btn.addEventListener('click', () => reorderStop(stops, btn.dataset.down, 1, id)));
+      <div class="maps-detail-body"><div class="maps-panel-note">Loading location...</div></div>
+    `;
+    wireBack();
   }
 
-  async function reorderStop(stops, stopId, dir, tripId) {
-    const idx = stops.findIndex(s => s.id === stopId);
-    const swapIdx = idx + dir;
-    if (swapIdx < 0 || swapIdx >= stops.length) return;
-    const a = stops[idx], b = stops[swapIdx];
-    await Promise.all([
-      sb.from('maps_trip_stops').update({ position: b.position }).eq('id', a.id),
-      sb.from('maps_trip_stops').update({ position: a.position }).eq('id', b.id),
-    ]);
-    openTrip(tripId);
+  function renderBareDetail(label, lat, lon) {
+    currentPlace = { lat, lon, label };
+    cardBody.innerHTML = `
+      <div class="maps-back-row">
+        <button class="maps-btn-text" id="mapsBackBtn">${icons.back} Back</button>
+      </div>
+      <div class="maps-detail-body">
+        <div class="maps-detail-title">${escapeHtml(shortLabel(label))}</div>
+        <div class="maps-detail-type">${escapeHtml(label || `${lat.toFixed(5)}, ${lon.toFixed(5)}`)}</div>
+        <div class="maps-detail-row">${icons.pin}<span>${lat.toFixed(5)}, ${lon.toFixed(5)}</span></div>
+        <div class="maps-detail-actions">
+          <button class="maps-btn" id="mapsDirectionsBtn">${icons.dir} Directions</button>
+          <button class="maps-btn-outline" id="mapsSaveBtn">Save</button>
+        </div>
+      </div>
+    `;
+    wireDetailActions();
   }
 
-  async function routeTripStops(stops) {
-    if (!stops || stops.length < 2) return;
-    const coords = stops.map(s => `${s.lng},${s.lat}`).join(';');
+  async function renderFromNominatim(result, lat, lon) {
+    currentPlace = { lat, lon, label: result.display_name };
+    if (marker) marker.bindPopup(result.display_name).openPopup();
+
+    const nameDetails = result.namedetails || {};
+    const address = result.address || {};
+    const extratags = result.extratags || {};
+    const name = nameDetails.name || address.amenity || address.building || address.shop || result.display_name.split(",")[0];
+    const typeLabel = (result.type || result.class || "").replace(/_/g, " ");
+
+    let enrichment = null;
+    try { enrichment = await enrichWithWiki(result, lat, lon); } catch { /* best effort */ }
+    const wiki = enrichment && enrichment.summary;
+    const photos = (enrichment && enrichment.photos) || [];
+
+    const photosHtml = photos.length
+      ? `<div class="maps-detail-photos">${photos.map((u) => `<img src="${u}" alt="${escapeHtml(name)}" loading="lazy">`).join("")}</div>`
+      : "";
+
+    const descHtml = wiki && wiki.description
+      ? `<div class="maps-detail-desc">${escapeHtml(wiki.description)}</div>`
+      : "";
+
+    const websiteRaw = extratags.website || extratags["contact:website"] || extratags["contact:facebook"];
+    const siteHtml = websiteRaw
+      ? `<div class="maps-detail-row">${icons.globe}<a href="${websiteRaw}" target="_blank" rel="noopener">${escapeHtml(websiteRaw.replace(/^https?:\/\//, ""))}</a></div>`
+      : (wiki && wiki.url ? `<div class="maps-detail-row">${icons.globe}<a href="${wiki.url}" target="_blank" rel="noopener">Wikipedia - ${escapeHtml(wiki.title || "")}</a></div>` : "");
+
+    const openingRaw = extratags.opening_hours;
+    const hoursHtml = openingRaw
+      ? `<div class="maps-detail-row">${icons.clock}<span>${escapeHtml(openingRaw)}</span></div>`
+      : "";
+
+    const phoneRaw = extratags.phone || extratags["contact:phone"];
+    const phoneHtml = phoneRaw
+      ? `<div class="maps-detail-row">${icons.globe}<a href="tel:${phoneRaw}">${escapeHtml(phoneRaw)}</a></div>`
+      : "";
+
+    // Address facts grid - always available from Nominatim, gives real
+    // structured information even when there's no Wikipedia article.
+    const factRows = [
+      ["Street", [address.house_number, address.road].filter(Boolean).join(" ")],
+      ["Neighborhood", address.neighbourhood || address.suburb],
+      ["City", address.city || address.town || address.village],
+      ["State / Region", address.state],
+      ["Postal code", address.postcode],
+      ["Country", address.country],
+    ].filter(([, v]) => !!v);
+
+    const extraFacts = [
+      ["Cuisine", extratags.cuisine],
+      ["Brand", extratags.brand || extratags.operator],
+      ["Wheelchair access", extratags.wheelchair],
+      ["Internet access", extratags.internet_access],
+    ].filter(([, v]) => !!v);
+
+    const allFacts = [...factRows, ...extraFacts];
+    const factsHtml = allFacts.length
+      ? `<div class="maps-detail-facts">${allFacts.map(([k, v]) => `
+          <div class="maps-fact"><span class="maps-fact-k">${escapeHtml(k)}</span><span class="maps-fact-v">${escapeHtml(String(v).replace(/_/g, " "))}</span></div>
+        `).join("")}</div>`
+      : "";
+
+    cardBody.innerHTML = `
+      <div class="maps-back-row">
+        <button class="maps-btn-text" id="mapsBackBtn">${icons.back} Back</button>
+      </div>
+      ${photosHtml}
+      <div class="maps-detail-body">
+        <div class="maps-detail-title">${escapeHtml(name)}</div>
+        ${typeLabel ? `<div class="maps-detail-type">${escapeHtml(typeLabel.replace(/\b\w/g, (c) => c.toUpperCase()))}</div>` : ""}
+        ${descHtml}
+        <div class="maps-detail-row">${icons.pin}<span>${escapeHtml(result.display_name)}</span></div>
+        <div class="maps-detail-row"><span style="width:16px;display:inline-block;"></span><span>${lat.toFixed(5)}, ${lon.toFixed(5)}</span></div>
+        ${hoursHtml}
+        ${phoneHtml}
+        ${siteHtml}
+        ${factsHtml}
+        <div class="maps-detail-actions">
+          <button class="maps-btn" id="mapsDirectionsBtn">${icons.dir} Directions</button>
+          <button class="maps-btn-outline" id="mapsSaveBtn">Save</button>
+        </div>
+      </div>
+    `;
+    wireDetailActions();
+  }
+
+  function wireBack() {
+    const btn = $("#mapsBackBtn");
+    if (btn) btn.addEventListener("click", showListView);
+  }
+  function wireDetailActions() {
+    wireBack();
+    const saveBtn = $("#mapsSaveBtn");
+    const dirBtn = $("#mapsDirectionsBtn");
+    if (saveBtn) saveBtn.addEventListener("click", openSaveModal);
+    if (dirBtn) dirBtn.addEventListener("click", startNavigation);
+  }
+
+  /* ============================================================
+     LIST VIEW (saved locations) — same card, swapped body
+     ============================================================ */
+  function showListView() {
+    if (marker) { map.removeLayer(marker); marker = null; }
+    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+    currentPlace = null;
+    renderSavedList();
+  }
+
+  async function renderSavedList() {
+    cardBody.innerHTML = `
+      <div class="maps-panel-title">Saved Locations</div>
+      <div class="maps-signin-notice" id="mapsSigninNotice" style="display:none;">
+        Sign in to save pins and access them from any device.
+      </div>
+      <div class="maps-saved-list" id="mapsSavedList"></div>
+    `;
+    await loadSavedLocations();
+  }
+
+  async function loadSavedLocations() {
+    const notice = $("#mapsSigninNotice");
+    const list = $("#mapsSavedList");
+    if (!list) return;
+    if (!currentUser) {
+      list.innerHTML = "";
+      if (notice) notice.style.display = "block";
+      return;
+    }
+    if (notice) notice.style.display = "none";
     try {
-      const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
-      const data = await res.json();
-      if (!data.routes?.length) { setError('No route through these stops.'); return; }
-      if (routeLine) map.removeLayer(routeLine);
-      routeLine = L.geoJSON(data.routes[0].geometry, { style: { color: '#06b6d4', weight: 5, opacity: .85 } }).addTo(map);
-      map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
-      toast(`Total: ${(data.routes[0].distance/1000).toFixed(1)} km`);
-    } catch (e) { setError('Routing failed.'); }
+      const { data, error } = await supabaseClient
+        .from("saved_locations")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      renderSavedItems(data || []);
+    } catch (err) {
+      showError(err.message || "Couldn't load saved locations");
+    }
   }
 
-  function exportTripGPX(trip, stops) {
-    const points = (stops || []).map(s => `  <wpt lat="${s.lat}" lon="${s.lng}"><name>${escXml(s.name)}</name></wpt>`).join('\n');
-    const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="360 Maps" xmlns="http://www.topografix.com/GPX/1/1">\n${points}\n</gpx>`;
-    const blob = new Blob([gpx], { type: 'application/gpx+xml' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${trip.title.replace(/[^a-z0-9]+/gi,'-')}.gpx`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-  function escXml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function renderSavedItems(items) {
+    const list = $("#mapsSavedList");
+    if (!list) return;
+    if (!items.length) {
+      list.innerHTML = `<div class="maps-panel-note">No saved locations yet. Search or drop a pin, then save it.</div>`;
+      return;
+    }
+    list.innerHTML = items.map((it) => `
+      <div class="maps-saved-item" data-id="${it.id}" data-lat="${it.lat}" data-lon="${it.lon}" data-label="${encodeURIComponent(it.label)}">
+        <div class="maps-saved-pin">${icons.pin}</div>
+        <div class="maps-saved-text">
+          <div class="maps-saved-label">${escapeHtml(it.label)}</div>
+          <div class="maps-saved-coords">${it.lat.toFixed(4)}, ${it.lon.toFixed(4)}${it.note ? " - " + escapeHtml(it.note) : ""}</div>
+        </div>
+        <button class="maps-saved-del" data-del="${it.id}" aria-label="Delete">${icons.close}</button>
+      </div>
+    `).join("");
 
-  async function manageTrip(trip) {
-    const makePublic = confirm(`"${trip.title}" is ${trip.is_public_editable ? 'PUBLIC (anyone can add stops)' : 'private'}.\n\nOK = make public-editable\nCancel = keep private (collaborator-only)`);
-    await sb.from('maps_trips').update({ is_public_editable: makePublic }).eq('id', trip.id);
-    if (!makePublic) {
-      const { data: existing } = await sb.from('maps_trip_collaborators').select('user_id').eq('trip_id', trip.id);
-      const { data: profs } = existing?.length ? await sb.from('profiles').select('id,username').in('id', existing.map(r=>r.user_id)) : { data: [] };
-      const input = prompt('Collaborator usernames (comma separated):', (profs||[]).map(p=>p.username).join(', '));
-      if (input !== null) {
-        await sb.from('maps_trip_collaborators').delete().eq('trip_id', trip.id);
-        for (const un of input.split(',').map(s=>s.trim()).filter(Boolean)) {
-          const { data: p } = await sb.from('profiles').select('id').ilike('username', un).maybeSingle();
-          if (p) await sb.from('maps_trip_collaborators').insert({ trip_id: trip.id, user_id: p.id, added_by: currentUser.id });
+    list.querySelectorAll(".maps-saved-item").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        if (e.target.closest("[data-del]")) return;
+        const lat = parseFloat(el.dataset.lat);
+        const lon = parseFloat(el.dataset.lon);
+        const label = decodeURIComponent(el.dataset.label);
+        hideDropdown();
+        placeMarker(lat, lon);
+        focusMap(lat, lon, 16);
+        renderDetailLoading();
+        nominatimReverse(lat, lon)
+          .then((r) => renderFromNominatim(r, lat, lon))
+          .catch(() => renderBareDetail(label, lat, lon));
+      });
+    });
+    list.querySelectorAll("[data-del]").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute("data-del");
+        btn.disabled = true;
+        try {
+          const { error } = await supabaseClient.from("saved_locations").delete().eq("id", id);
+          if (error) throw error;
+          await loadSavedLocations();
+        } catch (err) {
+          showError(err.message || "Couldn't delete location");
         }
+      });
+    });
+  }
+
+  /* ============================================================
+     SAVE MODAL
+     ============================================================ */
+  function openSaveModal() {
+    if (!currentUser) { showError("Sign in to save locations"); return; }
+    if (!currentPlace) return;
+    modalLabel.value = currentPlace.label ? shortLabel(currentPlace.label) : "Saved place";
+    modalNote.value = "";
+    modalOverlay.classList.add("show");
+    modalLabel.focus();
+  }
+  modalCancel.addEventListener("click", () => modalOverlay.classList.remove("show"));
+  modalOverlay.addEventListener("click", (e) => { if (e.target === modalOverlay) modalOverlay.classList.remove("show"); });
+  modalSave.addEventListener("click", async () => {
+    const label = modalLabel.value.trim() || "Saved place";
+    const note = modalNote.value.trim() || null;
+    if (!currentPlace) return;
+    modalSave.disabled = true;
+    try {
+      const { error } = await supabaseClient.from("saved_locations").insert({
+        user_id: currentUser.id,
+        label,
+        lat: currentPlace.lat,
+        lon: currentPlace.lon,
+        note,
+      });
+      if (error) throw error;
+      modalOverlay.classList.remove("show");
+    } catch (err) {
+      showError(err.message || "Couldn't save location");
+    } finally {
+      modalSave.disabled = false;
+    }
+  });
+
+  /* ============================================================
+     SEARCH + SUGGESTIONS
+     ============================================================ */
+  function myLocationRow() {
+    return `<div class="maps-suggest-item" data-kind="me">
+      <span class="maps-suggest-icon">${icons.pin}</span>
+      <span class="maps-suggest-text"><div class="maps-suggest-main">Your location</div></span>
+    </div>`;
+  }
+
+  function hideDropdown() {
+    dropdown.classList.remove("visible");
+    dropdown.innerHTML = "";
+    suggestList = [];
+    suggestIdx = -1;
+  }
+
+  function buildRows(recentItems, searchItems) {
+    let html = myLocationRow();
+    suggestList = [{ kind: "me" }];
+
+    if (recentItems.length) {
+      html += `<div class="maps-suggest-section-label">Recent</div>`;
+      recentItems.forEach((it) => {
+        suggestList.push({ kind: "recent", ...it });
+        html += `<div class="maps-suggest-item" data-kind="recent" data-idx="${suggestList.length - 1}">
+          <span class="maps-suggest-icon">${icons.clock}</span>
+          <span class="maps-suggest-text"><div class="maps-suggest-main">${escapeHtml(shortLabel(it.label))}</div><div class="maps-suggest-sub">${escapeHtml(it.label)}</div></span>
+          <button class="maps-suggest-remove" data-remove="${encodeURIComponent(it.label)}" aria-label="Remove">${icons.x}</button>
+        </div>`;
+      });
+    }
+
+    if (searchItems && searchItems.length) {
+      html += `<div class="maps-suggest-section-label">Suggestions</div>`;
+      searchItems.forEach((it) => {
+        suggestList.push({ kind: "search", raw: it, label: it.display_name, lat: parseFloat(it.lat), lon: parseFloat(it.lon) });
+        const main = shortLabel(it.display_name);
+        const sub = it.display_name.split(",").slice(1).join(",").trim();
+        html += `<div class="maps-suggest-item" data-kind="search" data-idx="${suggestList.length - 1}">
+          <span class="maps-suggest-icon">${icons.search}</span>
+          <span class="maps-suggest-text"><div class="maps-suggest-main">${escapeHtml(main)}</div>${sub ? `<div class="maps-suggest-sub">${escapeHtml(sub)}</div>` : ""}</span>
+        </div>`;
+      });
+    }
+
+    dropdown.innerHTML = html;
+    dropdown.classList.add("visible");
+    wireDropdownRows();
+  }
+
+  function wireDropdownRows() {
+    dropdown.querySelectorAll(".maps-suggest-item").forEach((row) => {
+      row.addEventListener("mousedown", (e) => {
+        if (e.target.closest(".maps-suggest-remove")) return;
+        e.preventDefault();
+        const kind = row.dataset.kind;
+        if (kind === "me") {
+          searchInput.value = "";
+          hideDropdown();
+          useMyLocation();
+          return;
+        }
+        const idx = parseInt(row.dataset.idx, 10);
+        const item = suggestList[idx];
+        if (!item) return;
+        hideDropdown();
+        searchInput.value = shortLabel(item.label);
+        if (item.kind === "search" && item.raw) {
+          selectFromResult(item.raw);
+        } else {
+          selectRawLatLng(item.lat, item.lon);
+          addRecent({ label: item.label, lat: item.lat, lon: item.lon });
+        }
+      });
+    });
+    dropdown.querySelectorAll(".maps-suggest-remove").forEach((btn) => {
+      btn.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        removeRecent(decodeURIComponent(btn.dataset.remove));
+        renderForQuery(searchInput.value.trim());
+      });
+    });
+  }
+
+  async function renderForQuery(q) {
+    const recent = getRecent();
+    if (!q) {
+      buildRows(recent.slice(0, 5), []);
+      return;
+    }
+    const lower = q.toLowerCase();
+    const matchingRecent = recent.filter((r) => r.label.toLowerCase().includes(lower)).slice(0, 5);
+    buildRows(matchingRecent, []);
+
+    if (q === lastQuery) return;
+    lastQuery = q;
+    try {
+      const results = await nominatimSearch(q, 5);
+      if (searchInput.value.trim() !== q) return; // stale
+      const seen = new Set(matchingRecent.map((r) => r.label));
+      const filtered = (results || []).filter((r) => !seen.has(r.display_name));
+      buildRows(matchingRecent, filtered.slice(0, Math.max(0, 5 - matchingRecent.length + 3)));
+    } catch {
+      /* suggestions are best-effort */
+    }
+  }
+
+  searchInput.addEventListener("focus", () => renderForQuery(searchInput.value.trim()));
+  searchInput.addEventListener("input", () => {
+    clearTimeout(suggestTimer);
+    const q = searchInput.value.trim();
+    suggestTimer = setTimeout(() => renderForQuery(q), 250);
+  });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".maps-search-wrap")) hideDropdown();
+  });
+  searchInput.addEventListener("keydown", (e) => {
+    const items = dropdown.querySelectorAll(".maps-suggest-item");
+    if (!dropdown.classList.contains("visible") || !items.length) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      suggestIdx = Math.min(suggestIdx + 1, items.length - 1);
+      items.forEach((it, i) => it.classList.toggle("active", i === suggestIdx));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      suggestIdx = Math.max(suggestIdx - 1, -1);
+      items.forEach((it, i) => it.classList.toggle("active", i === suggestIdx));
+    } else if (e.key === "Escape") {
+      hideDropdown();
+    } else if (e.key === "Enter" && suggestIdx >= 0) {
+      e.preventDefault();
+      items[suggestIdx].dispatchEvent(new Event("mousedown"));
+    }
+  });
+
+  /* Full text / full-address search on submit */
+  searchForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const q = searchInput.value.trim();
+    if (!q) return;
+    hideDropdown();
+    setStatus("Searching...");
+    try {
+      const results = await robustSearch(q);
+      setStatus("");
+      await selectFromResult(results[0]);
+    } catch (err) {
+      setStatus("");
+      showError(err.message || "Couldn't find that place");
+    }
+  });
+
+  /* ============================================================
+     GEOLOCATION (robust: high-accuracy first, falls back to
+     low-accuracy so it doesn't hang forever waiting for GPS lock)
+     ============================================================ */
+  function getPosition(onOk, onFail) {
+    if (!navigator.geolocation) { onFail("Geolocation isn't supported by this browser"); return; }
+
+    let settled = false;
+    const tryLowAccuracy = () => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { if (!settled) { settled = true; onOk(pos); } },
+        (err) => { if (!settled) { settled = true; onFail(geoErrorMessage(err)); } },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+      );
+    };
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { if (!settled) { settled = true; onOk(pos); } },
+      () => { if (!settled) tryLowAccuracy(); },
+      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+    );
+  }
+
+  function geoErrorMessage(err) {
+    if (!err) return "Couldn't get your location";
+    switch (err.code) {
+      case 1: return "Location access is blocked for this site. Check your browser's site settings and allow location.";
+      case 2: return "Your device couldn't determine a location right now. Try again in a moment.";
+      case 3: return "Location request timed out. Try again.";
+      default: return "Couldn't get your location - check location permissions";
+    }
+  }
+
+  /* ── My location ── */
+  function useMyLocation() {
+    setStatus("Locating...");
+    getPosition(
+      (pos) => {
+        setStatus("");
+        selectRawLatLng(pos.coords.latitude, pos.coords.longitude);
+        startWatching();
+      },
+      (msg) => { setStatus(""); showError(msg); }
+    );
+  }
+
+  /* ============================================================
+     LIVE TRACKING DOT
+     ============================================================ */
+  /* ============================================================
+     GEO MATH HELPERS
+     ============================================================ */
+  const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+  function haversine(a, b) {
+    const R = 6371000;
+    const dLat = (b.lat - a.lat) * D2R;
+    const dLon = (b.lon - a.lon) * D2R;
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * D2R) * Math.cos(b.lat * D2R) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+  }
+  function bearing(a, b) {
+    const y = Math.sin((b.lon - a.lon) * D2R) * Math.cos(b.lat * D2R);
+    const x = Math.cos(a.lat * D2R) * Math.sin(b.lat * D2R) -
+      Math.sin(a.lat * D2R) * Math.cos(b.lat * D2R) * Math.cos((b.lon - a.lon) * D2R);
+    return (Math.atan2(y, x) * R2D + 360) % 360;
+  }
+  function nearestRouteIndex(pos) {
+    let bestIdx = 0, bestDist = Infinity;
+    for (let i = 0; i < routeCoords.length; i++) {
+      const d = haversine(pos, { lat: routeCoords[i][0], lon: routeCoords[i][1] });
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    }
+    return { idx: bestIdx, dist: bestDist };
+  }
+
+  /* ============================================================
+     MAP / MARKER ROTATION (compass-facing navigation)
+     ============================================================ */
+  const mapsCanvasEl = document.getElementById("mapsCanvas");
+
+  function applyMapRotation(deg) {
+    mapHeading = deg;
+    mapsCanvasEl.style.transform = `rotate(${-deg}deg) scale(1.6)`;
+  }
+  function resetMapRotation() {
+    mapHeading = 0;
+    usingCompass = false;
+    mapsCanvasEl.style.transform = "";
+  }
+
+  function startCompass() {
+    if (orientationHandler) return;
+    orientationHandler = (e) => {
+      let heading = null;
+      if (typeof e.webkitCompassHeading === "number") {
+        heading = e.webkitCompassHeading; // iOS Safari: already 0-360, 0 = north
+      } else if (e.absolute && typeof e.alpha === "number") {
+        heading = (360 - e.alpha) % 360;
       }
+      if (heading === null || Number.isNaN(heading)) return;
+      usingCompass = true;
+      if (navActive) applyMapRotation(heading);
+      updateMeMarkerRotation();
+    };
+    window.addEventListener("deviceorientationabsolute", orientationHandler, true);
+    window.addEventListener("deviceorientation", orientationHandler, true);
+  }
+  function stopCompass() {
+    if (!orientationHandler) return;
+    window.removeEventListener("deviceorientationabsolute", orientationHandler, true);
+    window.removeEventListener("deviceorientation", orientationHandler, true);
+    orientationHandler = null;
+  }
+  async function requestCompassPermission() {
+    try {
+      if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res === "granted") startCompass();
+      } else {
+        startCompass();
+      }
+    } catch {
+      startCompass();
     }
-    toast('✅ Trip settings updated.');
-    openTrip(trip.id);
   }
 
-  els.mapsAddStopQuickBtn.addEventListener('click', async () => {
-    if (!activeTrip || !selected) return;
-    await sb.from('maps_trip_stops').insert({ trip_id: activeTrip.id, name: selected.label || 'Stop', lat: selected.lat, lng: selected.lng, added_by: currentUser.id, position: 999 });
-    toast('Added to trip.');
-    showTab('trips'); openTrip(activeTrip.id);
+  /* ============================================================
+     LIVE "YOU ARE HERE" MARKER (Google-Maps-style facing arrow)
+     ============================================================ */
+  function meIcon() {
+    return L.divIcon({
+      className: "maps-me-icon-wrap",
+      html: `<img class="maps-me-img" src="/assets/img/360maps-me-marker.png" width="30" height="30" alt="">`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+    });
+  }
+  function updateMeMarkerRotation() {
+    if (!meMarker) return;
+    const el = meMarker.getElement();
+    if (!el) return;
+    const img = el.querySelector(".maps-me-img");
+    if (!img) return;
+    // When the map itself rotates to face-up, cancel that rotation so the
+    // icon stays pointing straight up (forward). Otherwise, point it
+    // toward the direction of travel on the static north-up map.
+    const deg = usingCompass ? mapHeading : travelHeading;
+    img.style.transform = `rotate(${deg}deg)`;
+  }
+  function updateMeMarker(lat, lon) {
+    if (!meMarker) {
+      meMarker = L.marker([lat, lon], { icon: meIcon(), zIndexOffset: 1000 }).addTo(map);
+      meMarker.on("add", updateMeMarkerRotation);
+    } else {
+      meMarker.setLatLng([lat, lon]);
+    }
+    updateMeMarkerRotation();
+    return { lat, lon };
+  }
+
+  function startWatching(onUpdate) {
+    if (!navigator.geolocation) return;
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const here = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+
+        // Prefer real device heading (facing direction) when compass isn't
+        // driving rotation; else fall back to GPS course, else movement bearing.
+        if (!usingCompass) {
+          if (typeof pos.coords.heading === "number" && !Number.isNaN(pos.coords.heading)) {
+            travelHeading = pos.coords.heading;
+          } else if (lastPos && haversine(lastPos, here) > 3) {
+            travelHeading = bearing(lastPos, here);
+          }
+        }
+        lastPos = here;
+
+        updateMeMarker(here.lat, here.lon);
+        if (onUpdate) onUpdate(here);
+      },
+      () => { /* best-effort - live tracking just skips a beat on error */ },
+      { enableHighAccuracy: true, maximumAge: 4000, timeout: 8000 }
+    );
+  }
+
+  /* ============================================================
+     TRANSPORT MODE PICKER
+     ============================================================ */
+  const TRAVEL_MODES = {
+    car:      { label: "Car",     profile: "driving", icon: "M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11m-14 0h14m-14 0-1 5v3h2v-2h12v2h2v-3l-1-5M7.5 15.5h.01M16.5 15.5h.01" },
+    transit:  { label: "Transit", profile: "foot",    icon: "M4 16V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 11h16M8 21l-2-3m10 3 2-3M8 8h8" },
+    bike:     { label: "Bike",    profile: "cycling", icon: "M5 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm14 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM5 16l4-7h5l3 7M9 9 8 6h3" },
+    walk:     { label: "Walk",    profile: "foot",    icon: "M13 4a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM7 21l2-6 2 2 1 4M9 15l-1-5 3-2 3 3 3 1M11 10l1-3" },
+  };
+
+  function openModePicker() {
+    return new Promise((resolve) => {
+      const overlay = document.createElement("div");
+      overlay.className = "maps-modal-overlay show";
+      overlay.innerHTML = `
+        <div class="maps-modal maps-mode-modal">
+          <h3>Directions by</h3>
+          <div class="maps-mode-grid">
+            ${Object.entries(TRAVEL_MODES).map(([key, m]) => `
+              <button class="maps-mode-btn" data-mode="${key}">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${m.icon}"/></svg>
+                <span>${m.label}</span>
+              </button>
+            `).join("")}
+          </div>
+          <div class="maps-modal-actions">
+            <button class="maps-btn-outline" id="mapsModeCancel">Cancel</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+
+      function cleanup(result) {
+        overlay.remove();
+        resolve(result);
+      }
+      overlay.querySelectorAll("[data-mode]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          // Request fullscreen synchronously within this click handler -
+          // browsers require it to happen directly inside a user gesture.
+          const el = document.documentElement;
+          const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+          if (req) { try { req.call(el); } catch { /* ignore */ } }
+          cleanup(btn.dataset.mode);
+        });
+      });
+      overlay.querySelector("#mapsModeCancel").addEventListener("click", () => cleanup(null));
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) cleanup(null); });
+    });
+  }
+
+  /* ============================================================
+     NAVIGATION MODE (fullscreen, facing-up rotation, live reroute)
+     ============================================================ */
+  async function startNavigation() {
+    if (!currentPlace) return;
+    const mode = await openModePicker();
+    if (!mode) return;
+
+    setStatus("Getting your location...");
+    getPosition(
+      (pos) => {
+        setStatus("");
+        enterNavMode({ lat: pos.coords.latitude, lon: pos.coords.longitude }, mode);
+      },
+      (msg) => { setStatus(""); showError(msg); }
+    );
+  }
+
+  /* Draws the route split into a gray "already traveled" segment and a
+     colored "remaining" segment, based on the closest point on the route
+     to the current position. */
+  function drawRouteProgress(pos) {
+    if (!routeCoords.length) return;
+    const { idx } = nearestRouteIndex(pos);
+
+    if (traveledLine) map.removeLayer(traveledLine);
+    if (routeLine) map.removeLayer(routeLine);
+
+    const traveled = routeCoords.slice(0, idx + 1);
+    const remaining = routeCoords.slice(idx);
+
+    if (traveled.length > 1) {
+      traveledLine = L.polyline(traveled, { color: "#9aa0a6", weight: 6, opacity: 0.85 }).addTo(map);
+    }
+    if (remaining.length > 1) {
+      routeLine = L.polyline(remaining, { color: meColor(), weight: 6, opacity: 0.9 }).addTo(map);
+    }
+  }
+
+  // The free public OSRM demo server (router.project-osrm.org) only reliably
+  // hosts the "driving" profile - requesting /foot/ or /bike/ against it
+  // silently falls back to car-speed timing, which is why walking/biking
+  // times were coming back at driving speed. So we always fetch the
+  // "driving" road-network geometry, then compute a realistic duration
+  // ourselves for non-driving modes using typical average speeds.
+  const MODE_SPEED_MPS = {
+    car: null,     // use OSRM's own driving duration
+    bike: 4.2,      // ~15 km/h
+    walk: 1.35,     // ~4.9 km/h
+    transit: 1.35,  // shown as walking, see note in the UI
+  };
+
+  async function fetchRoute(origin, heading) {
+    let bearingsParam = "";
+    if (typeof heading === "number" && !Number.isNaN(heading)) {
+      const h = Math.round(((heading % 360) + 360) % 360);
+      bearingsParam = `&bearings=${h},60;0,180`;
+    }
+    const url = `${OSRM}/route/v1/driving/${origin.lon},${origin.lat};${currentPlace.lon},${currentPlace.lat}?overview=full&geometries=geojson${bearingsParam}`;
+    const data = await fetchJson(url);
+    if (!data.routes || !data.routes.length) throw new Error("No route found");
+    return data.routes[0];
+  }
+
+  async function requestRoute(origin, mode) {
+    try {
+      const heading = usingCompass ? mapHeading : travelHeading;
+      const route = await fetchRoute(origin, heading);
+      routeCoords = route.geometry.coordinates.map((c) => [c[1], c[0]]);
+      if (traveledLine) { map.removeLayer(traveledLine); traveledLine = null; }
+      if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+      routeLine = L.polyline(routeCoords, { color: meColor(), weight: 6, opacity: 0.9 }).addTo(map);
+      if (!navActive) map.fitBounds(routeLine.getBounds(), { padding: [60, 60] });
+
+      const speed = MODE_SPEED_MPS[mode];
+      const durationSec = speed ? route.distance / speed : route.duration;
+
+      const km = (route.distance / 1000).toFixed(1);
+      const mins = Math.max(1, Math.round(durationSec / 60));
+      navEta.textContent = `${mins} min`;
+      const modeNote = mode === "transit" ? " (walking pace shown - live transit routing isn't available on the free routing engine used here)" : "";
+      navSub.textContent = `${km} km - ${shortLabel(currentPlace.label) || "Destination"}${modeNote}`;
+    } catch (err) {
+      showError("Couldn't get directions to that location");
+    }
+  }
+
+  async function maybeReroute(pos) {
+    if (!navActive || !routeCoords.length) return;
+    const { dist } = nearestRouteIndex(pos);
+    const now = Date.now();
+    if (dist > 45 && now - lastRerouteAt > 8000) {
+      lastRerouteAt = now;
+      await requestRoute(pos, navMode);
+    }
+  }
+
+  function enterNavMode(origin, mode) {
+    navActive = true;
+    navMode = mode;
+    lastPos = origin;
+    document.body.classList.add("maps-nav-fullscreen");
+    mapsCard.classList.add("hidden");
+    navBar.classList.add("show");
+    map.dragging.disable();
+    map.doubleClickZoom.disable();
+    updateMeMarker(origin.lat, origin.lon);
+    requestCompassPermission();
+    requestRoute(origin, mode);
+    startWatching((pos) => {
+      drawRouteProgress(pos);
+      maybeReroute(pos);
+      if (usingCompass) {
+        // Map already rotates from the compass listener; just keep it centered.
+        map.setView([pos.lat, pos.lon], map.getZoom(), { animate: true });
+      } else {
+        map.panTo([pos.lat, pos.lon]);
+      }
+    });
+    map.setView([origin.lat, origin.lon], 17);
+  }
+
+  function exitNavMode() {
+    navActive = false;
+    stopCompass();
+    resetMapRotation();
+    updateMeMarkerRotation();
+    map.dragging.enable();
+    map.doubleClickZoom.enable();
+    document.body.classList.remove("maps-nav-fullscreen");
+    mapsCard.classList.remove("hidden");
+    navBar.classList.remove("show");
+    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+    if (traveledLine) { map.removeLayer(traveledLine); traveledLine = null; }
+    routeCoords = [];
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) { try { exit.call(document); } catch { /* ignore */ } }
+    }
+  }
+  navExitBtn.addEventListener("click", exitNavMode);
+
+  document.addEventListener("fullscreenchange", () => {
+    if (navActive && !document.fullscreenElement) exitNavMode();
+  });
+  document.addEventListener("webkitfullscreenchange", () => {
+    if (navActive && !document.webkitFullscreenElement) exitNavMode();
   });
 
-  async function checkTripDeepLink() {
-    const code = new URLSearchParams(location.search).get('trip');
-    if (!code) return;
-    const { data: trip } = await sb.from('maps_trips').select('*').eq('share_code', code).maybeSingle();
-    if (!trip) return;
-    allTrips = [trip];
-    showTab('trips');
-    openTrip(trip.id);
-  }
 
-  function checkDeepLink() {
-    const p = new URLSearchParams(location.search);
-    const lat = parseFloat(p.get('lat')), lng = parseFloat(p.get('lng'));
-    if (!isNaN(lat) && !isNaN(lng)) { selectLocation(lat, lng, p.get('label') || null); map.setView([lat, lng], 15); }
-  }
-
-  /* ════════════════════════════════════════════════════
-     SESSION RESUME + AUTH
-  ════════════════════════════════════════════════════ */
-  let sessionSaveTimer = null;
-  function scheduleSessionSave() {
-    if (!currentUser) return;
-    clearTimeout(sessionSaveTimer);
-    sessionSaveTimer = setTimeout(async () => {
-      const c = map.getCenter();
-      await sb.from('maps_sessions').upsert({ user_id: currentUser.id, last_lat: c.lat, last_lng: c.lng, last_zoom: map.getZoom(), updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-    }, 1500);
-  }
-
+  /* ============================================================
+     AUTH
+     ============================================================ */
   async function initAuth() {
-    const { data: { session } } = await sb.auth.getSession();
+    showListView();
+    if (typeof supabaseClient === "undefined" || !supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
     currentUser = session?.user ?? null;
-    await afterAuthResolved();
-  }
-  sb.auth.onAuthStateChange(async (_e, session) => { currentUser = session?.user ?? null; await afterAuthResolved(); });
-
-  async function afterAuthResolved() {
-    await loadSavedPlaces();
-    if (currentUser) {
-      const { data } = await sb.from('maps_sessions').select('*').eq('user_id', currentUser.id).maybeSingle();
-      if (data && !new URLSearchParams(location.search).has('lat')) map.setView([data.last_lat, data.last_lng], data.last_zoom || 12);
-      map.on('moveend zoomend', scheduleSessionSave);
-    }
+    await loadSavedLocations();
+    supabaseClient.auth.onAuthStateChange((_event, sess) => {
+      currentUser = sess?.user ?? null;
+      loadSavedLocations();
+    });
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    initMap();
-    initAuth().then(checkTripDeepLink);
-    checkDeepLink();
-  });
+  /* ============================================================
+     BOOT
+     ============================================================ */
+  document.body.classList.add("maps-lock");
+  initMap();
+  initAuth();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
 })();
