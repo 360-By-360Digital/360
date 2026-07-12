@@ -818,7 +818,7 @@
   function meIcon() {
     return L.divIcon({
       className: "maps-me-icon-wrap",
-      html: `<img class="maps-me-img" src="/assets/img/360maps-me-marker.png" width="30" height="30" alt="">`,
+      html: `<img class="maps-me-img" src="/assets/images/360maps-me-marker.png" width="30" height="30" alt="">`,
       iconSize: [30, 30],
       iconAnchor: [15, 15],
     });
