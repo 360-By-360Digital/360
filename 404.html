@@ -64,6 +64,34 @@
       transition: opacity .2s, transform .2s;
     }
     .home-btn:hover { opacity: .87; transform: translateY(-2px); }
+
+    .nav-suggest {
+      margin-bottom: 20px;
+      min-height: 0;
+    }
+    .nav-suggest-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 26px;
+      border-radius: 999px;
+      border: 1.5px solid var(--a);
+      background: transparent;
+      color: var(--a);
+      font-weight: 700;
+      font-size: 14.5px;
+      cursor: pointer;
+      transition: background .2s, transform .2s, color .2s;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: fadeUp .45s cubic-bezier(.22,.68,0,1.1) forwards;
+    }
+    .nav-suggest-btn:hover {
+      background: var(--a);
+      color: #050816;
+      transform: translateY(-2px);
+    }
+    .nav-suggest-btn svg { flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -79,6 +107,7 @@
     <div class="code">404</div>
     <div class="msg">Page not found</div>
     <p class="sub">Looks like this page doesn't exist — or maybe it moved.<br>Head back to 360 and keep searching.</p>
+    <div class="nav-suggest" id="nav-suggest"></div>
     <a class="home-btn" href="/">← Back to 360</a>
   </div>
 
@@ -87,5 +116,55 @@
   <script src="/assets/js/wide.js"></script>
   <script src="/assets/js/gallium.js"></script>
   <script src="/assets/js/cursor.js"></script>
+  <script>
+    (() => {
+      // Ask the AI-backed navigate-suggest edge function whether the
+      // broken path the user landed on looks like a typo/shorthand for
+      // a real 360 destination (menu item, app, or game). If so, show
+      // a one-click button to jump straight there.
+      const NAV_SUGGEST_URL = "https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/navigate-suggest";
+      const container = document.getElementById("nav-suggest");
+      if (!container) return;
+
+      const attemptedPath = location.pathname || "/";
+      // Nothing useful to suggest for the root itself.
+      if (attemptedPath === "/" || attemptedPath === "") return;
+
+      fetch(NAV_SUGGEST_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: attemptedPath }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (!data || !data.match) return;
+
+          const btn = document.createElement("button");
+          btn.className = "nav-suggest-btn";
+          btn.type = "button";
+          btn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+            <span>Do you mean ${data.label ? escapeNavHtml(data.label) : data.match}? Navigate to it now!</span>
+          `;
+          btn.addEventListener("click", () => {
+            window.location.href = data.match;
+          });
+
+          container.innerHTML = "";
+          container.appendChild(btn);
+        })
+        .catch(() => {
+          // Silent fail — the default "Back to 360" button is still there.
+        });
+
+      function escapeNavHtml(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+    })();
+  </script>
 </body>
 </html>
