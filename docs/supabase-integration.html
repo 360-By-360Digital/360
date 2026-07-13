@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>360 × Supabase Integration</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+    --bg:#ffffff;
+    --sidebar:#fafafa;
+    --border:#e5e7eb;
+    --text:#111827;
+    --muted:#6b7280;
+    --green:#3ecf8e;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    font-family:Inter,system-ui,sans-serif;
+    color:var(--text);
+    background:#fff;
+}
+
+.wrapper{
+    max-width:1200px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:240px 1fr;
+}
+
+.sidebar{
+    position:sticky;
+    top:0;
+    height:100vh;
+    border-right:1px solid var(--border);
+    background:var(--sidebar);
+    padding:32px 24px;
+}
+
+.logo{
+    font-weight:700;
+    font-size:20px;
+    margin-bottom:28px;
+}
+
+.logo span{
+    color:var(--green);
+}
+
+.sidebar nav{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.sidebar a{
+    color:#4b5563;
+    text-decoration:none;
+    font-size:14px;
+}
+
+.sidebar a:hover{
+    color:#111827;
+}
+
+main{
+    padding:48px;
+    max-width:850px;
+}
+
+h1{
+    font-size:42px;
+    margin-bottom:8px;
+    letter-spacing:-1px;
+}
+
+.subtitle{
+    color:var(--muted);
+    margin-bottom:48px;
+}
+
+section{
+    margin-bottom:56px;
+}
+
+h2{
+    font-size:24px;
+    margin-bottom:16px;
+}
+
+p{
+    line-height:1.7;
+    margin-bottom:16px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:16px;
+}
+
+th,td{
+    border:1px solid var(--border);
+    padding:12px;
+    text-align:left;
+    vertical-align:top;
+}
+
+th{
+    background:#fafafa;
+}
+
+.code{
+    background:#fafafa;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:18px;
+    overflow:auto;
+    font-family:ui-monospace,monospace;
+    font-size:14px;
+    white-space:pre;
+}
+
+ul{
+    padding-left:20px;
+}
+
+li{
+    margin:8px 0;
+}
+
+footer{
+    margin-top:64px;
+    padding-top:24px;
+    border-top:1px solid var(--border);
+    color:var(--muted);
+    font-size:14px;
+}
+
+@media(max-width:900px){
+
+.wrapper{
+    display:block;
+}
+
+.sidebar{
+    position:relative;
+    height:auto;
+    border-right:none;
+    border-bottom:1px solid var(--border);
+}
+
+main{
+    padding:24px;
+}
+
+}
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+<aside class="sidebar">
+
+<div class="logo">360<span>.</span>docs</div>
+
+<nav>
+<a href="#services">Services</a>
+<a href="#integration">Platform Integration</a>
+<a href="#database">Database</a>
+<a href="#search">Search</a>
+<a href="#ai">AI</a>
+<a href="#chat">Chat</a>
+<a href="#security">Security</a>
+</nav>
+
+</aside>
+
+<main>
+
+<h1>Supabase Integration</h1>
+
+<p class="subtitle">
+How Supabase is used throughout the 360 platform.
+</p>
+
+<section id="services">
+
+<h2>Services</h2>
+
+<table>
+<tr>
+<th>Supabase Service</th>
+<th>Usage</th>
+</tr>
+
+<tr>
+<td>Authentication</td>
+<td>User authentication and session management.</td>
+</tr>
+
+<tr>
+<td>PostgreSQL</td>
+<td>Primary application database.</td>
+</tr>
+
+<tr>
+<td>Edge Functions</td>
+<td>Backend APIs, AI requests, crawler endpoints, automation.</td>
+</tr>
+
+<tr>
+<td>Realtime</td>
+<td>Live chat synchronization.</td>
+</tr>
+
+<tr>
+<td>Storage</td>
+<td>Application assets and uploaded content.</td>
+</tr>
+</table>
+
+</section>
+
+<section id="integration">
+
+<h2>Platform Integration</h2>
+
+<p>
+Supabase is used across multiple parts of the 360 platform rather than being
+limited to a single application. Frontend applications communicate with
+Supabase services for authentication, backend processing, data storage, and
+realtime updates.
+</p>
+
+<p>
+Most server-side operations are performed through Supabase Edge Functions.
+These functions provide APIs used by search services, AI features, crawler
+systems, user operations, and other platform components.
+</p>
+
+</section>
+
+<section id="database">
+
+<h2>Database</h2>
+
+<p>
+Supabase PostgreSQL stores platform data used throughout 360.
+</p>
+
+<table>
+<tr>
+<th>Data Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td>User Accounts</td>
+<td>Authentication and profile information.</td>
+</tr>
+
+<tr>
+<td>Search Indexes</td>
+<td>Indexed crawler results and search metadata.</td>
+</tr>
+
+<tr>
+<td>Chat Messages</td>
+<td>Conversation history and message records.</td>
+</tr>
+
+<tr>
+<td>Platform Configuration</td>
+<td>Application settings and internal configuration.</td>
+</tr>
+
+<tr>
+<td>Application Data</td>
+<td>Data used by platform services and tools.</td>
+</tr>
+</table>
+
+</section>
+
+<section id="search">
+
+<h2>Search</h2>
+
+<p>
+Search services rely on Supabase for storage and backend processing. Indexed
+content is stored in PostgreSQL and accessed through backend APIs rather than
+direct database connections from clients.
+</p>
+
+</section>
+
+<section id="ai">
+
+<h2>AI</h2>
+
+<p>
+AI features use Supabase Edge Functions as the backend layer. Requests are
+received by an Edge Function, processed server-side, and returned to the
+frontend application.
+</p>
+
+</section>
+
+<section id="chat">
+
+<h2>Chat</h2>
+
+<p>
+The messaging system uses Supabase Realtime to synchronize conversations
+between connected clients. New messages are delivered through realtime
+subscriptions as they are written to the database, where they are then saved in tables for history.
+</p>
+
+<div class="code">Client
+   │
+subscribe()
+   │
+   <p>🔽🔽🔽 </p>
+Supabase Realtime
+   │
+database change
+   │
+broadcast
+   │
+   <p>🔽🔽🔽 </p>
+Connected Clients</div>
+
+</section>
+
+<section>
+
+<h2>Typical Request Flow</h2>
+
+<div class="code">Frontend Application
+        │
+        <p>🔽🔽🔽🔽🔽 </p>
+Supabase Auth
+        │
+        <p>🔽🔽🔽🔽🔽 </p>
+Edge Function
+        │
+        ├─ PostgreSQL
+        ├─ Storage
+        ├─ Realtime
+        |-> External Services
+        │
+        <p>🔽🔽🔽🔽🔽 </p>
+JSON Response</div>
+
+</section>
+
+<section id="security">
+
+<h2>Security</h2>
+
+<ul>
+<li>Database credentials are not exposed to frontend clients.</li>
+<li>Protected operations execute through Edge Functions.</li>
+<li>Authenticated requests are validated before accessing protected resources.</li>
+<li>Third-party API credentials remain server-side.</li>
+</ul>
+
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>
