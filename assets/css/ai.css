@@ -275,6 +275,7 @@ body.dark .conv-dropdown { background: #16161f; }
 
 .ai-conv-title-bar {
   display: none;
+  visibility: hidden;
   align-items: center;
   justify-content: center;
   padding: 9px 16px 3px;
