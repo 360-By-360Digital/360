@@ -18,7 +18,7 @@
   let map = null;
   let marker = null;
   let meMarker = null;
-  let routeLine = null;
+  let routeSegments = [];   // colored traffic-style polyline segments
   let traveledLine = null;
   let watchId = null;
   let orientationHandler = null;
@@ -31,8 +31,15 @@
   let travelHeading = 0;       // fallback heading derived from GPS movement
   let lastPos = null;          // { lat, lon } of previous fix, for bearing fallback
   let routeCoords = [];        // full [lat,lon] route geometry for the active nav
+  let routeSteps = [];         // per-step geometry+duration+distance from OSRM
   let navMode = "car";
+  let navOrigin = null;        // chosen starting point (may differ from live position)
   let lastRerouteAt = 0;
+  let trafficIntervalId = null;
+  let idleCheckIntervalId = null;
+  let lastInteractionAt = 0;
+  let followingUser = true;    // false once the person manually drags/zooms
+  let userLoc = null;          // best-effort location used to bias/sort search results
 
   let suggestList = [];
   let suggestIdx = -1;
@@ -56,10 +63,12 @@
   const modalSave      = $("#mapsModalSave");
   const modalCancel    = $("#mapsModalCancel");
 
-  const navBar          = $("#mapsNavBar");
-  const navExitBtn       = $("#mapsNavExit");
-  const navEta             = $("#mapsNavEta");
-  const navSub              = $("#mapsNavSub");
+  const instructionRow   = $("#mapsInstructionRow");
+  const instructionText   = $("#mapsInstructionText");
+  const navExitBtn         = $("#mapsNavExit");
+  const etaCard              = $("#mapsEtaCard");
+  const etaDuration            = $("#mapsEtaDuration");
+  const etaArrival              = $("#mapsEtaArrival");
 
   /* ── helpers ── */
   function showError(msg) {
@@ -146,9 +155,29 @@
   /* ============================================================
      GEOCODING (Nominatim) — used for both search and reverse lookup
      ============================================================ */
+  function viewboxParam() {
+    if (!userLoc) return "";
+    // A soft bias box (~5 degrees) around the user's last known location so
+    // "McDonald's" resolves to the nearest one instead of a random global
+    // result - bounded=0 keeps this a preference, not a hard restriction.
+    const d = 5;
+    const left = userLoc.lon - d, right = userLoc.lon + d;
+    const top = userLoc.lat + d, bottom = userLoc.lat - d;
+    return `&viewbox=${left},${top},${right},${bottom}&bounded=0`;
+  }
+
   async function nominatimSearch(query, limit) {
-    const url = `${NOMINATIM}/search?format=jsonv2&addressdetails=1&extratags=1&namedetails=1&limit=${limit || 5}&q=${encodeURIComponent(query)}`;
-    return fetchJson(url);
+    const url = `${NOMINATIM}/search?format=jsonv2&addressdetails=1&extratags=1&namedetails=1&limit=${limit || 5}${viewboxParam()}&q=${encodeURIComponent(query)}`;
+    const results = await fetchJson(url);
+    return sortByDistance(results || []);
+  }
+  function sortByDistance(results) {
+    if (!userLoc || !results.length) return results;
+    return results.slice().sort((a, b) => {
+      const da = haversine(userLoc, { lat: parseFloat(a.lat), lon: parseFloat(a.lon) });
+      const db = haversine(userLoc, { lat: parseFloat(b.lat), lon: parseFloat(b.lon) });
+      return da - db;
+    });
   }
   async function nominatimReverse(lat, lon) {
     const url = `${NOMINATIM}/reverse?format=jsonv2&addressdetails=1&extratags=1&lat=${lat}&lon=${lon}`;
@@ -159,13 +188,13 @@
      back empty (common for oddly formatted full addresses), retries with
      Nominatim's structured "street" style query as a fallback. */
   async function robustSearch(query) {
-    let results = await nominatimSearch(query, 5);
+    let results = await nominatimSearch(query, 8);
     if (results && results.length) return results;
 
     // Fallback: strip extra punctuation / retry without limit narrowing
     const cleaned = query.replace(/[,]{2,}/g, ",").trim();
     if (cleaned !== query) {
-      results = await nominatimSearch(cleaned, 5);
+      results = await nominatimSearch(cleaned, 8);
       if (results && results.length) return results;
     }
     throw new Error("Couldn't find that place");
@@ -410,7 +439,7 @@
      ============================================================ */
   function showListView() {
     if (marker) { map.removeLayer(marker); marker = null; }
-    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+    clearRouteLayers();
     currentPlace = null;
     renderSavedList();
   }
@@ -863,6 +892,7 @@
           }
         }
         lastPos = here;
+        userLoc = here;
 
         updateMeMarker(here.lat, here.lon);
         if (onUpdate) onUpdate(here);
@@ -889,6 +919,8 @@
       overlay.innerHTML = `
         <div class="maps-modal maps-mode-modal">
           <h3>Directions by</h3>
+          <label class="maps-mode-from-label" for="mapsModeFrom">Start from</label>
+          <input id="mapsModeFrom" class="maps-mode-from" placeholder="Your current location" autocomplete="off" />
           <div class="maps-mode-grid">
             ${Object.entries(TRAVEL_MODES).map(([key, m]) => `
               <button class="maps-mode-btn" data-mode="${key}">
@@ -914,7 +946,8 @@
           const el = document.documentElement;
           const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
           if (req) { try { req.call(el); } catch { /* ignore */ } }
-          cleanup(btn.dataset.mode);
+          const fromText = overlay.querySelector("#mapsModeFrom").value.trim();
+          cleanup({ mode: btn.dataset.mode, from: fromText || null });
         });
       });
       overlay.querySelector("#mapsModeCancel").addEventListener("click", () => cleanup(null));
@@ -927,38 +960,97 @@
      ============================================================ */
   async function startNavigation() {
     if (!currentPlace) return;
-    const mode = await openModePicker();
-    if (!mode) return;
+    const choice = await openModePicker();
+    if (!choice) return;
+    const { mode, from } = choice;
+
+    if (from) {
+      setStatus("Finding starting point...");
+      try {
+        const results = await nominatimSearch(from, 1);
+        setStatus("");
+        if (!results || !results.length) { showError("Couldn't find that starting location"); return; }
+        const origin = { lat: parseFloat(results[0].lat), lon: parseFloat(results[0].lon) };
+        enterNavMode(origin, mode, false);
+      } catch {
+        setStatus("");
+        showError("Couldn't find that starting location");
+      }
+      return;
+    }
 
     setStatus("Getting your location...");
     getPosition(
       (pos) => {
         setStatus("");
-        enterNavMode({ lat: pos.coords.latitude, lon: pos.coords.longitude }, mode);
+        enterNavMode({ lat: pos.coords.latitude, lon: pos.coords.longitude }, mode, true);
       },
       (msg) => { setStatus(""); showError(msg); }
     );
   }
 
-  /* Draws the route split into a gray "already traveled" segment and a
-     colored "remaining" segment, based on the closest point on the route
-     to the current position. */
+  /* Draws the already-traveled part of the route in gray, layered on top
+     of the colored traffic segments, based on the closest point on the
+     route to the current position. */
   function drawRouteProgress(pos) {
     if (!routeCoords.length) return;
     const { idx } = nearestRouteIndex(pos);
-
-    if (traveledLine) map.removeLayer(traveledLine);
-    if (routeLine) map.removeLayer(routeLine);
-
+    if (traveledLine) { map.removeLayer(traveledLine); traveledLine = null; }
     const traveled = routeCoords.slice(0, idx + 1);
-    const remaining = routeCoords.slice(idx);
-
     if (traveled.length > 1) {
-      traveledLine = L.polyline(traveled, { color: "#9aa0a6", weight: 6, opacity: 0.85 }).addTo(map);
+      traveledLine = L.polyline(traveled, { color: "#9aa0a6", weight: 6, opacity: 0.9 }).addTo(map);
     }
-    if (remaining.length > 1) {
-      routeLine = L.polyline(remaining, { color: meColor(), weight: 6, opacity: 0.9 }).addTo(map);
-    }
+  }
+
+  function clearRouteLayers() {
+    routeSegments.forEach((l) => map.removeLayer(l));
+    routeSegments = [];
+    if (traveledLine) { map.removeLayer(traveledLine); traveledLine = null; }
+  }
+
+  /* Colors each OSRM step by its own distance/duration ratio as a stand-in
+     for live traffic - the free OSRM demo has no real traffic feed, so this
+     reflects the router's own speed estimate per road segment rather than
+     actual congestion. Refreshed periodically (see trafficIntervalId). */
+  function drawTrafficColoredRoute(steps) {
+    steps.forEach((step) => {
+      if (!step.geometry || !step.geometry.coordinates || step.duration <= 0) return;
+      const coords = step.geometry.coordinates.map((c) => [c[1], c[0]]);
+      const speedMps = step.distance / step.duration;
+      let color;
+      if (speedMps < 4) color = "#ea4335";        // red  - slow
+      else if (speedMps < 9) color = "#fbbc04";    // orange - moderate
+      else color = "#1a73e8";                       // blue - free-flowing
+      routeSegments.push(L.polyline(coords, { color, weight: 6, opacity: 0.85 }).addTo(map));
+    });
+  }
+
+  function formatDuration(totalSeconds) {
+    const mins = Math.max(1, Math.round(totalSeconds / 60));
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h <= 0) return `${m} min`;
+    return `${h} hr ${m} min`;
+  }
+  function formatArrivalTime(totalSeconds) {
+    const arrival = new Date(Date.now() + totalSeconds * 1000);
+    return arrival.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+
+  function showOceanCrossingPopup() {
+    const overlay = document.createElement("div");
+    overlay.className = "maps-modal-overlay show";
+    overlay.innerHTML = `
+      <div class="maps-modal">
+        <h3>No road route available</h3>
+        <p>There's no connected road between your starting point and ${escapeHtml(shortLabel(currentPlace.label) || "this destination")}. You'll likely need to cross an ocean (by air or ferry) to get there, which this free routing engine can't calculate.</p>
+        <div class="maps-modal-actions">
+          <button class="maps-btn" id="mapsOceanOk">Got it</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector("#mapsOceanOk").addEventListener("click", () => overlay.remove());
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
   }
 
   // The free public OSRM demo server (router.project-osrm.org) only reliably
@@ -980,7 +1072,7 @@
       const h = Math.round(((heading % 360) + 360) % 360);
       bearingsParam = `&bearings=${h},60;0,180`;
     }
-    const url = `${OSRM}/route/v1/driving/${origin.lon},${origin.lat};${currentPlace.lon},${currentPlace.lat}?overview=full&geometries=geojson${bearingsParam}`;
+    const url = `${OSRM}/route/v1/driving/${origin.lon},${origin.lat};${currentPlace.lon},${currentPlace.lat}?overview=full&geometries=geojson&steps=true${bearingsParam}`;
     const data = await fetchJson(url);
     if (!data.routes || !data.routes.length) throw new Error("No route found");
     return data.routes[0];
@@ -991,22 +1083,40 @@
       const heading = usingCompass ? mapHeading : travelHeading;
       const route = await fetchRoute(origin, heading);
       routeCoords = route.geometry.coordinates.map((c) => [c[1], c[0]]);
-      if (traveledLine) { map.removeLayer(traveledLine); traveledLine = null; }
-      if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
-      routeLine = L.polyline(routeCoords, { color: meColor(), weight: 6, opacity: 0.9 }).addTo(map);
-      if (!navActive) map.fitBounds(routeLine.getBounds(), { padding: [60, 60] });
+      routeSteps = (route.legs || []).flatMap((leg) => leg.steps || []);
+
+      clearRouteLayers();
+      drawTrafficColoredRoute(routeSteps);
+      if (lastPos) drawRouteProgress(lastPos);
+      if (!navActive) {
+        const bounds = L.latLngBounds(routeCoords);
+        map.fitBounds(bounds, { padding: [60, 60] });
+      }
 
       const speed = MODE_SPEED_MPS[mode];
       const durationSec = speed ? route.distance / speed : route.duration;
 
-      const km = (route.distance / 1000).toFixed(1);
-      const mins = Math.max(1, Math.round(durationSec / 60));
-      navEta.textContent = `${mins} min`;
-      const modeNote = mode === "transit" ? " (walking pace shown - live transit routing isn't available on the free routing engine used here)" : "";
-      navSub.textContent = `${km} km - ${shortLabel(currentPlace.label) || "Destination"}${modeNote}`;
+      etaDuration.textContent = formatDuration(durationSec);
+      etaArrival.textContent = `Arrive around ${formatArrivalTime(durationSec)}`;
+      const modeNote = mode === "transit" ? " (walking pace shown)" : "";
+      instructionText.textContent = nextInstructionFor(routeSteps) + modeNote;
     } catch (err) {
-      showError("Couldn't get directions to that location");
+      const dist = haversine(origin, { lat: currentPlace.lat, lon: currentPlace.lon });
+      if (dist > 300000) {
+        showOceanCrossingPopup();
+      } else {
+        showError("Couldn't get directions to that location");
+      }
     }
+  }
+
+  function nextInstructionFor(steps) {
+    if (!steps || !steps.length) return "Head toward your destination";
+    const step = steps[0];
+    const m = step.maneuver || {};
+    const name = step.name ? ` onto ${step.name}` : "";
+    const type = (m.type || "continue").replace(/_/g, " ");
+    return `${type.charAt(0).toUpperCase()}${type.slice(1)}${name}`;
   }
 
   async function maybeReroute(pos) {
@@ -1019,21 +1129,68 @@
     }
   }
 
-  function enterNavMode(origin, mode) {
+  /* Periodic refresh so the traffic coloring and ETA stay current, without
+     yanking the person off a route they're already following turn-by-turn. */
+  function startTrafficRefresh(mode) {
+    stopTrafficRefresh();
+    trafficIntervalId = setInterval(() => {
+      if (!navActive || !lastPos) return;
+      requestRoute(lastPos, mode);
+    }, 60000);
+  }
+  function stopTrafficRefresh() {
+    if (trafficIntervalId) { clearInterval(trafficIntervalId); trafficIntervalId = null; }
+  }
+
+  /* Keeps the map following the live position marker, but backs off the
+     moment the person drags or zooms manually, resuming auto-follow only
+     after 10 seconds of no interaction. */
+  function markUserInteraction() {
+    if (!navActive) return;
+    followingUser = false;
+    lastInteractionAt = Date.now();
+  }
+  function startIdleRecenterCheck() {
+    stopIdleRecenterCheck();
+    idleCheckIntervalId = setInterval(() => {
+      if (!navActive || followingUser) return;
+      if (Date.now() - lastInteractionAt >= 10000) {
+        followingUser = true;
+        if (lastPos) map.setView([lastPos.lat, lastPos.lon], map.getZoom());
+      }
+    }, 1000);
+  }
+  function stopIdleRecenterCheck() {
+    if (idleCheckIntervalId) { clearInterval(idleCheckIntervalId); idleCheckIntervalId = null; }
+  }
+
+  function enterNavMode(origin, mode, isLiveLocation) {
     navActive = true;
     navMode = mode;
+    navOrigin = origin;
     lastPos = origin;
+    followingUser = true;
+    lastInteractionAt = Date.now();
+
     document.body.classList.add("maps-nav-fullscreen");
-    mapsCard.classList.add("hidden");
-    navBar.classList.add("show");
-    map.dragging.disable();
-    map.doubleClickZoom.disable();
+    mapsCard.classList.add("nav-mode");
+    searchForm.classList.add("maps-hidden-for-nav");
+    instructionRow.classList.add("show");
+    etaCard.classList.add("show");
+    hideDropdown();
+
+    // Map stays fully draggable/zoomable during navigation - see the
+    // idle-recenter check below for auto-follow behavior instead.
     updateMeMarker(origin.lat, origin.lon);
     requestCompassPermission();
     requestRoute(origin, mode);
+    startTrafficRefresh(mode);
+    startIdleRecenterCheck();
+
     startWatching((pos) => {
       drawRouteProgress(pos);
       maybeReroute(pos);
+      if (!followingUser) return;
       if (usingCompass) {
         // Map already rotates from the compass listener; just keep it centered.
         map.setView([pos.lat, pos.lon], map.getZoom(), { animate: true });
@@ -1041,28 +1198,38 @@
         map.panTo([pos.lat, pos.lon]);
       }
     });
-    map.setView([origin.lat, origin.lon], 17);
+
+    if (isLiveLocation) {
+      map.setView([origin.lat, origin.lon], 17);
+    } else {
+      // Custom start point chosen - show both ends until the route arrives.
+      map.setView([origin.lat, origin.lon], 14);
+    }
   }
 
   function exitNavMode() {
     navActive = false;
     stopCompass();
+    stopTrafficRefresh();
+    stopIdleRecenterCheck();
     resetMapRotation();
     updateMeMarkerRotation();
-    map.dragging.enable();
-    map.doubleClickZoom.enable();
     document.body.classList.remove("maps-nav-fullscreen");
-    mapsCard.classList.remove("hidden");
-    navBar.classList.remove("show");
-    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
-    if (traveledLine) { map.removeLayer(traveledLine); traveledLine = null; }
+    mapsCard.classList.remove("nav-mode");
+    searchForm.classList.remove("maps-hidden-for-nav");
+    instructionRow.classList.remove("show");
+    etaCard.classList.remove("show");
+    clearRouteLayers();
     routeCoords = [];
+    routeSteps = [];
     if (document.fullscreenElement || document.webkitFullscreenElement) {
       const exit = document.exitFullscreen || document.webkitExitFullscreen;
       if (exit) { try { exit.call(document); } catch { /* ignore */ } }
     }
   }
   navExitBtn.addEventListener("click", exitNavMode);
+
+  map.on("dragstart", markUserInteraction);
 
   document.addEventListener("fullscreenchange", () => {
     if (navActive && !document.fullscreenElement) exitNavMode();
@@ -1093,6 +1260,16 @@
   document.body.classList.add("maps-lock");
   initMap();
   initAuth();
+
+  // Best-effort, silent - just used to bias/sort search suggestions.
+  // No error shown if it's denied or unavailable.
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { userLoc = { lat: pos.coords.latitude, lon: pos.coords.longitude }; },
+      () => { /* ignore - search just falls back to unbiased results */ },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+    );
+  }
   }
 
   if (document.readyState === "loading") {
