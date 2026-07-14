@@ -14,37 +14,56 @@
   const MAX_RECENT = 8;
   const NOMINATIM = "https://nominatim.openstreetmap.org";
   const OSRM = "https://router.project-osrm.org";
+  const OSRM_BIKE = "https://routing.openstreetmap.de/routed-bike";
+  const OSRM_FOOT = "https://routing.openstreetmap.de/routed-foot";
+
+  const POI_TAGS = {
+    restaurant: 'amenity=restaurant', cafe: 'amenity=cafe', fuel: 'amenity=fuel',
+    atm: 'amenity=atm', hospital: 'amenity=hospital', park: 'leisure=park',
+    supermarket: 'shop=supermarket', pharmacy: 'amenity=pharmacy',
+  };
+  const POI_ICON = { restaurant: '🍽️', cafe: '☕', fuel: '⛽', atm: '🏧', hospital: '🏥', park: '🌳', supermarket: '🛒', pharmacy: '💊' };
+  const CATS = [
+    { id: 'home', icon: '🏠', label: 'Home' },
+    { id: 'work', icon: '💼', label: 'Work' },
+    { id: 'food', icon: '🍽️', label: 'Food' },
+    { id: 'shopping', icon: '🛍️', label: 'Shopping' },
+    { id: 'nature', icon: '🌳', label: 'Nature' },
+    { id: 'favorite', icon: '⭐', label: 'Favorite' },
+    { id: 'other', icon: '📍', label: 'Other' },
+  ];
+  function catMeta(id) { return CATS.find(c => c.id === id) || CATS[CATS.length - 1]; }
 
   let map = null;
   let marker = null;
   let meMarker = null;
-  let routeSegments = [];   // colored traffic-style polyline segments
-  let traveledLine = null;
+  let routeLine = null;
   let watchId = null;
-  let orientationHandler = null;
   let navActive = false;
   let currentUser = null;
   let currentPlace = null; // { lat, lon, label }
-
-  let mapHeading = 0;          // current compass rotation applied to the map (0 = north up)
-  let usingCompass = false;    // true once real device-orientation data has arrived
-  let travelHeading = 0;       // fallback heading derived from GPS movement
-  let lastPos = null;          // { lat, lon } of previous fix, for bearing fallback
-  let routeCoords = [];        // full [lat,lon] route geometry for the active nav
-  let routeSteps = [];         // per-step geometry+duration+distance from OSRM
-  let navMode = "car";
-  let navOrigin = null;        // chosen starting point (may differ from live position)
-  let lastRerouteAt = 0;
-  let trafficIntervalId = null;
-  let idleCheckIntervalId = null;
-  let lastInteractionAt = 0;
-  let followingUser = true;    // false once the person manually drags/zooms
-  let userLoc = null;          // best-effort location used to bias/sort search results
 
   let suggestList = [];
   let suggestIdx = -1;
   let suggestTimer = null;
   let lastQuery = "";
+
+  // New feature state
+  let tileLayer = null;
+  let activeTab = "saved";
+  let activeCatFilter = "all";
+  let savedCache = [];
+  let measuring = false;
+  let measurePoints = [];
+  let measureLine = null;
+  let measureMarkers = [];
+  let nearbyMarkers = [];
+  let routeSteps = [];
+  let currentStepIdx = 0;
+  let lastRouteFetchPos = null;
+  let activeTrip = null;
+  let tripStopMarkers = [];
+  let navMode = null; // remembers travel mode for rerouting
 
   const $ = (s) => document.querySelector(s);
 
@@ -63,12 +82,33 @@
   const modalSave      = $("#mapsModalSave");
   const modalCancel    = $("#mapsModalCancel");
 
-  const instructionRow   = $("#mapsInstructionRow");
-  const instructionText   = $("#mapsInstructionText");
-  const navExitBtn         = $("#mapsNavExit");
-  const etaCard              = $("#mapsEtaCard");
-  const etaDuration            = $("#mapsEtaDuration");
-  const etaArrival              = $("#mapsEtaArrival");
+  const navBar          = $("#mapsNavBar");
+  const navExitBtn       = $("#mapsNavExit");
+  const navEta             = $("#mapsNavEta");
+  const navSub              = $("#mapsNavSub");
+  const navInstruction       = $("#mapsNavInstruction");
+  const navStepsToggle        = $("#mapsNavStepsToggle");
+  const navStepsPanel          = $("#mapsNavStepsPanel");
+
+  const quickCats       = $("#mapsQuickCats");
+  const tabsBar          = $("#mapsTabs");
+  const layerSwitcher     = $("#mapsLayerSwitcher");
+  const fabStack           = $("#mapsFabStack");
+  const zoomInBtn            = $("#mapsZoomInBtn");
+  const zoomOutBtn            = $("#mapsZoomOutBtn");
+  const measureBtn              = $("#mapsMeasureBtn");
+  const fullscreenBtn            = $("#mapsFullscreenBtn");
+  const locateBtn                 = $("#mapsLocateBtn");
+  const measureReadout             = $("#mapsMeasureReadout");
+  const measureText                 = $("#mapsMeasureText");
+  const measureClearBtn              = $("#mapsMeasureClear");
+  const measureDoneBtn                = $("#mapsMeasureDone");
+
+  const modalCatRow     = $("#mapsModalCatRow");
+  const compareOverlay   = $("#mapsCompareOverlay");
+  const compareSelect     = $("#mapsCompareSelect");
+  const compareResult       = $("#mapsCompareResult");
+  const compareCancelBtn     = $("#mapsCompareCancel");
 
   /* ── helpers ── */
   function showError(msg) {
@@ -120,29 +160,37 @@
   /* ============================================================
      MAP SETUP
      ============================================================ */
-  function initMap() {
-    map = L.map("mapsCanvas", { zoomControl: true, attributionControl: true }).setView([20, 0], 3);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19,
-    }).addTo(map);
+  const TILE_LAYERS = {
+    standard: { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attr: '&copy; OpenStreetMap contributors', maxZoom: 19 },
+    dark:     { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', attr: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19 },
+    satellite:{ url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr: 'Tiles &copy; Esri', maxZoom: 19 },
+    terrain:  { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attr: '&copy; OpenStreetMap, SRTM | &copy; OpenTopoMap', maxZoom: 17 },
+  };
+  function setTileLayer(style) {
+    const cfg = TILE_LAYERS[style] || TILE_LAYERS.standard;
+    if (tileLayer) map.removeLayer(tileLayer);
+    tileLayer = L.tileLayer(cfg.url, { maxZoom: cfg.maxZoom, attribution: cfg.attr }).addTo(map);
+    try { localStorage.setItem("360maps_tile_style", style); } catch {}
+    layerSwitcher.querySelectorAll(".maps-layer-btn").forEach((b) => b.classList.toggle("active", b.dataset.style === style));
+  }
+  layerSwitcher.querySelectorAll(".maps-layer-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setTileLayer(btn.dataset.style));
+  });
 
-    // Drop a pin only on a genuine tap/click - not at the end of a drag.
-    // Leaflet's own click-after-drag suppression isn't reliable on every
-    // input device, so distance + time are measured manually here.
-    let downPoint = null;
-    let downTime = 0;
-    map.on("mousedown", (e) => { downPoint = e.containerPoint; downTime = Date.now(); });
-    map.on("mouseup", (e) => {
-      if (!downPoint) return;
-      const dist = downPoint.distanceTo(e.containerPoint);
-      const elapsed = Date.now() - downTime;
-      downPoint = null;
-      if (dist < 8 && elapsed < 600) {
-        selectRawLatLng(e.latlng.lat, e.latlng.lng);
-      }
+  function initMap() {
+    map = L.map("mapsCanvas", { zoomControl: false, attributionControl: true }).setView([20, 0], 3);
+    let savedStyle = "standard";
+    try { savedStyle = localStorage.getItem("360maps_tile_style") || "standard"; } catch {}
+    setTileLayer(savedStyle);
+
+    map.on("click", (e) => {
+      if (measuring) { addMeasurePoint(e.latlng); return; }
+      selectRawLatLng(e.latlng.lat, e.latlng.lng);
     });
   }
+
+  zoomInBtn.addEventListener("click", () => map.zoomIn());
+  zoomOutBtn.addEventListener("click", () => map.zoomOut());
 
   function placeMarker(lat, lon) {
     if (marker) { map.removeLayer(marker); marker = null; }
@@ -155,29 +203,9 @@
   /* ============================================================
      GEOCODING (Nominatim) — used for both search and reverse lookup
      ============================================================ */
-  function viewboxParam() {
-    if (!userLoc) return "";
-    // A soft bias box (~5 degrees) around the user's last known location so
-    // "McDonald's" resolves to the nearest one instead of a random global
-    // result - bounded=0 keeps this a preference, not a hard restriction.
-    const d = 5;
-    const left = userLoc.lon - d, right = userLoc.lon + d;
-    const top = userLoc.lat + d, bottom = userLoc.lat - d;
-    return `&viewbox=${left},${top},${right},${bottom}&bounded=0`;
-  }
-
   async function nominatimSearch(query, limit) {
-    const url = `${NOMINATIM}/search?format=jsonv2&addressdetails=1&extratags=1&namedetails=1&limit=${limit || 5}${viewboxParam()}&q=${encodeURIComponent(query)}`;
-    const results = await fetchJson(url);
-    return sortByDistance(results || []);
-  }
-  function sortByDistance(results) {
-    if (!userLoc || !results.length) return results;
-    return results.slice().sort((a, b) => {
-      const da = haversine(userLoc, { lat: parseFloat(a.lat), lon: parseFloat(a.lon) });
-      const db = haversine(userLoc, { lat: parseFloat(b.lat), lon: parseFloat(b.lon) });
-      return da - db;
-    });
+    const url = `${NOMINATIM}/search?format=jsonv2&addressdetails=1&extratags=1&namedetails=1&limit=${limit || 5}&q=${encodeURIComponent(query)}`;
+    return fetchJson(url);
   }
   async function nominatimReverse(lat, lon) {
     const url = `${NOMINATIM}/reverse?format=jsonv2&addressdetails=1&extratags=1&lat=${lat}&lon=${lon}`;
@@ -188,13 +216,13 @@
      back empty (common for oddly formatted full addresses), retries with
      Nominatim's structured "street" style query as a fallback. */
   async function robustSearch(query) {
-    let results = await nominatimSearch(query, 8);
+    let results = await nominatimSearch(query, 5);
     if (results && results.length) return results;
 
     // Fallback: strip extra punctuation / retry without limit narrowing
     const cleaned = query.replace(/[,]{2,}/g, ",").trim();
     if (cleaned !== query) {
-      results = await nominatimSearch(cleaned, 8);
+      results = await nominatimSearch(cleaned, 5);
       if (results && results.length) return results;
     }
     throw new Error("Couldn't find that place");
@@ -325,14 +353,18 @@
       <div class="maps-detail-body">
         <div class="maps-detail-title">${escapeHtml(shortLabel(label))}</div>
         <div class="maps-detail-type">${escapeHtml(label || `${lat.toFixed(5)}, ${lon.toFixed(5)}`)}</div>
-        <div class="maps-detail-row">${icons.pin}<span>${lat.toFixed(5)}, ${lon.toFixed(5)}</span></div>
+        <div class="maps-detail-row">${icons.pin}<span>${lat.toFixed(5)}, ${lon.toFixed(5)}</span><button class="maps-copy-coords" id="mapsCopyCoords" title="Copy">📋</button></div>
+        <div class="maps-info-strip" id="mapsInfoStrip"><span>⛰️ <b id="mapsElevation">…</b></span><span>🌡️ <b id="mapsWeather">…</b></span></div>
         <div class="maps-detail-actions">
           <button class="maps-btn" id="mapsDirectionsBtn">${icons.dir} Directions</button>
           <button class="maps-btn-outline" id="mapsSaveBtn">Save</button>
+          <button class="maps-btn-outline" id="mapsCompareBtn">Compare</button>
+          <button class="maps-btn-outline" id="mapsAddStopBtn" style="display:${activeTrip ? "" : "none"};">＋ Trip</button>
         </div>
       </div>
     `;
     wireDetailActions();
+    fetchElevationAndWeather(lat, lon);
   }
 
   async function renderFromNominatim(result, lat, lon) {
@@ -408,7 +440,8 @@
         ${typeLabel ? `<div class="maps-detail-type">${escapeHtml(typeLabel.replace(/\b\w/g, (c) => c.toUpperCase()))}</div>` : ""}
         ${descHtml}
         <div class="maps-detail-row">${icons.pin}<span>${escapeHtml(result.display_name)}</span></div>
-        <div class="maps-detail-row"><span style="width:16px;display:inline-block;"></span><span>${lat.toFixed(5)}, ${lon.toFixed(5)}</span></div>
+        <div class="maps-detail-row"><span style="width:16px;display:inline-block;"></span><span>${lat.toFixed(5)}, ${lon.toFixed(5)}</span><button class="maps-copy-coords" id="mapsCopyCoords" title="Copy">📋</button></div>
+        <div class="maps-info-strip" id="mapsInfoStrip"><span>⛰️ <b id="mapsElevation">…</b></span><span>🌡️ <b id="mapsWeather">…</b></span></div>
         ${hoursHtml}
         ${phoneHtml}
         ${siteHtml}
@@ -416,10 +449,13 @@
         <div class="maps-detail-actions">
           <button class="maps-btn" id="mapsDirectionsBtn">${icons.dir} Directions</button>
           <button class="maps-btn-outline" id="mapsSaveBtn">Save</button>
+          <button class="maps-btn-outline" id="mapsCompareBtn">Compare</button>
+          <button class="maps-btn-outline" id="mapsAddStopBtn" style="display:${activeTrip ? "" : "none"};">＋ Trip</button>
         </div>
       </div>
     `;
     wireDetailActions();
+    fetchElevationAndWeather(lat, lon);
   }
 
   function wireBack() {
@@ -430,26 +466,101 @@
     wireBack();
     const saveBtn = $("#mapsSaveBtn");
     const dirBtn = $("#mapsDirectionsBtn");
+    const compareBtn = $("#mapsCompareBtn");
+    const copyBtn = $("#mapsCopyCoords");
+    const addStopBtn = $("#mapsAddStopBtn");
     if (saveBtn) saveBtn.addEventListener("click", openSaveModal);
     if (dirBtn) dirBtn.addEventListener("click", startNavigation);
+    if (compareBtn) compareBtn.addEventListener("click", openCompareModal);
+    if (copyBtn) copyBtn.addEventListener("click", () => {
+      if (!currentPlace) return;
+      navigator.clipboard?.writeText(`${currentPlace.lat.toFixed(5)}, ${currentPlace.lon.toFixed(5)}`).then(() => setStatus("📋 Copied")).catch(() => {});
+      setTimeout(() => setStatus(""), 1500);
+    });
+    if (addStopBtn) addStopBtn.addEventListener("click", async () => {
+      if (!activeTrip || !currentPlace) return;
+      await addStopToTrip(activeTrip.id, currentPlace);
+    });
   }
+
+  function fetchElevationAndWeather(lat, lon) {
+    const elEl = $("#mapsElevation"), wEl = $("#mapsWeather");
+    if (!elEl || !wEl) return;
+    fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lon}`)
+      .then((r) => r.json())
+      .then((d) => { const m = d?.results?.[0]?.elevation; if (elEl.isConnected) elEl.textContent = m != null ? `${Math.round(m)} m` : "—"; })
+      .catch(() => { if (elEl.isConnected) elEl.textContent = "—"; });
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`)
+      .then((r) => r.json())
+      .then((d) => {
+        const w = d?.current_weather;
+        if (!wEl.isConnected) return;
+        wEl.textContent = w ? `${Math.round(w.temperature)}°C, ${weatherLabel(w.weathercode)}` : "—";
+      })
+      .catch(() => { if (wEl.isConnected) wEl.textContent = "—"; });
+  }
+  function weatherLabel(code) {
+    const table = { 0: "Clear", 1: "Mostly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 48: "Fog",
+      51: "Drizzle", 61: "Rain", 63: "Rain", 65: "Heavy rain", 71: "Snow", 73: "Snow", 75: "Heavy snow",
+      80: "Showers", 95: "Storms" };
+    return table[code] || "—";
+  }
+
+  /* ============================================================
+     COMPARE DISTANCE
+     ============================================================ */
+  function openCompareModal() {
+    if (!currentPlace) return;
+    if (!savedCache.length) { showError("Save a few places first to compare distances."); return; }
+    compareSelect.innerHTML = savedCache.map((p) => `<option value="${p.id}">${escapeHtml(p.label)}</option>`).join("");
+    compareOverlay.classList.add("show");
+    updateCompareResult();
+  }
+  compareSelect.addEventListener("change", updateCompareResult);
+  function updateCompareResult() {
+    const p = savedCache.find((x) => x.id === compareSelect.value);
+    if (!p || !currentPlace) return;
+    const km = haversineKm(currentPlace.lat, currentPlace.lon, p.lat, p.lon);
+    compareResult.innerHTML = `<b>${km.toFixed(2)} km</b> straight-line (${(km * 0.621371).toFixed(2)} mi)`;
+  }
+  compareCancelBtn.addEventListener("click", () => compareOverlay.classList.remove("show"));
+  compareOverlay.addEventListener("click", (e) => { if (e.target === compareOverlay) compareOverlay.classList.remove("show"); });
 
   /* ============================================================
      LIST VIEW (saved locations) — same card, swapped body
      ============================================================ */
   function showListView() {
     if (marker) { map.removeLayer(marker); marker = null; }
-    clearRouteLayers();
+    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
     currentPlace = null;
-    renderSavedList();
+    showTab(activeTab);
+  }
+
+  tabsBar.querySelectorAll(".maps-tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      activeTab = btn.dataset.tab;
+      tabsBar.querySelectorAll(".maps-tab").forEach((b) => b.classList.toggle("active", b === btn));
+      showTab(activeTab);
+    });
+  });
+
+  function showTab(tab) {
+    tabsBar.querySelectorAll(".maps-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+    if (tab === "trips") renderTripsView();
+    else if (tab === "nearby") renderNearbyView();
+    else renderSavedList();
   }
 
   async function renderSavedList() {
     cardBody.innerHTML = `
-      <div class="maps-panel-title">Saved Locations</div>
+      <div class="maps-panel-title-row">
+        <div class="maps-panel-title">Saved Locations</div>
+        <span class="maps-count-badge" id="mapsSavedCount"></span>
+      </div>
       <div class="maps-signin-notice" id="mapsSigninNotice" style="display:none;">
         Sign in to save pins and access them from any device.
       </div>
+      <div class="maps-cat-filter-row" id="mapsCatFilterRow"></div>
       <div class="maps-saved-list" id="mapsSavedList"></div>
     `;
     await loadSavedLocations();
@@ -471,22 +582,47 @@
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      renderSavedItems(data || []);
+      savedCache = data || [];
+      renderCatFilterRow();
+      renderSavedItems(filterSaved(savedCache));
     } catch (err) {
       showError(err.message || "Couldn't load saved locations");
     }
+  }
+
+  function filterSaved(items) {
+    return activeCatFilter === "all" ? items : items.filter((p) => (p.category || "other") === activeCatFilter);
+  }
+
+  function renderCatFilterRow() {
+    const row = $("#mapsCatFilterRow");
+    const countBadge = $("#mapsSavedCount");
+    if (countBadge) countBadge.textContent = savedCache.length ? String(savedCache.length) : "";
+    if (!row) return;
+    const cats = ["all", ...new Set(savedCache.map((p) => p.category || "other"))];
+    row.innerHTML = cats.map((id) => {
+      const meta = id === "all" ? { icon: "🗂️", label: "All" } : catMeta(id);
+      return `<button class="maps-cat-chip${activeCatFilter === id ? " active" : ""}" data-filter="${id}">${meta.icon} ${meta.label}</button>`;
+    }).join("");
+    row.querySelectorAll("[data-filter]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        activeCatFilter = btn.dataset.filter;
+        renderCatFilterRow();
+        renderSavedItems(filterSaved(savedCache));
+      });
+    });
   }
 
   function renderSavedItems(items) {
     const list = $("#mapsSavedList");
     if (!list) return;
     if (!items.length) {
-      list.innerHTML = `<div class="maps-panel-note">No saved locations yet. Search or drop a pin, then save it.</div>`;
+      list.innerHTML = `<div class="maps-panel-note">No saved locations${activeCatFilter !== "all" ? " in this category" : " yet"}. Search or drop a pin, then save it.</div>`;
       return;
     }
     list.innerHTML = items.map((it) => `
       <div class="maps-saved-item" data-id="${it.id}" data-lat="${it.lat}" data-lon="${it.lon}" data-label="${encodeURIComponent(it.label)}">
-        <div class="maps-saved-pin">${icons.pin}</div>
+        <div class="maps-saved-pin">${escapeHtml(it.icon || catMeta(it.category).icon)}</div>
         <div class="maps-saved-text">
           <div class="maps-saved-label">${escapeHtml(it.label)}</div>
           <div class="maps-saved-coords">${it.lat.toFixed(4)}, ${it.lon.toFixed(4)}${it.note ? " - " + escapeHtml(it.note) : ""}</div>
@@ -527,13 +663,278 @@
   }
 
   /* ============================================================
+     NEARBY (Overpass POI search) — real category/place search.
+     Nominatim alone is an address geocoder and is genuinely weak at
+     "find restaurants near me"-style category queries (it mostly
+     matches street/place names), which is why generic searches were
+     surfacing mostly roads. This queries OSM's live POI database
+     directly for whichever category the user picks.
+     ============================================================ */
+  let lastPoiTag = null;
+  function renderNearbyView() {
+    cardBody.innerHTML = `
+      <div class="maps-panel-title">Nearby</div>
+      <div class="maps-nearby-hint" id="mapsNearbyHint">Pick a category above, or drop a pin first to search around it.</div>
+      <div id="mapsNearbyList"></div>
+    `;
+    if (lastPoiTag) runNearbySearch(lastPoiTag);
+  }
+
+  quickCats.querySelectorAll(".maps-quickcat-btn").forEach((btn) => {
+    btn.addEventListener("click", () => runNearbySearch(btn.dataset.poi));
+  });
+
+  async function runNearbySearch(tag) {
+    lastPoiTag = tag;
+    activeTab = "nearby";
+    tabsBar.querySelectorAll(".maps-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === "nearby"));
+    if (!$("#mapsNearbyList")) renderNearbyView();
+
+    const center = currentPlace ? [currentPlace.lat, currentPlace.lon] : map.getCenter();
+    const [lat, lon] = Array.isArray(center) ? center : [center.lat, center.lng];
+    const hint = $("#mapsNearbyHint");
+    const list = $("#mapsNearbyList");
+    if (hint) hint.textContent = `Searching for ${tag}${currentPlace ? " near " + shortLabel(currentPlace.label) : " around your view"}…`;
+    if (list) list.innerHTML = "";
+    nearbyMarkers.forEach((m) => map.removeLayer(m));
+    nearbyMarkers = [];
+
+    const filter = POI_TAGS[tag];
+    const [k, v] = filter.split("=");
+    const query = `[out:json][timeout:25];(node["${k}"="${v}"](around:2500,${lat},${lon}););out body 30;`;
+    try {
+      const res = await fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: "data=" + encodeURIComponent(query) });
+      const data = await res.json();
+      const results = (data.elements || []).filter((el) => el.tags && el.tags.name);
+      if (!results.length) { if (hint) hint.textContent = "No results nearby. Try a different area or category."; return; }
+      results.sort((a, b) => haversineKm(lat, lon, a.lat, a.lon) - haversineKm(lat, lon, b.lat, b.lon));
+      if (hint) hint.textContent = `${results.length} result${results.length === 1 ? "" : "s"} within 2.5 km:`;
+      if (list) {
+        list.innerHTML = results.map((r, i) => `
+          <div class="maps-saved-item maps-nearby-item" data-i="${i}">
+            <div class="maps-saved-pin">${POI_ICON[tag] || "📍"}</div>
+            <div class="maps-saved-text">
+              <div class="maps-saved-label">${escapeHtml(r.tags.name)}</div>
+              <div class="maps-saved-coords">${haversineKm(lat, lon, r.lat, r.lon).toFixed(2)} km away</div>
+            </div>
+          </div>`).join("");
+        list.querySelectorAll("[data-i]").forEach((el) => {
+          el.addEventListener("click", () => {
+            const r = results[+el.dataset.i];
+            placeMarker(r.lat, r.lon);
+            focusMap(r.lat, r.lon, 16);
+            renderDetailLoading();
+            nominatimReverse(r.lat, r.lon)
+              .then((res2) => renderFromNominatim(res2, r.lat, r.lon))
+              .catch(() => renderBareDetail(r.tags.name, r.lat, r.lon));
+          });
+        });
+      }
+      results.forEach((r) => nearbyMarkers.push(L.circleMarker([r.lat, r.lon], { radius: 6, color: "#06b6d4", fillOpacity: 0.8 }).addTo(map)));
+    } catch (e) {
+      if (hint) hint.textContent = "Nearby search failed — check your connection.";
+    }
+  }
+
+  /* ============================================================
+     TRIPS — collaborative multi-stop planning
+     ============================================================ */
+  let allTrips = [];
+
+  async function renderTripsView() {
+    cardBody.innerHTML = `<div class="maps-panel-title">Trips</div><div id="mapsTripsList"></div>`;
+    if (!currentUser) { $("#mapsTripsList").innerHTML = `<div class="maps-signin-notice">Sign in to plan trips.</div>`; return; }
+    const { data: mine } = await supabaseClient.from("maps_trips").select("*").eq("user_id", currentUser.id);
+    const { data: collabRows } = await supabaseClient.from("maps_trip_collaborators").select("trip_id").eq("user_id", currentUser.id);
+    const collabIds = (collabRows || []).map((r) => r.trip_id);
+    let collabTrips = [];
+    if (collabIds.length) { const { data } = await supabaseClient.from("maps_trips").select("*").in("id", collabIds); collabTrips = data || []; }
+    allTrips = [...(mine || []), ...collabTrips];
+    renderTripsList();
+  }
+
+  function renderTripsList() {
+    const list = $("#mapsTripsList");
+    if (!list) return;
+    const newBtn = `<div class="maps-saved-item" id="newTripBtn"><div class="maps-saved-pin">➕</div><div class="maps-saved-text"><div class="maps-saved-label">New trip</div></div></div>`;
+    list.innerHTML = newBtn + (allTrips.length ? allTrips.map((t) => `
+      <div class="maps-saved-item" data-trip-id="${t.id}">
+        <div class="maps-saved-pin">🧳</div>
+        <div class="maps-saved-text"><div class="maps-saved-label">${escapeHtml(t.title)}</div>
+        <div class="maps-saved-coords">${t.is_public_editable ? "🌐 anyone can edit" : ""}</div></div>
+      </div>`).join("") : `<div class="maps-panel-note">No trips yet.</div>`);
+    $("#newTripBtn").addEventListener("click", createTrip);
+    list.querySelectorAll("[data-trip-id]").forEach((el) => el.addEventListener("click", () => openTrip(el.dataset.tripId)));
+  }
+
+  async function createTrip() {
+    if (!currentUser) return;
+    const title = prompt("Trip name:", "My trip");
+    if (!title) return;
+    const { data, error } = await supabaseClient.from("maps_trips").insert({ user_id: currentUser.id, title }).select().single();
+    if (error) { showError(error.message); return; }
+    await renderTripsView();
+    openTrip(data.id);
+  }
+
+  async function canEditTrip(trip) {
+    if (!currentUser) return false;
+    if (trip.user_id === currentUser.id) return true;
+    if (trip.is_public_editable) return true;
+    const { data } = await supabaseClient.from("maps_trip_collaborators").select("user_id").eq("trip_id", trip.id).eq("user_id", currentUser.id).maybeSingle();
+    return !!data;
+  }
+
+  async function addStopToTrip(tripId, place) {
+    const { data: stops } = await supabaseClient.from("maps_trip_stops").select("id").eq("trip_id", tripId);
+    await supabaseClient.from("maps_trip_stops").insert({
+      trip_id: tripId, name: shortLabel(place.label) || "Stop", lat: place.lat, lng: place.lon,
+      added_by: currentUser.id, position: (stops || []).length,
+    });
+    setStatus("Added to trip"); setTimeout(() => setStatus(""), 1500);
+    if (activeTab === "trips") openTrip(tripId);
+  }
+
+  async function openTrip(id) {
+    let trip = allTrips.find((t) => t.id === id);
+    if (!trip) { const { data } = await supabaseClient.from("maps_trips").select("*").eq("id", id).maybeSingle(); trip = data; }
+    if (!trip) { showError("Trip not found."); return; }
+    activeTrip = trip;
+    activeTab = "trips";
+    const editable = await canEditTrip(trip);
+    const { data: stops } = await supabaseClient.from("maps_trip_stops").select("*").eq("trip_id", id).order("position", { ascending: true });
+    const isOwner = currentUser && trip.user_id === currentUser.id;
+
+    tripStopMarkers.forEach((m) => map.removeLayer(m));
+    tripStopMarkers = [];
+    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+    (stops || []).forEach((s, i) => tripStopMarkers.push(L.marker([s.lat, s.lng]).addTo(map).bindTooltip(`${i + 1}. ${s.name}`)));
+    if (stops?.length) map.fitBounds(L.latLngBounds(stops.map((s) => [s.lat, s.lng])), { padding: [50, 50] });
+
+    const list = $("#mapsTripsList");
+    if (!list) return;
+    list.innerHTML = `
+      <div class="maps-back-row"><button class="maps-btn-text" id="tripBackBtn">${icons.back} All trips</button></div>
+      <div class="maps-detail-title">${escapeHtml(trip.title)}</div>
+      <div class="maps-detail-type">${(stops || []).length} stop${(stops || []).length === 1 ? "" : "s"}${editable ? " · you can edit" : ""}</div>
+      <div class="maps-detail-actions" style="margin:10px 0;flex-wrap:wrap;">
+        ${editable ? `<button class="maps-btn" id="addStopHereBtn">＋ Add current pin</button>` : ""}
+        <button class="maps-btn-outline" id="shareTripBtn">🔗 Share</button>
+        ${(stops || []).length >= 2 ? `<button class="maps-btn-outline" id="routeTripBtn">Route</button><button class="maps-btn-outline" id="gpxTripBtn">⬇ GPX</button>` : ""}
+        ${isOwner ? `<button class="maps-btn-outline" id="manageTripBtn">⚙️</button>` : ""}
+      </div>
+      <div class="maps-saved-list">
+        ${(stops || []).map((s, i) => `
+          <div class="maps-saved-item" data-stop-id="${s.id}">
+            ${editable ? `<div class="maps-reorder-btns"><button data-up="${s.id}" ${i === 0 ? "disabled" : ""}>▲</button><button data-down="${s.id}" ${i === stops.length - 1 ? "disabled" : ""}>▼</button></div>` : ""}
+            <div class="maps-saved-pin">${i + 1}</div>
+            <div class="maps-saved-text"><div class="maps-saved-label">${escapeHtml(s.name)}</div></div>
+            ${editable ? `<button class="maps-saved-del" data-remove-stop="${s.id}">${icons.close}</button>` : ""}
+          </div>`).join("")}
+      </div>`;
+
+    $("#tripBackBtn").addEventListener("click", () => { activeTrip = null; renderTripsList(); });
+    $("#addStopHereBtn")?.addEventListener("click", () => {
+      if (!currentPlace) { showError("Search or click the map to pick a spot first."); return; }
+      addStopToTrip(id, currentPlace);
+    });
+    $("#shareTripBtn").addEventListener("click", () => {
+      const url = `${location.origin}${location.pathname}?trip=${trip.share_code}`;
+      navigator.clipboard?.writeText(url).then(() => { setStatus("🔗 Trip link copied"); setTimeout(() => setStatus(""), 1800); }).catch(() => {});
+    });
+    $("#routeTripBtn")?.addEventListener("click", () => routeTripStops(stops));
+    $("#gpxTripBtn")?.addEventListener("click", () => exportTripGPX(trip, stops));
+    $("#manageTripBtn")?.addEventListener("click", () => manageTrip(trip));
+    list.querySelectorAll("[data-remove-stop]").forEach((btn) => btn.addEventListener("click", async () => { await supabaseClient.from("maps_trip_stops").delete().eq("id", btn.dataset.removeStop); openTrip(id); }));
+    list.querySelectorAll("[data-up]").forEach((btn) => btn.addEventListener("click", () => reorderStop(stops, btn.dataset.up, -1, id)));
+    list.querySelectorAll("[data-down]").forEach((btn) => btn.addEventListener("click", () => reorderStop(stops, btn.dataset.down, 1, id)));
+  }
+
+  async function reorderStop(stops, stopId, dir, tripId) {
+    const idx = stops.findIndex((s) => s.id === stopId);
+    const swapIdx = idx + dir;
+    if (swapIdx < 0 || swapIdx >= stops.length) return;
+    const a = stops[idx], b = stops[swapIdx];
+    await Promise.all([
+      supabaseClient.from("maps_trip_stops").update({ position: b.position }).eq("id", a.id),
+      supabaseClient.from("maps_trip_stops").update({ position: a.position }).eq("id", b.id),
+    ]);
+    openTrip(tripId);
+  }
+
+  async function routeTripStops(stops) {
+    if (!stops || stops.length < 2) return;
+    const coords = stops.map((s) => `${s.lng},${s.lat}`).join(";");
+    try {
+      const res = await fetch(`${OSRM}/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+      const data = await res.json();
+      if (!data.routes?.length) { showError("No route through these stops."); return; }
+      if (routeLine) map.removeLayer(routeLine);
+      routeLine = L.geoJSON(data.routes[0].geometry, { style: { color: "#06b6d4", weight: 5, opacity: 0.85 } }).addTo(map);
+      map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+    } catch (e) { showError("Routing failed."); }
+  }
+
+  function exportTripGPX(trip, stops) {
+    const points = (stops || []).map((s) => `  <wpt lat="${s.lat}" lon="${s.lng}"><name>${escapeXml(s.name)}</name></wpt>`).join("\n");
+    const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="360 Maps" xmlns="http://www.topografix.com/GPX/1/1">\n${points}\n</gpx>`;
+    const blob = new Blob([gpx], { type: "application/gpx+xml" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${trip.title.replace(/[^a-z0-9]+/gi, "-")}.gpx`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  function escapeXml(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+  async function manageTrip(trip) {
+    const makePublic = confirm(`"${trip.title}" is ${trip.is_public_editable ? "PUBLIC (anyone can add stops)" : "private"}.\n\nOK = make public-editable\nCancel = keep private (collaborator-only)`);
+    await supabaseClient.from("maps_trips").update({ is_public_editable: makePublic }).eq("id", trip.id);
+    if (!makePublic) {
+      const { data: existing } = await supabaseClient.from("maps_trip_collaborators").select("user_id").eq("trip_id", trip.id);
+      const { data: profs } = existing?.length ? await supabaseClient.from("profiles").select("id,username").in("id", existing.map((r) => r.user_id)) : { data: [] };
+      const input = prompt("Collaborator usernames (comma separated):", (profs || []).map((p) => p.username).join(", "));
+      if (input !== null) {
+        await supabaseClient.from("maps_trip_collaborators").delete().eq("trip_id", trip.id);
+        for (const un of input.split(",").map((s) => s.trim()).filter(Boolean)) {
+          const { data: p } = await supabaseClient.from("profiles").select("id").ilike("username", un).maybeSingle();
+          if (p) await supabaseClient.from("maps_trip_collaborators").insert({ trip_id: trip.id, user_id: p.id, added_by: currentUser.id });
+        }
+      }
+    }
+    openTrip(trip.id);
+  }
+
+  async function checkTripDeepLink() {
+    const code = new URLSearchParams(location.search).get("trip");
+    if (!code) return;
+    const { data: trip } = await supabaseClient.from("maps_trips").select("*").eq("share_code", code).maybeSingle();
+    if (!trip) return;
+    allTrips = [trip];
+    activeTab = "trips";
+    tabsBar.querySelectorAll(".maps-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === "trips"));
+    cardBody.innerHTML = `<div id="mapsTripsList"></div>`;
+    openTrip(trip.id);
+  }
+
+  /* ============================================================
      SAVE MODAL
      ============================================================ */
+  let modalCatSelection = "other";
+  function renderModalCatRow(active) {
+    modalCatSelection = active;
+    modalCatRow.innerHTML = CATS.map((c) => `<button type="button" class="maps-cat-chip${c.id === active ? " active" : ""}" data-cat="${c.id}">${c.icon} ${c.label}</button>`).join("");
+    modalCatRow.querySelectorAll("[data-cat]").forEach((btn) => {
+      btn.addEventListener("click", () => renderModalCatRow(btn.dataset.cat));
+    });
+  }
+
   function openSaveModal() {
     if (!currentUser) { showError("Sign in to save locations"); return; }
     if (!currentPlace) return;
     modalLabel.value = currentPlace.label ? shortLabel(currentPlace.label) : "Saved place";
     modalNote.value = "";
+    renderModalCatRow("other");
     modalOverlay.classList.add("show");
     modalLabel.focus();
   }
@@ -551,9 +952,12 @@
         lat: currentPlace.lat,
         lon: currentPlace.lon,
         note,
+        category: modalCatSelection,
+        icon: catMeta(modalCatSelection).icon,
       });
       if (error) throw error;
       modalOverlay.classList.remove("show");
+      showTab(activeTab);
     } catch (err) {
       showError(err.message || "Couldn't save location");
     } finally {
@@ -761,141 +1165,98 @@
     );
   }
 
+  locateBtn.addEventListener("click", useMyLocation);
+
+  fullscreenBtn.addEventListener("click", () => {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+    else document.exitFullscreen?.();
+  });
+  document.addEventListener("fullscreenchange", () => {
+    fullscreenBtn.classList.toggle("active", !!document.fullscreenElement);
+    setTimeout(() => map.invalidateSize(), 200);
+  });
+
+  /* ============================================================
+     MEASURE TOOL
+     ============================================================ */
+  function startMeasuring() {
+    measuring = true;
+    measurePoints = [];
+    measureBtn.classList.add("active");
+    measureReadout.style.display = "flex";
+    measureText.textContent = "Click points on the map to measure. Double-click to finish.";
+    if (measureLine) { map.removeLayer(measureLine); measureLine = null; }
+    measureMarkers.forEach((m) => map.removeLayer(m));
+    measureMarkers = [];
+    map.doubleClickZoom.disable();
+    map.once("dblclick", stopMeasuring);
+  }
+  function stopMeasuring() {
+    measuring = false;
+    measureBtn.classList.remove("active");
+    measureReadout.style.display = "none";
+    map.doubleClickZoom.enable();
+  }
+  function addMeasurePoint(latlng) {
+    measurePoints.push(latlng);
+    measureMarkers.push(L.circleMarker(latlng, { radius: 5, color: "#f59e0b", fillOpacity: 1 }).addTo(map));
+    if (measureLine) map.removeLayer(measureLine);
+    if (measurePoints.length > 1) {
+      measureLine = L.polyline(measurePoints, { color: "#f59e0b", weight: 4, dashArray: "6 6" }).addTo(map);
+      let totalKm = 0;
+      for (let i = 1; i < measurePoints.length; i++) totalKm += haversineKm(measurePoints[i - 1].lat, measurePoints[i - 1].lng, measurePoints[i].lat, measurePoints[i].lng);
+      measureText.textContent = `Total: ${totalKm.toFixed(2)} km (${(totalKm * 0.621371).toFixed(2)} mi) — ${measurePoints.length} points`;
+    }
+  }
+  function haversineKm(lat1, lon1, lat2, lon2) {
+    const R = 6371, dLat = ((lat2 - lat1) * Math.PI) / 180, dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+  measureBtn.addEventListener("click", () => (measuring ? stopMeasuring() : startMeasuring()));
+  measureClearBtn.addEventListener("click", () => {
+    measurePoints = [];
+    if (measureLine) { map.removeLayer(measureLine); measureLine = null; }
+    measureMarkers.forEach((m) => map.removeLayer(m));
+    measureMarkers = [];
+    measureText.textContent = "Click points on the map to measure. Double-click to finish.";
+  });
+  measureDoneBtn.addEventListener("click", stopMeasuring);
+
+  window.addEventListener("keydown", (e) => {
+    if (["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+    if (e.key === "m" || e.key === "M") measureBtn.click();
+    else if (e.key === "f" || e.key === "F") fullscreenBtn.click();
+    else if (e.key === "Escape" && measuring) stopMeasuring();
+  });
+
   /* ============================================================
      LIVE TRACKING DOT
      ============================================================ */
-  /* ============================================================
-     GEO MATH HELPERS
-     ============================================================ */
-  const D2R = Math.PI / 180, R2D = 180 / Math.PI;
-  function haversine(a, b) {
-    const R = 6371000;
-    const dLat = (b.lat - a.lat) * D2R;
-    const dLon = (b.lon - a.lon) * D2R;
-    const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * D2R) * Math.cos(b.lat * D2R) * Math.sin(dLon / 2) ** 2;
-    return 2 * R * Math.asin(Math.sqrt(s));
-  }
-  function bearing(a, b) {
-    const y = Math.sin((b.lon - a.lon) * D2R) * Math.cos(b.lat * D2R);
-    const x = Math.cos(a.lat * D2R) * Math.sin(b.lat * D2R) -
-      Math.sin(a.lat * D2R) * Math.cos(b.lat * D2R) * Math.cos((b.lon - a.lon) * D2R);
-    return (Math.atan2(y, x) * R2D + 360) % 360;
-  }
-  function nearestRouteIndex(pos) {
-    let bestIdx = 0, bestDist = Infinity;
-    for (let i = 0; i < routeCoords.length; i++) {
-      const d = haversine(pos, { lat: routeCoords[i][0], lon: routeCoords[i][1] });
-      if (d < bestDist) { bestDist = d; bestIdx = i; }
-    }
-    return { idx: bestIdx, dist: bestDist };
-  }
-
-  /* ============================================================
-     MAP / MARKER ROTATION (compass-facing navigation)
-     ============================================================ */
-  const mapsCanvasEl = document.getElementById("mapsCanvas");
-
-  function applyMapRotation(deg) {
-    mapHeading = deg;
-    mapsCanvasEl.style.transform = `rotate(${-deg}deg) scale(1.6)`;
-  }
-  function resetMapRotation() {
-    mapHeading = 0;
-    usingCompass = false;
-    mapsCanvasEl.style.transform = "";
-  }
-
-  function startCompass() {
-    if (orientationHandler) return;
-    orientationHandler = (e) => {
-      let heading = null;
-      if (typeof e.webkitCompassHeading === "number") {
-        heading = e.webkitCompassHeading; // iOS Safari: already 0-360, 0 = north
-      } else if (e.absolute && typeof e.alpha === "number") {
-        heading = (360 - e.alpha) % 360;
-      }
-      if (heading === null || Number.isNaN(heading)) return;
-      usingCompass = true;
-      if (navActive) applyMapRotation(heading);
-      updateMeMarkerRotation();
-    };
-    window.addEventListener("deviceorientationabsolute", orientationHandler, true);
-    window.addEventListener("deviceorientation", orientationHandler, true);
-  }
-  function stopCompass() {
-    if (!orientationHandler) return;
-    window.removeEventListener("deviceorientationabsolute", orientationHandler, true);
-    window.removeEventListener("deviceorientation", orientationHandler, true);
-    orientationHandler = null;
-  }
-  async function requestCompassPermission() {
-    try {
-      if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
-        const res = await DeviceOrientationEvent.requestPermission();
-        if (res === "granted") startCompass();
-      } else {
-        startCompass();
-      }
-    } catch {
-      startCompass();
-    }
-  }
-
-  /* ============================================================
-     LIVE "YOU ARE HERE" MARKER (Google-Maps-style facing arrow)
-     ============================================================ */
   function meIcon() {
     return L.divIcon({
-      className: "maps-me-icon-wrap",
-      html: `<img class="maps-me-img" src="/assets/images/360maps-me-marker.png" width="30" height="30" alt="">`,
-      iconSize: [30, 30],
-      iconAnchor: [15, 15],
+      className: "",
+      html: `<div class="maps-me-dot" style="background:${meColor()}"></div>`,
+      iconSize: [16, 16],
+      iconAnchor: [8, 8],
     });
-  }
-  function updateMeMarkerRotation() {
-    if (!meMarker) return;
-    const el = meMarker.getElement();
-    if (!el) return;
-    const img = el.querySelector(".maps-me-img");
-    if (!img) return;
-    // When the map itself rotates to face-up, cancel that rotation so the
-    // icon stays pointing straight up (forward). Otherwise, point it
-    // toward the direction of travel on the static north-up map.
-    const deg = usingCompass ? mapHeading : travelHeading;
-    img.style.transform = `rotate(${deg}deg)`;
   }
   function updateMeMarker(lat, lon) {
     if (!meMarker) {
       meMarker = L.marker([lat, lon], { icon: meIcon(), zIndexOffset: 1000 }).addTo(map);
-      meMarker.on("add", updateMeMarkerRotation);
     } else {
+      meMarker.setIcon(meIcon());
       meMarker.setLatLng([lat, lon]);
     }
-    updateMeMarkerRotation();
     return { lat, lon };
   }
-
   function startWatching(onUpdate) {
     if (!navigator.geolocation) return;
     if (watchId !== null) navigator.geolocation.clearWatch(watchId);
     watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        const here = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-
-        // Prefer real device heading (facing direction) when compass isn't
-        // driving rotation; else fall back to GPS course, else movement bearing.
-        if (!usingCompass) {
-          if (typeof pos.coords.heading === "number" && !Number.isNaN(pos.coords.heading)) {
-            travelHeading = pos.coords.heading;
-          } else if (lastPos && haversine(lastPos, here) > 3) {
-            travelHeading = bearing(lastPos, here);
-          }
-        }
-        lastPos = here;
-        userLoc = here;
-
-        updateMeMarker(here.lat, here.lon);
-        if (onUpdate) onUpdate(here);
+        const p = updateMeMarker(pos.coords.latitude, pos.coords.longitude);
+        if (onUpdate) onUpdate(p);
       },
       () => { /* best-effort - live tracking just skips a beat on error */ },
       { enableHighAccuracy: true, maximumAge: 4000, timeout: 8000 }
@@ -919,8 +1280,6 @@
       overlay.innerHTML = `
         <div class="maps-modal maps-mode-modal">
           <h3>Directions by</h3>
-          <label class="maps-mode-from-label" for="mapsModeFrom">Start from</label>
-          <input id="mapsModeFrom" class="maps-mode-from" placeholder="Your current location" autocomplete="off" />
           <div class="maps-mode-grid">
             ${Object.entries(TRAVEL_MODES).map(([key, m]) => `
               <button class="maps-mode-btn" data-mode="${key}">
@@ -940,15 +1299,7 @@
         resolve(result);
       }
       overlay.querySelectorAll("[data-mode]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          // Request fullscreen synchronously within this click handler -
-          // browsers require it to happen directly inside a user gesture.
-          const el = document.documentElement;
-          const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-          if (req) { try { req.call(el); } catch { /* ignore */ } }
-          const fromText = overlay.querySelector("#mapsModeFrom").value.trim();
-          cleanup({ mode: btn.dataset.mode, from: fromText || null });
-        });
+        btn.addEventListener("click", () => cleanup(btn.dataset.mode));
       });
       overlay.querySelector("#mapsModeCancel").addEventListener("click", () => cleanup(null));
       overlay.addEventListener("click", (e) => { if (e.target === overlay) cleanup(null); });
@@ -956,288 +1307,145 @@
   }
 
   /* ============================================================
-     NAVIGATION MODE (fullscreen, facing-up rotation, live reroute)
+     NAVIGATION MODE (fullscreen directions + live tracking)
      ============================================================ */
   async function startNavigation() {
     if (!currentPlace) return;
-    const choice = await openModePicker();
-    if (!choice) return;
-    const { mode, from } = choice;
-
-    if (from) {
-      setStatus("Finding starting point...");
-      try {
-        const results = await nominatimSearch(from, 1);
-        setStatus("");
-        if (!results || !results.length) { showError("Couldn't find that starting location"); return; }
-        const origin = { lat: parseFloat(results[0].lat), lon: parseFloat(results[0].lon) };
-        enterNavMode(origin, mode, false);
-      } catch {
-        setStatus("");
-        showError("Couldn't find that starting location");
-      }
-      return;
-    }
+    const mode = await openModePicker();
+    if (!mode) return;
 
     setStatus("Getting your location...");
     getPosition(
       (pos) => {
         setStatus("");
-        enterNavMode({ lat: pos.coords.latitude, lon: pos.coords.longitude }, mode, true);
+        enterNavMode({ lat: pos.coords.latitude, lon: pos.coords.longitude }, mode);
       },
       (msg) => { setStatus(""); showError(msg); }
     );
   }
 
-  /* Draws the already-traveled part of the route in gray, layered on top
-     of the colored traffic segments, based on the closest point on the
-     route to the current position. */
-  function drawRouteProgress(pos) {
-    if (!routeCoords.length) return;
-    const { idx } = nearestRouteIndex(pos);
-    if (traveledLine) { map.removeLayer(traveledLine); traveledLine = null; }
-    const traveled = routeCoords.slice(0, idx + 1);
-    if (traveled.length > 1) {
-      traveledLine = L.polyline(traveled, { color: "#9aa0a6", weight: 6, opacity: 0.9 }).addTo(map);
-    }
-  }
-
-  function clearRouteLayers() {
-    routeSegments.forEach((l) => map.removeLayer(l));
-    routeSegments = [];
-    if (traveledLine) { map.removeLayer(traveledLine); traveledLine = null; }
-  }
-
-  /* Colors each OSRM step by its own distance/duration ratio as a stand-in
-     for live traffic - the free OSRM demo has no real traffic feed, so this
-     reflects the router's own speed estimate per road segment rather than
-     actual congestion. Refreshed periodically (see trafficIntervalId). */
-  function drawTrafficColoredRoute(steps) {
-    steps.forEach((step) => {
-      if (!step.geometry || !step.geometry.coordinates || step.duration <= 0) return;
-      const coords = step.geometry.coordinates.map((c) => [c[1], c[0]]);
-      const speedMps = step.distance / step.duration;
-      let color;
-      if (speedMps < 4) color = "#ea4335";        // red  - slow
-      else if (speedMps < 9) color = "#fbbc04";    // orange - moderate
-      else color = "#1a73e8";                       // blue - free-flowing
-      routeSegments.push(L.polyline(coords, { color, weight: 6, opacity: 0.85 }).addTo(map));
-    });
-  }
-
-  function formatDuration(totalSeconds) {
-    const mins = Math.max(1, Math.round(totalSeconds / 60));
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    if (h <= 0) return `${m} min`;
-    return `${h} hr ${m} min`;
-  }
-  function formatArrivalTime(totalSeconds) {
-    const arrival = new Date(Date.now() + totalSeconds * 1000);
-    return arrival.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  }
-
-  function showOceanCrossingPopup() {
-    const overlay = document.createElement("div");
-    overlay.className = "maps-modal-overlay show";
-    overlay.innerHTML = `
-      <div class="maps-modal">
-        <h3>No road route available</h3>
-        <p>There's no connected road between your starting point and ${escapeHtml(shortLabel(currentPlace.label) || "this destination")}. You'll likely need to cross an ocean (by air or ferry) to get there, which this free routing engine can't calculate.</p>
-        <div class="maps-modal-actions">
-          <button class="maps-btn" id="mapsOceanOk">Got it</button>
-        </div>
-      </div>`;
-    document.body.appendChild(overlay);
-    overlay.querySelector("#mapsOceanOk").addEventListener("click", () => overlay.remove());
-    overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
-  }
-
-  // The free public OSRM demo server (router.project-osrm.org) only reliably
-  // hosts the "driving" profile - requesting /foot/ or /bike/ against it
-  // silently falls back to car-speed timing, which is why walking/biking
-  // times were coming back at driving speed. So we always fetch the
-  // "driving" road-network geometry, then compute a realistic duration
-  // ourselves for non-driving modes using typical average speeds.
-  const MODE_SPEED_MPS = {
-    car: null,     // use OSRM's own driving duration
-    bike: 4.2,      // ~15 km/h
-    walk: 1.35,     // ~4.9 km/h
-    transit: 1.35,  // shown as walking, see note in the UI
-  };
-
-  async function fetchRoute(origin, heading) {
-    let bearingsParam = "";
-    if (typeof heading === "number" && !Number.isNaN(heading)) {
-      const h = Math.round(((heading % 360) + 360) % 360);
-      bearingsParam = `&bearings=${h},60;0,180`;
-    }
-    const url = `${OSRM}/route/v1/driving/${origin.lon},${origin.lat};${currentPlace.lon},${currentPlace.lat}?overview=full&geometries=geojson&steps=true${bearingsParam}`;
-    const data = await fetchJson(url);
-    if (!data.routes || !data.routes.length) throw new Error("No route found");
-    return data.routes[0];
-  }
-
-  async function requestRoute(origin, mode) {
+  async function requestRoute(origin, mode, silent) {
     try {
-      const heading = usingCompass ? mapHeading : travelHeading;
-      const route = await fetchRoute(origin, heading);
-      routeCoords = route.geometry.coordinates.map((c) => [c[1], c[0]]);
+      const profile = (TRAVEL_MODES[mode] || TRAVEL_MODES.car).profile;
+      const url = `${OSRM}/route/v1/${profile}/${origin.lon},${origin.lat};${currentPlace.lon},${currentPlace.lat}?overview=full&geometries=geojson&steps=true`;
+      const data = await fetchJson(url);
+      if (!data.routes || !data.routes.length) throw new Error("No route found");
+      const route = data.routes[0];
+
+      if (routeLine) map.removeLayer(routeLine);
+      const coords = route.geometry.coordinates.map((c) => [c[1], c[0]]);
+      routeLine = L.polyline(coords, { color: meColor(), weight: 6, opacity: 0.85 }).addTo(map);
+      if (!silent) map.fitBounds(routeLine.getBounds(), { padding: [60, 60] });
+
+      const km = (route.distance / 1000).toFixed(1);
+      const mins = Math.round(route.duration / 60);
+      navEta.textContent = `${mins} min`;
+      const modeNote = mode === "transit" ? " (walking route shown - live transit routing isn't available on the free routing engine used here)" : "";
+      navSub.textContent = `${km} km - ${shortLabel(currentPlace.label) || "Destination"}${modeNote}`;
+
       routeSteps = (route.legs || []).flatMap((leg) => leg.steps || []);
-
-      clearRouteLayers();
-      drawTrafficColoredRoute(routeSteps);
-      if (lastPos) drawRouteProgress(lastPos);
-      if (!navActive) {
-        const bounds = L.latLngBounds(routeCoords);
-        map.fitBounds(bounds, { padding: [60, 60] });
-      }
-
-      const speed = MODE_SPEED_MPS[mode];
-      const durationSec = speed ? route.distance / speed : route.duration;
-
-      etaDuration.textContent = formatDuration(durationSec);
-      etaArrival.textContent = `Arrive around ${formatArrivalTime(durationSec)}`;
-      const modeNote = mode === "transit" ? " (walking pace shown)" : "";
-      instructionText.textContent = nextInstructionFor(routeSteps) + modeNote;
+      currentStepIdx = 0;
+      renderNavSteps();
+      updateNavInstruction();
     } catch (err) {
-      const dist = haversine(origin, { lat: currentPlace.lat, lon: currentPlace.lon });
-      if (dist > 300000) {
-        showOceanCrossingPopup();
-      } else {
-        showError("Couldn't get directions to that location");
-      }
+      if (!silent) showError("Couldn't get directions to that location");
     }
   }
 
-  function nextInstructionFor(steps) {
-    if (!steps || !steps.length) return "Head toward your destination";
-    const step = steps[0];
+  function maneuverText(step) {
     const m = step.maneuver || {};
-    const name = step.name ? ` onto ${step.name}` : "";
-    const type = (m.type || "continue").replace(/_/g, " ");
-    return `${type.charAt(0).toUpperCase()}${type.slice(1)}${name}`;
+    const road = step.name ? ` onto ${step.name}` : "";
+    const type = m.type, mod = m.modifier;
+    if (type === "depart") return `Head ${mod || ""}${road}`.trim();
+    if (type === "arrive") return "You have arrived at your destination";
+    if (type === "roundabout" || type === "rotary") return `At the roundabout, take the exit${road}`;
+    if (mod) {
+      const label = { left: "Turn left", right: "Turn right", "slight left": "Bear left", "slight right": "Bear right",
+        "sharp left": "Sharp left", "sharp right": "Sharp right", straight: "Continue straight", uturn: "Make a U-turn" }[mod] || "Continue";
+      return `${label}${road}`;
+    }
+    return `Continue${road}`;
+  }
+  function maneuverIcon(step) {
+    const mod = (step.maneuver || {}).modifier;
+    if (!mod) return "⬆️";
+    if (mod.includes("left")) return "⬅️";
+    if (mod.includes("right")) return "➡️";
+    if (mod === "uturn") return "↩️";
+    return "⬆️";
   }
 
-  async function maybeReroute(pos) {
-    if (!navActive || !routeCoords.length) return;
-    const { dist } = nearestRouteIndex(pos);
-    const now = Date.now();
-    if (dist > 45 && now - lastRerouteAt > 8000) {
-      lastRerouteAt = now;
-      await requestRoute(pos, navMode);
+  function renderNavSteps() {
+    navStepsPanel.innerHTML = routeSteps.map((s, i) => `
+      <div class="maps-nav-step${i === currentStepIdx ? " active" : ""}" data-step="${i}">
+        <span class="maps-nav-step-icon">${maneuverIcon(s)}</span>
+        <span class="maps-nav-step-text">${escapeHtml(maneuverText(s))}</span>
+        <span class="maps-nav-step-dist">${s.distance > 0 ? Math.round(s.distance) + " m" : ""}</span>
+      </div>`).join("");
+  }
+  navStepsToggle.addEventListener("click", () => navStepsPanel.classList.toggle("show"));
+
+  function updateNavInstruction() {
+    const step = routeSteps[currentStepIdx];
+    navInstruction.textContent = step ? `${maneuverIcon(step)} ${maneuverText(step)}` : "";
+    navStepsPanel.querySelectorAll(".maps-nav-step").forEach((el, i) => el.classList.toggle("active", i === currentStepIdx));
+  }
+
+  // Advance to the next turn once the live position passes near the step's
+  // maneuver point, and reroute from scratch if the user strays far off the
+  // drawn path (a real nav app has to handle wrong turns, not just assume
+  // the driver follows the original route perfectly).
+  function updateNavProgress(pos, origin, mode) {
+    if (!routeSteps.length) return;
+    const next = routeSteps[currentStepIdx + 1];
+    if (next && next.maneuver) {
+      const [lon, lat] = next.maneuver.location;
+      if (haversineKm(pos.lat, pos.lon, lat, lon) < 0.03) {
+        currentStepIdx++;
+        updateNavInstruction();
+      }
+    }
+    if (routeLine) {
+      const latlngs = routeLine.getLatLngs();
+      let minDist = Infinity;
+      for (const p of latlngs) minDist = Math.min(minDist, haversineKm(pos.lat, pos.lon, p.lat, p.lng));
+      if (minDist > 0.08) {
+        const now = Date.now();
+        if (!lastRouteFetchPos || now - lastRouteFetchPos > 8000) {
+          lastRouteFetchPos = now;
+          navSub.textContent = "Rerouting…";
+          requestRoute({ lat: pos.lat, lon: pos.lon }, mode, true);
+        }
+      }
     }
   }
 
-  /* Periodic refresh so the traffic coloring and ETA stay current, without
-     yanking the person off a route they're already following turn-by-turn. */
-  function startTrafficRefresh(mode) {
-    stopTrafficRefresh();
-    trafficIntervalId = setInterval(() => {
-      if (!navActive || !lastPos) return;
-      requestRoute(lastPos, mode);
-    }, 60000);
-  }
-  function stopTrafficRefresh() {
-    if (trafficIntervalId) { clearInterval(trafficIntervalId); trafficIntervalId = null; }
-  }
-
-  /* Keeps the map following the live position marker, but backs off the
-     moment the person drags or zooms manually, resuming auto-follow only
-     after 10 seconds of no interaction. */
-  function markUserInteraction() {
-    if (!navActive) return;
-    followingUser = false;
-    lastInteractionAt = Date.now();
-  }
-  function startIdleRecenterCheck() {
-    stopIdleRecenterCheck();
-    idleCheckIntervalId = setInterval(() => {
-      if (!navActive || followingUser) return;
-      if (Date.now() - lastInteractionAt >= 10000) {
-        followingUser = true;
-        if (lastPos) map.setView([lastPos.lat, lastPos.lon], map.getZoom());
-      }
-    }, 1000);
-  }
-  function stopIdleRecenterCheck() {
-    if (idleCheckIntervalId) { clearInterval(idleCheckIntervalId); idleCheckIntervalId = null; }
-  }
-
-  function enterNavMode(origin, mode, isLiveLocation) {
+  function enterNavMode(origin, mode) {
     navActive = true;
     navMode = mode;
-    navOrigin = origin;
-    lastPos = origin;
-    followingUser = true;
-    lastInteractionAt = Date.now();
-
     document.body.classList.add("maps-nav-fullscreen");
-    mapsCard.classList.add("nav-mode");
-    searchForm.classList.add("maps-hidden-for-nav");
-    instructionRow.classList.add("show");
-    etaCard.classList.add("show");
-    hideDropdown();
-
-    // Map stays fully draggable/zoomable during navigation - see the
-    // idle-recenter check below for auto-follow behavior instead.
+    mapsCard.classList.add("hidden");
+    navBar.classList.add("show");
+    navStepsPanel.classList.remove("show");
     updateMeMarker(origin.lat, origin.lon);
-    requestCompassPermission();
     requestRoute(origin, mode);
-    startTrafficRefresh(mode);
-    startIdleRecenterCheck();
-
     startWatching((pos) => {
-      drawRouteProgress(pos);
-      maybeReroute(pos);
-      if (!followingUser) return;
-      if (usingCompass) {
-        // Map already rotates from the compass listener; just keep it centered.
-        map.setView([pos.lat, pos.lon], map.getZoom(), { animate: true });
-      } else {
-        map.panTo([pos.lat, pos.lon]);
-      }
+      map.panTo([pos.lat, pos.lon]);
+      updateNavProgress(pos, origin, mode);
     });
-
-    if (isLiveLocation) {
-      map.setView([origin.lat, origin.lon], 17);
-    } else {
-      // Custom start point chosen - show both ends until the route arrives.
-      map.setView([origin.lat, origin.lon], 14);
-    }
+    map.setView([origin.lat, origin.lon], 17);
   }
 
   function exitNavMode() {
     navActive = false;
-    stopCompass();
-    stopTrafficRefresh();
-    stopIdleRecenterCheck();
-    resetMapRotation();
-    updateMeMarkerRotation();
     document.body.classList.remove("maps-nav-fullscreen");
-    mapsCard.classList.remove("nav-mode");
-    searchForm.classList.remove("maps-hidden-for-nav");
-    instructionRow.classList.remove("show");
-    etaCard.classList.remove("show");
-    clearRouteLayers();
-    routeCoords = [];
-    routeSteps = [];
-    if (document.fullscreenElement || document.webkitFullscreenElement) {
-      const exit = document.exitFullscreen || document.webkitExitFullscreen;
-      if (exit) { try { exit.call(document); } catch { /* ignore */ } }
-    }
+    mapsCard.classList.remove("hidden");
+    navBar.classList.remove("show");
+    navStepsPanel.classList.remove("show");
+    routeSteps = []; currentStepIdx = 0;
+    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
   }
   navExitBtn.addEventListener("click", exitNavMode);
-
-  map.on("dragstart", markUserInteraction);
-
-  document.addEventListener("fullscreenchange", () => {
-    if (navActive && !document.fullscreenElement) exitNavMode();
-  });
-  document.addEventListener("webkitfullscreenchange", () => {
-    if (navActive && !document.webkitFullscreenElement) exitNavMode();
-  });
-
 
   /* ============================================================
      AUTH
@@ -1248,6 +1456,7 @@
     const { data: { session } } = await supabaseClient.auth.getSession();
     currentUser = session?.user ?? null;
     await loadSavedLocations();
+    checkTripDeepLink();
     supabaseClient.auth.onAuthStateChange((_event, sess) => {
       currentUser = sess?.user ?? null;
       loadSavedLocations();
@@ -1260,16 +1469,6 @@
   document.body.classList.add("maps-lock");
   initMap();
   initAuth();
-
-  // Best-effort, silent - just used to bias/sort search suggestions.
-  // No error shown if it's denied or unavailable.
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { userLoc = { lat: pos.coords.latitude, lon: pos.coords.longitude }; },
-      () => { /* ignore - search just falls back to unbiased results */ },
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
-    );
-  }
   }
 
   if (document.readyState === "loading") {
