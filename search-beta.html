@@ -333,7 +333,10 @@
       width: 100%;
       max-width: 900px;
       box-sizing: border-box;
+      overflow-x: auto;
+      scrollbar-width: none;
     }
+    .results-tabs::-webkit-scrollbar { display: none; }
     .safe-search-toggle {
       margin-left: auto;
       flex-shrink: 0;
@@ -783,6 +786,62 @@
     .page-btn:disabled { opacity: 0.38; cursor: default; pointer-events: none; }
     body.dark .page-btn { background: var(--glass-dark); border-color: var(--glass-border-dk); color: var(--txtd); box-shadow: var(--glass-inset-dk); }
     body.dark .page-btn:hover { background: var(--glass-dark-mid); border-color: var(--a); }
+
+    /* ── People also ask ── */
+    .paa-box {
+      display: flex; flex-direction: column;
+      border-radius: 14px;
+      background: var(--glass-light);
+      backdrop-filter: var(--glass-blur-sm);
+      -webkit-backdrop-filter: var(--glass-blur-sm);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow-sm);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    body.dark .paa-box { background: var(--glass-dark); border-color: var(--glass-border-dk); }
+    .paa-heading { padding: 12px 16px 8px; font-size: 13px; font-weight: 700; color: var(--txt); }
+    body.dark .paa-heading { color: var(--txtd); }
+    .paa-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      width: 100%; text-align: left;
+      padding: 12px 16px;
+      background: transparent; border: none; border-top: 1px solid var(--glass-border);
+      font-family: inherit; font-size: 13px; color: var(--txt);
+      cursor: pointer; transition: background 0.15s;
+    }
+    .paa-item:hover { background: var(--glass-light-mid); }
+    body.dark .paa-item { color: var(--txtd); border-top-color: var(--glass-border-dk); }
+    body.dark .paa-item:hover { background: var(--glass-dark-mid); }
+    .paa-arrow { color: var(--mut); font-weight: 700; flex-shrink: 0; }
+
+    /* ── Related searches ── */
+    #related-searches-box:empty { display: none; }
+    .related-heading { font-size: 13px; font-weight: 700; color: var(--txt); margin: 24px 0 10px; }
+    body.dark .related-heading { color: var(--txtd); }
+    .related-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .related-chip {
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--glass-light);
+      backdrop-filter: var(--glass-blur-sm);
+      -webkit-backdrop-filter: var(--glass-blur-sm);
+      border: 1px solid var(--glass-border);
+      color: var(--txt);
+      font-family: inherit; font-size: 12.5px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .related-chip:hover { background: var(--glass-light-mid); border-color: var(--a); transform: translateY(-1px); }
+    body.dark .related-chip { background: var(--glass-dark); border-color: var(--glass-border-dk); color: var(--txtd); }
+    body.dark .related-chip:hover { background: var(--glass-dark-mid); border-color: var(--a); }
+
+    /* ── Maps tab ── */
+    .maps-embed-wrap { border-radius: 14px; overflow: hidden; box-shadow: var(--glass-shadow-sm); border: 1px solid var(--glass-border); margin-bottom: 16px; }
+    body.dark .maps-embed-wrap { border-color: var(--glass-border-dk); }
+    .maps-list { display: flex; flex-direction: column; gap: 10px; }
+    .maps-attribution { margin-top: 16px; font-size: 11px; color: var(--mut); }
+    .maps-attribution a { color: var(--a); text-decoration: none; }
+    body.dark .maps-attribution { color: var(--mutd); }
 
     /* ── State boxes ── */
     .state-box {
@@ -1309,8 +1368,10 @@
         input.value = q;
         state.query = q;
         state.tab = t;
+        state.searchStartTime = performance.now();
         updateClearBtn();
         setActiveTab(t);
+        updateToolsVisibility(t);
         if (t === 'ai') {
           showResultsArea(false);
           runAiSearch(q);
@@ -1325,11 +1386,16 @@
         } else if (t === 'shopping') {
           showResultsArea(true);
           run360Search(q, 'shopping');
+        } else if (t === 'videos') {
+          showResultsArea(true);
+          waitForGcseAndSearch(buildVideoQuery(q), t);
+        } else if (t === 'maps') {
+          showResultsArea(true);
+          renderMapsResults(q);
         } else {
           showResultsArea(true);
           loadKnowledgePanel(q);
-          fetch360IndexResults(q);
-          waitForGcseAndSearch(q, t);
+          searchWebGcse(q, t);
         }
       }
     }
@@ -1941,6 +2007,11 @@
       if (range === 'any' && state.sortMode === 'recent') range = 'year';
       const days = { hour: 1, day: 1, week: 7, month: 31, year: 366 }[range];
       return days ? `${q} after:${dateNDaysAgo(days)}` : q;
+    }
+    // Videos tab reuses the same GCSE widget, restricted to common video
+    // hosts — there's no dedicated video-search backend for this project.
+    function buildVideoQuery(q) {
+      return `${buildFilteredQuery(q)} (site:youtube.com OR site:vimeo.com OR site:dailymotion.com)`;
     }
     // Shared by doSearch / tab-switch / initFromUrl for the Web tab: fetches
     // our own crawled index in parallel with the (possibly date-filtered)
@@ -2620,12 +2691,21 @@
       if (t === state.tab) return; // no-op if same tab
       state.tab = t;
       state.page = 1;
+      state.searchStartTime = performance.now();
       setActiveTab(t);
+      updateToolsVisibility(t);
       updateUrl(state.query, t);
 
       if (t === 'ai') {
         showResultsArea(false);
         if (state.query) runAiSearch(state.query);
+        return;
+      }
+
+      if (t === 'maps') {
+        showResultsArea(true);
+        if (state.query) renderMapsResults(state.query);
+        else showEmptyState();
         return;
       }
 
@@ -2637,15 +2717,26 @@
           run360Search(state.query, 'news');
         } else if (t === 'shopping') {
           run360Search(state.query, 'shopping');
+        } else if (t === 'videos') {
+          waitForGcseAndSearch(buildVideoQuery(state.query), t);
         } else {
           // Switching to Web tab was missing this — only a fresh search
           // triggered it, so tab-switching alone never merged in the
           // crawled index, only GCSE's own results.
-          fetch360IndexResults(state.query);
-          waitForGcseAndSearch(state.query, t);
+          searchWebGcse(state.query, t);
         }
       }
     });
+
+    // Tools bar (time range / sort) only makes sense for tabs backed by a
+    // real, re-queryable GCSE search — Web and Videos.
+    function updateToolsVisibility(t) {
+      const toggle = document.getElementById('tools-toggle');
+      const bar = document.getElementById('tools-bar');
+      const relevant = (t === 'web' || t === 'videos');
+      toggle.style.display = relevant ? 'flex' : 'none';
+      if (!relevant) bar.classList.remove('open');
+    }
 
     function setActiveTab(t) {
       tabsEl.querySelectorAll('.results-tab').forEach(el => {
@@ -2757,6 +2848,41 @@
           state.page = 1;
           scrapeImageResults(document.getElementById('gcse-hidden-container'));
         }
+      });
+    })();
+
+    /* ─────────────────────────────────
+       TOOLS BAR (time range / sort) — Web & Videos only
+    ───────────────────────────────── */
+    (function setupToolsBar() {
+      const toggle = document.getElementById('tools-toggle');
+      const bar    = document.getElementById('tools-bar');
+      const rangeSel = document.getElementById('tools-time-range');
+      const sortSel  = document.getElementById('tools-sort-mode');
+
+      toggle.addEventListener('click', () => {
+        toggle.classList.toggle('active');
+        bar.classList.toggle('open');
+      });
+
+      function rerunCurrentSearch() {
+        if (!state.query) return;
+        state.page = 1;
+        state.searchStartTime = performance.now();
+        if (state.tab === 'videos') {
+          waitForGcseAndSearch(buildVideoQuery(state.query), 'videos');
+        } else {
+          searchWebGcse(state.query, state.tab);
+        }
+      }
+
+      rangeSel.addEventListener('change', () => {
+        state.timeRange = rangeSel.value;
+        rerunCurrentSearch();
+      });
+      sortSel.addEventListener('change', () => {
+        state.sortMode = sortSel.value;
+        rerunCurrentSearch();
       });
     })();
 
@@ -3012,10 +3138,12 @@
 
       state.query = q;
       state.page = 1;
+      state.searchStartTime = performance.now();
       input.value = q;
       updateClearBtn();
       updateUrl(q, state.tab);
       addRecentSearch(q);
+      updateToolsVisibility(state.tab);
 
       if (state.tab === 'ai') {
         showResultsArea(false);
@@ -3024,6 +3152,10 @@
       }
 
       showResultsArea(true);
+      if (state.tab === 'maps') {
+        renderMapsResults(q);
+        return;
+      }
       loadKnowledgePanel(q);
       if (state.tab === 'images') {
         scrapeImageResults(document.getElementById('gcse-hidden-container'));
@@ -3031,10 +3163,11 @@
         run360Search(q, 'news');
       } else if (state.tab === 'shopping') {
         run360Search(q, 'shopping');
+      } else if (state.tab === 'videos') {
+        waitForGcseAndSearch(buildVideoQuery(q), 'videos');
       } else {
         // Web tab: fetch 360 index first, then GCSE fills the rest.
-        fetch360IndexResults(q);
-        waitForGcseAndSearch(q, state.tab);
+        searchWebGcse(q, state.tab);
       }
     }
 
@@ -3207,7 +3340,7 @@
 
     function renderNewsResults(articles) {
       if (!articles.length) { renderNoResults(); return; }
-      let html = `<div class="results-info">${escHtml(articles.length + ' news articles')}</div>`;
+      let html = `<div class="results-info">${escHtml(articles.length + ' news articles')}${elapsedSuffix()}</div>`;
       articles.forEach((a, i) => {
         const delay = i * 0.03;
         html += `<div class="result-card" style="animation-delay:${delay}s">
@@ -3297,7 +3430,7 @@
       const hasRatings = products.some(p => p.rating !== null && p.rating !== undefined);
 
       let html = `<div class="results-info" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;">
-        <span id="shop-result-count">${products.length} shopping results</span>
+        <span id="shop-result-count">${products.length} shopping results${elapsedSuffix()}</span>
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
           ${hasPrices ? `
             <input id="shop-min-price" type="number" placeholder="Min $" style="width:80px;padding:6px 8px;border-radius:8px;border:1px solid var(--glass-border);background:transparent;color:inherit;font-size:12px;">
@@ -3331,6 +3464,54 @@
           <h3>No results found</h3>
           <p>Try different keywords or check your spelling</p>
         </div>`;
+    }
+
+    /* ─────────────────────────────────
+       MAPS TAB
+       Uses OpenStreetMap's free, CORS-enabled Nominatim geocoder (no API
+       key/backend needed) plus its embeddable map — no dedicated maps
+       backend exists in this project. Links out to the full 360 Maps app.
+    ───────────────────────────────── */
+    async function renderMapsResults(q) {
+      showLoading();
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=6&addressdetails=1`);
+        const places = await res.json();
+        if (state.tab !== 'maps' || state.query !== q) return; // stale
+        if (!places || !places.length) { renderNoResults(); return; }
+
+        const top = places[0];
+        const lat = parseFloat(top.lat), lon = parseFloat(top.lon);
+        const d = 0.015;
+        const bbox = `${lon - d},${lat - d},${lon + d},${lat + d}`;
+
+        let html = `<div class="results-info">${places.length} location${places.length > 1 ? 's' : ''} found${elapsedSuffix()}</div>`;
+        html += `<div class="maps-embed-wrap">
+          <iframe width="100%" height="380" style="border:0;border-radius:14px;" loading="lazy"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&marker=${lat},${lon}"></iframe>
+        </div>`;
+        html += `<div class="maps-list">`;
+        places.forEach(p => {
+          const name = (p.display_name || '').split(',')[0];
+          html += `<div class="result-card">
+            <div class="result-card-text">
+              <a class="result-title" href="https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lon}#map=17/${p.lat}/${p.lon}" target="_blank" rel="noopener noreferrer">${escHtml(name)}</a>
+              <div class="result-snippet">${escHtml(p.display_name || '')}</div>
+            </div>
+          </div>`;
+        });
+        html += `</div>`;
+        html += `<div class="maps-attribution">Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors — <a href="/apps/360Maps.html" target="_blank" rel="noopener noreferrer">Open in 360 Maps →</a></div>`;
+        resultsArea.innerHTML = html;
+      } catch (e) {
+        if (state.tab !== 'maps') return;
+        resultsArea.innerHTML = `
+          <div class="state-box">
+            <div class="big-icon">⚠️</div>
+            <h3>Map lookup failed</h3>
+            <p>Couldn't reach the map service. Try again in a moment.</p>
+          </div>`;
+      }
     }
 
     function renderWebResults(results, countText, currentPage, totalPages) {
@@ -3432,7 +3613,7 @@
       if (!imgs.length) { renderNoResults(); return; }
 
       let html = '';
-      if (countText) html += `<div class="results-info">${escHtml(countText)}</div>`;
+      if (countText) html += `<div class="results-info">${escHtml(countText)}${elapsedSuffix()}</div>`;
 
       html += `<div id="image-results-grid">`;
       imgs.forEach((img, i) => {
