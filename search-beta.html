@@ -1,5 +1,5 @@
 <!-- ===============================
-  SEARCH.HTML V.2.0.3 CUSTOM SEARCH
+  SEARCH.HTML V.3.0 CUSTOM SEARCH
 ================================ -->
 <!DOCTYPE html>
 <html lang="en">
@@ -56,6 +56,13 @@
       opacity: 0;
       pointer-events: none;
       z-index: -1;
+      /* A transform on this ancestor makes it the containing block for any
+         position:fixed descendants Google's widget injects (autosuggest
+         boxes, "Explore further" / related-product cards, etc). Without
+         this, fixed-position children ignore left:-9999px entirely because
+         fixed positioning is relative to the viewport, not this container —
+         which is how stray Google cards were leaking into view. */
+      transform: translateZ(0);
     }
 
     /* ── Page layout — NO background set ── */
@@ -185,6 +192,27 @@
     body.dark #custom-clear-btn:hover { background: rgba(255,255,255,0.20); color: var(--txtd); }
     #custom-clear-btn.visible { display: flex; }
 
+    #voice-search-btn {
+      flex-shrink: 0;
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--mut);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      margin-right: 4px;
+      transition: background 0.18s, color 0.18s;
+    }
+    #voice-search-btn:hover { background: rgba(0,0,0,0.10); color: var(--txt); }
+    body.dark #voice-search-btn:hover { background: rgba(255,255,255,0.12); color: var(--txtd); }
+    #voice-search-btn.listening { color: #ef4444; animation: voicePulse 1.2s ease-in-out infinite; }
+    @keyframes voicePulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.35); }
+      50%      { box-shadow: 0 0 0 7px rgba(239,68,68,0); }
+    }
+
     /* Search button — gradient pill */
     #custom-search-btn {
       flex-shrink: 0;
@@ -255,6 +283,32 @@
     body.dark .suggestion-icon { color: var(--mutd); }
 
     .suggestion-text { flex: 1; }
+    .suggestion-remove {
+      flex-shrink: 0;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--mut);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .12s, background .12s, color .12s;
+    }
+    .suggestion-item:hover .suggestion-remove { opacity: 1; }
+    .suggestion-remove:hover { background: rgba(0,0,0,0.10); color: var(--txt); }
+    body.dark .suggestion-remove:hover { background: rgba(255,255,255,0.12); color: var(--txtd); }
+    .suggestion-footer {
+      padding: 9px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--mut);
+      text-align: center;
+      cursor: pointer;
+      transition: color .12s;
+    }
+    .suggestion-footer:hover { color: var(--a); }
+    body.dark .suggestion-footer { color: var(--mutd); }
     .suggestion-text em {
       font-style: normal;
       font-weight: 700;
@@ -279,6 +333,32 @@
       width: 100%;
       max-width: 900px;
       box-sizing: border-box;
+    }
+    .safe-search-toggle {
+      margin-left: auto;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--mut);
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      border-radius: 999px;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s, background .15s;
+      white-space: nowrap;
+    }
+    .safe-search-toggle:hover { color: var(--txt); border-color: var(--a); }
+    .safe-search-toggle.off { color: #ef4444; border-color: rgba(239,68,68,0.4); }
+    body.dark .safe-search-toggle { color: var(--mutd); border-color: var(--glass-border-dk); }
+    body.dark .safe-search-toggle:hover { color: var(--txtd); border-color: var(--a); }
+    @media (max-width: 640px) {
+      .safe-search-toggle span { display: none; }
+      .safe-search-toggle { padding: 7px 9px; }
     }
     .results-tab {
       display: flex;
@@ -321,13 +401,232 @@
       color: #fff; border-color: transparent;
     }
 
+    #tools-toggle.active { color: var(--a); border-color: var(--a); }
+
+    .tools-bar {
+      display: none;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 12px 10px;
+      box-sizing: border-box;
+      font-size: 12px;
+      color: var(--mut);
+    }
+    .tools-bar.open { display: flex; }
+    body.dark .tools-bar { color: var(--mutd); }
+    .tools-bar label { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+    .tools-bar select {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--txt);
+      background: var(--glass-light);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 5px 8px;
+      cursor: pointer;
+    }
+    body.dark .tools-bar select { color: var(--txtd); background: var(--glass-dark); border-color: var(--glass-border-dk); }
+    .tools-bar .tools-note { font-size: 11px; opacity: 0.75; }
+    @media (max-width: 640px) {
+      .tools-bar .tools-note { display: none; }
+    }
+
     /* ── Results container ── */
     #custom-results-area {
       width: 100%;
       max-width: 900px;
       padding: 16px 20px 60px;
       box-sizing: border-box;
+      /* flex item: grows to fill space next to the knowledge panel, and
+         when the panel is absent (display:none, taken out of flow) this
+         becomes the only flex item — it grows up to max-width then the
+         leftover space is split evenly by these auto margins, which
+         centers it instead of hugging the left edge like a narrow box. */
+      flex: 1 1 0%;
+      min-width: 0;
+      margin: 0 auto;
     }
+
+
+    .results-layout {
+      width: 100%;
+      max-width: 1240px;
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      padding: 16px 20px 60px;
+      box-sizing: border-box;
+    }
+
+    #knowledge-panel {
+      position: sticky;
+      top: 92px;
+      flex: 0 0 320px;
+      width: 320px;
+      border-radius: 18px;
+      padding: 14px;
+      background: var(--glass-light-mid);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow-sm), var(--glass-inset);
+      display: none;
+    }
+    body.dark #knowledge-panel { background: var(--glass-dark-mid); border-color: var(--glass-border-dk); box-shadow: var(--glass-shadow-sm), var(--glass-inset-dk);}
+    #knowledge-panel.active { display:block; }
+    .kp-image { width: 100%; height: 170px; object-fit: cover; border-radius: 12px; margin-bottom: 10px; }
+
+    .kp-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--txt);
+      line-height: 1.3;
+      margin-bottom: 4px;
+    }
+    body.dark .kp-title { color: var(--txtd); }
+    .kp-subtext {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--mut);
+      margin-bottom: 10px;
+    }
+    body.dark .kp-subtext { color: var(--mutd); }
+    .kp-desc {
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--txt);
+      margin-bottom: 12px;
+    }
+    body.dark .kp-desc { color: var(--txtd); }
+    .kp-source {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--a);
+      text-decoration: none;
+      margin-bottom: 14px;
+    }
+    .kp-source:hover { text-decoration: underline; }
+
+    .kp-related-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--mut);
+      margin: 4px 0 8px;
+      padding-top: 12px;
+      border-top: 1px solid var(--glass-border);
+    }
+    body.dark .kp-related-label { color: var(--mutd); border-top-color: var(--glass-border-dk); }
+    .kp-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .kp-pill {
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--txt);
+      background: rgba(0,0,0,0.06);
+      border: none;
+      border-radius: 999px;
+      padding: 6px 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: background .15s, color .15s;
+    }
+    .kp-pill:hover { background: var(--a); color: #fff; }
+    body.dark .kp-pill { color: var(--txtd); background: rgba(255,255,255,0.08); }
+    body.dark .kp-pill:hover { background: var(--a); color: #fff; }
+
+    /* Shimmer skeleton shown while the panel loads */
+    .kp-skel-img, .kp-skel-line {
+      background: linear-gradient(90deg, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.11) 37%, rgba(0,0,0,0.06) 63%);
+      background-size: 400% 100%;
+      animation: kpShimmer 1.4s ease infinite;
+      border-radius: 8px;
+    }
+    body.dark .kp-skel-img, body.dark .kp-skel-line {
+      background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.13) 37%, rgba(255,255,255,0.06) 63%);
+      background-size: 400% 100%;
+    }
+    .kp-skel-img { width: 100%; height: 170px; border-radius: 12px; margin-bottom: 12px; }
+    .kp-skel-line { height: 13px; margin-bottom: 9px; width: 100%; }
+    @keyframes kpShimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+    /* Structured facts table — Wikidata-sourced "Born / Founded / Headquarters"
+       style rows, the part that actually makes this a knowledge panel rather
+       than a Wikipedia excerpt. */
+    .kp-facts {
+      margin: 4px 0 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--glass-border);
+    }
+    body.dark .kp-facts { border-top-color: var(--glass-border-dk); }
+    .kp-fact-row {
+      display: flex;
+      gap: 10px;
+      padding: 5px 0;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .kp-fact-label {
+      flex: 0 0 38%;
+      color: var(--mut);
+      font-weight: 600;
+    }
+    body.dark .kp-fact-label { color: var(--mutd); }
+    .kp-fact-value { flex: 1; color: var(--txt); }
+    body.dark .kp-fact-value { color: var(--txtd); }
+
+    /* Inline calculator card — shown instead of the bio panel when the
+       query itself looks like a math expression. */
+    .kp-calc {
+      text-align: center;
+      padding: 6px 2px 4px;
+    }
+    .kp-calc-expr {
+      font-size: 13px;
+      color: var(--mut);
+      margin-bottom: 6px;
+      word-break: break-word;
+    }
+    body.dark .kp-calc-expr { color: var(--mutd); }
+    .kp-calc-result {
+      font-size: 30px;
+      font-weight: 800;
+      color: var(--txt);
+      word-break: break-word;
+      line-height: 1.25;
+    }
+    body.dark .kp-calc-result { color: var(--txtd); }
+    .kp-calc-icon { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--a); margin-bottom: 10px; }
+
+    /* Dictionary instant answer */
+    .kp-dict-word {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--txt);
+      margin-bottom: 2px;
+    }
+    body.dark .kp-dict-word { color: var(--txtd); }
+    .kp-dict-phonetic { font-size: 13px; color: var(--a); margin-bottom: 12px; }
+    .kp-dict-pos {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      font-style: italic;
+      color: var(--mut);
+      margin: 10px 0 4px;
+    }
+    body.dark .kp-dict-pos { color: var(--mutd); }
+    .kp-dict-defs { margin: 0 0 0 18px; padding: 0; }
+    .kp-dict-defs li { font-size: 13.5px; line-height: 1.55; color: var(--txt); margin-bottom: 4px; }
+    body.dark .kp-dict-defs li { color: var(--txtd); }
 
     .results-info {
       font-size: 13px;
@@ -423,6 +722,35 @@
     .image-result-item img { width: 100%; height: 140px; object-fit: cover; display: block; }
     .image-result-label { padding: 7px 10px; font-size: 12px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     body.dark .image-result-label { color: var(--mutd); }
+
+    /* ── Video grid ── */
+    #video-results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .video-result-item {
+      border-radius: 14px; overflow: hidden;
+      background: var(--glass-light);
+      backdrop-filter: var(--glass-blur-sm);
+      -webkit-backdrop-filter: var(--glass-blur-sm);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow-sm);
+      animation: cardIn 0.2s ease both;
+    }
+    body.dark .video-result-item { background: var(--glass-dark); border-color: var(--glass-border-dk); }
+    .video-thumb-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+    .video-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .video-thumb-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 28px; background: #111; }
+    .video-play-badge {
+      position: absolute; inset: 0; margin: auto; width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.55); color: #fff; border-radius: 50%; font-size: 16px;
+      pointer-events: none;
+    }
+    .video-result-text { padding: 10px 12px 12px; }
+    .video-result-text .result-title { font-size: 13px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+    .video-result-text .result-snippet { font-size: 12px; margin-top: 4px; }
 
     /* ── Pagination — glass pill buttons ── */
     .results-pagination {
@@ -613,47 +941,6 @@
     }
     #ai-panel.active { display: flex; }
 
-    /* ── News panel ── */
-    #news-panel {
-      width: 100%;
-      max-width: 900px;
-      padding: 16px 20px 60px;
-      box-sizing: border-box;
-      display: none;
-      flex-direction: column;
-      gap: 12px;
-    }
-    #news-panel.active { display: flex; }
-    .news-result-card {
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-      padding: 14px 18px;
-      background: var(--glass-light-mid);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
-      border-radius: 18px;
-      border: 1px solid var(--glass-border);
-      box-shadow: var(--glass-shadow-sm), var(--glass-inset);
-      text-decoration: none;
-      color: inherit;
-      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
-      animation: cardIn 0.22s ease both;
-    }
-    .news-result-card:hover { transform: translateY(-2px); box-shadow: var(--glass-shadow), var(--glass-inset); border-color: var(--a); }
-    body.dark .news-result-card { background: var(--glass-dark-mid); border-color: var(--glass-border-dk); box-shadow: var(--glass-shadow-sm), var(--glass-inset-dk); }
-    body.dark .news-result-card:hover { border-color: var(--a); box-shadow: var(--glass-shadow), var(--glass-inset-dk); }
-    .news-result-thumb { width: 100px; height: 68px; object-fit: cover; border-radius: 10px; flex-shrink: 0; border: 1px solid var(--glass-border); }
-    body.dark .news-result-thumb { border-color: var(--glass-border-dk); }
-    .news-result-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-    .news-result-source { font-size: 12px; color: var(--mut); font-weight: 600; }
-    body.dark .news-result-source { color: var(--mutd); }
-    .news-result-title { font-size: 16px; font-weight: 700; color: var(--a); line-height: 1.35; }
-    .news-result-desc { font-size: 13px; color: var(--mut); line-height: 1.5; }
-    body.dark .news-result-desc { color: var(--mutd); }
-    .news-result-date { font-size: 12px; color: var(--mut); margin-top: 2px; }
-    body.dark .news-result-date { color: var(--mutd); }
-
     .ai-response-card {
       background: var(--glass-light-mid);
       backdrop-filter: var(--glass-blur);
@@ -716,6 +1003,9 @@
       .search-bar-strip { padding: 9px 12px; }
       .result-thumbnail { display: none; }
       #image-results-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+      .results-layout { flex-direction: column; }
+      #knowledge-panel { position: static; order: -1; width: 100%; flex-basis: auto; }
+      #custom-results-area { margin: 0; }
       .results-tabs { gap: 4px; padding: 8px; }
       .results-tab { padding: 6px 12px; font-size: 12px; }
     }
@@ -760,6 +1050,25 @@
       <input type="color" id="cursorColorPicker" value="#3b82f6" />
       <button id="cursorColorReset">Reset</button>
     </div>
+    <div class="temp-unit-box" style="margin-top:20px;">
+      Temp Unit: <span id="tempUnitLabel">°C</span>
+      <button id="tempUnitBtn">Switch</button>
+    </div>
+    <div class="settings-box" style="margin-top:20px;">
+      <div class="settings-label">Background Image</div>
+      <input type="file" id="bgUpload" accept="image/*" class="settings-input" />
+      <input type="text" id="bgUrlInput" placeholder="Paste image URL…" class="settings-input" />
+      <button id="bgUrlBtn" class="settings-btn">Apply URL</button>
+      <button id="bgResetBtn" class="settings-btn">Reset</button>
+    </div>
+    <h3 style="margin-top:25px;">Legal</h3>
+    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
+    <a href="/tos" class="legal-link">📜 Terms of Service</a>
+    <h3 style="margin-top:25px;">About</h3>
+    <details class="about-dropdown">
+      <summary>ℹ️ What is 360?</summary>
+      <p>360 is a next-generation search engine and digital workspace. Search, chat, translate, check weather, monitor stocks, and interact with AI — all in one unified interface. Built by 360 Digital, Co.</p>
+    </details>
   </div>
   <div id="auth-popup" class="auth-popup hidden">
     <div class="auth-box">
@@ -816,6 +1125,9 @@
           <button id="custom-clear-btn" aria-label="Clear search" title="Clear">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
+          <button id="voice-search-btn" aria-label="Search by voice" title="Search by voice" style="display:none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+          </button>
           <button id="custom-search-btn">Search</button>
         </div>
         <!-- Live suggestions dropdown -->
@@ -825,10 +1137,6 @@
 
     <!-- Tab bar -->
     <div class="results-tabs" id="results-tabs">
-      <div class="results-tab" data-tab="ai">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 5 5"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-        AI
-      </div>
       <div class="results-tab active" data-tab="web">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         Web
@@ -841,22 +1149,70 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>
         News
       </div>
+      <div class="results-tab" data-tab="videos">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Videos
+      </div>
+      <div class="results-tab" data-tab="shopping">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Shopping
+      </div>
+      <div class="results-tab" data-tab="maps">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        Maps
+      </div>
+      <div class="results-tab" data-tab="ai">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 5 5"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        AI
+      </div>
+      <button id="safe-search-toggle" class="safe-search-toggle" title="Toggle Safe Search">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"/></svg>
+        <span id="safe-search-label">Safe Search: On</span>
+      </button>
+      <button id="tools-toggle" class="safe-search-toggle" title="Search tools" style="display:none;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+        <span>Tools</span>
+      </button>
     </div>
 
-    <!-- Results area -->
-    <div id="custom-results-area">
+    <!-- Tools bar: time range + sort, only meaningful for Web/Videos (real
+         Google results via GCSE) — News/Shopping/Maps come from a single
+         backend call with no per-request date filtering available. -->
+    <div class="tools-bar" id="tools-bar">
+      <label>Time:
+        <select id="tools-time-range">
+          <option value="any">Any time</option>
+          <option value="hour">Past hour</option>
+          <option value="day">Past 24 hours</option>
+          <option value="week">Past week</option>
+          <option value="month">Past month</option>
+          <option value="year">Past year</option>
+        </select>
+      </label>
+      <label>Sort:
+        <select id="tools-sort-mode">
+          <option value="relevance">Relevance</option>
+          <option value="recent">Most recent</option>
+        </select>
+      </label>
+      <span class="tools-note">Recency is best-effort — applied as a date filter on the underlying search, not a guaranteed chronological sort.</span>
+    </div>
+
+    <div class="results-layout">
+      <aside id="knowledge-panel"></aside>
+      <!-- Results area -->
+      <div id="custom-results-area">
       <div class="state-box" id="empty-state">
         <div class="big-icon">🔍</div>
+
         <h3>Search anything</h3>
         <p>Type in the bar above and press Search or Enter</p>
+      </div>
       </div>
     </div>
 
     <!-- AI panel -->
     <div id="ai-panel"></div>
-
-    <!-- News panel -->
-    <div id="news-panel"></div>
   </div>
 
   <!-- Image lightbox -->
@@ -886,7 +1242,2428 @@
   <script src="/assets/js/cursor.js"></script>
   <!-- Load GCSE silently -->
   <script async src="https://cse.google.com/cse.js?cx=e003eb0834b6b4be8"></script>
-  <!-- PAGE SCRIPT -->
-  <script src="/assets/js/360-search.js"></script>
+
+  <script>
+  (() => {
+    /* ─────────────────────────────────
+       STATE
+    ───────────────────────────────── */
+    const state = {
+      query: '',
+      tab: 'web',
+      page: 1,
+      suggestIdx: -1,
+      suggestList: [],
+      gcseReady: false,
+      pendingSearch: null,
+      // track whether suggestion dropdown should stay open
+      suggestOpen: false,
+      // prevent observer from firing during suggestion mirroring
+      suppressObserver: false,
+      // currently only filters the Images tab (passed to the image-search
+      // edge function); GCSE's own web-results safe search is configured
+      // at the CSE control-panel level, not adjustable per-request here.
+      safeSearch: localStorage.getItem('360_safe_search') !== 'off',
+      // Tools bar (Web/Videos only) — see buildFilteredQuery()
+      timeRange: 'any',
+      sortMode: 'relevance',
+      // performance.now() timestamp set when a search/tab-switch/page-nav
+      // begins, used to show "(X.XX seconds)" next to the result count.
+      searchStartTime: 0,
+    };
+
+    /* ─────────────────────────────────
+       SUPABASE EDGE FUNCTION AUTH
+       Same project anon key main.js uses for supabaseClient — Supabase
+       Edge Functions reject requests with no apikey/Authorization header
+       by default, so every fetch() to *.supabase.co/functions/v1/* needs
+       this attached.
+    ───────────────────────────────── */
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM";
+    const SUPABASE_FN_HEADERS = {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    };
+
+    /* ─────────────────────────────────
+       ELEMENT REFS
+    ───────────────────────────────── */
+    const input       = document.getElementById('custom-search-input');
+    const clearBtn    = document.getElementById('custom-clear-btn');
+    const searchBtn   = document.getElementById('custom-search-btn');
+    const dropdown    = document.getElementById('suggestions-dropdown');
+    const resultsArea = document.getElementById('custom-results-area');
+    const aiPanel     = document.getElementById('ai-panel');
+    const tabsEl      = document.getElementById('results-tabs');
+    const knowledgePanel = document.getElementById('knowledge-panel');
+    let kpToken = 0; // increments per knowledge-panel request; guards against a slow, stale response overwriting a newer one
+
+    /* ─────────────────────────────────
+       INIT FROM URL
+    ───────────────────────────────── */
+    function initFromUrl() {
+      const params = new URL(location.href).searchParams;
+      const q = params.get('q') || '';
+      const t = params.get('tab') || 'web';
+      if (q) {
+        input.value = q;
+        state.query = q;
+        state.tab = t;
+        updateClearBtn();
+        setActiveTab(t);
+        if (t === 'ai') {
+          showResultsArea(false);
+          runAiSearch(q);
+        } else if (t === 'images') {
+          showResultsArea(true);
+          loadKnowledgePanel(q);
+          state.page = 1;
+          scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        } else if (t === 'news') {
+          showResultsArea(true);
+          run360Search(q, 'news');
+        } else if (t === 'shopping') {
+          showResultsArea(true);
+          run360Search(q, 'shopping');
+        } else {
+          showResultsArea(true);
+          loadKnowledgePanel(q);
+          fetch360IndexResults(q);
+          waitForGcseAndSearch(q, t);
+        }
+      }
+    }
+
+    /* ─────────────────────────────────
+       SHOW / HIDE RESULTS vs AI PANEL
+    ───────────────────────────────── */
+    function showResultsArea(show) {
+      resultsArea.style.display = show ? '' : 'none';
+      aiPanel.classList.toggle('active', !show);
+    }
+
+    /* ─────────────────────────────────
+       WAIT FOR GCSE THEN SEARCH
+    ───────────────────────────────── */
+    
+    /* ─────────────────────────────────
+       INLINE CALCULATOR
+       Detects math-expression queries ("2+2", "15% of 200", "sqrt(81)")
+       and evaluates them without ever passing raw, unwhitelisted input to
+       Function() — known function/constant words are stripped first, and
+       whatever's left must be only digits/operators/whitespace/punctuation.
+    ───────────────────────────────── */
+    function tryCalculate(q) {
+      const trimmed = q.trim();
+      if (!trimmed || trimmed.length > 100) return null;
+
+      const pctOf = trimmed.match(/^([\d.]+)\s*%\s*of\s*([\d.]+)$/i);
+      if (pctOf) {
+        const a = parseFloat(pctOf[1]), b = parseFloat(pctOf[2]);
+        if (isNaN(a) || isNaN(b)) return null;
+        return { expr: trimmed, result: (a / 100) * b };
+      }
+
+      if (!/\d/.test(trimmed)) return null;
+      const looksMathy = /[+\-*/^%]/.test(trimmed) || /\b(sqrt|sin|cos|tan|log|ln|abs|pow)\s*\(/i.test(trimmed);
+      if (!looksMathy) return null;
+
+      const stripped = trimmed.replace(/\b(sqrt|sin|cos|tan|log|ln|abs|pow|pi|e)\b/gi, '');
+      if (!/^[\d\s+\-*/^%.(),]*$/.test(stripped)) return null; // anything else → not safe, bail
+
+      const expr = trimmed
+        .replace(/\^/g, '**')
+        .replace(/\bsqrt\(/gi, 'Math.sqrt(')
+        .replace(/\bsin\(/gi, 'Math.sin(')
+        .replace(/\bcos\(/gi, 'Math.cos(')
+        .replace(/\btan\(/gi, 'Math.tan(')
+        .replace(/\blog\(/gi, 'Math.log10(')
+        .replace(/\bln\(/gi, 'Math.log(')
+        .replace(/\babs\(/gi, 'Math.abs(')
+        .replace(/\bpow\(/gi, 'Math.pow(')
+        .replace(/\bpi\b/gi, 'Math.PI')
+        .replace(/(?<![a-zA-Z])e(?![a-zA-Z])/gi, 'Math.E');
+
+      try {
+        const result = Function(`"use strict"; return (${expr});`)();
+        if (typeof result !== 'number' || !isFinite(result)) return null;
+        return { expr: trimmed, result };
+      } catch (e) { return null; }
+    }
+
+    function renderCalculator(calc) {
+      const formatted = Number.isInteger(calc.result)
+        ? calc.result.toLocaleString()
+        : parseFloat(calc.result.toFixed(8)).toLocaleString(undefined, { maximumFractionDigits: 8 });
+      knowledgePanel.innerHTML = `
+        <div class="kp-calc">
+          <div class="kp-calc-icon">Calculator</div>
+          <div class="kp-calc-expr">${escHtml(calc.expr)} =</div>
+          <div class="kp-calc-result">${escHtml(formatted)}</div>
+        </div>
+      `;
+      knowledgePanel.classList.add('active');
+    }
+
+    /* ─────────────────────────────────
+       SPEED TEST
+       Real measurement (no fake numbers): ping via small round-trips,
+       download/upload via Cloudflare's public, keyless __down/__up
+       endpoints (the same ones speed.cloudflare.com itself uses — safe
+       to call cross-origin from any site).
+    ───────────────────────────────── */
+    let speedTestRunning = false;
+
+    function renderSpeedTestCard() {
+      knowledgePanel.classList.add('active');
+      knowledgePanel.innerHTML = `
+        <div class="kp-calc" id="speedtest-card">
+          <div class="kp-calc-icon">Internet Speed Test</div>
+          <div id="speedtest-body" style="margin-top:10px;">
+            <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:14px;">
+              <div style="flex:1;text-align:center;">
+                <div id="st-ping" style="font-size:22px;font-weight:700;">–</div>
+                <div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;">Ping (ms)</div>
+              </div>
+              <div style="flex:1;text-align:center;">
+                <div id="st-download" style="font-size:22px;font-weight:700;">–</div>
+                <div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;">Download (Mbps)</div>
+              </div>
+              <div style="flex:1;text-align:center;">
+                <div id="st-upload" style="font-size:22px;font-weight:700;">–</div>
+                <div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;">Upload (Mbps)</div>
+              </div>
+            </div>
+            <div id="st-status" style="font-size:13px;color:var(--mut);margin-bottom:10px;">Uses real network traffic — click to begin.</div>
+            <button id="st-start-btn" style="padding:9px 18px;border-radius:10px;border:none;background:var(--a);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Start Test</button>
+          </div>
+        </div>`;
+      const btn = document.getElementById('st-start-btn');
+      if (btn) btn.addEventListener('click', runSpeedTest);
+    }
+
+    async function measurePing() {
+      const times = [];
+      for (let i = 0; i < 4; i++) {
+        const t0 = performance.now();
+        try {
+          await fetch(`https://speed.cloudflare.com/__down?bytes=0&cachebust=${Date.now()}_${i}`, { cache: 'no-store' });
+          times.push(performance.now() - t0);
+        } catch(e) {}
+      }
+      times.sort((a,b) => a-b);
+      // Drop the first (TCP/TLS warmup) and take the median of what's left.
+      const rest = times.slice(1);
+      if (!rest.length) return null;
+      return rest[Math.floor(rest.length / 2)];
+    }
+
+    async function measureDownload() {
+      const bytes = 20_000_000; // 20MB
+      const t0 = performance.now();
+      const res = await fetch(`https://speed.cloudflare.com/__down?bytes=${bytes}&cachebust=${Date.now()}`, { cache: 'no-store' });
+      const buf = await res.arrayBuffer();
+      const seconds = (performance.now() - t0) / 1000;
+      const mbps = (buf.byteLength * 8) / seconds / 1_000_000;
+      return mbps;
+    }
+
+    async function measureUpload() {
+      const bytes = 8_000_000; // 8MB
+      const data = new Uint8Array(bytes);
+      crypto.getRandomValues(data.subarray(0, Math.min(65536, bytes))); // seed a chunk, rest can be zero — server doesn't care about content
+      const t0 = performance.now();
+      await fetch(`https://speed.cloudflare.com/__up`, { method: 'POST', body: data, cache: 'no-store' });
+      const seconds = (performance.now() - t0) / 1000;
+      return (bytes * 8) / seconds / 1_000_000;
+    }
+
+    async function runSpeedTest() {
+      if (speedTestRunning) return;
+      speedTestRunning = true;
+      const btn = document.getElementById('st-start-btn');
+      const status = document.getElementById('st-status');
+      const pingEl = document.getElementById('st-ping');
+      const dlEl = document.getElementById('st-download');
+      const ulEl = document.getElementById('st-upload');
+      if (btn) { btn.disabled = true; btn.textContent = 'Testing…'; btn.style.opacity = '0.6'; }
+
+      try {
+        if (status) status.textContent = 'Measuring ping…';
+        const ping = await measurePing();
+        if (pingEl) pingEl.textContent = ping !== null ? Math.round(ping) : '—';
+
+        if (status) status.textContent = 'Measuring download speed…';
+        const dl = await measureDownload();
+        if (dlEl) dlEl.textContent = dl.toFixed(1);
+
+        if (status) status.textContent = 'Measuring upload speed…';
+        const ul = await measureUpload();
+        if (ulEl) ulEl.textContent = ul.toFixed(1);
+
+        if (status) status.textContent = 'Test complete.';
+      } catch(e) {
+        if (status) status.textContent = 'Test failed — check your connection and try again.';
+      } finally {
+        speedTestRunning = false;
+        if (btn) { btn.disabled = false; btn.textContent = 'Run Again'; btn.style.opacity = '1'; }
+      }
+    }
+
+    /* ─────────────────────────────────
+       UNIT CONVERTER
+       "10 km to miles", "5kg in lbs", "100 f to c" — pure math, no API,
+       so it's instant and can never fail/timeout.
+    ───────────────────────────────── */
+    const UNIT_CATEGORIES = {
+      length: { mm:0.001, cm:0.01, m:1, km:1000, in:0.0254, ft:0.3048, yd:0.9144, mi:1609.344 },
+      weight: { mg:0.001, g:1, kg:1000, oz:28.3495, lb:453.592, ton:1000000, stone:6350.29 },
+      volume: { ml:0.001, l:1, gal:3.78541, qt:0.946353, pt:0.473176, cup:0.236588, floz:0.0295735 },
+      speed:  { mph:0.44704, kmh:0.277778, kph:0.277778, mps:1, knot:0.514444 },
+    };
+    const UNIT_ALIASES = {
+      meter:'m', meters:'m', metre:'m', metres:'m', millimeter:'mm', millimeters:'mm',
+      centimeter:'cm', centimeters:'cm', kilometer:'km', kilometers:'km', kilometre:'km', kilometres:'km',
+      mile:'mi', miles:'mi', foot:'ft', feet:'ft', inch:'in', inches:'in', yard:'yd', yards:'yd',
+      gram:'g', grams:'g', kilogram:'kg', kilograms:'kg', kilo:'kg', kilos:'kg', milligram:'mg', milligrams:'mg',
+      pound:'lb', pounds:'lb', lbs:'lb', ounce:'oz', ounces:'oz', tonne:'ton', tonnes:'ton', tons:'ton', stones:'stone',
+      liter:'l', liters:'l', litre:'l', litres:'l', milliliter:'ml', milliliters:'ml',
+      gallon:'gal', gallons:'gal', quart:'qt', quarts:'qt', pint:'pt', pints:'pt', cups:'cup',
+      'fl oz':'floz', 'fluid ounce':'floz', 'fluid ounces':'floz',
+      celsius:'c', '°c':'c', fahrenheit:'f', '°f':'f', kelvin:'k',
+      'km/h':'kmh', 'kph':'kph', 'mi/h':'mph', knots:'knot', 'm/s':'mps',
+    };
+    function normalizeUnit(raw) {
+      const u = raw.trim().toLowerCase();
+      return UNIT_ALIASES[u] || u;
+    }
+    function convertTemp(value, from, to) {
+      let c = from === 'c' ? value : from === 'f' ? (value - 32) * 5/9 : value - 273.15;
+      return to === 'c' ? c : to === 'f' ? c * 9/5 + 32 : c + 273.15;
+    }
+    const TEMP_LABEL = { c: '°C', f: '°F', k: 'K' };
+
+    function tryUnitConvert(q) {
+      const m = q.trim().match(/^([\d.]+)\s*([a-z°\/]+)\s+(?:to|in|as|->)\s+([a-z°\/]+)\??$/i);
+      if (!m) return null;
+      const value = parseFloat(m[1]);
+      if (isNaN(value)) return null;
+      const fromUnit = normalizeUnit(m[2]);
+      const toUnit   = normalizeUnit(m[3]);
+      if (fromUnit === toUnit) return null; // not a meaningful conversion
+
+      if (['c','f','k'].includes(fromUnit) && ['c','f','k'].includes(toUnit)) {
+        return {
+          expr: `${value}${TEMP_LABEL[fromUnit]} =`,
+          result: convertTemp(value, fromUnit, toUnit),
+          unit: TEMP_LABEL[toUnit],
+        };
+      }
+      for (const cat of Object.values(UNIT_CATEGORIES)) {
+        if (cat[fromUnit] != null && cat[toUnit] != null) {
+          return { expr: `${value} ${fromUnit} =`, result: (value * cat[fromUnit]) / cat[toUnit], unit: toUnit };
+        }
+      }
+      return null;
+    }
+
+    function renderUnitConvert(conv) {
+      const formatted = parseFloat(conv.result.toFixed(6)).toLocaleString(undefined, { maximumFractionDigits: 6 });
+      knowledgePanel.innerHTML = `
+        <div class="kp-calc">
+          <div class="kp-calc-icon">Unit Converter</div>
+          <div class="kp-calc-expr">${escHtml(conv.expr)}</div>
+          <div class="kp-calc-result">${escHtml(formatted)} <span style="font-size:18px;font-weight:700;">${escHtml(conv.unit)}</span></div>
+        </div>
+      `;
+      knowledgePanel.classList.add('active');
+    }
+
+    /* ─────────────────────────────────
+       DICTIONARY LOOKUP
+       "define X" / "what does X mean" / "X meaning" — keyless, CORS-enabled
+       free dictionary API.
+    ───────────────────────────────── */
+    function parseDictionaryQuery(q) {
+      const trimmed = q.trim();
+      let m = /^define\s+([a-z\-']+)\??$/i.exec(trimmed)
+           || /^definition\s+of\s+([a-z\-']+)\??$/i.exec(trimmed)
+           || /^what\s+does\s+([a-z\-']+)\s+mean\??$/i.exec(trimmed)
+           || /^([a-z\-']+)\s+meaning\??$/i.exec(trimmed)
+           || /^meaning\s+of\s+([a-z\-']+)\??$/i.exec(trimmed);
+      return m ? m[1] : null;
+    }
+
+    async function tryDictionaryLookup(q, token) {
+      const word = parseDictionaryQuery(q);
+      if (!word) return null;
+      try {
+        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+        if (!res.ok || token !== kpToken) return null;
+        const data = await res.json();
+        const entry = Array.isArray(data) ? data[0] : null;
+        if (!entry) return null;
+        const phonetic = entry.phonetic || entry.phonetics?.find(p => p.text)?.text || '';
+        const meanings = (entry.meanings || []).slice(0, 3).map(m => ({
+          pos: m.partOfSpeech,
+          defs: (m.definitions || []).slice(0, 2).map(d => d.definition).filter(Boolean),
+        })).filter(m => m.defs.length);
+        if (!meanings.length) return null;
+        return { word: entry.word || word, phonetic, meanings };
+      } catch (e) { return null; }
+    }
+
+    function renderDictionary(dict) {
+      knowledgePanel.innerHTML = `
+        <div class="kp-dict-word">${escHtml(dict.word)}</div>
+        ${dict.phonetic ? `<div class="kp-dict-phonetic">${escHtml(dict.phonetic)}</div>` : ''}
+        ${dict.meanings.map(m => `
+          <div class="kp-dict-pos">${escHtml(m.pos)}</div>
+          <ol class="kp-dict-defs">${m.defs.map(d => `<li>${escHtml(d)}</li>`).join('')}</ol>
+        `).join('')}
+      `;
+      knowledgePanel.classList.add('active');
+    }
+
+    /* ─────────────────────────────────
+       WIKIDATA STRUCTURED FACTS
+       The piece that turns "a paragraph from Wikipedia" into an actual
+       knowledge panel — Born/Founded/Headquarters/Population style rows.
+       Keyless, CORS-enabled, same access pattern as the Wikipedia calls
+       already used above.
+    ───────────────────────────────── */
+    const WIKIDATA_PROPS = {
+      P569: 'Born', P570: 'Died', P19: 'Born in', P27: 'Citizenship', P106: 'Occupation',
+      P571: 'Founded', P112: 'Founded by', P159: 'Headquarters', P1128: 'Employees',
+      P2046: 'Area', P1082: 'Population', P36: 'Capital', P17: 'Country', P452: 'Industry',
+    };
+
+    function formatWikidataDate(timeStr, precision) {
+      const m = /^([+-])(\d+)-(\d{2})-(\d{2})/.exec(timeStr || '');
+      if (!m) return null;
+      const [, sign, y, mo, d] = m;
+      const year = sign === '-' ? `${parseInt(y)} BCE` : `${parseInt(y)}`;
+      if (precision <= 9) return year;
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const monthName = months[parseInt(mo) - 1] || '';
+      return precision === 10 ? `${monthName} ${year}` : `${monthName} ${parseInt(d)}, ${year}`;
+    }
+
+    async function fetchWikidataFacts(title, token) {
+      try {
+        const entRes = await fetch(`https://www.wikidata.org/w/api.php?action=wbgetentities&sites=enwiki&titles=${encodeURIComponent(title)}&props=claims&languages=en&format=json&origin=*`);
+        if (!entRes.ok || token !== kpToken) return [];
+        const entData = await entRes.json();
+        const entity = Object.values(entData.entities || {})[0];
+        if (!entity || !entity.claims || entity.id === undefined) return [];
+
+        const rawFacts = [];
+        for (const [pid, label] of Object.entries(WIKIDATA_PROPS)) {
+          const dv = entity.claims[pid]?.[0]?.mainsnak?.datavalue;
+          if (dv) rawFacts.push({ label, dv });
+          if (rawFacts.length >= 8) break; // cap — a panel, not a spreadsheet
+        }
+        if (!rawFacts.length) return [];
+
+        const qids = new Set();
+        rawFacts.forEach(f => { if (f.dv.type === 'wikibase-entityid') qids.add(f.dv.value.id); });
+
+        let labelMap = {};
+        if (qids.size) {
+          const labelRes = await fetch(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${[...qids].join('|')}&props=labels&languages=en&format=json&origin=*`);
+          if (labelRes.ok && token === kpToken) {
+            const labelData = await labelRes.json();
+            Object.entries(labelData.entities || {}).forEach(([qid, ent]) => {
+              labelMap[qid] = ent.labels?.en?.value || qid;
+            });
+          }
+        }
+
+        const facts = [];
+        for (const f of rawFacts) {
+          let value = null;
+          if (f.dv.type === 'wikibase-entityid') value = labelMap[f.dv.value.id] || null;
+          else if (f.dv.type === 'time') value = formatWikidataDate(f.dv.value.time, f.dv.value.precision);
+          else if (f.dv.type === 'quantity') {
+            const amt = parseFloat(f.dv.value.amount);
+            value = isNaN(amt) ? null : amt.toLocaleString();
+          } else if (f.dv.type === 'string' || f.dv.type === 'monolingualtext') {
+            value = f.dv.value?.text || (typeof f.dv.value === 'string' ? f.dv.value : null);
+          }
+          if (value) facts.push({ label: f.label, value });
+        }
+        return facts;
+      } catch (e) { return []; }
+    }
+
+
+    /* ─────────────────────────────────
+       KNOWLEDGE PANEL — query-shape gate
+       Decides whether a query looks like a genuine single-entity/
+       definition lookup (person, place, thing, concept) worth trying
+       Wikipedia/DDG for, vs. task/troubleshooting/comparison/navigational
+       queries that should just go straight to web results — matching how
+       Google actually decides when to surface a knowledge panel.
+    ───────────────────────────────── */
+    const KP_SITE_NAMES = new Set(['reddit','youtube','gmail','amazon','netflix','github','instagram','twitter','facebook','tiktok','spotify','discord','twitch','linkedin','pinterest','whatsapp','telegram','outlook','yahoo','ebay','walmart','target','craigslist','wikipedia','google']);
+    const KP_EXCLUDE_PATTERNS = [
+      /\b(how (do|can|to)|why (is|does|do|are|isn'?t|doesn'?t)|fix|troubleshoot|error|not working|won'?t|doesn'?t work)\b/i,
+      /\bvs\.?\b|\bversus\b|\bor\b.*\bor\b/i, // comparisons ("X vs Y", "X or Y or Z")
+      /\b(login|sign in|sign up|download|coupon|deal|discount|price|buy|cheap|near me|reddit|reviews?)\b/i,
+      /\brecipe\b/i, // recipes want web/shopping results, not an entity bio panel
+      /[?].*[?]/, // multiple question marks — compound/rambling question
+      /^(is|are|do|does|can|will|should|was|were)\b/i, // yes/no questions rarely have a single-entity answer
+    ];
+    function looksLikeEntityQuery(q) {
+      const trimmed = q.trim();
+      const words = trimmed.split(/\s+/);
+      if (words.length > 7) return false; // long-form questions/sentences aren't entity lookups
+      const lower = trimmed.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+      if (KP_SITE_NAMES.has(lower)) return false; // bare site name — user wants to navigate there, not read about it
+      return !KP_EXCLUDE_PATTERNS.some(re => re.test(trimmed));
+    }
+
+    /* ─────────────────────────────────
+       KNOWLEDGE PANEL — result relevance gate
+       Even for queries that pass the shape check above, Wikipedia's fuzzy
+       search can still return a barely-related "closest available" page
+       for genuinely obscure/misspelled queries. Require the returned
+       title to actually share meaningful vocabulary with the query before
+       trusting it, instead of rendering whatever came back.
+    ───────────────────────────────── */
+    const KP_STOPWORDS = new Set(['a','an','the','is','are','was','were','of','in','on','at','to','for','and','or','what','who','where','when']);
+    function kpTitleRelevant(query, title) {
+      if (!title) return false;
+      const sig = s => new Set(s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 1 && !KP_STOPWORDS.has(w)));
+      const qWords = sig(query);
+      const tWords = sig(title);
+      if (!qWords.size) return true;
+      let overlap = 0;
+      qWords.forEach(w => { if (tWords.has(w) || [...tWords].some(t => t.startsWith(w) || w.startsWith(t))) overlap++; });
+      return overlap / qWords.size >= 0.4;
+    }
+
+    async function loadKnowledgePanel(q) {
+      const myToken = ++kpToken; // guards against a slow earlier request clobbering a newer one
+      if (!q?.trim()) { knowledgePanel.classList.remove('active'); knowledgePanel.innerHTML = ''; return; }
+
+      // "speed test" / "internet speed test" — real, no fake numbers.
+      // Doesn't auto-run (bandwidth tests use real data and shouldn't fire
+      // on every keystroke); shows a Start button instead, Google-style.
+      if (/^(internet |wifi |network )?speed\s*test$|^test my (internet |network )?speed$/i.test(q.trim())) {
+        renderSpeedTestCard();
+        return;
+      }
+
+      // Math expressions get an instant calculator card — no need to hit
+      // Wikipedia/DuckDuckGo/Wikidata for "2+2".
+      const calc = tryCalculate(q);
+      if (calc) { renderCalculator(calc); return; }
+
+      // "10 km to miles" style queries — pure math, instant, no API needed.
+      const conv = tryUnitConvert(q);
+      if (conv) { renderUnitConvert(conv); return; }
+
+      // "100 usd to eur" — real live rates via server-side proxy (the
+      // frontend never calls the currency API directly, same CORS-safety
+      // pattern as the DuckDuckGo instant-answer proxy).
+      const currencyMatch = q.trim().match(/^([\d.,]+)\s*([a-z]{3})\s+(?:to|in)\s+([a-z]{3})\s*\??$/i);
+      if (currencyMatch) {
+        const CURRENCY_CODES = new Set(['usd','eur','gbp','jpy','cad','aud','chf','cny','inr','mxn','brl','krw','sgd','nzd','sek','nok','dkk','pln','try','zar','hkd','thb','ils','aed']);
+        const from = currencyMatch[2].toLowerCase(), to = currencyMatch[3].toLowerCase();
+        if (CURRENCY_CODES.has(from) && CURRENCY_CODES.has(to)) {
+          const amount = parseFloat(currencyMatch[1].replace(/,/g, ''));
+          knowledgePanel.classList.add('active');
+          knowledgePanel.innerHTML = `<div class="kp-skel-line" style="width:50%;height:22px;"></div><div class="kp-skel-line" style="width:30%"></div>`;
+          try {
+            const res = await fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/currency-convert?from=${from}&to=${to}&amount=${amount}`, { headers: SUPABASE_FN_HEADERS });
+            const data = await res.json();
+            if (myToken !== kpToken) return;
+            if (!data.error && data.result !== undefined) {
+              knowledgePanel.innerHTML = `
+                <div class="kp-calc">
+                  <div class="kp-calc-icon">Currency · Live rate ${escHtml(data.date || '')}</div>
+                  <div class="kp-calc-expr">${escHtml(amount.toString())} ${from.toUpperCase()} =</div>
+                  <div class="kp-calc-result">${data.result.toFixed(2)} <span style="font-size:18px;font-weight:700;">${to.toUpperCase()}</span></div>
+                </div>`;
+              return;
+            }
+          } catch (e) {}
+          if (myToken !== kpToken) return;
+          knowledgePanel.classList.remove('active');
+          knowledgePanel.innerHTML = '';
+        }
+      }
+
+      // "define X" / "what does X mean" — try the dictionary before falling
+      // through to the Wikipedia/Wikidata bio-panel flow.
+      const dictWord = parseDictionaryQuery(q);
+      if (dictWord) {
+        knowledgePanel.classList.add('active');
+        knowledgePanel.innerHTML = `
+          <div class="kp-skel-line" style="width:50%;height:22px;"></div>
+          <div class="kp-skel-line" style="width:30%"></div>
+          <div class="kp-skel-line"></div>
+          <div class="kp-skel-line" style="width:80%"></div>
+        `;
+        const dict = await tryDictionaryLookup(q, myToken);
+        if (myToken !== kpToken) return;
+        if (dict) { renderDictionary(dict); return; }
+        // No dictionary entry found (not a real word, or API miss) — fall
+        // through to the normal knowledge-panel flow below as a backstop.
+      }
+
+      // ── Should this query even attempt an entity/definition panel? ──
+      // Wikipedia's search API always returns SOME top hit for any string
+      // (it's fuzzy full-text search), so without this gate the panel was
+      // firing for nearly every query — including troubleshooting
+      // questions, comparisons, and navigational searches — often showing
+      // a confidently wrong "closest available" article. Google is far
+      // more selective: it only shows a knowledge panel for queries that
+      // actually look like a single-entity/definition lookup.
+      if (!looksLikeEntityQuery(q)) {
+        knowledgePanel.classList.remove('active');
+        knowledgePanel.innerHTML = '';
+        return;
+      }
+
+      knowledgePanel.classList.add('active');
+      knowledgePanel.innerHTML = `
+        <div class="kp-skel-img"></div>
+        <div class="kp-skel-line" style="width:70%"></div>
+        <div class="kp-skel-line" style="width:40%"></div>
+        <div class="kp-skel-line"></div>
+        <div class="kp-skel-line"></div>
+        <div class="kp-skel-line" style="width:55%"></div>
+      `;
+
+      try {
+        // Wikipedia's summary endpoint needs an EXACT page title — most real
+        // search queries (questions, multi-word phrases) aren't exact titles
+        // and would just 404. Searching first and feeding the best match's
+        // title into the summary endpoint covers vastly more queries.
+        const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&origin=*&srlimit=1`);
+        const searchData = searchRes.ok ? await searchRes.json() : {};
+        const bestTitle = searchData?.query?.search?.[0]?.title;
+
+        const [wikiRes, ddgRes, facts] = await Promise.all([
+          bestTitle
+            ? fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(bestTitle)}`)
+            : Promise.resolve(null),
+          // DuckDuckGo's api.duckduckgo.com does not reliably send CORS
+          // headers, so calling it directly from the browser fails with a
+          // console CORS error on every search (it degraded silently in the
+          // UI, but was still a real broken network call). Routed through
+          // our ddg-instant edge function, which proxies it server-side.
+          fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/ddg-instant?q=${encodeURIComponent(q)}`, {
+            headers: SUPABASE_FN_HEADERS,
+          }),
+          bestTitle ? fetchWikidataFacts(bestTitle, myToken) : Promise.resolve([]),
+        ]);
+        if (myToken !== kpToken) return; // a newer search started while we were waiting
+
+        const wiki = (wikiRes && wikiRes.ok) ? await wikiRes.json() : {};
+        const ddg  = ddgRes.ok ? await ddgRes.json() : {};
+
+        const img    = wiki.thumbnail?.source || ddg.Image || '';
+        const title  = wiki.title || ddg.Heading || '';
+        const desc   = wiki.extract || ddg.AbstractText || '';
+        const source = wiki.content_urls?.desktop?.page || ddg.AbstractURL || '';
+        const related = (ddg.RelatedTopics || [])
+          .map(x => x.Text || x.Topics?.[0]?.Text)
+          .filter(Boolean)
+          .slice(0, 5);
+
+        // Genuinely nothing to show — hide rather than render a panel with
+        // the raw query as a fake title and an empty body.
+        if (!title && !desc && !related.length && !facts.length) {
+          knowledgePanel.classList.remove('active');
+          knowledgePanel.innerHTML = '';
+          return;
+        }
+
+        // Confidence gate: Wikipedia's search is fuzzy and always returns
+        // SOME top hit, even for queries with no real match — only trust
+        // it if the returned title actually shares vocabulary with what
+        // was searched. Wikidata facts (keyed off the same bestTitle) are
+        // gated by the same check since they'd be equally wrong.
+        if (title && !kpTitleRelevant(q, title)) {
+          knowledgePanel.classList.remove('active');
+          knowledgePanel.innerHTML = '';
+          return;
+        }
+
+        knowledgePanel.innerHTML = `
+          ${img ? `<img class="kp-image" src="${escHtml(img)}" alt="${escHtml(title || q)}" loading="lazy">` : ''}
+          <div class="kp-title">${escHtml(title || q)}</div>
+          <div class="kp-subtext">From Wikipedia &amp; DuckDuckGo</div>
+          ${desc ? `<div class="kp-desc">${escHtml(desc)}</div>` : ''}
+          ${facts.length ? `
+            <div class="kp-facts">
+              ${facts.map(f => `
+                <div class="kp-fact-row">
+                  <div class="kp-fact-label">${escHtml(f.label)}</div>
+                  <div class="kp-fact-value">${escHtml(f.value)}</div>
+                </div>`).join('')}
+            </div>` : ''}
+          ${source ? `<a class="kp-source" href="${escHtml(source)}" target="_blank" rel="noopener noreferrer">Read more →</a>` : ''}
+          ${related.length ? `
+            <div class="kp-related-label">People also search for</div>
+            <div class="kp-pills">
+              ${related.map(f => `<button class="kp-pill" data-q="${escHtml(f)}">${escHtml(f.length > 38 ? f.slice(0, 36) + '…' : f)}</button>`).join('')}
+            </div>` : ''}
+        `;
+
+        knowledgePanel.querySelectorAll('.kp-pill').forEach(btn => {
+          btn.addEventListener('click', () => { hideSuggestions(); doSearch(btn.dataset.q); });
+        });
+      } catch (e) {
+        if (myToken !== kpToken) return;
+        knowledgePanel.classList.remove('active');
+        knowledgePanel.innerHTML = '';
+      }
+    }
+
+    /* ─────────────────────────────────
+       TOOLS BAR — time range / sort
+       Google's public "after:YYYY-MM-DD" query operator is the only date
+       filter still reachable through a scraped GCSE widget (no direct API
+       params available here). "Most recent" sort has no true chronological
+       equivalent through this widget, so as a best-effort stand-in it
+       biases toward the last year when no narrower range is chosen —
+       this is documented to the user in the tools bar itself.
+    ───────────────────────────────── */
+    function dateNDaysAgo(n) {
+      return new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    }
+    function buildFilteredQuery(q) {
+      let range = state.timeRange;
+      if (range === 'any' && state.sortMode === 'recent') range = 'year';
+      const days = { hour: 1, day: 1, week: 7, month: 31, year: 366 }[range];
+      return days ? `${q} after:${dateNDaysAgo(days)}` : q;
+    }
+    // Shared by doSearch / tab-switch / initFromUrl for the Web tab: fetches
+    // our own crawled index in parallel with the (possibly date-filtered)
+    // GCSE query.
+    function searchWebGcse(q, tab) {
+      fetch360IndexResults(q);
+      waitForGcseAndSearch(buildFilteredQuery(q), tab);
+    }
+
+    let gcseTimeoutId = null;
+    function waitForGcseAndSearch(q, tab) {
+      if (state.gcseReady) {
+        clearTimeout(gcseTimeoutId);
+        triggerGcseSearch(q, tab);
+      } else {
+        state.pendingSearch = { q, tab };
+        // GCSE is a Google ads-supported widget and commonly gets blocked by
+        // ad blockers / privacy extensions / network policy. Without a
+        // timeout, a blocked widget leaves the Web tab spinning forever even
+        // though we already have working 360 Index + web results fetched.
+        clearTimeout(gcseTimeoutId);
+        gcseTimeoutId = setTimeout(() => {
+          if (!state.gcseReady && state.pendingSearch && state.pendingSearch.q === q && state.tab === tab) {
+            useIndexFallbackForWeb(q);
+          }
+        }, 6000);
+      }
+    }
+
+    /* ─────────────────────────────────
+       FALLBACK: render index/web results directly when the GCSE widget
+       never becomes ready (blocked script, network policy, etc.)
+    ───────────────────────────────── */
+    function useIndexFallbackForWeb(q) {
+      state.pendingSearch = null;
+      if (edgeWebFallback && edgeWebFallback.web && edgeWebFallback.web.length) {
+        const mapped = edgeWebFallback.web.map(r => ({ href: r.url, title: r.title, snippet: r.desc, thumb: r.thumb }));
+        const note = edgeWebFallback.countText || '';
+        renderWebResults(mapped, note, 1, 1);
+      } else {
+        resultsArea.innerHTML = `
+          <div class="state-box">
+            <div class="big-icon">⚠️</div>
+            <h3>Web search unavailable</h3>
+            <p>Our search widget couldn't load — this is often caused by an ad blocker or content-blocking extension. Try disabling it for this site, or use the News / Shopping / AI tabs.</p>
+          </div>`;
+      }
+    }
+
+    /* ─────────────────────────────────
+       GCSE READY DETECTION
+    ───────────────────────────────── */
+    let gcseCheckInterval = setInterval(() => {
+      const gcseInput = getGcseInput();
+      if (gcseInput) {
+        clearInterval(gcseCheckInterval);
+        state.gcseReady = true;
+        clearTimeout(gcseTimeoutId);
+        if (state.pendingSearch) {
+          triggerGcseSearch(state.pendingSearch.q, state.pendingSearch.tab);
+          state.pendingSearch = null;
+        }
+      }
+    }, 100);
+
+    /* ─────────────────────────────────
+       GET GCSE ELEMENTS
+    ───────────────────────────────── */
+    function getGcseInput() {
+      return document.querySelector('#gcse-hidden-container input.gsc-input');
+    }
+    function getGcseBtn() {
+      return document.querySelector('#gcse-hidden-container .gsc-search-button-v2, #gcse-hidden-container button.gsc-search-button');
+    }
+
+    /* ─────────────────────────────────
+       TRIGGER GCSE SEARCH
+    ───────────────────────────────── */
+    function triggerGcseSearch(q, tab) {
+      const gcseInput = getGcseInput();
+      if (!gcseInput) return;
+
+      // Suppress observer while we set the value
+      state.suppressObserver = true;
+      gcseInput.value = q;
+      gcseInput.dispatchEvent(new Event('input', { bubbles: true }));
+      gcseInput.dispatchEvent(new Event('change', { bubbles: true }));
+      setTimeout(() => { state.suppressObserver = false; }, 200);
+
+      // Try the google.search.cse API first
+      if (window.google && google.search && google.search.cse) {
+        try {
+          const el = google.search.cse.element.getElement('searchresults-only0') ||
+                     google.search.cse.element.getAllElements()[0];
+          if (el) {
+            el.execute(q);
+            setupGcseObserver();
+            return;
+          }
+        } catch(e) {}
+      }
+
+      // Fallback: click GCSE search button
+      const btn = getGcseBtn();
+      if (btn) {
+        setTimeout(() => {
+          btn.click();
+          setupGcseObserver();
+        }, 50);
+      }
+    }
+
+    /* ─────────────────────────────────
+       OBSERVE GCSE RESULTS + SCRAPE
+       Only fires after a real search,
+       not while mirroring suggestion input.
+    ───────────────────────────────── */
+    let gcseObserver = null;
+    let stableTimer  = null;
+    let safetyTimer  = null;
+
+    function setupGcseObserver() {
+      showLoading();
+      if (gcseObserver) { gcseObserver.disconnect(); gcseObserver = null; }
+      clearTimeout(stableTimer);
+      clearTimeout(safetyTimer);
+
+      const gcseContainer = document.getElementById('gcse-hidden-container');
+
+      gcseObserver = new MutationObserver(() => {
+        if (state.suppressObserver) return;
+        clearTimeout(stableTimer);
+        // Wait 1200ms of DOM silence before scraping — gives GCSE time to
+        // finish rendering all 10 results, not just the first few
+        stableTimer = setTimeout(() => {
+          scrapeAndRender();
+        }, 1200);
+      });
+
+      gcseObserver.observe(gcseContainer, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: false,
+      });
+
+      // Safety net — scrape no matter what after 8s
+      safetyTimer = setTimeout(() => scrapeAndRender(), 8000);
+    }
+
+    /* ─────────────────────────────────
+       SCRAPE GCSE RESULTS
+       Web and images use different GCSE DOM structures.
+    ───────────────────────────────── */
+    function scrapeAndRender() {
+      if (state.tab === 'ai' || state.tab === 'maps') return;
+
+      const gcseContainer = document.getElementById('gcse-hidden-container');
+
+      if (state.tab === 'images') {
+        scrapeImageResults(gcseContainer);
+      } else if (state.tab === 'videos') {
+        scrapeVideoResults(gcseContainer);
+      } else {
+        scrapeWebResults(gcseContainer);
+      }
+    }
+
+    function scrapeWebResults(gcseContainer) {
+      const resultEls = gcseContainer.querySelectorAll('.gsc-webResult.gsc-result');
+      if (!resultEls.length) {
+        const noResults = gcseContainer.querySelector('.gs-no-results-result, .gsc-no-results-result');
+        const indexOnly = (edgeWebFallback?.web || []).filter(r => r._from360);
+        if (noResults) {
+          if (indexOnly.length) {
+            const merged = indexOnly.map(r => {
+              let hostname = ''; try { hostname = new URL(r.url).hostname.replace('www.', ''); } catch(e) {}
+              return { title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: '' };
+            });
+            renderWebResults(merged, '', 1, 1);
+          } else {
+            renderNoResults();
+          }
+          return;
+        }
+        return; // still loading
+      }
+
+      const seenHrefs = new Set();
+      const results = [];
+
+      resultEls.forEach(el => {
+        const titleAnchor = el.querySelector('.gs-title a[data-ctorig], .gs-title a, a.gs-title');
+        const snippetEl   = el.querySelector('.gs-snippet');
+        const urlEl       = el.querySelector('.gs-visibleUrl, .gsc-url-top, .gs-visibleUrl-long');
+        const thumbEl     = el.querySelector('.gs-image img, .gsc-thumbnail img, img.gs-image');
+
+        let href = '';
+        if (titleAnchor) {
+          href = titleAnchor.getAttribute('data-ctorig') || titleAnchor.href || '';
+        }
+        if (href.includes('google.com/url')) {
+          try { href = new URL(href).searchParams.get('q') || href; } catch(e) {}
+        }
+        const hrefKey = href.replace(/\/$/, '').toLowerCase();
+        if (!href || !titleAnchor || seenHrefs.has(hrefKey)) return;
+        seenHrefs.add(hrefKey);
+
+        const title   = titleAnchor.textContent.trim();
+        const snippet = snippetEl ? snippetEl.innerHTML : '';
+
+        let displayUrl = '';
+        try {
+          const u = new URL(href);
+          const host = u.hostname.replace(/^www\./, '');
+          const path = u.pathname.replace(/\/$/, '');
+          displayUrl = path ? `${host} › ${path}` : host;
+        } catch(e) {
+          displayUrl = urlEl ? urlEl.textContent.trim() : href;
+        }
+
+        const thumb = thumbEl ? (thumbEl.src || thumbEl.getAttribute('data-src') || '') : '';
+        results.push({ title, href, displayUrl, snippet, thumb });
+      });
+
+      const { countText, currentPage, totalPages } = getGcsePaginationInfo(gcseContainer);
+
+      // Merge in crawled-index results, same shape as GCSE results, so they
+      // render as identical cards in the same single list — not a separate
+      // styled section. indexResults arrives from the backend already
+      // ordered best-first by the blended score (cosine similarity + full-
+      // text rank + PageRank authority, see search_crawled_pages). Building
+      // this as a single ordered block instead of unshifting one-by-one in
+      // a loop matters: unshift-in-a-forEach silently reverses the list,
+      // which was putting our LOWEST-ranked, lowest-authority index result
+      // at the very top and the actual best (highest PageRank/relevance)
+      // match at the bottom — exactly backwards from what PageRank is for.
+      const indexResults = (edgeWebFallback?.web || []).filter(r => r._from360);
+      const seenIndexHrefs = new Set(results.map(r => (r.href||'').replace(/\/$/,'').toLowerCase()));
+      const indexCards = [];
+      indexResults.forEach(r => {
+        const key = (r.url||'').replace(/\/$/,'').toLowerCase();
+        if (seenIndexHrefs.has(key)) return;
+        seenIndexHrefs.add(key);
+        let hostname = '';
+        try { hostname = new URL(r.url).hostname.replace('www.', ''); } catch(e) {}
+        // r._score is the backend's blended relevance score (cosine
+        // similarity + full-text rank + PageRank authority), roughly
+        // 0-0.6 for real matches after calibration. GCSE results carry no
+        // numeric score of their own, but their array order already IS
+        // Google's relevance ranking, so we assign a comparable synthetic
+        // score by position (starts at 1.0, decays per rank) and sort the
+        // two lists together — instead of always forcing our results
+        // first, which was overriding Google's own ranking outright even
+        // when its top pick was clearly more relevant.
+        indexCards.push({ title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: r.thumb || '', _score: r._score ?? 0.3 });
+      });
+
+      const gcseScored = results.map((r, i) => ({ ...r, _score: Math.max(0.05, 1 - i * 0.09) }));
+      const merged = [...indexCards, ...gcseScored].sort((a, b) => b._score - a._score);
+
+      renderWebResults(merged, countText, currentPage, totalPages);
+    }
+
+    /* ─────────────────────────────────
+       VIDEOS TAB
+       No dedicated video-search backend exists, so this reuses the same
+       GCSE widget with the query site-restricted to common video hosts
+       (see buildFilteredQuery's sibling below) and scrapes it the same way
+       as web results, then renders as a thumbnail grid. YouTube links get
+       a real inline player (YouTube's public /embed/ iframe needs no API
+       key); everything else just opens the source in a new tab.
+    ───────────────────────────────── */
+    function youtubeIdFromUrl(href) {
+      try {
+        const u = new URL(href);
+        if (u.hostname.includes('youtu.be')) return u.pathname.slice(1);
+        if (u.hostname.includes('youtube.com')) {
+          if (u.pathname === '/watch') return u.searchParams.get('v');
+          if (u.pathname.startsWith('/embed/')) return u.pathname.split('/')[2];
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    function scrapeVideoResults(gcseContainer) {
+      const resultEls = gcseContainer.querySelectorAll('.gsc-webResult.gsc-result');
+      if (!resultEls.length) {
+        const noResults = gcseContainer.querySelector('.gs-no-results-result, .gsc-no-results-result');
+        if (noResults) renderNoResults();
+        return; // still loading
+      }
+
+      const seenHrefs = new Set();
+      const videos = [];
+      resultEls.forEach(el => {
+        const titleAnchor = el.querySelector('.gs-title a[data-ctorig], .gs-title a, a.gs-title');
+        const snippetEl   = el.querySelector('.gs-snippet');
+        const thumbEl     = el.querySelector('.gs-image img, .gsc-thumbnail img, img.gs-image');
+        if (!titleAnchor) return;
+
+        let href = titleAnchor.getAttribute('data-ctorig') || titleAnchor.href || '';
+        if (href.includes('google.com/url')) {
+          try { href = new URL(href).searchParams.get('q') || href; } catch(e) {}
+        }
+        const key = href.replace(/\/$/, '').toLowerCase();
+        if (!href || seenHrefs.has(key)) return;
+        seenHrefs.add(key);
+
+        const ytId = youtubeIdFromUrl(href);
+        let hostname = '';
+        try { hostname = new URL(href).hostname.replace(/^www\./, ''); } catch(e) {}
+
+        videos.push({
+          title: titleAnchor.textContent.trim(),
+          href,
+          hostname,
+          snippet: snippetEl ? snippetEl.innerHTML : '',
+          thumb: ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : (thumbEl ? (thumbEl.src || thumbEl.getAttribute('data-src') || '') : ''),
+          ytId,
+        });
+      });
+
+      const { countText, currentPage, totalPages } = getGcsePaginationInfo(gcseContainer);
+      renderVideoResults(videos, countText, currentPage, totalPages);
+    }
+
+    function scrapeImageResults(gcseContainer) {
+      // Real per-page image results via our image-search edge function (keeps
+      // the Google API key server-side instead of exposed in page source).
+      // Google's Custom Search JSON API hard-caps at 100 total results
+      // (start must be 1-91), so with 30 results/page (3 calls of 10) we
+      // cap at 3 full pages — anything beyond that the API can't serve.
+      const PAGE_SIZE = 30;
+      const pageStart = ((state.page - 1) * PAGE_SIZE) + 1; // 1, 31, 61…
+      const starts = [0, 10, 20].map(off => pageStart + off);
+
+      showLoading();
+
+      Promise.allSettled(
+        starts.map(s =>
+          fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/image-search?q=${encodeURIComponent(state.query)}&start=${s}&safe=${state.safeSearch === false ? 'off' : 'active'}`, {
+            headers: SUPABASE_FN_HEADERS,
+          })
+            .then(r => r.json())
+        )
+      ).then(responses => {
+        const seenSrcs = new Set();
+        const imgs = [];
+        let totalResults = 0;
+
+        responses.forEach(res => {
+          if (res.status !== 'fulfilled' || !res.value || res.value.error) return;
+          if (!totalResults && res.value.totalResults) totalResults = res.value.totalResults;
+          (res.value.items || []).forEach(item => {
+            if (!item.src || seenSrcs.has(item.src)) return;
+            seenSrcs.add(item.src);
+            imgs.push(item);
+          });
+        });
+
+        if (!imgs.length) {
+          // Key missing/invalid, quota exceeded, or zero real results —
+          // fall back to thumbnails already present in the GCSE web results.
+          scrapeImageFallback(gcseContainer);
+          return;
+        }
+
+        const totalPages = Math.min(3, Math.max(1, Math.ceil(totalResults / PAGE_SIZE)));
+        const countText  = totalResults ? `About ${totalResults.toLocaleString()} image results` : '';
+        renderImageResults(imgs, countText, state.page, totalPages);
+      }).catch(() => scrapeImageFallback(gcseContainer));
+    }
+
+    // Fallback: scrape whatever thumbnails GCSE put in web results
+    function scrapeImageFallback(gcseContainer) {
+      const seenSrcs = new Set();
+      const results = [];
+      gcseContainer.querySelectorAll('.gsc-webResult.gsc-result, .gs-result').forEach(el => {
+        const thumbEl = el.querySelector('.gs-image img, .gsc-thumbnail img, img.gs-image');
+        const titleEl = el.querySelector('.gs-title a');
+        if (!thumbEl) return;
+        const src = thumbEl.getAttribute('data-src') || thumbEl.src || '';
+        if (!src || src.startsWith('data:') || seenSrcs.has(src)) return;
+        seenSrcs.add(src);
+        let href = titleEl ? (titleEl.getAttribute('data-ctorig') || titleEl.href || '#') : '#';
+        if (href.includes('google.com/url')) {
+          try { href = new URL(href).searchParams.get('q') || href; } catch(e) {}
+        }
+        const alt = titleEl ? titleEl.textContent.trim() : 'Image';
+        let displayUrl = '';
+        try { displayUrl = new URL(href).hostname.replace(/^www\./, ''); } catch(e) { displayUrl = href; }
+        results.push({ src, href, alt, displayUrl });
+      });
+      const { countText, currentPage, totalPages } = getGcsePaginationInfo(gcseContainer);
+      if (!results.length) { renderNoResults(); return; }
+      renderImageResults(results, countText, currentPage, totalPages);
+    }
+
+    function getGcsePaginationInfo(gcseContainer) {
+      const countEl       = gcseContainer.querySelector('.gsc-result-info');
+      const countText     = countEl ? countEl.textContent.trim() : '';
+      const currentPageEl = gcseContainer.querySelector('.gsc-cursor-current-page');
+      const currentPage   = currentPageEl ? parseInt(currentPageEl.textContent.trim()) : state.page;
+      // GCSE always has exactly 10 pages
+      const totalPages = 10;
+      state.page = currentPage;
+      return { countText, currentPage, totalPages };
+    }
+
+    /* The web-result-thumbnail-scraping fallback used when image-search
+       returns nothing (key missing/invalid/quota exceeded, or zero results) —
+       see scrapeImageFallback() above, which already handles this case. */
+
+    /* ─────────────────────────────────
+       LIVE SUGGESTIONS
+       Mirror to GCSE with suppressObserver=true
+       so the observer doesn't fire on suggestion updates.
+       Use JSONP from Google Suggest as primary source.
+    ───────────────────────────────── */
+    let suggestTimeout   = null;
+    let lastSuggestQuery = '';
+    // Track whether input is currently focused
+    let inputFocused = false;
+
+    function fetchSuggestions(q) {
+      if (!q.trim()) return;
+      if (q === lastSuggestQuery) return;
+      lastSuggestQuery = q;
+
+      // Mirror to GCSE for its own autocomplete — suppress observer
+      const gcseInput = getGcseInput();
+      if (gcseInput) {
+        state.suppressObserver = true;
+        gcseInput.value = q;
+        gcseInput.dispatchEvent(new Event('input', { bubbles: true }));
+        gcseInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+        setTimeout(() => { state.suppressObserver = false; }, 300);
+      }
+
+      const reqToken = q;
+      fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/autocomplete?q=${encodeURIComponent(q)}`, {
+        headers: SUPABASE_FN_HEADERS,
+      })
+        .then(r => r.json())
+        .then(data => {
+          // Stale response guard — a slower earlier request shouldn't clobber
+          // a newer one if responses arrive out of order.
+          if (reqToken !== lastSuggestQuery) return;
+          if (!inputFocused) return;
+          const suggs = (data?.suggestions || []).slice(0, 8).map(s => s.text || s);
+          showSuggestions(suggs, q);
+        })
+        .catch(() => { /* suggestions are best-effort — fail silently */ });
+    }
+
+    function showSuggestions(items, query) {
+      if (!items || !items.length || !inputFocused) { hideSuggestions(); return; }
+
+      state.suggestList = items;
+      state.suggestIdx = -1;
+      state.suggestOpen = true;
+
+      const q = query.toLowerCase();
+      dropdown.innerHTML = items.map((s, i) => {
+        const lower = s.toLowerCase();
+        let display;
+        if (lower.startsWith(q)) {
+          display = `<em>${escHtml(s.slice(0, q.length))}</em>${escHtml(s.slice(q.length))}`;
+        } else {
+          display = escHtml(s);
+        }
+        return `<div class="suggestion-item" data-idx="${i}" data-val="${escHtml(s)}">
+          <span class="suggestion-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+          <span class="suggestion-text">${display}</span>
+          <span class="suggestion-arrow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg></span>
+        </div>`;
+      }).join('');
+
+      dropdown.classList.add('visible');
+
+      dropdown.querySelectorAll('.suggestion-item').forEach(item => {
+        item.addEventListener('mousedown', e => {
+          e.preventDefault(); // prevent blur from firing before click
+          const val = item.getAttribute('data-val');
+          input.value = val;
+          state.query = val;
+          lastSuggestQuery = val;
+          hideSuggestions();
+          updateClearBtn();
+          doSearch(val);
+        });
+      });
+    }
+
+    function hideSuggestions() {
+      dropdown.classList.remove('visible');
+      state.suggestOpen = false;
+      state.suggestIdx = -1;
+    }
+
+    /* ─────────────────────────────────
+       RECENT SEARCHES — shown when the search bar is focused while empty.
+       Plain localStorage on a real shipped page (not a Claude artifact),
+       so this is safe to use.
+    ───────────────────────────────── */
+    const RECENT_KEY = '360_recent_searches';
+    function getRecentSearches() {
+      try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch { return []; }
+    }
+    function addRecentSearch(q) {
+      if (!q?.trim()) return;
+      let list = getRecentSearches().filter(s => s.toLowerCase() !== q.toLowerCase());
+      list.unshift(q);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 8)));
+    }
+    function removeRecentSearch(q) {
+      const list = getRecentSearches().filter(s => s !== q);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+    }
+
+    function showRecentSearches() {
+      const recent = getRecentSearches();
+      if (!recent.length) { hideSuggestions(); return; }
+
+      state.suggestList = recent;
+      state.suggestIdx = -1;
+      state.suggestOpen = true;
+
+      const clockIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`;
+      const xIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
+
+      dropdown.innerHTML = recent.map((s, i) => `
+        <div class="suggestion-item" data-idx="${i}" data-val="${escHtml(s)}">
+          <span class="suggestion-icon">${clockIcon}</span>
+          <span class="suggestion-text">${escHtml(s)}</span>
+          <button class="suggestion-remove" data-remove="${escHtml(s)}" title="Remove" aria-label="Remove from recent searches">${xIcon}</button>
+        </div>
+      `).join('') + `<div class="suggestion-footer" id="clear-recent-btn">Clear recent searches</div>`;
+
+      dropdown.classList.add('visible');
+
+      dropdown.querySelectorAll('.suggestion-item').forEach(item => {
+        item.addEventListener('mousedown', e => {
+          if (e.target.closest('.suggestion-remove')) return; // handled separately below
+          e.preventDefault();
+          const val = item.getAttribute('data-val');
+          input.value = val;
+          state.query = val;
+          hideSuggestions();
+          updateClearBtn();
+          doSearch(val);
+        });
+      });
+      dropdown.querySelectorAll('.suggestion-remove').forEach(btn => {
+        btn.addEventListener('mousedown', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          removeRecentSearch(btn.dataset.remove);
+          showRecentSearches();
+        });
+      });
+      document.getElementById('clear-recent-btn')?.addEventListener('mousedown', e => {
+        e.preventDefault();
+        localStorage.setItem(RECENT_KEY, '[]');
+        hideSuggestions();
+      });
+    }
+
+    /* ─────────────────────────────────
+       KEYBOARD NAVIGATION
+    ───────────────────────────────── */
+    input.addEventListener('keydown', e => {
+      const items = dropdown.querySelectorAll('.suggestion-item');
+      if (dropdown.classList.contains('visible') && items.length) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          state.suggestIdx = Math.min(state.suggestIdx + 1, items.length - 1);
+          updateSuggestHighlight(items);
+          if (state.suggestIdx >= 0) input.value = state.suggestList[state.suggestIdx];
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          state.suggestIdx = Math.max(state.suggestIdx - 1, -1);
+          updateSuggestHighlight(items);
+          if (state.suggestIdx >= 0) input.value = state.suggestList[state.suggestIdx];
+          else input.value = state.query;
+          return;
+        }
+        if (e.key === 'Escape') { hideSuggestions(); return; }
+      }
+      if (e.key === 'Enter') {
+        hideSuggestions();
+        const q = input.value.trim();
+        if (q) doSearch(q);
+      }
+    });
+
+    function updateSuggestHighlight(items) {
+      items.forEach((el, i) => el.classList.toggle('active', i === state.suggestIdx));
+    }
+
+    /* ─────────────────────────────────
+       INPUT EVENTS
+    ───────────────────────────────── */
+    input.addEventListener('input', () => {
+      const val = input.value;
+      state.query = val;
+      updateClearBtn();
+      if (!val.trim()) {
+        lastSuggestQuery = '';
+        if (inputFocused) showRecentSearches(); else hideSuggestions();
+        return;
+      }
+      clearTimeout(suggestTimeout);
+      suggestTimeout = setTimeout(() => fetchSuggestions(val), 150);
+    });
+
+    input.addEventListener('focus', () => {
+      inputFocused = true;
+      if (!input.value.trim()) {
+        showRecentSearches();
+      } else if (state.suggestList.length) {
+        // Re-show suggestions if we have them and there's a query
+        dropdown.classList.add('visible');
+        state.suggestOpen = true;
+      }
+    });
+
+    input.addEventListener('blur', () => {
+      inputFocused = false;
+      // Delay so mousedown on suggestion fires first
+      setTimeout(() => {
+        if (!inputFocused) hideSuggestions();
+      }, 180);
+    });
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.custom-search-wrapper')) hideSuggestions();
+    });
+
+    /* ─────────────────────────────────
+       CLEAR BUTTON
+    ───────────────────────────────── */
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      state.query = '';
+      lastSuggestQuery = '';
+      state.suggestList = [];
+      updateClearBtn();
+      hideSuggestions();
+      input.focus();
+      showEmptyState();
+      updateUrl('', state.tab);
+    });
+
+    function updateClearBtn() {
+      clearBtn.classList.toggle('visible', !!input.value);
+    }
+
+    /* ─────────────────────────────────
+       SEARCH BUTTON
+    ───────────────────────────────── */
+    searchBtn.addEventListener('click', () => {
+      const q = input.value.trim();
+      if (q) { hideSuggestions(); doSearch(q); }
+    });
+
+    /* ─────────────────────────────────
+       TABS
+    ───────────────────────────────── */
+    tabsEl.addEventListener('click', e => {
+      const tab = e.target.closest('.results-tab');
+      if (!tab) return;
+      const t = tab.getAttribute('data-tab');
+      if (t === state.tab) return; // no-op if same tab
+      state.tab = t;
+      state.page = 1;
+      setActiveTab(t);
+      updateUrl(state.query, t);
+
+      if (t === 'ai') {
+        showResultsArea(false);
+        if (state.query) runAiSearch(state.query);
+        return;
+      }
+
+      showResultsArea(true);
+      if (state.query) {
+        if (t === 'images') {
+          scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        } else if (t === 'news') {
+          run360Search(state.query, 'news');
+        } else if (t === 'shopping') {
+          run360Search(state.query, 'shopping');
+        } else {
+          // Switching to Web tab was missing this — only a fresh search
+          // triggered it, so tab-switching alone never merged in the
+          // crawled index, only GCSE's own results.
+          fetch360IndexResults(state.query);
+          waitForGcseAndSearch(state.query, t);
+        }
+      }
+    });
+
+    function setActiveTab(t) {
+      tabsEl.querySelectorAll('.results-tab').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-tab') === t);
+      });
+    }
+
+    /* ─────────────────────────────────
+       LIGHTBOX
+    ───────────────────────────────── */
+    const lightbox   = document.getElementById('img-lightbox');
+    const lbImg      = document.getElementById('lb-img');
+    const lbDesc     = document.getElementById('lb-desc');
+    const lbUrl      = document.getElementById('lb-url');
+    const lbVisit    = document.getElementById('lb-visit');
+    const lbCloseBtn = document.getElementById('lb-close-btn');
+
+    function openLightbox({ src, href, alt, url }) {
+      lbImg.src = src;
+      lbImg.alt = alt || '';
+      lbDesc.textContent = alt || 'Image';
+      lbUrl.href = href;
+      lbUrl.textContent = url || href;
+      lbVisit.href = href;
+      lightbox.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      lightbox.classList.remove('open');
+      document.body.style.overflow = '';
+      lbImg.src = '';
+    }
+
+    lbCloseBtn.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', e => {
+      if (e.target === lightbox) closeLightbox();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeLightbox();
+
+      // "/" focuses the search bar — but never while the person is already
+      // typing somewhere (would otherwise insert a literal "/" mid-thought).
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey) {
+        const tag = document.activeElement?.tagName;
+        const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable;
+        if (!isTyping) {
+          e.preventDefault();
+          input.focus();
+          input.select();
+        }
+      }
+    });
+
+    /* ─────────────────────────────────
+       VOICE SEARCH — Web Speech API.
+       Not supported in Firefox; button stays hidden there rather than
+       doing nothing when clicked.
+    ───────────────────────────────── */
+    (function setupVoiceSearch() {
+      const voiceBtn = document.getElementById('voice-search-btn');
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) return; // stays display:none
+
+      voiceBtn.style.display = 'flex';
+      let recognizer = null;
+      let listening = false;
+
+      voiceBtn.addEventListener('click', () => {
+        if (listening) { recognizer?.stop(); return; }
+
+        recognizer = new SpeechRecognition();
+        recognizer.lang = navigator.language || 'en-US';
+        recognizer.interimResults = false;
+        recognizer.maxAlternatives = 1;
+
+        recognizer.onstart = () => { listening = true; voiceBtn.classList.add('listening'); };
+        recognizer.onend   = () => { listening = false; voiceBtn.classList.remove('listening'); };
+        recognizer.onerror = () => { listening = false; voiceBtn.classList.remove('listening'); };
+        recognizer.onresult = (e) => {
+          const transcript = e.results?.[0]?.[0]?.transcript;
+          if (!transcript) return;
+          input.value = transcript;
+          updateClearBtn();
+          hideSuggestions();
+          doSearch(transcript);
+        };
+
+        try { recognizer.start(); } catch (err) { listening = false; }
+      });
+    })();
+
+    /* ─────────────────────────────────
+       SAFE SEARCH TOGGLE
+    ───────────────────────────────── */
+    (function setupSafeSearchToggle() {
+      const btn   = document.getElementById('safe-search-toggle');
+      const label = document.getElementById('safe-search-label');
+      function render() {
+        label.textContent = state.safeSearch ? 'Safe Search: On' : 'Safe Search: Off';
+        btn.classList.toggle('off', !state.safeSearch);
+      }
+      render();
+      btn.addEventListener('click', () => {
+        state.safeSearch = !state.safeSearch;
+        localStorage.setItem('360_safe_search', state.safeSearch ? 'on' : 'off');
+        render();
+        if (state.tab === 'images' && state.query) {
+          state.page = 1;
+          scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        }
+      });
+    })();
+
+    /* ─────────────────────────────────
+       AI SEARCH
+       Calls Supabase edge function.
+       Returns { reply: "..." } — extract .reply.
+       Renders markdown-lite formatting.
+    ───────────────────────────────── */
+    let aiAbortController = null;
+
+    const AI_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 5 5"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>`;
+
+    // Convert markdown to safe HTML
+    function renderMarkdown(text) {
+      if (!text) return '';
+
+      // Normalize literal \n (from JSON serialization) to real newlines
+      text = text.replace(/\\n/g, '\n');
+      // Normalize \r\n and \r
+      text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+      const lines = text.split('\n');
+      const out   = [];
+      let i = 0;
+
+      while (i < lines.length) {
+        const line = lines[i];
+
+        // ── Fenced code block ```
+        if (line.trim().startsWith('```')) {
+          const lang = line.trim().slice(3).trim();
+          const codeLines = [];
+          i++;
+          while (i < lines.length && !lines[i].trim().startsWith('```')) {
+            codeLines.push(escHtml(lines[i]));
+            i++;
+          }
+          out.push(`<pre style="background:rgba(0,0,0,0.12);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:13px;margin:10px 0;line-height:1.5;border:1px solid var(--glass-border);"><code>${codeLines.join('\n')}</code></pre>`);
+          i++; // skip closing ```
+          continue;
+        }
+
+        // ── Table: line that starts and ends with |
+        if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+          const tableLines = [];
+          while (i < lines.length && lines[i].trim().startsWith('|')) {
+            tableLines.push(lines[i]);
+            i++;
+          }
+          out.push(renderTable(tableLines));
+          continue;
+        }
+
+        // ── Heading #
+        const hMatch = line.match(/^(#{1,3})\s+(.+)/);
+        if (hMatch) {
+          const level = hMatch[1].length;
+          const sizes = ['19px','17px','15px'];
+          out.push(`<div style="font-size:${sizes[level-1]};font-weight:700;margin:14px 0 4px;line-height:1.3;">${inlineFormat(hMatch[2])}</div>`);
+          i++; continue;
+        }
+
+        // ── Horizontal rule ---
+        if (/^---+$/.test(line.trim())) {
+          out.push(`<hr style="border:none;border-top:1px solid var(--glass-border);margin:12px 0;">`);
+          i++; continue;
+        }
+
+        // ── Unordered list item - or *
+        if (/^[\*\-]\s/.test(line)) {
+          const listItems = [];
+          while (i < lines.length && /^[\*\-]\s/.test(lines[i])) {
+            listItems.push(`<li style="margin:4px 0;">${inlineFormat(lines[i].replace(/^[\*\-]\s/, ''))}</li>`);
+            i++;
+          }
+          out.push(`<ul style="padding-left:22px;margin:6px 0;">${listItems.join('')}</ul>`);
+          continue;
+        }
+
+        // ── Numbered list
+        if (/^\d+\.\s/.test(line)) {
+          const listItems = [];
+          while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
+            listItems.push(`<li style="margin:4px 0;">${inlineFormat(lines[i].replace(/^\d+\.\s/, ''))}</li>`);
+            i++;
+          }
+          out.push(`<ol style="padding-left:22px;margin:6px 0;">${listItems.join('')}</ol>`);
+          continue;
+        }
+
+        // ── Empty line → spacing
+        if (line.trim() === '') {
+          out.push(`<div style="height:8px;"></div>`);
+          i++; continue;
+        }
+
+        // ── Regular paragraph
+        out.push(`<p style="margin:0 0 6px;line-height:1.7;">${inlineFormat(line)}</p>`);
+        i++;
+      }
+
+      return out.join('');
+    }
+
+    function renderTable(tableLines) {
+      if (tableLines.length < 2) return escHtml(tableLines.join('\n'));
+
+      const parseRow = (line) =>
+        line.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+
+      const headers = parseRow(tableLines[0]);
+      // Skip separator row (---|---|---)
+      const bodyLines = tableLines.slice(2);
+
+      let html = `<div style="overflow-x:auto;margin:12px 0;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr>`;
+      headers.forEach(h => {
+        html += `<th style="padding:8px 12px;border-bottom:2px solid var(--glass-border);text-align:left;font-weight:700;white-space:nowrap;">${inlineFormat(h)}</th>`;
+      });
+      html += `</tr></thead><tbody>`;
+
+      bodyLines.forEach((line, ri) => {
+        if (!line.trim() || /^[\|\s\-:]+$/.test(line)) return;
+        const cells = parseRow(line);
+        const bg = ri % 2 === 0 ? 'rgba(255,255,255,0.05)' : 'transparent';
+        html += `<tr style="background:${bg};">`;
+        cells.forEach(c => {
+          html += `<td style="padding:7px 12px;border-bottom:1px solid var(--glass-border);vertical-align:top;">${inlineFormat(c)}</td>`;
+        });
+        html += `</tr>`;
+      });
+
+      html += `</tbody></table></div>`;
+      return html;
+    }
+
+    function inlineFormat(text) {
+      // Preserve literal <br> and <br/> before escaping, restore after
+      const PLACEHOLDER = '\x00BR\x00';
+      let s = text.replace(/<br\s*\/?>/gi, PLACEHOLDER);
+      s = escHtml(s);
+      // Restore <br> placeholders
+      s = s.replace(/\x00BR\x00/g, '<br>');
+      // Also convert \n within a cell to <br>
+      s = s.replace(/\\n/g, '<br>');
+      // Bold **text** or __text__
+      s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/__(.+?)__/g, '<strong>$1</strong>');
+      // Italic *text* or _text_ → underline as requested
+      s = s.replace(/\*([^*\n]+)\*/g, '<span style="text-decoration:underline;">$1</span>');
+      s = s.replace(/_([^_\n]+)_/g, '<span style="text-decoration:underline;">$1</span>');
+      // Strikethrough
+      s = s.replace(/~~(.+?)~~/g, '<del>$1</del>');
+      // Inline code
+      s = s.replace(/`([^`]+)`/g, '<code style="background:rgba(0,0,0,0.10);padding:2px 5px;border-radius:4px;font-size:92%;">$1</code>');
+      return s;
+    }
+
+    async function runAiSearch(q) {
+      // Offline check
+      if (!navigator.onLine) {
+        aiPanel.innerHTML = `
+          <div class="ai-response-card">
+            <div class="ai-response-label">${AI_ICON} AI Answer</div>
+            <div class="ai-response-text" style="color:var(--mut)">📡 You appear to be offline. Please check your internet connection and try again.</div>
+          </div>`;
+        return;
+      }
+
+      if (aiAbortController) aiAbortController.abort();
+      aiAbortController = new AbortController();
+
+      aiPanel.innerHTML = `
+        <div class="ai-response-card">
+          <div class="ai-response-label">${AI_ICON} AI Answer</div>
+          <div class="ai-thinking">
+            <div class="ai-thinking-dots"><span></span><span></span><span></span></div>
+            Thinking…
+          </div>
+        </div>`;
+
+      const card = aiPanel.querySelector('.ai-response-card');
+
+      function showAnswer(text) {
+        // UTF-8-safe base64 handoff of the Q&A pair to ai.html, so
+        // "Continue conversation" opens the real multi-turn chat app
+        // (ai.html/ai.js — it already has full conversation history,
+        // persistence, and follow-up support) already seeded with this
+        // exchange as the first turn, instead of starting over from
+        // scratch like clicking a fresh link would.
+        let handoffUrl = '';
+        try {
+          const b64 = btoa(unescape(encodeURIComponent(text)));
+          handoffUrl = `ai.html?q=${encodeURIComponent(q)}&a=${encodeURIComponent(b64)}`;
+        } catch(e) {}
+        card.innerHTML = `<div class="ai-response-label">${AI_ICON} AI Answer</div><div class="ai-response-text">${renderMarkdown(text)}</div>
+          ${handoffUrl ? `<a href="${escHtml(handoffUrl)}" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:9px 16px;border-radius:10px;background:var(--a);color:#fff;text-decoration:none;font-size:13px;font-weight:600;">Continue this conversation →</a>` : ''}`;
+      }
+
+      try {
+        const resp = await fetch('https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/search-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...SUPABASE_FN_HEADERS },
+          body: JSON.stringify({ message: q }),
+          signal: aiAbortController.signal,
+        });
+
+        if (!resp.ok) {
+          let errMsg = `Error ${resp.status}`;
+          try { const e = await resp.json(); errMsg = e.error || e.message || errMsg; } catch(e) {}
+          throw new Error(errMsg);
+        }
+
+        const j = await resp.json();
+
+        // Your edge function returns { reply: "..." }
+        const answer = j.reply
+                    ?? j.response
+                    ?? j.content
+                    ?? j.text
+                    ?? j.message
+                    ?? j.answer
+                    ?? j.choices?.[0]?.message?.content
+                    ?? JSON.stringify(j, null, 2);
+
+        showAnswer(answer);
+
+      } catch(err) {
+        if (err.name === 'AbortError') return;
+        const isOffline = !navigator.onLine || err.message.includes('Failed to fetch') || err.message.includes('NetworkError');
+        card.innerHTML = `
+          <div class="ai-response-label">${AI_ICON} AI Answer</div>
+          <div class="ai-response-text" style="color:var(--mut)">${isOffline ? '📡 No internet connection.' : '⚠ ' + escHtml(err.message || 'Something went wrong.')}</div>`;
+      }
+    }
+
+    /* ─────────────────────────────────
+       DO SEARCH (main entry point)
+    ───────────────────────────────── */
+    function doSearch(q) {
+      // Offline check for web/images searches
+      if (!navigator.onLine && state.tab !== 'ai') {
+        resultsArea.innerHTML = `
+          <div class="state-box">
+            <div class="big-icon">📡</div>
+            <h3>No internet connection</h3>
+            <p>Please check your connection and try again.</p>
+          </div>`;
+        return;
+      }
+
+      state.query = q;
+      state.page = 1;
+      input.value = q;
+      updateClearBtn();
+      updateUrl(q, state.tab);
+      addRecentSearch(q);
+
+      if (state.tab === 'ai') {
+        showResultsArea(false);
+        runAiSearch(q);
+        return;
+      }
+
+      showResultsArea(true);
+      loadKnowledgePanel(q);
+      if (state.tab === 'images') {
+        scrapeImageResults(document.getElementById('gcse-hidden-container'));
+      } else if (state.tab === 'news') {
+        run360Search(q, 'news');
+      } else if (state.tab === 'shopping') {
+        run360Search(q, 'shopping');
+      } else {
+        // Web tab: fetch 360 index first, then GCSE fills the rest.
+        fetch360IndexResults(q);
+        waitForGcseAndSearch(q, state.tab);
+      }
+    }
+
+    /* ─────────────────────────────────
+       URL MANAGEMENT — uses %20 not + for spaces
+    ───────────────────────────────── */
+    function updateUrl(q, tab) {
+      const base = location.pathname;
+      if (q) {
+        history.replaceState(null, '', `${base}?q=${encodeURIComponent(q)}&tab=${encodeURIComponent(tab)}`);
+      } else {
+        history.replaceState(null, '', base);
+      }
+    }
+
+    function syncGcsQuery() {
+      const hash = window.location.hash;
+
+      // Only act if the hash actually contains a GCSE query token
+      if (!hash.includes('gsc.q=')) {
+        // GCSE fired a replaceState without a query — just strip the hash
+        // but DO NOT wipe the search params we set ourselves
+        if (window.location.hash) {
+          const url = new URL(window.location.href);
+          url.hash = '';
+          window.history.replaceState(null, '', url.toString());
+        }
+        return;
+      }
+
+      const qMatch   = hash.match(/gsc\.q=([^&]*)/);
+      const tabMatch = hash.match(/gsc\.tab=([^&]*)/);
+
+      if (!qMatch || !qMatch[1]) return; // nothing useful in hash — leave URL alone
+
+      const gscQuery = decodeURIComponent(qMatch[1].replace(/\+/g, ' ')).trim();
+      if (!gscQuery) return; // empty query — leave URL alone
+
+      const tab      = tabMatch ? tabMatch[1] : '0';
+      const base     = location.pathname;
+      const curQ     = new URLSearchParams(location.search).get('q') || '';
+
+      // Only update if it differs from what we already have
+      if (gscQuery !== curQ) {
+        window.history.replaceState(null, '',
+          `${base}?q=${encodeURIComponent(gscQuery)}&tab=${encodeURIComponent(tab)}`);
+      } else {
+        // Same query — just strip the hash fragment
+        const url = new URL(window.location.href);
+        url.hash = '';
+        window.history.replaceState(null, '', url.toString());
+      }
+    }
+
+    const _origPushState    = history.pushState.bind(history);
+    const _origReplaceState = history.replaceState.bind(history);
+
+    history.pushState = function(...args) {
+      _origPushState(...args);
+      // Only sync if GCSE put its own hash in
+      if (args[2] && String(args[2]).includes('gsc.')) setTimeout(syncGcsQuery, 50);
+    };
+    history.replaceState = function(...args) {
+      if (args[2] && String(args[2]).includes('gsc.')) {
+        _origReplaceState(...args);
+        setTimeout(syncGcsQuery, 50);
+      } else {
+        _origReplaceState(...args);
+      }
+    };
+
+    window.addEventListener('hashchange', () => {
+      if (window.location.hash.includes('gsc.')) syncGcsQuery();
+    });
+    window.addEventListener('load', () => setTimeout(syncGcsQuery, 300));
+
+    // Also detect going offline/online while the page is open
+    window.addEventListener('offline', () => {
+      resultsArea.innerHTML = `
+        <div class="state-box">
+          <div class="big-icon">📡</div>
+          <h3>You went offline</h3>
+          <p>Results may not load until your connection is restored.</p>
+        </div>`;
+    });
+
+    /* ─────────────────────────────────
+       RENDER FUNCTIONS
+    ───────────────────────────────── */
+    function showLoading() {
+      resultsArea.innerHTML = `
+        <div class="state-box">
+          <div class="loader-spinner"></div>
+          <p>Searching…</p>
+        </div>`;
+    }
+
+    function showEmptyState() {
+      resultsArea.innerHTML = `
+        <div class="state-box">
+          <div class="big-icon">🔍</div>
+          <h3>Search anything</h3>
+          <p>Type in the bar above and press Search or Enter</p>
+        </div>`;
+      aiPanel.innerHTML = '';
+      aiPanel.classList.remove('active');
+      resultsArea.style.display = '';
+    }
+
+    /* ─────────────────────────────────
+       360 INDEX — fetch crawled results, merge into the same result list
+       as GCSE (see scrapeWebResults) instead of a separate DOM node, since
+       inserting a sibling into #results-layout (a flex row meant only for
+       #knowledge-panel + #custom-results-area) broke the layout into a
+       mismatched narrow/wide split.
+    ───────────────────────────────── */
+    const EDGE_SEARCH = 'https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/search';
+    let edgeWebFallback = null; // full last web-tab response, used to merge into GCSE results and as a fallback if GCSE never loads
+
+    async function fetch360IndexResults(q) {
+      try {
+        const res = await fetch(EDGE_SEARCH, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...SUPABASE_FN_HEADERS },
+          body: JSON.stringify({ q, tab: 'web', safe: state.safeSearch ? 'moderate' : 'off' })
+        });
+        const data = await res.json();
+        edgeWebFallback = data;
+        // If GCSE already finished rendering before this resolved, re-merge
+        // now so index results still show up without a full reload.
+        if (state.tab === 'web' && !state.pendingSearch) scrapeAndRender();
+      } catch(e) {
+        edgeWebFallback = null;
+      }
+    }
+
+    /* ─────────────────────────────────
+       NEWS + SHOPPING via 360 edge function
+    ───────────────────────────────── */
+    async function run360Search(q, tab) {
+      showLoading();
+      try {
+        const res = await fetch(EDGE_SEARCH, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...SUPABASE_FN_HEADERS },
+          body: JSON.stringify({ q, tab })
+        });
+        if (!res.ok) {
+          let detail = '';
+          try { detail = (await res.json()).error || ''; } catch(e) { try { detail = await res.text(); } catch(e2) {} }
+          throw new Error(`Edge function returned ${res.status}${detail ? ': ' + detail : ''}`);
+        }
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        // Guard against stale responses: if the user switched tabs while
+        // this request was in flight (e.g. News takes longer than a
+        // follow-up Shopping request), the older response must not
+        // overwrite whatever the newer, currently-active tab is showing.
+        // This was the cause of "shopping switches to news after a few
+        // seconds" — a late-arriving News response with no staleness
+        // check at all would blindly render over the Shopping results.
+        if (state.tab !== tab) return;
+        if (tab === 'news') renderNewsResults(data.news || []);
+        else if (tab === 'shopping') renderShoppingResults(data.shopping || []);
+      } catch(e) {
+        if (state.tab !== tab) return;
+        resultsArea.innerHTML = `<div class="state-box"><div class="big-icon">⚠️</div><h3>Failed to load ${tab}</h3><p>${escHtml(String(e.message || e))}</p></div>`;
+      }
+    }
+
+    function renderNewsResults(articles) {
+      if (!articles.length) { renderNoResults(); return; }
+      let html = `<div class="results-info">${escHtml(articles.length + ' news articles')}</div>`;
+      articles.forEach((a, i) => {
+        const delay = i * 0.03;
+        html += `<div class="result-card" style="animation-delay:${delay}s">
+          <div class="result-card-inner">
+            ${a.thumb ? `<img class="result-thumbnail" src="${escHtml(a.thumb)}" alt="" loading="lazy" onerror="this.remove()" style="width:90px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
+            <div class="result-card-text">
+              <div class="result-site-row">
+                <img class="result-favicon" src="${escHtml(a.favicon||'')}" alt="" loading="lazy" onerror="this.style.display='none'"/>
+                <span class="result-site-name">${escHtml(a.source)}</span>
+                ${a.age ? `<span style="color:var(--mut);font-size:11px;margin-left:auto">${escHtml(a.age)}</span>` : ''}
+              </div>
+              <a class="result-title" href="${escHtml(a.url)}" target="_blank" rel="noopener noreferrer">${escHtml(a.title)}</a>
+              ${a.desc ? `<div class="result-snippet">${escHtml(a.desc)}</div>` : ''}
+            </div>
+          </div>
+        </div>`;
+      });
+      resultsArea.innerHTML = html;
+    }
+
+    let lastShoppingProducts = [];
+
+    function debounce(fn, ms) {
+      let t;
+      return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
+
+    function parsePriceNum(str) {
+      const m = String(str || '').match(/[\d,]+\.?\d*/);
+      return m ? parseFloat(m[0].replace(/,/g, '')) : null;
+    }
+
+    function shoppingCardHtml(p, i) {
+      return `<div class="result-card" style="animation-delay:${i*0.03}s;padding:14px;display:flex;flex-direction:column;gap:8px;">
+        ${p.thumb ? `<img src="${escHtml(p.thumb)}" alt="${escHtml(p.title)}" loading="lazy" onerror="this.remove()" style="width:100%;height:140px;object-fit:contain;border-radius:8px;background:rgba(0,0,0,0.05);">` : ''}
+        <div style="font-size:13px;font-weight:600;line-height:1.4;flex:1">${escHtml(p.title)}</div>
+        ${p.price ? `<div style="font-size:15px;font-weight:700;color:var(--a)">${escHtml(p.price)}</div>` : ''}
+        ${p.source ? `<div style="font-size:11px;color:var(--mut)">${escHtml(p.source)}</div>` : ''}
+        ${(p.rating !== null && p.rating !== undefined) ? `<div style="font-size:11px;color:var(--mut)">⭐ ${p.rating}${p.reviews ? ` (${p.reviews})` : ''}</div>` : ''}
+        ${p.desc ? `<div style="font-size:12px;color:var(--mut);line-height:1.4">${escHtml(p.desc.slice(0,100))}</div>` : ''}
+        <a href="${escHtml(p.url)}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--a);text-decoration:none;font-weight:600;margin-top:auto">View →</a>
+      </div>`;
+    }
+
+    function applyShoppingFilters() {
+      const sortSel = document.getElementById('shop-sort');
+      const minEl = document.getElementById('shop-min-price');
+      const maxEl = document.getElementById('shop-max-price');
+      const grid = document.getElementById('shop-grid');
+      const countEl = document.getElementById('shop-result-count');
+      if (!grid) return;
+
+      const min = minEl && minEl.value !== '' ? parseFloat(minEl.value) : null;
+      const max = maxEl && maxEl.value !== '' ? parseFloat(maxEl.value) : null;
+
+      let list = lastShoppingProducts.filter(p => {
+        const priceNum = parsePriceNum(p.price);
+        if (min !== null && (priceNum === null || priceNum < min)) return false;
+        if (max !== null && (priceNum === null || priceNum > max)) return false;
+        return true;
+      });
+
+      const sort = sortSel ? sortSel.value : 'relevance';
+      if (sort === 'price-asc' || sort === 'price-desc') {
+        list = list.slice().sort((a, b) => {
+          const pa = parsePriceNum(a.price), pb = parsePriceNum(b.price);
+          if (pa === null && pb === null) return 0;
+          if (pa === null) return 1; // no-price items sort last regardless of direction
+          if (pb === null) return -1;
+          return sort === 'price-asc' ? pa - pb : pb - pa;
+        });
+      } else if (sort === 'rating') {
+        list = list.slice().sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1));
+      }
+
+      if (countEl) countEl.textContent = `${list.length} of ${lastShoppingProducts.length} results`;
+      grid.innerHTML = list.length
+        ? list.map((p, i) => shoppingCardHtml(p, i)).join('')
+        : `<div style="grid-column:1/-1;padding:24px;text-align:center;color:var(--mut);">No products match this price range.</div>`;
+    }
+
+    function renderShoppingResults(products) {
+      if (!products.length) { renderNoResults(); return; }
+      lastShoppingProducts = products;
+
+      const hasPrices = products.some(p => parsePriceNum(p.price) !== null);
+      const hasRatings = products.some(p => p.rating !== null && p.rating !== undefined);
+
+      let html = `<div class="results-info" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;">
+        <span id="shop-result-count">${products.length} shopping results</span>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+          ${hasPrices ? `
+            <input id="shop-min-price" type="number" placeholder="Min $" style="width:80px;padding:6px 8px;border-radius:8px;border:1px solid var(--glass-border);background:transparent;color:inherit;font-size:12px;">
+            <span style="color:var(--mut);font-size:12px;">–</span>
+            <input id="shop-max-price" type="number" placeholder="Max $" style="width:80px;padding:6px 8px;border-radius:8px;border:1px solid var(--glass-border);background:transparent;color:inherit;font-size:12px;">
+          ` : ''}
+          <select id="shop-sort" style="padding:6px 10px;border-radius:8px;border:1px solid var(--glass-border);background:transparent;color:inherit;font-size:12px;">
+            <option value="relevance">Sort: Relevance</option>
+            ${hasPrices ? `<option value="price-asc">Price: Low to High</option><option value="price-desc">Price: High to Low</option>` : ''}
+            ${hasRatings ? `<option value="rating">Highest Rated</option>` : ''}
+          </select>
+        </div>
+      </div>`;
+      html += `<div id="shop-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:12px;">`;
+      html += products.map((p, i) => shoppingCardHtml(p, i)).join('');
+      html += `</div>`;
+      resultsArea.innerHTML = html;
+
+      const sortSel = document.getElementById('shop-sort');
+      const minEl = document.getElementById('shop-min-price');
+      const maxEl = document.getElementById('shop-max-price');
+      if (sortSel) sortSel.addEventListener('change', applyShoppingFilters);
+      if (minEl) minEl.addEventListener('input', debounce(applyShoppingFilters, 300));
+      if (maxEl) maxEl.addEventListener('input', debounce(applyShoppingFilters, 300));
+    }
+
+    function renderNoResults() {
+      resultsArea.innerHTML = `
+        <div class="state-box">
+          <div class="big-icon">🔎</div>
+          <h3>No results found</h3>
+          <p>Try different keywords or check your spelling</p>
+        </div>`;
+    }
+
+    function renderWebResults(results, countText, currentPage, totalPages) {
+      if (!results.length) { renderNoResults(); return; }
+
+      // Each GCSE page has its own result set — show all of them
+      const visible = results;
+
+      let html = '';
+      if (countText) html += `<div class="results-info">${escHtml(countText)}${elapsedSuffix()}</div>`;
+      html += renderPeopleAlsoAsk(state.query);
+
+      visible.forEach((r, i) => {
+        let hostname = '';
+        try { hostname = new URL(r.href).hostname.replace('www.', ''); } catch(e) {}
+        const faviconUrl = `https://www.google.com/s2/favicons?sz=32&domain_url=${encodeURIComponent(r.href)}`;
+        const delay = i * 0.03;
+
+        html += `
+          <div class="result-card" style="animation-delay:${delay}s">
+            <div class="result-card-inner">
+              <div class="result-card-text">
+                <div class="result-site-row">
+                  <img class="result-favicon" src="${escHtml(faviconUrl)}" alt="" loading="lazy" onerror="this.style.display='none'"/>
+                  <span class="result-site-name">${escHtml(hostname)}</span>
+                </div>
+                <div class="result-url">${escHtml(r.displayUrl || r.href)}</div>
+                <a class="result-title" href="${escHtml(r.href)}" target="_blank" rel="noopener noreferrer">${escHtml(r.title)}</a>
+                ${r.snippet ? `<div class="result-snippet">${r.snippet}</div>` : ''}
+              </div>
+              ${r.thumb ? `<img class="result-thumbnail" src="${escHtml(r.thumb)}" alt="" loading="lazy" onerror="this.remove()"/>` : ''}
+            </div>
+          </div>`;
+      });
+
+      if (totalPages > 1) html += buildPagination(currentPage, totalPages);
+      html += `<div id="related-searches-box"></div>`;
+      resultsArea.innerHTML = html;
+      resultsArea.querySelectorAll('.page-btn[data-page]').forEach(btn => {
+        btn.addEventListener('click', () => goToPage(parseInt(btn.getAttribute('data-page'))));
+      });
+      resultsArea.querySelectorAll('.paa-item').forEach(btn => {
+        btn.addEventListener('click', () => doSearch(btn.dataset.q));
+      });
+      if (state.query) loadRelatedSearches(state.query);
+    }
+
+    /* ─────────────────────────────────
+       PEOPLE ALSO ASK — template-generated, not scraped from Google (their
+       real "People also ask" data isn't reachable through a GCSE widget).
+       Clicking a question just re-searches with that phrasing.
+    ───────────────────────────────── */
+    function looksLikeQuestion(q) {
+      return /^(who|what|when|where|why|how|is|are|can|does|do|did|will|should|which)\b/i.test(q.trim());
+    }
+    function renderPeopleAlsoAsk(q) {
+      if (!q || looksLikeQuestion(q)) return '';
+      const questions = [
+        `What is ${q}?`,
+        `How does ${q} work?`,
+        `Why is ${q} important?`,
+        `Is ${q} worth it?`,
+      ];
+      return `<div class="paa-box">
+        <div class="paa-heading">People also ask</div>
+        ${questions.map(qq => `<button class="paa-item" data-q="${escHtml(qq)}">${escHtml(qq)}<span class="paa-arrow">+</span></button>`).join('')}
+      </div>`;
+    }
+
+    /* ─────────────────────────────────
+       RELATED SEARCHES — reuses the same autocomplete edge function that
+       backs the live suggestions dropdown, called with the full query.
+    ───────────────────────────────── */
+    function loadRelatedSearches(q) {
+      fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/autocomplete?q=${encodeURIComponent(q)}`, {
+        headers: SUPABASE_FN_HEADERS,
+      })
+        .then(r => r.json())
+        .then(data => {
+          const box = document.getElementById('related-searches-box');
+          if (!box) return; // user navigated away before this resolved
+          const items = (data?.suggestions || [])
+            .map(s => s.text || s)
+            .filter(s => s.toLowerCase() !== q.toLowerCase())
+            .slice(0, 8);
+          if (!items.length) { box.remove(); return; }
+          box.innerHTML = `<div class="related-heading">Related searches</div>
+            <div class="related-chips">
+              ${items.map(s => `<button class="related-chip" data-q="${escHtml(s)}">${escHtml(s)}</button>`).join('')}
+            </div>`;
+          box.querySelectorAll('.related-chip').forEach(btn => {
+            btn.addEventListener('click', () => doSearch(btn.dataset.q));
+          });
+        })
+        .catch(() => { const box = document.getElementById('related-searches-box'); if (box) box.remove(); });
+    }
+
+    function renderImageResults(imgs, countText, currentPage, totalPages) {
+      if (!imgs.length) { renderNoResults(); return; }
+
+      let html = '';
+      if (countText) html += `<div class="results-info">${escHtml(countText)}</div>`;
+
+      html += `<div id="image-results-grid">`;
+      imgs.forEach((img, i) => {
+        const isGif = /\.gif($|\?)/i.test(img.src);
+        html += `
+          <div class="image-result-item"
+            data-src="${escHtml(img.src)}"
+            data-href="${escHtml(img.href)}"
+            data-alt="${escHtml(img.alt)}"
+            data-url="${escHtml(img.displayUrl || img.href)}"
+            style="animation-delay:${i*0.02}s">
+            <img src="${escHtml(img.src)}" alt="${escHtml(img.alt)}" loading="lazy"
+              style="${isGif ? 'object-fit:contain;background:#000;height:140px;' : ''}"
+              onerror="this.closest('.image-result-item').remove()"/>
+            <div class="image-result-label">${escHtml(img.alt || 'Image')}</div>
+          </div>`;
+      });
+      html += `</div>`;
+
+      if (totalPages > 1) html += buildPagination(currentPage, totalPages);
+      resultsArea.innerHTML = html;
+
+      resultsArea.querySelectorAll('.image-result-item').forEach(tile => {
+        tile.addEventListener('click', () => openLightbox({
+          src:  tile.dataset.src,
+          href: tile.dataset.href,
+          alt:  tile.dataset.alt,
+          url:  tile.dataset.url,
+        }));
+      });
+
+      resultsArea.querySelectorAll('.page-btn[data-page]').forEach(btn => {
+        btn.addEventListener('click', () => goToPage(parseInt(btn.getAttribute('data-page'))));
+      });
+    }
+
+    function renderVideoResults(videos, countText, currentPage, totalPages) {
+      if (!videos.length) { renderNoResults(); return; }
+
+      let html = '';
+      if (countText) html += `<div class="results-info">${escHtml(countText)}${elapsedSuffix()}</div>`;
+
+      html += `<div id="video-results-grid">`;
+      videos.forEach((v, i) => {
+        html += `
+          <div class="video-result-item" data-idx="${i}" style="animation-delay:${i*0.02}s">
+            <div class="video-thumb-wrap">
+              ${v.thumb ? `<img src="${escHtml(v.thumb)}" alt="" loading="lazy" onerror="this.style.display='none'">` : `<div class="video-thumb-fallback">▶</div>`}
+              <span class="video-play-badge">▶</span>
+            </div>
+            <div class="video-result-text">
+              <a class="result-title" href="${escHtml(v.href)}" target="_blank" rel="noopener noreferrer">${escHtml(v.title)}</a>
+              <div class="result-site-row"><span class="result-site-name">${escHtml(v.hostname)}</span></div>
+              ${v.snippet ? `<div class="result-snippet">${v.snippet}</div>` : ''}
+            </div>
+          </div>`;
+      });
+      html += `</div>`;
+
+      if (totalPages > 1) html += buildPagination(currentPage, totalPages);
+      resultsArea.innerHTML = html;
+
+      resultsArea.querySelectorAll('.video-result-item').forEach(tile => {
+        const v = videos[parseInt(tile.dataset.idx)];
+        if (!v.ytId) return; // non-YouTube: title link above just opens the source
+        tile.querySelector('.video-thumb-wrap').addEventListener('click', () => {
+          const wrap = tile.querySelector('.video-thumb-wrap');
+          wrap.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${encodeURIComponent(v.ytId)}?autoplay=1"
+            title="${escHtml(v.title)}" frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen></iframe>`;
+        });
+        tile.querySelector('.video-thumb-wrap').style.cursor = 'pointer';
+      });
+
+      resultsArea.querySelectorAll('.page-btn[data-page]').forEach(btn => {
+        btn.addEventListener('click', () => goToPage(parseInt(btn.getAttribute('data-page'))));
+      });
+    }
+
+    function buildPagination(current, total) {
+      const pages = [];
+      for (let i = 1; i <= Math.min(total, 10); i++) pages.push(i);
+      let html = `<div class="results-pagination">`;
+      html += `<button class="page-btn" data-page="${current-1}" ${current<=1?'disabled':''}>← Prev</button>`;
+      pages.forEach(p => {
+        html += `<button class="page-btn ${p===current?'active':''}" data-page="${p}">${p}</button>`;
+      });
+      html += `<button class="page-btn" data-page="${current+1}" ${current>=total?'disabled':''}>Next →</button>`;
+      html += `</div>`;
+      return html;
+    }
+
+    /* ─────────────────────────────────
+       GO TO PAGE
+       1. Disconnect the mutation observer so partial
+          GCSE updates don't trigger premature scrapes.
+       2. Click the right GCSE cursor button (direct if
+          visible, or step via Next/Prev arrows).
+       3. Wait for the GCSE results container to change
+          using a MutationObserver promise.
+       4. Scrape and render the new page.
+    ───────────────────────────────── */
+    function goToPage(targetPage) {
+      if (targetPage < 1) return;
+      if (targetPage === state.page) return;
+
+      if (state.tab === 'images') {
+        state.page = targetPage;
+        scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      showLoading();
+
+      // Stop observer so mid-navigation DOM changes don't trigger early scrapes
+      if (gcseObserver) { gcseObserver.disconnect(); gcseObserver = null; }
+      clearTimeout(stableTimer);
+      clearTimeout(safetyTimer);
+
+      const gcseContainer = document.getElementById('gcse-hidden-container');
+
+      // Step through GCSE pages until we reach the target
+      navigateGcseTo(gcseContainer, targetPage, () => {
+        // Wait for GCSE to finish rendering the new page, then scrape
+        waitForGcseChange(gcseContainer, 3000).then(() => {
+          scrapeAndRender();
+          // Re-attach observer for any future changes
+          setupGcseObserver();
+        });
+      });
+    }
+
+    // Recursively navigate GCSE one step at a time toward targetPage
+    function navigateGcseTo(gcseContainer, targetPage, done) {
+      // Try direct click first
+      const cursorBtns = gcseContainer.querySelectorAll('.gsc-cursor-page');
+      for (const btn of cursorBtns) {
+        const num = parseInt(btn.textContent.trim());
+        if (num === targetPage && !btn.classList.contains('gsc-cursor-current-page')) {
+          btn.click();
+          setTimeout(done, 100);
+          return;
+        }
+      }
+
+      // Can't click directly — use prev/next arrow
+      const currentBtn = gcseContainer.querySelector('.gsc-cursor-current-page');
+      const currentNum = currentBtn ? parseInt(currentBtn.textContent.trim()) : state.page;
+      const goForward  = targetPage > currentNum;
+
+      const arrowBtn = goForward
+        ? gcseContainer.querySelector('.gsc-cursor-next-page')
+        : gcseContainer.querySelector('.gsc-cursor-previous-page');
+
+      if (!arrowBtn) {
+        // No arrow available — just scrape wherever we are
+        setTimeout(done, 100);
+        return;
+      }
+
+      // Click arrow, wait for GCSE to update cursor, then recurse
+      arrowBtn.click();
+      waitForGcseChange(gcseContainer, 2500).then(() => {
+        navigateGcseTo(gcseContainer, targetPage, done);
+      });
+    }
+
+    // Returns a promise that resolves when GCSE results container changes,
+    // or after `maxWait` ms (whichever comes first)
+    function waitForGcseChange(gcseContainer, maxWait) {
+      return new Promise(resolve => {
+        let settled = false;
+        let settleTimer = null;
+
+        const timer = setTimeout(() => {
+          obs.disconnect();
+          if (!settled) resolve();
+        }, maxWait);
+
+        const obs = new MutationObserver(() => {
+          // Reset settle timer on every mutation — only resolve when DOM
+          // has been quiet for 1000ms (all results have finished rendering)
+          clearTimeout(settleTimer);
+          settleTimer = setTimeout(() => {
+            settled = true;
+            clearTimeout(timer);
+            obs.disconnect();
+            resolve();
+          }, 1000);
+        });
+
+        obs.observe(gcseContainer, {
+          childList: true,
+          subtree: true,
+          characterData: false,
+          attributes: false,
+        });
+      });
+    }
+
+    function waitAndScrape(ms) {
+      clearTimeout(safetyTimer);
+      safetyTimer = setTimeout(() => scrapeAndRender(), ms);
+    }
+
+    /* ─────────────────────────────────
+       UTILS
+    ───────────────────────────────── */
+    function elapsedSuffix() {
+      if (!state.searchStartTime) return '';
+      const secs = (performance.now() - state.searchStartTime) / 1000;
+      return ` (${secs.toFixed(2)} seconds)`;
+    }
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /* ─────────────────────────────────
+       BOOT
+    ───────────────────────────────── */
+    initFromUrl();
+
+  })();
+  </script>
 </body>
 </html>
