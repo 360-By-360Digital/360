@@ -333,7 +333,10 @@
       width: 100%;
       max-width: 900px;
       box-sizing: border-box;
+      overflow-x: auto;
+      scrollbar-width: none;
     }
+    .results-tabs::-webkit-scrollbar { display: none; }
     .safe-search-toggle {
       margin-left: auto;
       flex-shrink: 0;
@@ -401,29 +404,73 @@
       color: #fff; border-color: transparent;
     }
 
+    #tools-toggle.active { color: var(--a); border-color: var(--a); }
+
+    .tools-bar {
+      display: none;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 12px 10px;
+      box-sizing: border-box;
+      font-size: 12px;
+      color: var(--mut);
+    }
+    .tools-bar.open { display: flex; }
+    body.dark .tools-bar { color: var(--mutd); }
+    .tools-bar label { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+    .tools-bar select {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--txt);
+      background: var(--glass-light);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 5px 8px;
+      cursor: pointer;
+    }
+    body.dark .tools-bar select { color: var(--txtd); background: var(--glass-dark); border-color: var(--glass-border-dk); }
+    .tools-bar .tools-note { font-size: 11px; opacity: 0.75; }
+    @media (max-width: 640px) {
+      .tools-bar .tools-note { display: none; }
+    }
+
     /* ── Results container ── */
     #custom-results-area {
       width: 100%;
       max-width: 900px;
       padding: 16px 20px 60px;
       box-sizing: border-box;
+      /* flex item: grows to fill space next to the knowledge panel, and
+         when the panel is absent (display:none, taken out of flow) this
+         becomes the only flex item — it grows up to max-width then the
+         leftover space is split evenly by these auto margins, which
+         centers it instead of hugging the left edge like a narrow box. */
+      flex: 1 1 0%;
+      min-width: 0;
+      margin: 0 auto;
     }
 
 
     .results-layout {
       width: 100%;
       max-width: 1240px;
-      display: grid;
-      grid-template-columns: 320px minmax(0, 1fr);
+      display: flex;
+      align-items: flex-start;
       gap: 18px;
       padding: 16px 20px 60px;
       box-sizing: border-box;
-      align-items: start;
     }
 
     #knowledge-panel {
       position: sticky;
       top: 92px;
+      flex: 0 0 320px;
+      width: 320px;
       border-radius: 18px;
       padding: 14px;
       background: var(--glass-light-mid);
@@ -679,6 +726,35 @@
     .image-result-label { padding: 7px 10px; font-size: 12px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     body.dark .image-result-label { color: var(--mutd); }
 
+    /* ── Video grid ── */
+    #video-results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .video-result-item {
+      border-radius: 14px; overflow: hidden;
+      background: var(--glass-light);
+      backdrop-filter: var(--glass-blur-sm);
+      -webkit-backdrop-filter: var(--glass-blur-sm);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow-sm);
+      animation: cardIn 0.2s ease both;
+    }
+    body.dark .video-result-item { background: var(--glass-dark); border-color: var(--glass-border-dk); }
+    .video-thumb-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+    .video-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .video-thumb-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 28px; background: #111; }
+    .video-play-badge {
+      position: absolute; inset: 0; margin: auto; width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.55); color: #fff; border-radius: 50%; font-size: 16px;
+      pointer-events: none;
+    }
+    .video-result-text { padding: 10px 12px 12px; }
+    .video-result-text .result-title { font-size: 13px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+    .video-result-text .result-snippet { font-size: 12px; margin-top: 4px; }
+
     /* ── Pagination — glass pill buttons ── */
     .results-pagination {
       display: flex;
@@ -710,6 +786,62 @@
     .page-btn:disabled { opacity: 0.38; cursor: default; pointer-events: none; }
     body.dark .page-btn { background: var(--glass-dark); border-color: var(--glass-border-dk); color: var(--txtd); box-shadow: var(--glass-inset-dk); }
     body.dark .page-btn:hover { background: var(--glass-dark-mid); border-color: var(--a); }
+
+    /* ── People also ask ── */
+    .paa-box {
+      display: flex; flex-direction: column;
+      border-radius: 14px;
+      background: var(--glass-light);
+      backdrop-filter: var(--glass-blur-sm);
+      -webkit-backdrop-filter: var(--glass-blur-sm);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow-sm);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    body.dark .paa-box { background: var(--glass-dark); border-color: var(--glass-border-dk); }
+    .paa-heading { padding: 12px 16px 8px; font-size: 13px; font-weight: 700; color: var(--txt); }
+    body.dark .paa-heading { color: var(--txtd); }
+    .paa-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      width: 100%; text-align: left;
+      padding: 12px 16px;
+      background: transparent; border: none; border-top: 1px solid var(--glass-border);
+      font-family: inherit; font-size: 13px; color: var(--txt);
+      cursor: pointer; transition: background 0.15s;
+    }
+    .paa-item:hover { background: var(--glass-light-mid); }
+    body.dark .paa-item { color: var(--txtd); border-top-color: var(--glass-border-dk); }
+    body.dark .paa-item:hover { background: var(--glass-dark-mid); }
+    .paa-arrow { color: var(--mut); font-weight: 700; flex-shrink: 0; }
+
+    /* ── Related searches ── */
+    #related-searches-box:empty { display: none; }
+    .related-heading { font-size: 13px; font-weight: 700; color: var(--txt); margin: 24px 0 10px; }
+    body.dark .related-heading { color: var(--txtd); }
+    .related-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .related-chip {
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--glass-light);
+      backdrop-filter: var(--glass-blur-sm);
+      -webkit-backdrop-filter: var(--glass-blur-sm);
+      border: 1px solid var(--glass-border);
+      color: var(--txt);
+      font-family: inherit; font-size: 12.5px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .related-chip:hover { background: var(--glass-light-mid); border-color: var(--a); transform: translateY(-1px); }
+    body.dark .related-chip { background: var(--glass-dark); border-color: var(--glass-border-dk); color: var(--txtd); }
+    body.dark .related-chip:hover { background: var(--glass-dark-mid); border-color: var(--a); }
+
+    /* ── Maps tab ── */
+    .maps-embed-wrap { border-radius: 14px; overflow: hidden; box-shadow: var(--glass-shadow-sm); border: 1px solid var(--glass-border); margin-bottom: 16px; }
+    body.dark .maps-embed-wrap { border-color: var(--glass-border-dk); }
+    .maps-list { display: flex; flex-direction: column; gap: 10px; }
+    .maps-attribution { margin-top: 16px; font-size: 11px; color: var(--mut); }
+    .maps-attribution a { color: var(--a); text-decoration: none; }
+    body.dark .maps-attribution { color: var(--mutd); }
 
     /* ── State boxes ── */
     .state-box {
@@ -930,8 +1062,9 @@
       .search-bar-strip { padding: 9px 12px; }
       .result-thumbnail { display: none; }
       #image-results-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
-      .results-layout { grid-template-columns: 1fr; }
-      #knowledge-panel { position: static; order: -1; }
+      .results-layout { flex-direction: column; }
+      #knowledge-panel { position: static; order: -1; width: 100%; flex-basis: auto; }
+      #custom-results-area { margin: 0; }
       .results-tabs { gap: 4px; padding: 8px; }
       .results-tab { padding: 6px 12px; font-size: 12px; }
     }
@@ -1075,9 +1208,17 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>
         News
       </div>
+      <div class="results-tab" data-tab="videos">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Videos
+      </div>
       <div class="results-tab" data-tab="shopping">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         Shopping
+      </div>
+      <div class="results-tab" data-tab="maps">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        Maps
       </div>
       <div class="results-tab" data-tab="ai">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 5 5"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
@@ -1087,6 +1228,33 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"/></svg>
         <span id="safe-search-label">Safe Search: On</span>
       </button>
+      <button id="tools-toggle" class="safe-search-toggle" title="Search tools" style="display:none;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+        <span>Tools</span>
+      </button>
+    </div>
+
+    <!-- Tools bar: time range + sort, only meaningful for Web/Videos (real
+         Google results via GCSE) — News/Shopping/Maps come from a single
+         backend call with no per-request date filtering available. -->
+    <div class="tools-bar" id="tools-bar">
+      <label>Time:
+        <select id="tools-time-range">
+          <option value="any">Any time</option>
+          <option value="hour">Past hour</option>
+          <option value="day">Past 24 hours</option>
+          <option value="week">Past week</option>
+          <option value="month">Past month</option>
+          <option value="year">Past year</option>
+        </select>
+      </label>
+      <label>Sort:
+        <select id="tools-sort-mode">
+          <option value="relevance">Relevance</option>
+          <option value="recent">Most recent</option>
+        </select>
+      </label>
+      <span class="tools-note">Recency is best-effort — applied as a date filter on the underlying search, not a guaranteed chronological sort.</span>
     </div>
 
     <div class="results-layout">
@@ -1095,6 +1263,7 @@
       <div id="custom-results-area">
       <div class="state-box" id="empty-state">
         <div class="big-icon">🔍</div>
+
         <h3>Search anything</h3>
         <p>Type in the bar above and press Search or Enter</p>
       </div>
@@ -1154,6 +1323,12 @@
       // edge function); GCSE's own web-results safe search is configured
       // at the CSE control-panel level, not adjustable per-request here.
       safeSearch: localStorage.getItem('360_safe_search') !== 'off',
+      // Tools bar (Web/Videos only) — see buildFilteredQuery()
+      timeRange: 'any',
+      sortMode: 'relevance',
+      // performance.now() timestamp set when a search/tab-switch/page-nav
+      // begins, used to show "(X.XX seconds)" next to the result count.
+      searchStartTime: 0,
     };
 
     /* ─────────────────────────────────
@@ -1193,8 +1368,10 @@
         input.value = q;
         state.query = q;
         state.tab = t;
+        state.searchStartTime = performance.now();
         updateClearBtn();
         setActiveTab(t);
+        updateToolsVisibility(t);
         if (t === 'ai') {
           showResultsArea(false);
           runAiSearch(q);
@@ -1209,11 +1386,16 @@
         } else if (t === 'shopping') {
           showResultsArea(true);
           run360Search(q, 'shopping');
+        } else if (t === 'videos') {
+          showResultsArea(true);
+          waitForGcseAndSearch(buildVideoQuery(q), t);
+        } else if (t === 'maps') {
+          showResultsArea(true);
+          renderMapsResults(q);
         } else {
           showResultsArea(true);
           loadKnowledgePanel(q);
-          fetch360IndexResults(q);
-          waitForGcseAndSearch(q, t);
+          searchWebGcse(q, t);
         }
       }
     }
@@ -1808,6 +1990,37 @@
       }
     }
 
+    /* ─────────────────────────────────
+       TOOLS BAR — time range / sort
+       Google's public "after:YYYY-MM-DD" query operator is the only date
+       filter still reachable through a scraped GCSE widget (no direct API
+       params available here). "Most recent" sort has no true chronological
+       equivalent through this widget, so as a best-effort stand-in it
+       biases toward the last year when no narrower range is chosen —
+       this is documented to the user in the tools bar itself.
+    ───────────────────────────────── */
+    function dateNDaysAgo(n) {
+      return new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    }
+    function buildFilteredQuery(q) {
+      let range = state.timeRange;
+      if (range === 'any' && state.sortMode === 'recent') range = 'year';
+      const days = { hour: 1, day: 1, week: 7, month: 31, year: 366 }[range];
+      return days ? `${q} after:${dateNDaysAgo(days)}` : q;
+    }
+    // Videos tab reuses the same GCSE widget, restricted to common video
+    // hosts — there's no dedicated video-search backend for this project.
+    function buildVideoQuery(q) {
+      return `${buildFilteredQuery(q)} (site:youtube.com OR site:vimeo.com OR site:dailymotion.com)`;
+    }
+    // Shared by doSearch / tab-switch / initFromUrl for the Web tab: fetches
+    // our own crawled index in parallel with the (possibly date-filtered)
+    // GCSE query.
+    function searchWebGcse(q, tab) {
+      fetch360IndexResults(q);
+      waitForGcseAndSearch(buildFilteredQuery(q), tab);
+    }
+
     let gcseTimeoutId = null;
     function waitForGcseAndSearch(q, tab) {
       if (state.gcseReady) {
@@ -1954,12 +2167,14 @@
        Web and images use different GCSE DOM structures.
     ───────────────────────────────── */
     function scrapeAndRender() {
-      if (state.tab === 'ai') return;
+      if (state.tab === 'ai' || state.tab === 'maps') return;
 
       const gcseContainer = document.getElementById('gcse-hidden-container');
 
       if (state.tab === 'images') {
         scrapeImageResults(gcseContainer);
+      } else if (state.tab === 'videos') {
+        scrapeVideoResults(gcseContainer);
       } else {
         scrapeWebResults(gcseContainer);
       }
@@ -2059,6 +2274,69 @@
       const merged = [...indexCards, ...gcseScored].sort((a, b) => b._score - a._score);
 
       renderWebResults(merged, countText, currentPage, totalPages);
+    }
+
+    /* ─────────────────────────────────
+       VIDEOS TAB
+       No dedicated video-search backend exists, so this reuses the same
+       GCSE widget with the query site-restricted to common video hosts
+       (see buildFilteredQuery's sibling below) and scrapes it the same way
+       as web results, then renders as a thumbnail grid. YouTube links get
+       a real inline player (YouTube's public /embed/ iframe needs no API
+       key); everything else just opens the source in a new tab.
+    ───────────────────────────────── */
+    function youtubeIdFromUrl(href) {
+      try {
+        const u = new URL(href);
+        if (u.hostname.includes('youtu.be')) return u.pathname.slice(1);
+        if (u.hostname.includes('youtube.com')) {
+          if (u.pathname === '/watch') return u.searchParams.get('v');
+          if (u.pathname.startsWith('/embed/')) return u.pathname.split('/')[2];
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    function scrapeVideoResults(gcseContainer) {
+      const resultEls = gcseContainer.querySelectorAll('.gsc-webResult.gsc-result');
+      if (!resultEls.length) {
+        const noResults = gcseContainer.querySelector('.gs-no-results-result, .gsc-no-results-result');
+        if (noResults) renderNoResults();
+        return; // still loading
+      }
+
+      const seenHrefs = new Set();
+      const videos = [];
+      resultEls.forEach(el => {
+        const titleAnchor = el.querySelector('.gs-title a[data-ctorig], .gs-title a, a.gs-title');
+        const snippetEl   = el.querySelector('.gs-snippet');
+        const thumbEl     = el.querySelector('.gs-image img, .gsc-thumbnail img, img.gs-image');
+        if (!titleAnchor) return;
+
+        let href = titleAnchor.getAttribute('data-ctorig') || titleAnchor.href || '';
+        if (href.includes('google.com/url')) {
+          try { href = new URL(href).searchParams.get('q') || href; } catch(e) {}
+        }
+        const key = href.replace(/\/$/, '').toLowerCase();
+        if (!href || seenHrefs.has(key)) return;
+        seenHrefs.add(key);
+
+        const ytId = youtubeIdFromUrl(href);
+        let hostname = '';
+        try { hostname = new URL(href).hostname.replace(/^www\./, ''); } catch(e) {}
+
+        videos.push({
+          title: titleAnchor.textContent.trim(),
+          href,
+          hostname,
+          snippet: snippetEl ? snippetEl.innerHTML : '',
+          thumb: ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : (thumbEl ? (thumbEl.src || thumbEl.getAttribute('data-src') || '') : ''),
+          ytId,
+        });
+      });
+
+      const { countText, currentPage, totalPages } = getGcsePaginationInfo(gcseContainer);
+      renderVideoResults(videos, countText, currentPage, totalPages);
     }
 
     function scrapeImageResults(gcseContainer) {
@@ -2413,12 +2691,21 @@
       if (t === state.tab) return; // no-op if same tab
       state.tab = t;
       state.page = 1;
+      state.searchStartTime = performance.now();
       setActiveTab(t);
+      updateToolsVisibility(t);
       updateUrl(state.query, t);
 
       if (t === 'ai') {
         showResultsArea(false);
         if (state.query) runAiSearch(state.query);
+        return;
+      }
+
+      if (t === 'maps') {
+        showResultsArea(true);
+        if (state.query) renderMapsResults(state.query);
+        else showEmptyState();
         return;
       }
 
@@ -2430,15 +2717,26 @@
           run360Search(state.query, 'news');
         } else if (t === 'shopping') {
           run360Search(state.query, 'shopping');
+        } else if (t === 'videos') {
+          waitForGcseAndSearch(buildVideoQuery(state.query), t);
         } else {
           // Switching to Web tab was missing this — only a fresh search
           // triggered it, so tab-switching alone never merged in the
           // crawled index, only GCSE's own results.
-          fetch360IndexResults(state.query);
-          waitForGcseAndSearch(state.query, t);
+          searchWebGcse(state.query, t);
         }
       }
     });
+
+    // Tools bar (time range / sort) only makes sense for tabs backed by a
+    // real, re-queryable GCSE search — Web and Videos.
+    function updateToolsVisibility(t) {
+      const toggle = document.getElementById('tools-toggle');
+      const bar = document.getElementById('tools-bar');
+      const relevant = (t === 'web' || t === 'videos');
+      toggle.style.display = relevant ? 'flex' : 'none';
+      if (!relevant) bar.classList.remove('open');
+    }
 
     function setActiveTab(t) {
       tabsEl.querySelectorAll('.results-tab').forEach(el => {
@@ -2550,6 +2848,41 @@
           state.page = 1;
           scrapeImageResults(document.getElementById('gcse-hidden-container'));
         }
+      });
+    })();
+
+    /* ─────────────────────────────────
+       TOOLS BAR (time range / sort) — Web & Videos only
+    ───────────────────────────────── */
+    (function setupToolsBar() {
+      const toggle = document.getElementById('tools-toggle');
+      const bar    = document.getElementById('tools-bar');
+      const rangeSel = document.getElementById('tools-time-range');
+      const sortSel  = document.getElementById('tools-sort-mode');
+
+      toggle.addEventListener('click', () => {
+        toggle.classList.toggle('active');
+        bar.classList.toggle('open');
+      });
+
+      function rerunCurrentSearch() {
+        if (!state.query) return;
+        state.page = 1;
+        state.searchStartTime = performance.now();
+        if (state.tab === 'videos') {
+          waitForGcseAndSearch(buildVideoQuery(state.query), 'videos');
+        } else {
+          searchWebGcse(state.query, state.tab);
+        }
+      }
+
+      rangeSel.addEventListener('change', () => {
+        state.timeRange = rangeSel.value;
+        rerunCurrentSearch();
+      });
+      sortSel.addEventListener('change', () => {
+        state.sortMode = sortSel.value;
+        rerunCurrentSearch();
       });
     })();
 
@@ -2805,10 +3138,12 @@
 
       state.query = q;
       state.page = 1;
+      state.searchStartTime = performance.now();
       input.value = q;
       updateClearBtn();
       updateUrl(q, state.tab);
       addRecentSearch(q);
+      updateToolsVisibility(state.tab);
 
       if (state.tab === 'ai') {
         showResultsArea(false);
@@ -2817,6 +3152,10 @@
       }
 
       showResultsArea(true);
+      if (state.tab === 'maps') {
+        renderMapsResults(q);
+        return;
+      }
       loadKnowledgePanel(q);
       if (state.tab === 'images') {
         scrapeImageResults(document.getElementById('gcse-hidden-container'));
@@ -2824,10 +3163,11 @@
         run360Search(q, 'news');
       } else if (state.tab === 'shopping') {
         run360Search(q, 'shopping');
+      } else if (state.tab === 'videos') {
+        waitForGcseAndSearch(buildVideoQuery(q), 'videos');
       } else {
         // Web tab: fetch 360 index first, then GCSE fills the rest.
-        fetch360IndexResults(q);
-        waitForGcseAndSearch(q, state.tab);
+        searchWebGcse(q, state.tab);
       }
     }
 
@@ -2940,9 +3280,9 @@
     /* ─────────────────────────────────
        360 INDEX — fetch crawled results, merge into the same result list
        as GCSE (see scrapeWebResults) instead of a separate DOM node, since
-       inserting a sibling into #results-layout (a strict 320px/1fr grid
-       meant for #knowledge-panel + #custom-results-area) broke the layout
-       into a mismatched narrow/wide split.
+       inserting a sibling into #results-layout (a flex row meant only for
+       #knowledge-panel + #custom-results-area) broke the layout into a
+       mismatched narrow/wide split.
     ───────────────────────────────── */
     const EDGE_SEARCH = 'https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/search';
     let edgeWebFallback = null; // full last web-tab response, used to merge into GCSE results and as a fallback if GCSE never loads
@@ -3000,7 +3340,7 @@
 
     function renderNewsResults(articles) {
       if (!articles.length) { renderNoResults(); return; }
-      let html = `<div class="results-info">${escHtml(articles.length + ' news articles')}</div>`;
+      let html = `<div class="results-info">${escHtml(articles.length + ' news articles')}${elapsedSuffix()}</div>`;
       articles.forEach((a, i) => {
         const delay = i * 0.03;
         html += `<div class="result-card" style="animation-delay:${delay}s">
@@ -3090,7 +3430,7 @@
       const hasRatings = products.some(p => p.rating !== null && p.rating !== undefined);
 
       let html = `<div class="results-info" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;">
-        <span id="shop-result-count">${products.length} shopping results</span>
+        <span id="shop-result-count">${products.length} shopping results${elapsedSuffix()}</span>
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
           ${hasPrices ? `
             <input id="shop-min-price" type="number" placeholder="Min $" style="width:80px;padding:6px 8px;border-radius:8px;border:1px solid var(--glass-border);background:transparent;color:inherit;font-size:12px;">
@@ -3126,6 +3466,54 @@
         </div>`;
     }
 
+    /* ─────────────────────────────────
+       MAPS TAB
+       Uses OpenStreetMap's free, CORS-enabled Nominatim geocoder (no API
+       key/backend needed) plus its embeddable map — no dedicated maps
+       backend exists in this project. Links out to the full 360 Maps app.
+    ───────────────────────────────── */
+    async function renderMapsResults(q) {
+      showLoading();
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=6&addressdetails=1`);
+        const places = await res.json();
+        if (state.tab !== 'maps' || state.query !== q) return; // stale
+        if (!places || !places.length) { renderNoResults(); return; }
+
+        const top = places[0];
+        const lat = parseFloat(top.lat), lon = parseFloat(top.lon);
+        const d = 0.015;
+        const bbox = `${lon - d},${lat - d},${lon + d},${lat + d}`;
+
+        let html = `<div class="results-info">${places.length} location${places.length > 1 ? 's' : ''} found${elapsedSuffix()}</div>`;
+        html += `<div class="maps-embed-wrap">
+          <iframe width="100%" height="380" style="border:0;border-radius:14px;" loading="lazy"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&marker=${lat},${lon}"></iframe>
+        </div>`;
+        html += `<div class="maps-list">`;
+        places.forEach(p => {
+          const name = (p.display_name || '').split(',')[0];
+          html += `<div class="result-card">
+            <div class="result-card-text">
+              <a class="result-title" href="https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lon}#map=17/${p.lat}/${p.lon}" target="_blank" rel="noopener noreferrer">${escHtml(name)}</a>
+              <div class="result-snippet">${escHtml(p.display_name || '')}</div>
+            </div>
+          </div>`;
+        });
+        html += `</div>`;
+        html += `<div class="maps-attribution">Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors — <a href="/apps/360Maps.html" target="_blank" rel="noopener noreferrer">Open in 360 Maps →</a></div>`;
+        resultsArea.innerHTML = html;
+      } catch (e) {
+        if (state.tab !== 'maps') return;
+        resultsArea.innerHTML = `
+          <div class="state-box">
+            <div class="big-icon">⚠️</div>
+            <h3>Map lookup failed</h3>
+            <p>Couldn't reach the map service. Try again in a moment.</p>
+          </div>`;
+      }
+    }
+
     function renderWebResults(results, countText, currentPage, totalPages) {
       if (!results.length) { renderNoResults(); return; }
 
@@ -3133,7 +3521,8 @@
       const visible = results;
 
       let html = '';
-      if (countText) html += `<div class="results-info">${escHtml(countText)}</div>`;
+      if (countText) html += `<div class="results-info">${escHtml(countText)}${elapsedSuffix()}</div>`;
+      html += renderPeopleAlsoAsk(state.query);
 
       visible.forEach((r, i) => {
         let hostname = '';
@@ -3159,17 +3548,72 @@
       });
 
       if (totalPages > 1) html += buildPagination(currentPage, totalPages);
+      html += `<div id="related-searches-box"></div>`;
       resultsArea.innerHTML = html;
       resultsArea.querySelectorAll('.page-btn[data-page]').forEach(btn => {
         btn.addEventListener('click', () => goToPage(parseInt(btn.getAttribute('data-page'))));
       });
+      resultsArea.querySelectorAll('.paa-item').forEach(btn => {
+        btn.addEventListener('click', () => doSearch(btn.dataset.q));
+      });
+      if (state.query) loadRelatedSearches(state.query);
+    }
+
+    /* ─────────────────────────────────
+       PEOPLE ALSO ASK — template-generated, not scraped from Google (their
+       real "People also ask" data isn't reachable through a GCSE widget).
+       Clicking a question just re-searches with that phrasing.
+    ───────────────────────────────── */
+    function looksLikeQuestion(q) {
+      return /^(who|what|when|where|why|how|is|are|can|does|do|did|will|should|which)\b/i.test(q.trim());
+    }
+    function renderPeopleAlsoAsk(q) {
+      if (!q || looksLikeQuestion(q)) return '';
+      const questions = [
+        `What is ${q}?`,
+        `How does ${q} work?`,
+        `Why is ${q} important?`,
+        `Is ${q} worth it?`,
+      ];
+      return `<div class="paa-box">
+        <div class="paa-heading">People also ask</div>
+        ${questions.map(qq => `<button class="paa-item" data-q="${escHtml(qq)}">${escHtml(qq)}<span class="paa-arrow">+</span></button>`).join('')}
+      </div>`;
+    }
+
+    /* ─────────────────────────────────
+       RELATED SEARCHES — reuses the same autocomplete edge function that
+       backs the live suggestions dropdown, called with the full query.
+    ───────────────────────────────── */
+    function loadRelatedSearches(q) {
+      fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/autocomplete?q=${encodeURIComponent(q)}`, {
+        headers: SUPABASE_FN_HEADERS,
+      })
+        .then(r => r.json())
+        .then(data => {
+          const box = document.getElementById('related-searches-box');
+          if (!box) return; // user navigated away before this resolved
+          const items = (data?.suggestions || [])
+            .map(s => s.text || s)
+            .filter(s => s.toLowerCase() !== q.toLowerCase())
+            .slice(0, 8);
+          if (!items.length) { box.remove(); return; }
+          box.innerHTML = `<div class="related-heading">Related searches</div>
+            <div class="related-chips">
+              ${items.map(s => `<button class="related-chip" data-q="${escHtml(s)}">${escHtml(s)}</button>`).join('')}
+            </div>`;
+          box.querySelectorAll('.related-chip').forEach(btn => {
+            btn.addEventListener('click', () => doSearch(btn.dataset.q));
+          });
+        })
+        .catch(() => { const box = document.getElementById('related-searches-box'); if (box) box.remove(); });
     }
 
     function renderImageResults(imgs, countText, currentPage, totalPages) {
       if (!imgs.length) { renderNoResults(); return; }
 
       let html = '';
-      if (countText) html += `<div class="results-info">${escHtml(countText)}</div>`;
+      if (countText) html += `<div class="results-info">${escHtml(countText)}${elapsedSuffix()}</div>`;
 
       html += `<div id="image-results-grid">`;
       imgs.forEach((img, i) => {
@@ -3199,6 +3643,50 @@
           alt:  tile.dataset.alt,
           url:  tile.dataset.url,
         }));
+      });
+
+      resultsArea.querySelectorAll('.page-btn[data-page]').forEach(btn => {
+        btn.addEventListener('click', () => goToPage(parseInt(btn.getAttribute('data-page'))));
+      });
+    }
+
+    function renderVideoResults(videos, countText, currentPage, totalPages) {
+      if (!videos.length) { renderNoResults(); return; }
+
+      let html = '';
+      if (countText) html += `<div class="results-info">${escHtml(countText)}${elapsedSuffix()}</div>`;
+
+      html += `<div id="video-results-grid">`;
+      videos.forEach((v, i) => {
+        html += `
+          <div class="video-result-item" data-idx="${i}" style="animation-delay:${i*0.02}s">
+            <div class="video-thumb-wrap">
+              ${v.thumb ? `<img src="${escHtml(v.thumb)}" alt="" loading="lazy" onerror="this.style.display='none'">` : `<div class="video-thumb-fallback">▶</div>`}
+              <span class="video-play-badge">▶</span>
+            </div>
+            <div class="video-result-text">
+              <a class="result-title" href="${escHtml(v.href)}" target="_blank" rel="noopener noreferrer">${escHtml(v.title)}</a>
+              <div class="result-site-row"><span class="result-site-name">${escHtml(v.hostname)}</span></div>
+              ${v.snippet ? `<div class="result-snippet">${v.snippet}</div>` : ''}
+            </div>
+          </div>`;
+      });
+      html += `</div>`;
+
+      if (totalPages > 1) html += buildPagination(currentPage, totalPages);
+      resultsArea.innerHTML = html;
+
+      resultsArea.querySelectorAll('.video-result-item').forEach(tile => {
+        const v = videos[parseInt(tile.dataset.idx)];
+        if (!v.ytId) return; // non-YouTube: title link above just opens the source
+        tile.querySelector('.video-thumb-wrap').addEventListener('click', () => {
+          const wrap = tile.querySelector('.video-thumb-wrap');
+          wrap.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${encodeURIComponent(v.ytId)}?autoplay=1"
+            title="${escHtml(v.title)}" frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen></iframe>`;
+        });
+        tile.querySelector('.video-thumb-wrap').style.cursor = 'pointer';
       });
 
       resultsArea.querySelectorAll('.page-btn[data-page]').forEach(btn => {
@@ -3336,6 +3824,11 @@
     /* ─────────────────────────────────
        UTILS
     ───────────────────────────────── */
+    function elapsedSuffix() {
+      if (!state.searchStartTime) return '';
+      const secs = (performance.now() - state.searchStartTime) / 1000;
+      return ` (${secs.toFixed(2)} seconds)`;
+    }
     function escHtml(str) {
       if (!str) return '';
       return String(str)
