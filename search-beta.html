@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="/assets/css/responsive.css" />
   <link rel="stylesheet" href="/assets/css/cursor.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/js/360-settings.js"></script>
 
   <style>
     /* ══════════════════════════════════════════
@@ -742,7 +743,12 @@
       animation: cardIn 0.2s ease both;
     }
     body.dark .video-result-item { background: var(--glass-dark); border-color: var(--glass-border-dk); }
-    .video-thumb-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+    .video-thumb-wrap { position: relative; display: block; width: 100%; aspect-ratio: 16/9; background: #000; }
+    .video-native-badge {
+      position: absolute; top: 6px; left: 6px;
+      background: linear-gradient(120deg, var(--a), var(--a2)); color: #fff;
+      font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 6px;
+    }
     .video-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .video-thumb-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 28px; background: #111; }
     .video-play-badge {
@@ -1343,6 +1349,9 @@
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     };
+    // Only used for account-settings sync (Settings360) — everything else
+    // on this page talks to Supabase via plain fetch, kept as-is.
+    const sb360 = supabase.createClient('https://wiswfpfsjiowtrdyqpxy.supabase.co', SUPABASE_ANON_KEY);
 
     /* ─────────────────────────────────
        ELEMENT REFS
@@ -1388,7 +1397,7 @@
           run360Search(q, 'shopping');
         } else if (t === 'videos') {
           showResultsArea(true);
-          waitForGcseAndSearch(buildVideoQuery(q), t);
+          searchVideosGcse(q, t);
         } else if (t === 'maps') {
           showResultsArea(true);
           renderMapsResults(q);
@@ -2021,6 +2030,28 @@
       waitForGcseAndSearch(buildFilteredQuery(q), tab);
     }
 
+    // Videos tab: merges in the user's own 360Vids uploads (marked
+    // featured_in_search=true via 360MySite → Linked Content) alongside
+    // the GCSE-scraped external video results.
+    let edgeVidsFallback = null;
+    async function fetch360VidsResults(q) {
+      try {
+        const res = await fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/rest/v1/vids?select=id,title,description,thumbnail_url,video_url,duration,views,username&featured_in_search=eq.true&order=views.desc&limit=50`, {
+          headers: SUPABASE_FN_HEADERS,
+        });
+        const all = await res.json();
+        const needle = q.toLowerCase();
+        edgeVidsFallback = Array.isArray(all) ? all.filter(v => `${v.title || ''} ${v.description || ''}`.toLowerCase().includes(needle)) : [];
+        if (state.tab === 'videos' && !state.pendingSearch) scrapeAndRender();
+      } catch (e) {
+        edgeVidsFallback = null;
+      }
+    }
+    function searchVideosGcse(q, tab) {
+      fetch360VidsResults(q);
+      waitForGcseAndSearch(buildVideoQuery(q), tab);
+    }
+
     let gcseTimeoutId = null;
     function waitForGcseAndSearch(q, tab) {
       if (state.gcseReady) {
@@ -2336,7 +2367,19 @@
       });
 
       const { countText, currentPage, totalPages } = getGcsePaginationInfo(gcseContainer);
-      renderVideoResults(videos, countText, currentPage, totalPages);
+
+      const nativeVids = (edgeVidsFallback || []).map(v => ({
+        title: v.title,
+        href: `/apps/360vids.html?v=${v.id}`,
+        hostname: '360vids',
+        snippet: v.description ? escHtml(v.description).slice(0, 160) : '',
+        thumb: v.thumbnail_url || '',
+        ytId: null,
+        isNative: true,
+      }));
+      const merged = currentPage <= 1 ? [...nativeVids, ...videos] : videos;
+
+      renderVideoResults(merged, countText, currentPage, totalPages);
     }
 
     function scrapeImageResults(gcseContainer) {
@@ -2718,7 +2761,7 @@
         } else if (t === 'shopping') {
           run360Search(state.query, 'shopping');
         } else if (t === 'videos') {
-          waitForGcseAndSearch(buildVideoQuery(state.query), t);
+          searchVideosGcse(state.query, t);
         } else {
           // Switching to Web tab was missing this — only a fresh search
           // triggered it, so tab-switching alone never merged in the
@@ -2843,10 +2886,22 @@
       btn.addEventListener('click', () => {
         state.safeSearch = !state.safeSearch;
         localStorage.setItem('360_safe_search', state.safeSearch ? 'on' : 'off');
+        Settings360.set('safeSearch', state.safeSearch);
         render();
         if (state.tab === 'images' && state.query) {
           state.page = 1;
           scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        }
+      });
+
+      // Reconcile against the signed-in account once it loads, so Safe
+      // Search follows you across devices instead of resetting per-browser.
+      Settings360.init(sb360).then(() => {
+        const remote = Settings360.get('safeSearch');
+        if (typeof remote === 'boolean' && remote !== state.safeSearch) {
+          state.safeSearch = remote;
+          localStorage.setItem('360_safe_search', remote ? 'on' : 'off');
+          render();
         }
       });
     })();
@@ -2871,6 +2926,7 @@
         state.searchStartTime = performance.now();
         if (state.tab === 'videos') {
           waitForGcseAndSearch(buildVideoQuery(state.query), 'videos');
+          fetch360VidsResults(state.query);
         } else {
           searchWebGcse(state.query, state.tab);
         }
@@ -3164,7 +3220,7 @@
       } else if (state.tab === 'shopping') {
         run360Search(q, 'shopping');
       } else if (state.tab === 'videos') {
-        waitForGcseAndSearch(buildVideoQuery(q), 'videos');
+        searchVideosGcse(q, 'videos');
       } else {
         // Web tab: fetch 360 index first, then GCSE fills the rest.
         searchWebGcse(q, state.tab);
@@ -3660,10 +3716,11 @@
       videos.forEach((v, i) => {
         html += `
           <div class="video-result-item" data-idx="${i}" style="animation-delay:${i*0.02}s">
-            <div class="video-thumb-wrap">
+            <a class="video-thumb-wrap" href="${escHtml(v.href)}" target="_blank" rel="noopener noreferrer">
               ${v.thumb ? `<img src="${escHtml(v.thumb)}" alt="" loading="lazy" onerror="this.style.display='none'">` : `<div class="video-thumb-fallback">▶</div>`}
               <span class="video-play-badge">▶</span>
-            </div>
+              ${v.isNative ? `<span class="video-native-badge">360Vids</span>` : ''}
+            </a>
             <div class="video-result-text">
               <a class="result-title" href="${escHtml(v.href)}" target="_blank" rel="noopener noreferrer">${escHtml(v.title)}</a>
               <div class="result-site-row"><span class="result-site-name">${escHtml(v.hostname)}</span></div>
@@ -3678,13 +3735,14 @@
 
       resultsArea.querySelectorAll('.video-result-item').forEach(tile => {
         const v = videos[parseInt(tile.dataset.idx)];
-        if (!v.ytId) return; // non-YouTube: title link above just opens the source
-        tile.querySelector('.video-thumb-wrap').addEventListener('click', () => {
+        if (!v.ytId) return; // native/non-YouTube: the link above just opens the source
+        tile.querySelector('.video-thumb-wrap').addEventListener('click', e => {
+          e.preventDefault();
           const wrap = tile.querySelector('.video-thumb-wrap');
-          wrap.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${encodeURIComponent(v.ytId)}?autoplay=1"
+          wrap.outerHTML = `<div class="video-thumb-wrap"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${encodeURIComponent(v.ytId)}?autoplay=1"
             title="${escHtml(v.title)}" frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen></iframe>`;
+            allowfullscreen></iframe></div>`;
         });
         tile.querySelector('.video-thumb-wrap').style.cursor = 'pointer';
       });
