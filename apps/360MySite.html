@@ -1,15 +1,15 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360MySite — manage your site on 360</title>
+  <title>360MySite — Manage your site on 360</title>
   <link rel="icon" type="image/png" href="/favicon-32x32.png" />
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#3b82f6" />
   <link rel="stylesheet" href="/assets/css/main.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/js/360-settings.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -307,10 +307,11 @@
     /* ── Theme ── */
     function applyTheme(t) { document.body.classList.toggle('dark', t === 'dark'); }
     let theme = localStorage.getItem('360_theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    applyTheme(theme);
+    applyTheme(theme); // instant, no flash — reconciled against the account below
     document.getElementById('theme-toggle').addEventListener('click', () => {
       theme = theme === 'dark' ? 'light' : 'dark';
       localStorage.setItem('360_theme', theme);
+      Settings360.set('theme', theme);
       applyTheme(theme);
     });
 
@@ -356,6 +357,14 @@
       renderAuthSlot();
       render();
       if (currentUser) loadSites();
+
+      await Settings360.init(sb);
+      const remoteTheme = Settings360.get('theme');
+      if (remoteTheme && remoteTheme !== theme) {
+        theme = remoteTheme;
+        localStorage.setItem('360_theme', theme);
+        applyTheme(theme);
+      }
     }
     sb.auth.onAuthStateChange((_e, session) => {
       currentSession = session;
@@ -497,6 +506,7 @@
           activeSiteId = data.site.id;
           view = 'detail';
           render();
+          if (data.auto_verified) toast('Subdomain of a verified site — auto-verified 🎉');
         } catch (e) {
           errEl.textContent = e.message;
           btn.disabled = false; btn.textContent = 'Add site';
@@ -530,14 +540,22 @@
 
       const detail = document.getElementById('detail-content');
       if (!site.verified) {
-        detail.innerHTML = verificationSectionHtml(site);
+        detail.innerHTML = verificationSectionHtml(site) + ownersSectionHtml(site);
         wireVerificationSection(site);
+        wireOwnersSection(site);
+        loadOwners(site);
       } else {
         detail.innerHTML = `<div id="coverage-stats" class="ms-section"><h3>Coverage</h3><div class="ms-section-sub">Loading…</div></div>` +
-          indexingToolsHtml(site) + `<div id="recent-pages" class="ms-section"><h3>Recently crawled pages</h3><div class="ms-section-sub">Loading…</div></div>`;
+          indexingToolsHtml(site) +
+          `<div id="recent-pages" class="ms-section"><h3>Recently crawled pages</h3><div class="ms-section-sub">Loading…</div></div>` +
+          `<div id="dns-records" class="ms-section"><h3>DNS records</h3><div class="ms-section-sub">Loading…</div></div>` +
+          ownersSectionHtml(site);
         wireIndexingTools(site);
         loadCoverageStats(site);
         loadRecentPages(site);
+        wireOwnersSection(site);
+        loadOwners(site);
+        loadDnsRecords(site);
       }
     }
 
@@ -696,6 +714,178 @@
             </tr>`).join('')}
           </tbody>
         </table>`;
+    }
+
+    /* ── DNS records (verified sites only) ── */
+    const DNS_TYPES = ['A', 'AAAA', 'CNAME', 'TXT', 'MX', 'NS'];
+    async function loadDnsRecords(site) {
+      const box = document.getElementById('dns-records');
+      if (!box) return;
+      const { data, error } = await sb.from('dns_records').select('*').eq('site_id', site.id).order('created_at', { ascending: true });
+      renderDnsRecords(site, data || []);
+    }
+
+    function renderDnsRecords(site, records) {
+      const box = document.getElementById('dns-records');
+      if (!box) return;
+      box.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h3 style="margin:0;">DNS records</h3>
+          <button class="ms-btn-outline" id="add-dns-btn">+ Add record</button>
+        </div>
+        <p class="ms-section-sub">Records you plan to (or already) have set at your registrar. 360 doesn't host DNS for you — this just tracks what should be there and checks it live against the real internet.</p>
+        ${records.length ? `<table class="ms-table">
+          <thead><tr><th>Type</th><th>Name</th><th>Value</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            ${records.map(r => `<tr>
+              <td>${escHtml(r.record_type)}</td>
+              <td>${escHtml(r.name)}</td>
+              <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(r.value)}</td>
+              <td><span class="ms-status-dot ${r.status==='live'?'ms-status-ok':'ms-status-error'}"></span>${escHtml(r.status)}${r.last_checked_at ? ` · ${timeAgo(r.last_checked_at)}` : ''}</td>
+              <td style="white-space:nowrap;">
+                <button class="ms-copy-btn" data-check="${r.id}">Check</button>
+                &nbsp;
+                <button class="ms-copy-btn" style="color:var(--ms-danger);" data-del="${r.id}">Remove</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>` : `<div class="ms-section-sub">No DNS records tracked yet.</div>`}`;
+
+      document.getElementById('add-dns-btn').addEventListener('click', () => openAddDnsModal(site));
+      box.querySelectorAll('[data-check]').forEach(b => b.addEventListener('click', async () => {
+        b.textContent = '…';
+        try {
+          const data = await callFn('check_dns_record', { site_id: site.id, record_id: b.dataset.check });
+          toast(data.status === 'live' ? '✓ Record is live' : `Status: ${data.status}`);
+        } catch (e) { toast(e.message); }
+        loadDnsRecords(site);
+      }));
+      box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
+        if (!confirm('Remove this DNS record from tracking?')) return;
+        await sb.from('dns_records').delete().eq('id', b.dataset.del);
+        loadDnsRecords(site);
+      }));
+    }
+
+    function openAddDnsModal(site) {
+      const overlay = document.createElement('div');
+      overlay.className = 'ms-modal-overlay';
+      overlay.innerHTML = `
+        <div class="ms-modal">
+          <h2>Add DNS record</h2>
+          <div class="ms-field">
+            <label>Type</label>
+            <select id="dns-type" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--ms-border);background:var(--bg);color:var(--txt);font-family:inherit;font-size:13.5px;">
+              ${DNS_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
+            </select>
+          </div>
+          <div class="ms-field">
+            <label>Name (subdomain label — use @ for root)</label>
+            <input type="text" id="dns-name" placeholder="@ or www or mail" value="@" />
+          </div>
+          <div class="ms-field">
+            <label>Value</label>
+            <input type="text" id="dns-value" placeholder="e.g. 192.0.2.1 or target.example.com" />
+          </div>
+          <div class="ms-modal-err" id="add-dns-err"></div>
+          <div class="ms-modal-actions">
+            <button class="ms-btn-outline" id="cancel-dns">Cancel</button>
+            <button class="ms-btn" id="confirm-dns">Add record</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      const close = () => overlay.remove();
+      overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+      document.getElementById('cancel-dns').addEventListener('click', close);
+      document.getElementById('confirm-dns').addEventListener('click', async () => {
+        const errEl = document.getElementById('add-dns-err');
+        const record_type = document.getElementById('dns-type').value;
+        const name = document.getElementById('dns-name').value.trim() || '@';
+        const value = document.getElementById('dns-value').value.trim();
+        if (!value) { errEl.textContent = 'Enter a value.'; return; }
+        const { error } = await sb.from('dns_records').insert({ site_id: site.id, record_type, name, value, created_by: currentUser.id });
+        if (error) { errEl.textContent = error.message; return; }
+        close();
+        loadDnsRecords(site);
+      });
+    }
+
+    /* ── Owners ── */
+    function ownersSectionHtml(site) {
+      const isPrimary = site.user_id === currentUser.id;
+      return `<div class="ms-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h3 style="margin:0;">Owners</h3>
+          ${isPrimary ? `<button class="ms-btn-outline" id="add-owner-btn">+ Add owner</button>` : ''}
+        </div>
+        <p class="ms-section-sub">Co-owners can verify, manage DNS, and request crawls without proving domain ownership again.</p>
+        <div id="owners-list" class="ms-section-sub">Loading…</div>
+      </div>`;
+    }
+
+    function wireOwnersSection(site) {
+      const btn = document.getElementById('add-owner-btn');
+      if (btn) btn.addEventListener('click', () => openAddOwnerModal(site));
+    }
+
+    async function loadOwners(site) {
+      const box = document.getElementById('owners-list');
+      if (!box) return;
+      const { data: rows } = await sb.from('site_owners').select('id,user_id,added_at').eq('site_id', site.id);
+      const ids = [site.user_id, ...(rows || []).map(r => r.user_id)];
+      const { data: profiles } = await sb.from('profiles').select('id,username,email').in('id', ids);
+      const byId = Object.fromEntries((profiles || []).map(p => [p.id, p]));
+      const isPrimary = site.user_id === currentUser.id;
+
+      const primary = byId[site.user_id];
+      let html = `<div class="ms-content-row"><div style="flex:1;">
+        <div class="ms-content-title">${escHtml(primary?.username || primary?.email || 'You')} <span class="ms-badge ms-badge-verified" style="margin-left:6px;">Primary owner</span></div>
+      </div></div>`;
+      (rows || []).forEach(r => {
+        const p = byId[r.user_id];
+        html += `<div class="ms-content-row"><div style="flex:1;">
+          <div class="ms-content-title">${escHtml(p?.username || p?.email || 'Unknown user')}</div>
+          <div class="ms-content-meta">Added ${timeAgo(r.added_at)}</div>
+        </div>${isPrimary ? `<button class="ms-copy-btn" style="color:var(--ms-danger);" data-remove-owner="${r.user_id}">Remove</button>` : ''}</div>`;
+      });
+      box.innerHTML = html;
+      box.querySelectorAll('[data-remove-owner]').forEach(b => b.addEventListener('click', async () => {
+        try { await callFn('remove_owner', { site_id: site.id, owner_user_id: b.dataset.removeOwner }); toast('Owner removed'); loadOwners(site); }
+        catch (e) { toast(e.message); }
+      }));
+    }
+
+    function openAddOwnerModal(site) {
+      const overlay = document.createElement('div');
+      overlay.className = 'ms-modal-overlay';
+      overlay.innerHTML = `
+        <div class="ms-modal">
+          <h2>Add an owner</h2>
+          <div class="ms-field">
+            <label>Their 360 account email</label>
+            <input type="email" id="owner-email" placeholder="friend@example.com" autofocus />
+          </div>
+          <div class="ms-modal-err" id="add-owner-err"></div>
+          <div class="ms-modal-actions">
+            <button class="ms-btn-outline" id="cancel-owner">Cancel</button>
+            <button class="ms-btn" id="confirm-owner">Add</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      const close = () => overlay.remove();
+      overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+      document.getElementById('cancel-owner').addEventListener('click', close);
+      document.getElementById('confirm-owner').addEventListener('click', async () => {
+        const errEl = document.getElementById('add-owner-err');
+        const email = document.getElementById('owner-email').value.trim();
+        if (!email) { errEl.textContent = 'Enter an email.'; return; }
+        try {
+          await callFn('add_owner', { site_id: site.id, email });
+          toast('Owner added');
+          close();
+          loadOwners(site);
+        } catch (e) { errEl.textContent = e.message; }
+      });
     }
 
     async function removeSite(site) {
