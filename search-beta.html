@@ -49,7 +49,7 @@
     }
 
     /* ── GCSE hidden container ── */
-    #gcse-hidden-container {
+    #idx-container {
       position: absolute;
       left: -9999px;
       top: -9999px;
@@ -1161,8 +1161,8 @@
   </div>
 
   <!-- ══ HIDDEN GCSE CONTAINER (does the actual work) ══ -->
-  <div id="gcse-hidden-container">
-    <div class="gcse-search" id="gcse-widget"></div>
+  <div id="idx-container">
+    <div class="gcse-search" id="idx-mount"></div>
   </div>
 
   <!-- ══ SEARCH RESULTS PAGE ══ -->
@@ -1335,6 +1335,20 @@
       // performance.now() timestamp set when a search/tab-switch/page-nav
       // begins, used to show "(X.XX seconds)" next to the result count.
       searchStartTime: 0,
+      // Set the instant scrapeWebResults actually renders something (real
+      // results OR a genuine "no results" state) for a given query. Used
+      // by the watchdog below to tell "still legitimately loading" apart
+      // from "GCSE loaded fine but silently never produced a result",
+      // which the old 6s ready-timeout couldn't catch since it only
+      // covers the widget never loading at all.
+      lastRenderedQuery: null,
+      gcseStuckTimeoutId: null,
+      // In-memory only (never persisted to localStorage/sessionStorage) —
+      // so it's already effectively "deleted when the user leaves" for
+      // free, since it just stops existing on page unload. Cleared
+      // explicitly on every new query (see doSearch) so a stale tab's
+      // results can never bleed into a different search.
+      resultsCache: {},
     };
 
     /* ─────────────────────────────────
@@ -1398,7 +1412,7 @@
           showResultsArea(true);
           loadKnowledgePanel(q);
           state.page = 1;
-          scrapeImageResults(document.getElementById('gcse-hidden-container'));
+          scrapeImageResults(document.getElementById('idx-container'));
         } else if (t === 'news') {
           showResultsArea(true);
           run360Search(q, 'news');
@@ -2046,8 +2060,15 @@
     let edgeVidsFallback = null;
     async function fetch360VidsResults(q) {
       try {
-        const res = await fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/rest/v1/vids?select=id,title,description,thumbnail_url,video_url,duration,views,username&featured_in_search=eq.true&order=views.desc&limit=50`, {
-          headers: SUPABASE_FN_HEADERS,
+        // Uses an RPC (not a raw table select) — PostgREST's schema cache
+        // was refusing to serve select=...&featured_in_search=eq.true
+        // against the vids table directly (404, even though the same SQL
+        // works fine run directly and the table/RLS/grants all check out —
+        // an RPC sidesteps whatever that caching issue is).
+        const res = await fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/rest/v1/rpc/get_featured_vids`, {
+          method: 'POST',
+          body: JSON.stringify({ limit_count: 50 }),
+          headers: { ...SUPABASE_FN_HEADERS, 'Content-Type': 'application/json' },
         });
         const all = await res.json();
         const needle = q.toLowerCase();
@@ -2078,7 +2099,7 @@
           if (!state.gcseReady && state.pendingSearch && state.pendingSearch.q === q && state.tab === tab) {
             useIndexFallbackForWeb(q);
           }
-        }, 6000);
+        }, 4000);
       }
     }
 
@@ -2088,6 +2109,7 @@
     ───────────────────────────────── */
     function useIndexFallbackForWeb(q) {
       state.pendingSearch = null;
+      state.lastRenderedQuery = q;
       if (edgeWebFallback && edgeWebFallback.web && edgeWebFallback.web.length) {
         const mapped = edgeWebFallback.web.map(r => ({ href: r.url, title: r.title, snippet: r.desc, thumb: r.thumb }));
         const note = edgeWebFallback.countText || '';
@@ -2122,10 +2144,10 @@
        GET GCSE ELEMENTS
     ───────────────────────────────── */
     function getGcseInput() {
-      return document.querySelector('#gcse-hidden-container input.gsc-input');
+      return document.querySelector('#idx-container input.gsc-input');
     }
     function getGcseBtn() {
-      return document.querySelector('#gcse-hidden-container .gsc-search-button-v2, #gcse-hidden-container button.gsc-search-button');
+      return document.querySelector('#idx-container .gsc-search-button-v2, #idx-container button.gsc-search-button');
     }
 
     /* ─────────────────────────────────
@@ -2134,6 +2156,23 @@
     function triggerGcseSearch(q, tab) {
       const gcseInput = getGcseInput();
       if (!gcseInput) return;
+
+      // Watchdog for the OTHER stuck-loader case: GCSE's script loads fine
+      // (state.gcseReady = true, so the earlier "widget never loads" timer
+      // never fires) but the search itself never produces a scraped result
+      // — no .gsc-webResult, no "no results" marker either, e.g. because
+      // the underlying Programmable Search Engine is mid-outage or its
+      // quota/billing lapsed. Without this, scrapeWebResults's "still
+      // loading" branch just returns forever with nothing to catch it.
+      if (tab === 'web' || tab === 'videos') {
+        const watchdogQuery = q;
+        clearTimeout(state.gcseStuckTimeoutId);
+        state.gcseStuckTimeoutId = setTimeout(() => {
+          if (state.tab === tab && state.query && state.lastRenderedQuery !== state.query) {
+            useIndexFallbackForWeb(state.query);
+          }
+        }, 5000);
+      }
 
       // Suppress observer while we set the value
       state.suppressObserver = true;
@@ -2180,7 +2219,7 @@
       clearTimeout(stableTimer);
       clearTimeout(safetyTimer);
 
-      const gcseContainer = document.getElementById('gcse-hidden-container');
+      const gcseContainer = document.getElementById('idx-container');
 
       gcseObserver = new MutationObserver(() => {
         if (state.suppressObserver) return;
@@ -2210,7 +2249,7 @@
     function scrapeAndRender() {
       if (state.tab === 'ai' || state.tab === 'maps') return;
 
-      const gcseContainer = document.getElementById('gcse-hidden-container');
+      const gcseContainer = document.getElementById('idx-container');
 
       if (state.tab === 'images') {
         scrapeImageResults(gcseContainer);
@@ -2227,6 +2266,7 @@
         const noResults = gcseContainer.querySelector('.gs-no-results-result, .gsc-no-results-result');
         const indexOnly = (edgeWebFallback?.web || []).filter(r => r._from360);
         if (noResults) {
+          state.lastRenderedQuery = state.query;
           if (indexOnly.length) {
             const merged = indexOnly.map(r => {
               let hostname = ''; try { hostname = new URL(r.url).hostname.replace('www.', ''); } catch(e) {}
@@ -2240,6 +2280,7 @@
         }
         return; // still loading
       }
+      state.lastRenderedQuery = state.query;
 
       const seenHrefs = new Set();
       const results = [];
@@ -2302,17 +2343,25 @@
         // r._score is the backend's blended relevance score (cosine
         // similarity + full-text rank + PageRank authority), roughly
         // 0-0.6 for real matches after calibration. GCSE results carry no
-        // numeric score of their own, but their array order already IS
-        // Google's relevance ranking, so we assign a comparable synthetic
-        // score by position (starts at 1.0, decays per rank) and sort the
-        // two lists together — instead of always forcing our results
-        // first, which was overriding Google's own ranking outright even
-        // when its top pick was clearly more relevant.
-        indexCards.push({ title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: r.thumb || '', _score: r._score ?? 0.3 });
+        // r._score is the backend's blended relevance score (cosine
+        // similarity + full-text rank + PageRank authority) from our own
+        // crawl+embeddings pipeline — this is the primary ranking signal
+        // now, not a fallback. Index results are placed ahead of GCSE's
+        // results below; GCSE fills in additional coverage behind them
+        // rather than competing on a shared numeric scale (a shared-scale
+        // blend was tried here before, but GCSE's synthetic per-position
+        // score for its own #1 pick almost always outranked even a very
+        // strong index match, which defeated the point of having our own
+        // ranking at all).
+        indexCards.push({ title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: r.thumb || '', _score: r._score ?? 0 });
       });
 
-      const gcseScored = results.map((r, i) => ({ ...r, _score: Math.max(0.05, 1 - i * 0.09) }));
-      const merged = [...indexCards, ...gcseScored].sort((a, b) => b._score - a._score);
+      // Our own index leads (best-first, by its own real relevance score);
+      // GCSE's results — already deduped against anything the index already
+      // covered — fill in behind, in GCSE's own order, as supplementary
+      // coverage for whatever our index doesn't have yet.
+      indexCards.sort((a, b) => b._score - a._score);
+      const merged = [...indexCards, ...results];
 
       renderWebResults(merged, countText, currentPage, totalPages);
     }
@@ -2765,7 +2814,7 @@
       showResultsArea(true);
       if (state.query) {
         if (t === 'images') {
-          scrapeImageResults(document.getElementById('gcse-hidden-container'));
+          scrapeImageResults(document.getElementById('idx-container'));
         } else if (t === 'news') {
           run360Search(state.query, 'news');
         } else if (t === 'shopping') {
@@ -2901,7 +2950,7 @@
         render();
         if (state.tab === 'images' && state.query) {
           state.page = 1;
-          scrapeImageResults(document.getElementById('gcse-hidden-container'));
+          scrapeImageResults(document.getElementById('idx-container'));
         }
       });
 
@@ -3226,7 +3275,7 @@
         }
         loadKnowledgePanel(q);
         if (state.tab === 'images') {
-          scrapeImageResults(document.getElementById('gcse-hidden-container'));
+          scrapeImageResults(document.getElementById('idx-container'));
         } else if (state.tab === 'news') {
           run360Search(q, 'news');
         } else if (state.tab === 'shopping') {
@@ -3430,7 +3479,7 @@
                 ${a.age ? `<span style="color:var(--mut);font-size:11px;margin-left:auto">${escHtml(a.age)}</span>` : ''}
               </div>
               <a class="result-title" href="${escHtml(a.url)}" target="_blank" rel="noopener noreferrer">${escHtml(a.title)}</a>
-              ${a.desc ? `<div class="result-snippet">${escHtml(a.desc)}</div>` : ''}
+              ${a.desc ? `<div class="result-snippet">${a.desc}</div>` : ''}
             </div>
           </div>
         </div>`;
@@ -3807,7 +3856,7 @@
 
       if (state.tab === 'images') {
         state.page = targetPage;
-        scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        scrapeImageResults(document.getElementById('idx-container'));
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
@@ -3819,7 +3868,7 @@
       clearTimeout(stableTimer);
       clearTimeout(safetyTimer);
 
-      const gcseContainer = document.getElementById('gcse-hidden-container');
+      const gcseContainer = document.getElementById('idx-container');
 
       // Step through GCSE pages until we reach the target
       navigateGcseTo(gcseContainer, targetPage, () => {
@@ -3904,6 +3953,30 @@
       clearTimeout(safetyTimer);
       safetyTimer = setTimeout(() => scrapeAndRender(), ms);
     }
+
+    /* ─────────────────────────────────
+       PER-TAB RESULTS CACHE
+       Switching tabs (Web ↔ Images ↔ News ↔ ...) and back for the SAME
+       query re-renders from memory instantly instead of re-fetching.
+       Keyed by tab+query+page; wiped on any new query. Nothing here ever
+       touches localStorage/sessionStorage, so it's automatically gone the
+       moment the user leaves the page too.
+    ───────────────────────────────── */
+    function cacheKey(tab, query, page) { return `${tab}::${query}::${page || 1}`; }
+
+    function cacheRender(tab, query, page, renderFn, args) {
+      state.resultsCache[cacheKey(tab, query, page)] = { renderFn, args };
+      renderFn(...args);
+    }
+
+    function tryServeFromCache(tab, query, page) {
+      const entry = state.resultsCache[cacheKey(tab, query, page)];
+      if (!entry) return false;
+      entry.renderFn(...entry.args);
+      return true;
+    }
+
+    function clearResultsCache() { state.resultsCache = {}; }
 
     /* ─────────────────────────────────
        UTILS
