@@ -1351,7 +1351,12 @@
     };
     // Only used for account-settings sync (Settings360) — everything else
     // on this page talks to Supabase via plain fetch, kept as-is.
-    const sb360 = supabase.createClient('https://wiswfpfsjiowtrdyqpxy.supabase.co', SUPABASE_ANON_KEY);
+    // Reuses the global `supabaseClient` main.js already created (loaded
+    // above via /assets/js/main.js) rather than calling
+    // supabase.createClient() a second time — two GoTrueClient instances
+    // sharing the same storage key throws a "Multiple GoTrueClient
+    // instances detected" warning and risks auth-state races.
+    const sb360 = window.supabaseClient || supabase.createClient('https://wiswfpfsjiowtrdyqpxy.supabase.co', SUPABASE_ANON_KEY);
 
     /* ─────────────────────────────────
        ELEMENT REFS
