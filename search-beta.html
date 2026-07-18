@@ -2776,6 +2776,7 @@
     function updateToolsVisibility(t) {
       const toggle = document.getElementById('tools-toggle');
       const bar = document.getElementById('tools-bar');
+      if (!toggle || !bar) return; // defensive: never let a missing element break doSearch
       const relevant = (t === 'web' || t === 'videos');
       toggle.style.display = relevant ? 'flex' : 'none';
       if (!relevant) bar.classList.remove('open');
@@ -3199,31 +3200,41 @@
       updateClearBtn();
       updateUrl(q, state.tab);
       addRecentSearch(q);
-      updateToolsVisibility(state.tab);
+      try { updateToolsVisibility(state.tab); } catch (e) { console.error('updateToolsVisibility failed:', e); }
 
-      if (state.tab === 'ai') {
-        showResultsArea(false);
-        runAiSearch(q);
-        return;
-      }
+      try {
+        if (state.tab === 'ai') {
+          showResultsArea(false);
+          runAiSearch(q);
+          return;
+        }
 
-      showResultsArea(true);
-      if (state.tab === 'maps') {
-        renderMapsResults(q);
-        return;
-      }
-      loadKnowledgePanel(q);
-      if (state.tab === 'images') {
-        scrapeImageResults(document.getElementById('gcse-hidden-container'));
-      } else if (state.tab === 'news') {
-        run360Search(q, 'news');
-      } else if (state.tab === 'shopping') {
-        run360Search(q, 'shopping');
-      } else if (state.tab === 'videos') {
-        searchVideosGcse(q, 'videos');
-      } else {
-        // Web tab: fetch 360 index first, then GCSE fills the rest.
-        searchWebGcse(q, state.tab);
+        showResultsArea(true);
+        if (state.tab === 'maps') {
+          renderMapsResults(q);
+          return;
+        }
+        loadKnowledgePanel(q);
+        if (state.tab === 'images') {
+          scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        } else if (state.tab === 'news') {
+          run360Search(q, 'news');
+        } else if (state.tab === 'shopping') {
+          run360Search(q, 'shopping');
+        } else if (state.tab === 'videos') {
+          searchVideosGcse(q, 'videos');
+        } else {
+          // Web tab: fetch 360 index first, then GCSE fills the rest.
+          searchWebGcse(q, state.tab);
+        }
+      } catch (e) {
+        console.error('doSearch failed:', e);
+        resultsArea.innerHTML = `
+          <div class="state-box">
+            <div class="big-icon">⚠️</div>
+            <h3>Something went wrong</h3>
+            <p>That search hit an error on our end. Try again, or try a different tab.</p>
+          </div>`;
       }
     }
 
@@ -3571,14 +3582,15 @@
     }
 
     function renderWebResults(results, countText, currentPage, totalPages) {
-      if (!results.length) { renderNoResults(); return; }
+      if (!results || !results.length) { renderNoResults(); return; }
 
-      // Each GCSE page has its own result set — show all of them
       const visible = results;
-
       let html = '';
-      if (countText) html += `<div class="results-info">${escHtml(countText)}${elapsedSuffix()}</div>`;
-      html += renderPeopleAlsoAsk(state.query);
+      if (countText) html += `<div class="results-info">${escHtml(countText)}${safeElapsedSuffix()}</div>`;
+
+      // People Also Ask is new/best-effort — never let a bug in it wipe out
+      // real search results.
+      try { html += renderPeopleAlsoAsk(state.query); } catch (e) { console.error('renderPeopleAlsoAsk failed:', e); }
 
       visible.forEach((r, i) => {
         let hostname = '';
@@ -3603,7 +3615,7 @@
           </div>`;
       });
 
-      if (totalPages > 1) html += buildPagination(currentPage, totalPages);
+      try { if (totalPages > 1) html += buildPagination(currentPage, totalPages); } catch (e) { console.error('buildPagination failed:', e); }
       html += `<div id="related-searches-box"></div>`;
       resultsArea.innerHTML = html;
       resultsArea.querySelectorAll('.page-btn[data-page]').forEach(btn => {
@@ -3612,8 +3624,12 @@
       resultsArea.querySelectorAll('.paa-item').forEach(btn => {
         btn.addEventListener('click', () => doSearch(btn.dataset.q));
       });
-      if (state.query) loadRelatedSearches(state.query);
+      try { if (state.query) loadRelatedSearches(state.query); } catch (e) { console.error('loadRelatedSearches failed:', e); }
     }
+    // elapsedSuffix() is used inside render*Results — guarded here too since
+    // it's a small cosmetic addition and shouldn't ever be able to blank
+    // real results if state.searchStartTime is ever in an unexpected shape.
+    function safeElapsedSuffix() { try { return elapsedSuffix(); } catch (e) { return ''; } }
 
     /* ─────────────────────────────────
        PEOPLE ALSO ASK — template-generated, not scraped from Google (their
