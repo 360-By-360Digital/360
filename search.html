@@ -2337,17 +2337,25 @@
         // r._score is the backend's blended relevance score (cosine
         // similarity + full-text rank + PageRank authority), roughly
         // 0-0.6 for real matches after calibration. GCSE results carry no
-        // numeric score of their own, but their array order already IS
-        // Google's relevance ranking, so we assign a comparable synthetic
-        // score by position (starts at 1.0, decays per rank) and sort the
-        // two lists together — instead of always forcing our results
-        // first, which was overriding Google's own ranking outright even
-        // when its top pick was clearly more relevant.
-        indexCards.push({ title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: r.thumb || '', _score: r._score ?? 0.3 });
+        // r._score is the backend's blended relevance score (cosine
+        // similarity + full-text rank + PageRank authority) from our own
+        // crawl+embeddings pipeline — this is the primary ranking signal
+        // now, not a fallback. Index results are placed ahead of GCSE's
+        // results below; GCSE fills in additional coverage behind them
+        // rather than competing on a shared numeric scale (a shared-scale
+        // blend was tried here before, but GCSE's synthetic per-position
+        // score for its own #1 pick almost always outranked even a very
+        // strong index match, which defeated the point of having our own
+        // ranking at all).
+        indexCards.push({ title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: r.thumb || '', _score: r._score ?? 0 });
       });
 
-      const gcseScored = results.map((r, i) => ({ ...r, _score: Math.max(0.05, 1 - i * 0.09) }));
-      const merged = [...indexCards, ...gcseScored].sort((a, b) => b._score - a._score);
+      // Our own index leads (best-first, by its own real relevance score);
+      // GCSE's results — already deduped against anything the index already
+      // covered — fill in behind, in GCSE's own order, as supplementary
+      // coverage for whatever our index doesn't have yet.
+      indexCards.sort((a, b) => b._score - a._score);
+      const merged = [...indexCards, ...results];
 
       renderWebResults(merged, countText, currentPage, totalPages);
     }
