@@ -44,7 +44,23 @@
   /* ── Read persisted state ── */
   let galliumOn = localStorage.getItem(STORAGE_KEY) === "true";
 
-  /* ── Apply / remove the class immediately (before paint) ── */
+  /* ── Cursor-reactive gleam, scoped to hero elements only ──
+     Attaches a lightweight mousemove listener directly to each
+     hero element present on the page (there are only ever 0-2 of
+     these), writing --glx/--gly onto that element specifically —
+     never onto <html> or <body> — so the browser only needs to
+     recompute style for that one element's subtree, not the
+     whole document. Throttled by timestamp, not rAF piling. */
+  let gleamEls = [];
+  let lastMove = 0;
+
+  /* ── Apply / remove the class immediately (before paint) ──
+     Declared after gleamEls/lastMove above: applyState() calls
+     detachGleamListeners(), which reads gleamEls — calling this
+     before that `let` had run threw "Cannot access 'gleamEls'
+     before initialization" (TDZ), which aborted the rest of this
+     IIFE (toggle injection, settings-panel wiring, etc.) on every
+     single page load. */
   function applyState(on) {
     document.body.classList.toggle("gallium-mode", on);
     if (on) {
@@ -55,16 +71,6 @@
   }
 
   applyState(galliumOn);
-
-  /* ── Cursor-reactive gleam, scoped to hero elements only ──
-     Attaches a lightweight mousemove listener directly to each
-     hero element present on the page (there are only ever 0-2 of
-     these), writing --glx/--gly onto that element specifically —
-     never onto <html> or <body> — so the browser only needs to
-     recompute style for that one element's subtree, not the
-     whole document. Throttled by timestamp, not rAF piling. */
-  let gleamEls = [];
-  let lastMove = 0;
 
   function onHeroMove(e) {
     const now = performance.now();
