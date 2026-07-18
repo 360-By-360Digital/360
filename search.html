@@ -1335,6 +1335,14 @@
       // performance.now() timestamp set when a search/tab-switch/page-nav
       // begins, used to show "(X.XX seconds)" next to the result count.
       searchStartTime: 0,
+      // Set the instant scrapeWebResults actually renders something (real
+      // results OR a genuine "no results" state) for a given query. Used
+      // by the watchdog below to tell "still legitimately loading" apart
+      // from "GCSE loaded fine but silently never produced a result",
+      // which the old 6s ready-timeout couldn't catch since it only
+      // covers the widget never loading at all.
+      lastRenderedQuery: null,
+      gcseStuckTimeoutId: null,
     };
 
     /* ─────────────────────────────────
@@ -2095,6 +2103,7 @@
     ───────────────────────────────── */
     function useIndexFallbackForWeb(q) {
       state.pendingSearch = null;
+      state.lastRenderedQuery = q;
       if (edgeWebFallback && edgeWebFallback.web && edgeWebFallback.web.length) {
         const mapped = edgeWebFallback.web.map(r => ({ href: r.url, title: r.title, snippet: r.desc, thumb: r.thumb }));
         const note = edgeWebFallback.countText || '';
@@ -2141,6 +2150,23 @@
     function triggerGcseSearch(q, tab) {
       const gcseInput = getGcseInput();
       if (!gcseInput) return;
+
+      // Watchdog for the OTHER stuck-loader case: GCSE's script loads fine
+      // (state.gcseReady = true, so the earlier "widget never loads" timer
+      // never fires) but the search itself never produces a scraped result
+      // — no .gsc-webResult, no "no results" marker either, e.g. because
+      // the underlying Programmable Search Engine is mid-outage or its
+      // quota/billing lapsed. Without this, scrapeWebResults's "still
+      // loading" branch just returns forever with nothing to catch it.
+      if (tab === 'web' || tab === 'videos') {
+        const watchdogQuery = q;
+        clearTimeout(state.gcseStuckTimeoutId);
+        state.gcseStuckTimeoutId = setTimeout(() => {
+          if (state.tab === tab && state.query && state.lastRenderedQuery !== state.query) {
+            useIndexFallbackForWeb(state.query);
+          }
+        }, 9000);
+      }
 
       // Suppress observer while we set the value
       state.suppressObserver = true;
@@ -2234,6 +2260,7 @@
         const noResults = gcseContainer.querySelector('.gs-no-results-result, .gsc-no-results-result');
         const indexOnly = (edgeWebFallback?.web || []).filter(r => r._from360);
         if (noResults) {
+          state.lastRenderedQuery = state.query;
           if (indexOnly.length) {
             const merged = indexOnly.map(r => {
               let hostname = ''; try { hostname = new URL(r.url).hostname.replace('www.', ''); } catch(e) {}
@@ -2247,6 +2274,7 @@
         }
         return; // still loading
       }
+      state.lastRenderedQuery = state.query;
 
       const seenHrefs = new Set();
       const results = [];
@@ -3437,7 +3465,7 @@
                 ${a.age ? `<span style="color:var(--mut);font-size:11px;margin-left:auto">${escHtml(a.age)}</span>` : ''}
               </div>
               <a class="result-title" href="${escHtml(a.url)}" target="_blank" rel="noopener noreferrer">${escHtml(a.title)}</a>
-              ${a.desc ? `<div class="result-snippet">${escHtml(a.desc)}</div>` : ''}
+              ${a.desc ? `<div class="result-snippet">${a.desc}</div>` : ''}
             </div>
           </div>
         </div>`;
