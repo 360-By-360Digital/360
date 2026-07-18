@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="/assets/css/responsive.css" />
   <link rel="stylesheet" href="/assets/css/cursor.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/js/360-settings.js"></script>
 
   <style>
     /* ══════════════════════════════════════════
@@ -742,7 +743,12 @@
       animation: cardIn 0.2s ease both;
     }
     body.dark .video-result-item { background: var(--glass-dark); border-color: var(--glass-border-dk); }
-    .video-thumb-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+    .video-thumb-wrap { position: relative; display: block; width: 100%; aspect-ratio: 16/9; background: #000; }
+    .video-native-badge {
+      position: absolute; top: 6px; left: 6px;
+      background: linear-gradient(120deg, var(--a), var(--a2)); color: #fff;
+      font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 6px;
+    }
     .video-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .video-thumb-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 28px; background: #111; }
     .video-play-badge {
@@ -1343,6 +1349,14 @@
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     };
+    // Only used for account-settings sync (Settings360) — everything else
+    // on this page talks to Supabase via plain fetch, kept as-is.
+    // Reuses the global `supabaseClient` main.js already created (loaded
+    // above via /assets/js/main.js) rather than calling
+    // supabase.createClient() a second time — two GoTrueClient instances
+    // sharing the same storage key throws a "Multiple GoTrueClient
+    // instances detected" warning and risks auth-state races.
+    const sb360 = window.supabaseClient || supabase.createClient('https://wiswfpfsjiowtrdyqpxy.supabase.co', SUPABASE_ANON_KEY);
 
     /* ─────────────────────────────────
        ELEMENT REFS
@@ -1388,7 +1402,7 @@
           run360Search(q, 'shopping');
         } else if (t === 'videos') {
           showResultsArea(true);
-          waitForGcseAndSearch(buildVideoQuery(q), t);
+          searchVideosGcse(q, t);
         } else if (t === 'maps') {
           showResultsArea(true);
           renderMapsResults(q);
@@ -2021,6 +2035,28 @@
       waitForGcseAndSearch(buildFilteredQuery(q), tab);
     }
 
+    // Videos tab: merges in the user's own 360Vids uploads (marked
+    // featured_in_search=true via 360MySite → Linked Content) alongside
+    // the GCSE-scraped external video results.
+    let edgeVidsFallback = null;
+    async function fetch360VidsResults(q) {
+      try {
+        const res = await fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/rest/v1/vids?select=id,title,description,thumbnail_url,video_url,duration,views,username&featured_in_search=eq.true&order=views.desc&limit=50`, {
+          headers: SUPABASE_FN_HEADERS,
+        });
+        const all = await res.json();
+        const needle = q.toLowerCase();
+        edgeVidsFallback = Array.isArray(all) ? all.filter(v => `${v.title || ''} ${v.description || ''}`.toLowerCase().includes(needle)) : [];
+        if (state.tab === 'videos' && !state.pendingSearch) scrapeAndRender();
+      } catch (e) {
+        edgeVidsFallback = null;
+      }
+    }
+    function searchVideosGcse(q, tab) {
+      fetch360VidsResults(q);
+      waitForGcseAndSearch(buildVideoQuery(q), tab);
+    }
+
     let gcseTimeoutId = null;
     function waitForGcseAndSearch(q, tab) {
       if (state.gcseReady) {
@@ -2336,7 +2372,19 @@
       });
 
       const { countText, currentPage, totalPages } = getGcsePaginationInfo(gcseContainer);
-      renderVideoResults(videos, countText, currentPage, totalPages);
+
+      const nativeVids = (edgeVidsFallback || []).map(v => ({
+        title: v.title,
+        href: `/apps/360vids.html?v=${v.id}`,
+        hostname: '360vids',
+        snippet: v.description ? escHtml(v.description).slice(0, 160) : '',
+        thumb: v.thumbnail_url || '',
+        ytId: null,
+        isNative: true,
+      }));
+      const merged = currentPage <= 1 ? [...nativeVids, ...videos] : videos;
+
+      renderVideoResults(merged, countText, currentPage, totalPages);
     }
 
     function scrapeImageResults(gcseContainer) {
@@ -2718,7 +2766,7 @@
         } else if (t === 'shopping') {
           run360Search(state.query, 'shopping');
         } else if (t === 'videos') {
-          waitForGcseAndSearch(buildVideoQuery(state.query), t);
+          searchVideosGcse(state.query, t);
         } else {
           // Switching to Web tab was missing this — only a fresh search
           // triggered it, so tab-switching alone never merged in the
@@ -2733,6 +2781,7 @@
     function updateToolsVisibility(t) {
       const toggle = document.getElementById('tools-toggle');
       const bar = document.getElementById('tools-bar');
+      if (!toggle || !bar) return; // defensive: never let a missing element break doSearch
       const relevant = (t === 'web' || t === 'videos');
       toggle.style.display = relevant ? 'flex' : 'none';
       if (!relevant) bar.classList.remove('open');
@@ -2843,10 +2892,22 @@
       btn.addEventListener('click', () => {
         state.safeSearch = !state.safeSearch;
         localStorage.setItem('360_safe_search', state.safeSearch ? 'on' : 'off');
+        Settings360.set('safeSearch', state.safeSearch);
         render();
         if (state.tab === 'images' && state.query) {
           state.page = 1;
           scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        }
+      });
+
+      // Reconcile against the signed-in account once it loads, so Safe
+      // Search follows you across devices instead of resetting per-browser.
+      Settings360.init(sb360).then(() => {
+        const remote = Settings360.get('safeSearch');
+        if (typeof remote === 'boolean' && remote !== state.safeSearch) {
+          state.safeSearch = remote;
+          localStorage.setItem('360_safe_search', remote ? 'on' : 'off');
+          render();
         }
       });
     })();
@@ -2871,6 +2932,7 @@
         state.searchStartTime = performance.now();
         if (state.tab === 'videos') {
           waitForGcseAndSearch(buildVideoQuery(state.query), 'videos');
+          fetch360VidsResults(state.query);
         } else {
           searchWebGcse(state.query, state.tab);
         }
@@ -3143,31 +3205,41 @@
       updateClearBtn();
       updateUrl(q, state.tab);
       addRecentSearch(q);
-      updateToolsVisibility(state.tab);
+      try { updateToolsVisibility(state.tab); } catch (e) { console.error('updateToolsVisibility failed:', e); }
 
-      if (state.tab === 'ai') {
-        showResultsArea(false);
-        runAiSearch(q);
-        return;
-      }
+      try {
+        if (state.tab === 'ai') {
+          showResultsArea(false);
+          runAiSearch(q);
+          return;
+        }
 
-      showResultsArea(true);
-      if (state.tab === 'maps') {
-        renderMapsResults(q);
-        return;
-      }
-      loadKnowledgePanel(q);
-      if (state.tab === 'images') {
-        scrapeImageResults(document.getElementById('gcse-hidden-container'));
-      } else if (state.tab === 'news') {
-        run360Search(q, 'news');
-      } else if (state.tab === 'shopping') {
-        run360Search(q, 'shopping');
-      } else if (state.tab === 'videos') {
-        waitForGcseAndSearch(buildVideoQuery(q), 'videos');
-      } else {
-        // Web tab: fetch 360 index first, then GCSE fills the rest.
-        searchWebGcse(q, state.tab);
+        showResultsArea(true);
+        if (state.tab === 'maps') {
+          renderMapsResults(q);
+          return;
+        }
+        loadKnowledgePanel(q);
+        if (state.tab === 'images') {
+          scrapeImageResults(document.getElementById('gcse-hidden-container'));
+        } else if (state.tab === 'news') {
+          run360Search(q, 'news');
+        } else if (state.tab === 'shopping') {
+          run360Search(q, 'shopping');
+        } else if (state.tab === 'videos') {
+          searchVideosGcse(q, 'videos');
+        } else {
+          // Web tab: fetch 360 index first, then GCSE fills the rest.
+          searchWebGcse(q, state.tab);
+        }
+      } catch (e) {
+        console.error('doSearch failed:', e);
+        resultsArea.innerHTML = `
+          <div class="state-box">
+            <div class="big-icon">⚠️</div>
+            <h3>Something went wrong</h3>
+            <p>That search hit an error on our end. Try again, or try a different tab.</p>
+          </div>`;
       }
     }
 
@@ -3515,14 +3587,15 @@
     }
 
     function renderWebResults(results, countText, currentPage, totalPages) {
-      if (!results.length) { renderNoResults(); return; }
+      if (!results || !results.length) { renderNoResults(); return; }
 
-      // Each GCSE page has its own result set — show all of them
       const visible = results;
-
       let html = '';
-      if (countText) html += `<div class="results-info">${escHtml(countText)}${elapsedSuffix()}</div>`;
-      html += renderPeopleAlsoAsk(state.query);
+      if (countText) html += `<div class="results-info">${escHtml(countText)}${safeElapsedSuffix()}</div>`;
+
+      // People Also Ask is new/best-effort — never let a bug in it wipe out
+      // real search results.
+      try { html += renderPeopleAlsoAsk(state.query); } catch (e) { console.error('renderPeopleAlsoAsk failed:', e); }
 
       visible.forEach((r, i) => {
         let hostname = '';
@@ -3547,7 +3620,7 @@
           </div>`;
       });
 
-      if (totalPages > 1) html += buildPagination(currentPage, totalPages);
+      try { if (totalPages > 1) html += buildPagination(currentPage, totalPages); } catch (e) { console.error('buildPagination failed:', e); }
       html += `<div id="related-searches-box"></div>`;
       resultsArea.innerHTML = html;
       resultsArea.querySelectorAll('.page-btn[data-page]').forEach(btn => {
@@ -3556,8 +3629,12 @@
       resultsArea.querySelectorAll('.paa-item').forEach(btn => {
         btn.addEventListener('click', () => doSearch(btn.dataset.q));
       });
-      if (state.query) loadRelatedSearches(state.query);
+      try { if (state.query) loadRelatedSearches(state.query); } catch (e) { console.error('loadRelatedSearches failed:', e); }
     }
+    // elapsedSuffix() is used inside render*Results — guarded here too since
+    // it's a small cosmetic addition and shouldn't ever be able to blank
+    // real results if state.searchStartTime is ever in an unexpected shape.
+    function safeElapsedSuffix() { try { return elapsedSuffix(); } catch (e) { return ''; } }
 
     /* ─────────────────────────────────
        PEOPLE ALSO ASK — template-generated, not scraped from Google (their
@@ -3660,10 +3737,11 @@
       videos.forEach((v, i) => {
         html += `
           <div class="video-result-item" data-idx="${i}" style="animation-delay:${i*0.02}s">
-            <div class="video-thumb-wrap">
+            <a class="video-thumb-wrap" href="${escHtml(v.href)}" target="_blank" rel="noopener noreferrer">
               ${v.thumb ? `<img src="${escHtml(v.thumb)}" alt="" loading="lazy" onerror="this.style.display='none'">` : `<div class="video-thumb-fallback">▶</div>`}
               <span class="video-play-badge">▶</span>
-            </div>
+              ${v.isNative ? `<span class="video-native-badge">360Vids</span>` : ''}
+            </a>
             <div class="video-result-text">
               <a class="result-title" href="${escHtml(v.href)}" target="_blank" rel="noopener noreferrer">${escHtml(v.title)}</a>
               <div class="result-site-row"><span class="result-site-name">${escHtml(v.hostname)}</span></div>
@@ -3678,13 +3756,14 @@
 
       resultsArea.querySelectorAll('.video-result-item').forEach(tile => {
         const v = videos[parseInt(tile.dataset.idx)];
-        if (!v.ytId) return; // non-YouTube: title link above just opens the source
-        tile.querySelector('.video-thumb-wrap').addEventListener('click', () => {
+        if (!v.ytId) return; // native/non-YouTube: the link above just opens the source
+        tile.querySelector('.video-thumb-wrap').addEventListener('click', e => {
+          e.preventDefault();
           const wrap = tile.querySelector('.video-thumb-wrap');
-          wrap.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${encodeURIComponent(v.ytId)}?autoplay=1"
+          wrap.outerHTML = `<div class="video-thumb-wrap"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${encodeURIComponent(v.ytId)}?autoplay=1"
             title="${escHtml(v.title)}" frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen></iframe>`;
+            allowfullscreen></iframe></div>`;
         });
         tile.querySelector('.video-thumb-wrap').style.cursor = 'pointer';
       });
