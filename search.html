@@ -2093,7 +2093,7 @@
           if (!state.gcseReady && state.pendingSearch && state.pendingSearch.q === q && state.tab === tab) {
             useIndexFallbackForWeb(q);
           }
-        }, 6000);
+        }, 4000);
       }
     }
 
@@ -2165,7 +2165,7 @@
           if (state.tab === tab && state.query && state.lastRenderedQuery !== state.query) {
             useIndexFallbackForWeb(state.query);
           }
-        }, 9000);
+        }, 5000);
       }
 
       // Suppress observer while we set the value
