@@ -662,6 +662,27 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
     }
     body.dark .results-info { color: var(--mutd); }
 
+    /* ── Classic results view — opt-in alternative to the glass-card
+       layout, closer to a traditional SERP (plain list, blue links, green
+       URL line, tight spacing, no cards/blur/shadow). Pure CSS override
+       driven by body.classic-results — no render-logic changes needed,
+       since the underlying markup (.result-card/.result-title/etc.) is
+       already the same regardless of view mode. ── */
+    body.classic-results .result-card {
+      background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none;
+      border: none; box-shadow: none; border-radius: 0;
+      padding: 10px 4px; margin-bottom: 2px;
+    }
+    body.classic-results .result-card:hover { transform: none; box-shadow: none; }
+    body.classic-results .result-title { color: #1a73e8; font-size: 18px; font-weight: 400; margin-top: 2px; }
+    body.dark.classic-results .result-title { color: #8ab4f8; }
+    body.classic-results .result-url { color: #202124; opacity: 0.65; }
+    body.dark.classic-results .result-url { color: var(--txtd); }
+    body.classic-results .result-site-name { display: none; } /* URL line already shown below */
+    body.classic-results .result-favicon { width: 14px; height: 14px; }
+    body.classic-results .result-snippet { color: var(--mut); font-size: 13.5px; }
+    body.classic-results #custom-results-area { max-width: 650px; }
+
     /* ── Result cards — frosted glass panels ── */
     .result-card {
       display: flex;
@@ -1279,6 +1300,10 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
         <span>Tools</span>
       </button>
+      <button id="view-mode-toggle" class="safe-search-toggle" title="Switch results layout">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        <span id="view-mode-label">Classic view</span>
+      </button>
     </div>
 
     <!-- Tools bar: time range + sort, only meaningful for Web/Videos (real
@@ -1774,6 +1799,8 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
     ───────────────────────────────── */
     const WIKIDATA_PROPS = {
       P569: 'Born', P570: 'Died', P19: 'Born in', P27: 'Citizenship', P106: 'Occupation',
+      P26: 'Spouse', P108: 'Employer', P69: 'Education', P166: 'Awards', P800: 'Known for',
+      P856: 'Website',
       P571: 'Founded', P112: 'Founded by', P159: 'Headquarters', P1128: 'Employees',
       P2046: 'Area', P1082: 'Population', P36: 'Capital', P17: 'Country', P452: 'Industry',
     };
@@ -1800,8 +1827,8 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
         const rawFacts = [];
         for (const [pid, label] of Object.entries(WIKIDATA_PROPS)) {
           const dv = entity.claims[pid]?.[0]?.mainsnak?.datavalue;
-          if (dv) rawFacts.push({ label, dv });
-          if (rawFacts.length >= 8) break; // cap — a panel, not a spreadsheet
+          if (dv) rawFacts.push({ pid, label, dv });
+          if (rawFacts.length >= 10) break; // cap — a panel, not a spreadsheet
         }
         if (!rawFacts.length) return [];
 
@@ -1820,18 +1847,31 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
         }
 
         const facts = [];
+        let bornYear = null, diedYear = null;
         for (const f of rawFacts) {
           let value = null;
           if (f.dv.type === 'wikibase-entityid') value = labelMap[f.dv.value.id] || null;
-          else if (f.dv.type === 'time') value = formatWikidataDate(f.dv.value.time, f.dv.value.precision);
-          else if (f.dv.type === 'quantity') {
+          else if (f.dv.type === 'time') {
+            value = formatWikidataDate(f.dv.value.time, f.dv.value.precision);
+            const yearMatch = /^(\d+)/.exec(value || '');
+            if (f.pid === 'P569' && yearMatch) bornYear = parseInt(yearMatch[1]);
+            if (f.pid === 'P570' && yearMatch) diedYear = parseInt(yearMatch[1]);
+          } else if (f.dv.type === 'quantity') {
             const amt = parseFloat(f.dv.value.amount);
             value = isNaN(amt) ? null : amt.toLocaleString();
           } else if (f.dv.type === 'string' || f.dv.type === 'monolingualtext') {
             value = f.dv.value?.text || (typeof f.dv.value === 'string' ? f.dv.value : null);
           }
-          if (value) facts.push({ label: f.label, value });
+          if (value) facts.push({ label: f.label, value, isUrl: f.pid === 'P856' });
         }
+
+        // Google's people panels show a computed age for the living —
+        // Wikidata rarely stores "age" directly, so derive it the same way.
+        if (bornYear && !diedYear) {
+          const age = new Date().getFullYear() - bornYear;
+          if (age > 0 && age < 130) facts.splice(1, 0, { label: 'Age', value: `${age} years` });
+        }
+
         return facts;
       } catch (e) { return []; }
     }
@@ -2043,7 +2083,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
               ${facts.map(f => `
                 <div class="kp-fact-row">
                   <div class="kp-fact-label">${escHtml(f.label)}</div>
-                  <div class="kp-fact-value">${escHtml(f.value)}</div>
+                  <div class="kp-fact-value">${f.isUrl ? `<a href="${escHtml(f.value)}" target="_blank" rel="noopener noreferrer" style="color:var(--a);text-decoration:none;">${escHtml(f.value.replace(/^https?:\/\//,''))}</a>` : escHtml(f.value)}</div>
                 </div>`).join('')}
             </div>` : ''}
           ${source ? `<a class="kp-source" href="${escHtml(source)}" target="_blank" rel="noopener noreferrer">Read more →</a>` : ''}
@@ -3005,6 +3045,41 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
         if (typeof remote === 'boolean' && remote !== state.safeSearch) {
           state.safeSearch = remote;
           localStorage.setItem('360_safe_search', remote ? 'on' : 'off');
+          render();
+        }
+      });
+    })();
+
+    /* ─────────────────────────────────
+       CLASSIC / FULL-PAGE RESULTS VIEW
+       Purely a body class + CSS override (see .classic-results rules
+       above) — no re-render needed on toggle since the same result-card
+       markup is reused either way.
+    ───────────────────────────────── */
+    (function setupViewModeToggle() {
+      const btn = document.getElementById('view-mode-toggle');
+      const label = document.getElementById('view-mode-label');
+      let classicMode = localStorage.getItem('360_view_mode') === 'classic';
+
+      function render() {
+        document.body.classList.toggle('classic-results', classicMode);
+        label.textContent = classicMode ? 'Standard view' : 'Classic view';
+        btn.classList.toggle('off', classicMode);
+      }
+      render();
+
+      btn.addEventListener('click', () => {
+        classicMode = !classicMode;
+        localStorage.setItem('360_view_mode', classicMode ? 'classic' : 'standard');
+        Settings360.set('viewMode', classicMode ? 'classic' : 'standard');
+        render();
+      });
+
+      Settings360.init(sb360).then(() => {
+        const remote = Settings360.get('viewMode');
+        if (remote && remote !== (classicMode ? 'classic' : 'standard')) {
+          classicMode = remote === 'classic';
+          localStorage.setItem('360_view_mode', remote);
           render();
         }
       });
