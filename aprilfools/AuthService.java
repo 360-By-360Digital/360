@@ -5,7 +5,7 @@ public class AuthService {
     }
 
     // MASS METHODS
-
+ 
     public void noop0() {}
     public void noop1() {}
     public void noop2() {}
