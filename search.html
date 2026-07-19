@@ -70,7 +70,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
       --glass-inset-dk:   inset 0 1px 0 rgba(255,255,255,0.08);
     }
 
-    /* ── GCSE hidden container ── */
+    /* ── one of the result containers ── */
     #idx-container {
       position: absolute;
       left: -9999px;
@@ -79,12 +79,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
       opacity: 0;
       pointer-events: none;
       z-index: -1;
-      /* A transform on this ancestor makes it the containing block for any
-         position:fixed descendants Google's widget injects (autosuggest
-         boxes, "Explore further" / related-product cards, etc). Without
-         this, fixed-position children ignore left:-9999px entirely because
-         fixed positioning is relative to the viewport, not this container —
-         which is how stray Google cards were leaking into view. */
+      /* transform will prevent cards from always shrinking */
       transform: translateZ(0);
     }
 
