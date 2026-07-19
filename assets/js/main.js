@@ -25,6 +25,55 @@ const body = document.body;
    data-extra attribute, e.g.:
    <span id="sidebar-slot" data-extra='[{"label":"Report","href":"/report"}]'></span>
    ============================================================ */
+
+const PINNED_APPS_STORAGE_KEY = "360_pinned_apps";
+const PINNED_APPS_POSITION_KEY = "360_pinned_apps_position";
+const PINNED_APP_CATALOG = [
+  { label: "360Vids", href: "/apps/360vids", icon: "🎬" },
+  { label: "360Music", href: "/apps/360Music", icon: "🎶" },
+  { label: "Zone", href: "/apps/360zone", icon: "🏫" },
+  { label: "360Notes", href: "/apps/360Notes", icon: "📖" },
+  { label: "360Draw", href: "/apps/360Draw", icon: "🎨" },
+  { label: "360Docs", href: "/apps/360Docs", icon: "📃" },
+  { label: "360Do", href: "/apps/360Do", icon: "💡" },
+  { label: "360Mail", href: "/apps/360mail-claim", icon: "✉️" },
+  { label: "360Studio", href: "/apps/360Studio", icon: "🎛️" },
+  { label: "360MySite", href: "/apps/360MySite", icon: "🌐" },
+  { label: "360Canvas", href: "/apps/360Canvas", icon: "🚀" }
+];
+
+function safeParseJSON(raw, fallback) {
+  try { return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
+}
+
+function normalizeAppHref(href) {
+  try { return new URL(href, window.location.origin).pathname.replace(/\.html$/, "").replace(/\/+$/, "") || "/"; }
+  catch { return href.replace(/\.html$/, "").replace(/\/+$/, "") || "/"; }
+}
+
+function getPinnedAppHrefs() {
+  const saved = safeParseJSON(localStorage.getItem(PINNED_APPS_STORAGE_KEY), []);
+  return Array.isArray(saved) ? saved.map(normalizeAppHref) : [];
+}
+
+function savePinnedAppHrefs(hrefs) {
+  const unique = Array.from(new Set(hrefs.map(normalizeAppHref)));
+  localStorage.setItem(PINNED_APPS_STORAGE_KEY, JSON.stringify(unique));
+}
+
+function getPinnedApps() {
+  const pinned = getPinnedAppHrefs();
+  return pinned.map(href => PINNED_APP_CATALOG.find(app => normalizeAppHref(app.href) === href)).filter(Boolean);
+}
+
+function getPinnedAppsPosition() {
+  return localStorage.getItem(PINNED_APPS_POSITION_KEY) || "after-apps";
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+}
+
 const SIDEBAR_NAV_ITEMS = [
   { label: "Home",           href: "/" },
   { label: "AI",             href: "/ai" },
@@ -47,10 +96,25 @@ function renderSidebar() {
     try { extraItems = JSON.parse(slot.dataset.extra); } catch {}
   }
 
-  const allItems = SIDEBAR_NAV_ITEMS.concat(extraItems);
+  const pinnedApps = getPinnedApps();
+  const position = getPinnedAppsPosition();
+  const appItemHtml = pinnedApps
+    .map(it => `<div class="nav-item pinned-app-item" data-href="${it.href}"><span class="pinned-app-icon">${it.icon}</span>${escapeHtml(it.label)}</div>`)
+    .join("");
+  const pinnedSectionHtml = pinnedApps.length
+    ? `<div class="nav-section pinned-apps-section"><div class="nav-section-label">Pinned Apps</div>${appItemHtml}</div>`
+    : "";
+
+  let allItems = SIDEBAR_NAV_ITEMS.concat(extraItems);
+  if (position === "after-apps") {
+    const appsIndex = allItems.findIndex(it => it.label === "Apps");
+    allItems = appsIndex >= 0
+      ? allItems.slice(0, appsIndex + 1).concat(pinnedApps.map(app => ({ ...app, pinned: true })), allItems.slice(appsIndex + 1))
+      : allItems.concat(pinnedApps.map(app => ({ ...app, pinned: true })));
+  }
 
   const navHtml = allItems
-    .map(it => `<div class="nav-item" data-href="${it.href}">${it.label}</div>`)
+    .map(it => `<div class="nav-item${it.pinned ? " pinned-app-item" : ""}" data-href="${it.href}">${it.icon ? `<span class="pinned-app-icon">${it.icon}</span>` : ""}${escapeHtml(it.label)}</div>`)
     .join("");
 
   slot.innerHTML = `
@@ -58,7 +122,9 @@ function renderSidebar() {
       <div class="logo-mark"></div>
       <button id="settingsBtn">⚙</button>
     </div>
+    ${position === "top" ? pinnedSectionHtml : ""}
     <nav class="nav-list">${navHtml}</nav>
+    ${position === "bottom" ? pinnedSectionHtml : ""}
     <div class="sidebar-footer"><span id="sidebar-ver">Loading...</span></div>
   `;
 
@@ -514,7 +580,9 @@ sidebarToggle?.addEventListener("click", e => {
 });
 
 /* Settings toggle */
-settingsBtn?.addEventListener("click", e => {
+document.addEventListener("click", e => {
+  const btn = e.target.closest("#settingsBtn");
+  if (!btn) return;
   e.stopPropagation();
   settingsPanel?.classList.toggle("open");
   updateOverlay();
@@ -542,37 +610,54 @@ document.addEventListener("click", e => {
 });
 
 /* Nav item navigation */
-navItems.forEach(item => {
-  item.addEventListener("click", e => {
-    e.stopPropagation();
+sidebar?.addEventListener("click", e => {
+  const item = e.target.closest(".nav-item[data-href]");
+  if (!item || !sidebar.contains(item)) return;
+  e.stopPropagation();
 
-    const ripple = document.createElement("span");
-    ripple.className = "nav-ripple";
-    const rect = item.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
-    ripple.style.width = ripple.style.height = `${size}px`;
-    ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
-    ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
-    item.appendChild(ripple);
-    ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
+  const ripple = document.createElement("span");
+  ripple.className = "nav-ripple";
+  const rect = item.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  ripple.style.width = ripple.style.height = `${size}px`;
+  ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
+  ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
+  item.appendChild(ripple);
+  ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
 
-    const href = item.dataset.href;
-    if (href) {
-      const current = window.location.pathname || "/";
-      const targetPath = new URL(href, window.location.origin).pathname;
-      if (targetPath !== current) {
-        const raw = sessionStorage.getItem("navHistory");
-        const history = raw ? JSON.parse(raw) : [];
-        if (!history.length || history[history.length - 1] !== current) history.push(current);
-        sessionStorage.setItem("navHistory", JSON.stringify(history.slice(-30)));
-      }
-      setTimeout(() => { window.location.href = href; }, 140);
+  const href = item.dataset.href;
+  if (href) {
+    const current = window.location.pathname || "/";
+    const targetPath = new URL(href, window.location.origin).pathname;
+    if (targetPath !== current) {
+      const raw = sessionStorage.getItem("navHistory");
+      const history = raw ? JSON.parse(raw) : [];
+      if (!history.length || history[history.length - 1] !== current) history.push(current);
+      sessionStorage.setItem("navHistory", JSON.stringify(history.slice(-30)));
     }
+    setTimeout(() => { window.location.href = href; }, 140);
+  }
 
-    sidebar?.classList.remove("open");
-    updateOverlay();
-  });
+  sidebar?.classList.remove("open");
+  updateOverlay();
 });
+
+function refreshSidebarAfterPinnedAppChange() {
+  renderSidebar();
+  markActiveNav();
+  initPinnedAppsSettings();
+  initAppsPagePinButtons();
+}
+
+function togglePinnedApp(href) {
+  const normalized = normalizeAppHref(href);
+  const pinned = getPinnedAppHrefs();
+  const next = pinned.includes(normalized)
+    ? pinned.filter(item => item !== normalized)
+    : pinned.concat(normalized);
+  savePinnedAppHrefs(next);
+  refreshSidebarAfterPinnedAppChange();
+}
 
 Array.from(document.querySelectorAll(".back-btn")).forEach(btn => {
   btn.addEventListener("click", e => {
@@ -748,7 +833,7 @@ if (installBtn) installBtn.onclick = () => deferredPrompt?.prompt();
 /* ============================================================
    ACTIVE NAV MARK
    ============================================================ */
-(function markActiveNav() {
+function markActiveNav() {
   const path = location.pathname.replace(/\/+$/, "") || "/";
   $$(".nav-item[data-href]").forEach(item => {
     const href = item.dataset.href.replace(/\/+$/, "") || "/";
@@ -756,6 +841,79 @@ if (installBtn) installBtn.onclick = () => deferredPrompt?.prompt();
     const normHref = href.replace(/^(\.\.\/)+/, "/");
     item.classList.toggle("active", path === normHref || path.endsWith(normHref));
   });
-})();
+}
+markActiveNav();
+
+
+/* ============================================================
+   PINNED APPS CUSTOMIZATION
+   ============================================================ */
+function initPinnedAppsSettings() {
+  const panel = document.getElementById("settingsPanel");
+  if (!panel || panel.querySelector("#pinnedAppsSettings")) return;
+
+  const section = document.createElement("div");
+  section.id = "pinnedAppsSettings";
+  section.className = "pinned-apps-settings";
+  section.innerHTML = `
+    <h3 style="margin-top:25px;">Pinned Apps</h3>
+    <div class="settings-label">Menu bar location</div>
+    <select id="pinnedAppsPosition" class="settings-select">
+      <option value="after-apps">Under Apps</option>
+      <option value="top">Top section</option>
+      <option value="bottom">Bottom section</option>
+    </select>
+    <div class="settings-label" style="margin-top:14px;">Pinned shortcuts</div>
+    <div id="pinnedAppsList" class="pinned-apps-list"></div>
+  `;
+  panel.appendChild(section);
+
+  const positionSelect = section.querySelector("#pinnedAppsPosition");
+  positionSelect.value = getPinnedAppsPosition();
+  positionSelect.addEventListener("change", () => {
+    localStorage.setItem(PINNED_APPS_POSITION_KEY, positionSelect.value);
+    refreshSidebarAfterPinnedAppChange();
+  });
+
+  const list = section.querySelector("#pinnedAppsList");
+  PINNED_APP_CATALOG.forEach(app => {
+    const row = document.createElement("label");
+    row.className = "pinned-app-toggle";
+    const checked = getPinnedAppHrefs().includes(normalizeAppHref(app.href));
+    row.innerHTML = `<span>${app.icon} ${escapeHtml(app.label)}</span><input type="checkbox" ${checked ? "checked" : ""} data-href="${app.href}">`;
+    row.querySelector("input").addEventListener("change", () => togglePinnedApp(app.href));
+    list.appendChild(row);
+  });
+}
+
+function initAppsPagePinButtons() {
+  document.querySelectorAll(".app-card[href]").forEach(card => {
+    const href = normalizeAppHref(card.getAttribute("href"));
+    const app = PINNED_APP_CATALOG.find(item => normalizeAppHref(item.href) === href);
+    if (!app) return;
+
+    let btn = card.querySelector(".app-pin-btn");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "app-pin-btn";
+      btn.dataset.href = app.href;
+      btn.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        togglePinnedApp(app.href);
+      });
+      card.appendChild(btn);
+    }
+
+    const pinned = getPinnedAppHrefs().includes(normalizeAppHref(app.href));
+    btn.classList.toggle("pinned", pinned);
+    btn.textContent = pinned ? "★ Pinned" : "☆ Pin";
+    btn.setAttribute("aria-label", `${pinned ? "Unpin" : "Pin"} ${app.label} on the menu bar`);
+  });
+}
+
+initPinnedAppsSettings();
+initAppsPagePinButtons();
 
 console.log("%c360 V.3.0.0 — main.js loaded.", "color:#4ade80;font-weight:bold;font-size:14px;");
