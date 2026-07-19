@@ -2192,7 +2192,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
       state.pendingSearch = null;
       state.lastRenderedQuery = q;
       if (edgeWebFallback && edgeWebFallback.web && edgeWebFallback.web.length) {
-        const mapped = edgeWebFallback.web.map(r => ({ href: r.url, title: r.title, snippet: r.desc, thumb: r.thumb }));
+        const mapped = rankWebResultsWithPageRank(edgeWebFallback.web.map(r => ({ href: r.url, title: r.title, snippet: r.desc, thumb: r.thumb, _score: r._score ?? 0 })), state.query);
         const note = edgeWebFallback.countText || '';
         renderWebResults(mapped, note, 1, 1);
       } else {
@@ -2341,6 +2341,109 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
       }
     }
 
+
+    /* ─────────────────────────────────
+       CLIENT-SIDE PAGERANK + RELEVANCE BLENDING
+       The edge index can return its own authority score, but GCSE and any
+       fallback results arrive without comparable rank signals. This layer
+       builds a tiny per-query graph from the visible result set and applies
+       PageRank so every source gets ordered by query match + inferred
+       authority rather than by provider arrival order alone.
+    ───────────────────────────────── */
+    const STOP_WORDS = new Set(['a','an','and','are','as','at','be','by','for','from','how','in','into','is','it','near','of','on','or','the','to','vs','with','what','when','where','who','why']);
+
+    function tokenizeSearchText(text) {
+      return String(text || '')
+        .toLowerCase()
+        .replace(/<[^>]*>/g, ' ')
+        .match(/[a-z0-9]{2,}/g)?.filter(t => !STOP_WORDS.has(t)) || [];
+    }
+
+    function normalizeResultUrl(url) {
+      try {
+        const u = new URL(url);
+        u.hash = '';
+        ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','fbclid','gclid'].forEach(k => u.searchParams.delete(k));
+        u.hostname = u.hostname.replace(/^www\./, '').toLowerCase();
+        u.pathname = u.pathname.replace(/\/$/, '') || '/';
+        return u.toString().replace(/\/$/, '');
+      } catch(e) {
+        return String(url || '').replace(/\/$/, '').toLowerCase();
+      }
+    }
+
+    function getHostname(url) {
+      try { return new URL(url).hostname.replace(/^www\./, '').toLowerCase(); } catch(e) { return ''; }
+    }
+
+    function calculateTopicalPageRank(results) {
+      const n = results.length;
+      if (!n) return [];
+      const domains = results.map(r => getHostname(r.href));
+      const titleTokens = results.map(r => new Set(tokenizeSearchText(r.title)));
+      const bodyText = results.map(r => `${r.title || ''} ${String(r.snippet || '').replace(/<[^>]*>/g, ' ')} ${r.displayUrl || ''}`.toLowerCase());
+      const outbound = Array.from({ length: n }, () => new Set());
+
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          if (i === j || !domains[j]) continue;
+          const sameDomain = domains[i] && domains[i] === domains[j];
+          const mentionsDomain = bodyText[i].includes(domains[j]);
+          let sharedTitleTerms = 0;
+          titleTokens[j].forEach(t => { if (bodyText[i].includes(t)) sharedTitleTerms++; });
+          if (mentionsDomain || sameDomain || sharedTitleTerms >= 2) outbound[i].add(j);
+        }
+      }
+
+      let scores = Array(n).fill(1 / n);
+      const damping = 0.85;
+      for (let iter = 0; iter < 24; iter++) {
+        const next = Array(n).fill((1 - damping) / n);
+        for (let i = 0; i < n; i++) {
+          const links = outbound[i].size ? [...outbound[i]] : [...Array(n).keys()].filter(j => j !== i);
+          const share = scores[i] / Math.max(links.length, 1);
+          links.forEach(j => { next[j] += damping * share; });
+        }
+        scores = next;
+      }
+      const max = Math.max(...scores) || 1;
+      return scores.map(v => v / max);
+    }
+
+    function scoreSearchResult(result, index, pagerank, queryTokens, total) {
+      const titleTokens = tokenizeSearchText(result.title);
+      const snippetTokens = tokenizeSearchText(result.snippet);
+      const urlText = normalizeResultUrl(result.href).toLowerCase();
+      const titleMatches = queryTokens.filter(t => titleTokens.includes(t)).length;
+      const snippetMatches = queryTokens.filter(t => snippetTokens.includes(t)).length;
+      const urlMatches = queryTokens.filter(t => urlText.includes(t)).length;
+      const relevance = queryTokens.length ? Math.min(1, (titleMatches * 3 + snippetMatches + urlMatches * 1.5) / (queryTokens.length * 4.5)) : 0;
+      const providerRank = total > 1 ? 1 - (index / (total - 1)) : 1;
+      const backendScore = Number.isFinite(Number(result._score)) ? Math.max(0, Math.min(1, Number(result._score))) : 0;
+      const httpsBoost = String(result.href || '').startsWith('https://') ? 0.03 : 0;
+      return (relevance * 0.42) + (pagerank * 0.26) + (providerRank * 0.17) + (backendScore * 0.12) + httpsBoost;
+    }
+
+    function rankWebResultsWithPageRank(results, query) {
+      const deduped = [];
+      const seen = new Set();
+      results.forEach((r, providerIndex) => {
+        const key = normalizeResultUrl(r.href);
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        deduped.push({ ...r, _providerIndex: providerIndex });
+      });
+      const queryTokens = tokenizeSearchText(query);
+      const pageranks = calculateTopicalPageRank(deduped);
+      return deduped
+        .map((r, i) => ({
+          ...r,
+          _pageRank: pageranks[i] || 0,
+          _rankScore: scoreSearchResult(r, r._providerIndex ?? i, pageranks[i] || 0, queryTokens, results.length),
+        }))
+        .sort((a, b) => (b._rankScore - a._rankScore) || ((a._providerIndex ?? 0) - (b._providerIndex ?? 0)));
+    }
+
     function scrapeWebResults(gcseContainer) {
       const resultEls = gcseContainer.querySelectorAll('.gsc-webResult.gsc-result');
       if (!resultEls.length) {
@@ -2349,10 +2452,10 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
         if (noResults) {
           state.lastRenderedQuery = state.query;
           if (indexOnly.length) {
-            const merged = indexOnly.map(r => {
+            const merged = rankWebResultsWithPageRank(indexOnly.map(r => {
               let hostname = ''; try { hostname = new URL(r.url).hostname.replace('www.', ''); } catch(e) {}
-              return { title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: '' };
-            });
+              return { title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: '', _score: r._score ?? 0 };
+            }), state.query);
             cacheRender('web', state.query, state.page, renderWebResults, [merged, '', 1, 1]);
           } else {
             renderNoResults();
@@ -2437,12 +2540,11 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
         indexCards.push({ title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: r.thumb || '', _score: r._score ?? 0 });
       });
 
-      // Our own index leads (best-first, by its own real relevance score);
-      // GCSE's results — already deduped against anything the index already
-      // covered — fill in behind, in GCSE's own order, as supplementary
-      // coverage for whatever our index doesn't have yet.
-      indexCards.sort((a, b) => b._score - a._score);
-      const merged = [...indexCards, ...results];
+      // Rank the combined set with a local PageRank pass plus query-match,
+      // provider-order, HTTPS, and backend-score boosts. This keeps strong
+      // 360 Index matches competitive while allowing excellent GCSE results
+      // to surface when they are more relevant for the query.
+      const merged = rankWebResultsWithPageRank([...indexCards, ...results], state.query);
 
       cacheRender('web', state.query, currentPage, renderWebResults, [merged, countText, currentPage, totalPages]);
     }
@@ -3761,10 +3863,32 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
       }
     }
 
+    function updateSearchResultsJsonLd(results) {
+      document.querySelectorAll('script[data-search-results-jsonld]').forEach(el => el.remove());
+      if (!results || !results.length) return;
+      const itemList = {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        itemListElement: results.slice(0, 10).map((r, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          url: r.href,
+          name: String(r.title || '').replace(/<[^>]*>/g, ' '),
+          description: String(r.snippet || '').replace(/<[^>]*>/g, ' ').trim(),
+        })),
+      };
+      const script = document.createElement('script');
+      script.type = 'application/ld+json';
+      script.dataset.searchResultsJsonld = 'true';
+      script.textContent = JSON.stringify(itemList);
+      document.head.appendChild(script);
+    }
+
     function renderWebResults(results, countText, currentPage, totalPages) {
       if (!results || !results.length) { renderNoResults(); return; }
 
       const visible = results;
+      updateSearchResultsJsonLd(visible);
       let html = '';
       if (countText) html += `<div class="results-info">${escHtml(countText)}${safeElapsedSuffix()}</div>`;
 
