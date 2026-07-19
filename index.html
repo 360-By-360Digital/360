@@ -93,6 +93,28 @@
     #bob-canvas-wrap.visible { display: flex; }
     #bob-canvas { display: block; }
 
+
+    #voice-search-btn {
+      flex-shrink: 0;
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--mut);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      margin-right: 4px;
+      transition: background 0.18s, color 0.18s;
+    }
+    #voice-search-btn:hover { background: rgba(0,0,0,0.10); color: var(--txt); }
+    body.dark #voice-search-btn:hover { background: rgba(255,255,255,0.12); color: var(--txtd); }
+    #voice-search-btn.listening { color: #ef4444; animation: voicePulse 1.2s ease-in-out infinite; }
+    @keyframes voicePulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.35); }
+      50%      { box-shadow: 0 0 0 7px rgba(239,68,68,0); }
+    }
+
     #search-btn {
       flex-shrink: 0;
       margin: 6px 8px 6px 0;
@@ -303,6 +325,9 @@
           autocapitalize="off"
           spellcheck="false"
         />
+        <button id="voice-search-btn" type="button" aria-label="Search by voice" title="Search by voice" style="display:none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+        </button>
         <!-- Bob sits here, between input and button -->
         <div id="bob-canvas-wrap">
           <canvas id="bob-canvas" width="32" height="32"></canvas>
@@ -323,6 +348,44 @@
   <script src="/assets/js/home.js"></script>
   <script src="/assets/js/cookie.js"></script>
   <script src="/assets/js/cursor.js"></script>
+
+  <!-- ── VOICE SEARCH SCRIPT ── -->
+  <script>
+  (function setupVoiceSearch() {
+    const voiceBtn = document.getElementById('voice-search-btn');
+    const input = document.getElementById('search-input');
+    const form = document.getElementById('search-form');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return; // stays display:none
+
+    voiceBtn.style.display = 'flex';
+    let recognizer = null;
+    let listening = false;
+
+    voiceBtn.addEventListener('click', () => {
+      if (listening) { recognizer?.stop(); return; }
+
+      recognizer = new SpeechRecognition();
+      recognizer.lang = navigator.language || 'en-US';
+      recognizer.interimResults = false;
+      recognizer.maxAlternatives = 1;
+
+      recognizer.onstart = () => { listening = true; voiceBtn.classList.add('listening'); };
+      recognizer.onend   = () => { listening = false; voiceBtn.classList.remove('listening'); };
+      recognizer.onerror = () => { listening = false; voiceBtn.classList.remove('listening'); };
+      recognizer.onresult = (e) => {
+        const transcript = e.results?.[0]?.[0]?.transcript;
+        if (!transcript) return;
+        input.value = transcript;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        if (form.requestSubmit) form.requestSubmit();
+        else form.submit();
+      };
+
+      try { recognizer.start(); } catch (err) { listening = false; }
+    });
+  })();
+  </script>
 
   <!-- ── BOB SCRIPT ── -->
   <script>
