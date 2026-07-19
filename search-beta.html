@@ -2272,7 +2272,7 @@
               let hostname = ''; try { hostname = new URL(r.url).hostname.replace('www.', ''); } catch(e) {}
               return { title: r.title, href: r.url, displayUrl: hostname, snippet: r.desc || '', thumb: '' };
             });
-            renderWebResults(merged, '', 1, 1);
+            cacheRender('web', state.query, state.page, renderWebResults, [merged, '', 1, 1]);
           } else {
             renderNoResults();
           }
@@ -2363,7 +2363,7 @@
       indexCards.sort((a, b) => b._score - a._score);
       const merged = [...indexCards, ...results];
 
-      renderWebResults(merged, countText, currentPage, totalPages);
+      cacheRender('web', state.query, currentPage, renderWebResults, [merged, countText, currentPage, totalPages]);
     }
 
     /* ─────────────────────────────────
@@ -2438,7 +2438,7 @@
       }));
       const merged = currentPage <= 1 ? [...nativeVids, ...videos] : videos;
 
-      renderVideoResults(merged, countText, currentPage, totalPages);
+      cacheRender('videos', state.query, currentPage, renderVideoResults, [merged, countText, currentPage, totalPages]);
     }
 
     function scrapeImageResults(gcseContainer) {
@@ -2484,7 +2484,7 @@
 
         const totalPages = Math.min(3, Math.max(1, Math.ceil(totalResults / PAGE_SIZE)));
         const countText  = totalResults ? `About ${totalResults.toLocaleString()} image results` : '';
-        renderImageResults(imgs, countText, state.page, totalPages);
+        cacheRender('images', state.query, state.page, renderImageResults, [imgs, countText, state.page, totalPages]);
       }).catch(() => scrapeImageFallback(gcseContainer));
     }
 
@@ -2813,6 +2813,7 @@
 
       showResultsArea(true);
       if (state.query) {
+        if (tryServeFromCache(t, state.query, state.page)) return; // instant, no re-fetch
         if (t === 'images') {
           scrapeImageResults(document.getElementById('idx-container'));
         } else if (t === 'news') {
@@ -2982,6 +2983,7 @@
 
       function rerunCurrentSearch() {
         if (!state.query) return;
+        clearResultsCache(); // time-range/sort changed — cached entries no longer reflect the current filter
         state.page = 1;
         state.searchStartTime = performance.now();
         if (state.tab === 'videos') {
@@ -3252,6 +3254,7 @@
         return;
       }
 
+      if (q !== state.query) clearResultsCache();
       state.query = q;
       state.page = 1;
       state.searchStartTime = performance.now();
@@ -3456,8 +3459,8 @@
         // seconds" — a late-arriving News response with no staleness
         // check at all would blindly render over the Shopping results.
         if (state.tab !== tab) return;
-        if (tab === 'news') renderNewsResults(data.news || []);
-        else if (tab === 'shopping') renderShoppingResults(data.shopping || []);
+        if (tab === 'news') cacheRender('news', state.query, 1, renderNewsResults, [data.news || []]);
+        else if (tab === 'shopping') cacheRender('shopping', state.query, 1, renderShoppingResults, [data.shopping || []]);
       } catch(e) {
         if (state.tab !== tab) return;
         resultsArea.innerHTML = `<div class="state-box"><div class="big-icon">⚠️</div><h3>Failed to load ${tab}</h3><p>${escHtml(String(e.message || e))}</p></div>`;
