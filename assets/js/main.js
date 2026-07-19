@@ -887,10 +887,34 @@ function initPinnedAppsSettings() {
 }
 
 function initAppsPagePinButtons() {
-  document.querySelectorAll(".app-card[href]").forEach(card => {
-    const href = normalizeAppHref(card.getAttribute("href"));
-    const app = PINNED_APP_CATALOG.find(item => normalizeAppHref(item.href) === href);
+  document.querySelectorAll(".app-card").forEach(card => {
+    const title = card.querySelector(".app-title")?.textContent?.trim();
+    const cardHref = card.getAttribute("href");
+    const app = PINNED_APP_CATALOG.find(item =>
+      (cardHref && normalizeAppHref(item.href) === normalizeAppHref(cardHref)) ||
+      item.label === title
+    );
     if (!app) return;
+
+    // Some newly launched apps may still be plain Coming Soon cards in older
+    // markup. Activate them progressively here so users can open and pin them
+    // without requiring another apps.html merge touchpoint.
+    if (!cardHref) {
+      card.style.opacity = "";
+      card.style.pointerEvents = "";
+      card.setAttribute("role", "link");
+      card.setAttribute("tabindex", "0");
+      if (!card.dataset.appActivated) {
+        card.dataset.appActivated = "true";
+        card.addEventListener("click", () => { window.location.href = app.href; });
+        card.addEventListener("keydown", event => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            window.location.href = app.href;
+          }
+        });
+      }
+    }
 
     let btn = card.querySelector(".app-pin-btn");
     if (!btn) {
