@@ -12,7 +12,7 @@ SPDX-License-Identifier: Apache-2.0!
 <!--=============================================================================================================================================================
                                                  MODIFIER NOTES (Notes from the contributors of this file):
 - This program scrapes GCSE results and styles them into our custom result cards
-- This program scrapes DDG results and styles them into our custom result cards
+- This program uses You.com's Search API and a local crawled index (with vector-embedding + PageRank-style ranking) as additional real web results
 - This program uses SERPAPI's for shopping
 - This program uses public API's and scrapes public news sites for news
 - This program is not GCSE or DDG in disguise, rather a meta search engine. Read more: https://en.wikipedia.org/wiki/Metasearch_engine
@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0!
 - This program aims to comply with all TOS's for code used, and we do not intend to misuse/illegally use code. 
 Before taking an action to legal matter, please reach out to us at admin@360-search.com and we will respectfully remove anything strike-worthy.
 - This program uses cached data for speed! It is instantly deleted!
+- This program uses Google Tag Manager for page analytics. We only measure page visits! There are no other scopes.
 ============================================================================================================================================================= !-->
 
 <!DOCTYPE html>
@@ -2639,7 +2640,9 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
     /* ─────────────────────────────────
        RECENT SEARCHES — shown when the search bar is focused while empty.
        Plain localStorage on a real shipped page (not a Claude artifact),
-       so this is safe to use.
+       so this is safe to use. Lives only in this browser — never sent to
+       any server, never synced to an account, and not part of the
+       cross-device Settings360 sync used elsewhere on this page.
     ───────────────────────────────── */
     const RECENT_KEY = '360_recent_searches';
     function getRecentSearches() {
