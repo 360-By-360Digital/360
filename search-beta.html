@@ -1,6 +1,28 @@
 <!-- ===============================
   SEARCH.HTML V.3.0 CUSTOM SEARCH
 ================================ -->
+
+<!--================================
+Copyright from GCSE Widget: 
+
+Copyright The Closure Library Authors. 
+SPDX-License-Identifier: Apache-2.0!
+================================ -->
+
+<!--=============================================================================================================================================================
+                                                 MODIFIER NOTES (Notes from the contributors of this file):
+- This program scrapes GCSE results and styles them into our custom result cards
+- This program uses You.com's Search API and a local crawled index (with vector-embedding + PageRank-style ranking) as additional real web results
+- This program uses SERPAPI's for shopping
+- This program uses public API's and scrapes public news sites for news
+- This program is not GCSE or DDG in disguise, rather a meta search engine. Read more: https://en.wikipedia.org/wiki/Metasearch_engine
+- This program does not create a digital footprint profile for marketed ads. Everything backend related is either for account storage or profile/sign in related.
+- This program aims to comply with all TOS's for code used, and we do not intend to misuse/illegally use code. 
+Before taking an action to legal matter, please reach out to us at admin@360-search.com and we will respectfully remove anything strike-worthy.
+- This program uses cached data for speed! It is instantly deleted!
+- This program uses Google Tag Manager for page analytics. We only measure page visits! There are no other scopes.
+============================================================================================================================================================= !-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -819,7 +841,26 @@
     .paa-item:hover { background: var(--glass-light-mid); }
     body.dark .paa-item { color: var(--txtd); border-top-color: var(--glass-border-dk); }
     body.dark .paa-item:hover { background: var(--glass-dark-mid); }
-    .paa-arrow { color: var(--mut); font-weight: 700; flex-shrink: 0; }
+    .paa-arrow { color: var(--mut); font-weight: 700; flex-shrink: 0; transition: transform 0.18s; }
+    .paa-row.open .paa-arrow { transform: rotate(45deg); }
+    .paa-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.22s ease;
+      padding: 0 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--mut);
+    }
+    body.dark .paa-answer { color: var(--mutd); }
+    .paa-row.open .paa-answer { max-height: 320px; padding: 0 16px 14px; }
+    .paa-answer-text { margin-bottom: 8px; }
+    .paa-loading { opacity: 0.7; font-style: italic; }
+    .paa-full-link {
+      background: none; border: none; color: var(--a); font-family: inherit;
+      font-size: 12.5px; font-weight: 700; cursor: pointer; padding: 0;
+    }
+    .paa-full-link:hover { text-decoration: underline; }
 
     /* ── Related searches ── */
     #related-searches-box:empty { display: none; }
@@ -2618,7 +2659,9 @@
     /* ─────────────────────────────────
        RECENT SEARCHES — shown when the search bar is focused while empty.
        Plain localStorage on a real shipped page (not a Claude artifact),
-       so this is safe to use.
+       so this is safe to use. Lives only in this browser — never sent to
+       any server, never synced to an account, and not part of the
+       cross-device Settings360 sync used elsewhere on this page.
     ───────────────────────────────── */
     const RECENT_KEY = '360_recent_searches';
     function getRecentSearches() {
@@ -3684,7 +3727,7 @@
         btn.addEventListener('click', () => goToPage(parseInt(btn.getAttribute('data-page'))));
       });
       resultsArea.querySelectorAll('.paa-item').forEach(btn => {
-        btn.addEventListener('click', () => doSearch(btn.dataset.q));
+        btn.addEventListener('click', () => togglePaaRow(btn.closest('.paa-row')));
       });
       try { if (state.query) loadRelatedSearches(state.query); } catch (e) { console.error('loadRelatedSearches failed:', e); }
     }
@@ -3694,9 +3737,13 @@
     function safeElapsedSuffix() { try { return elapsedSuffix(); } catch (e) { return ''; } }
 
     /* ─────────────────────────────────
-       PEOPLE ALSO ASK — template-generated, not scraped from Google (their
+       PEOPLE ALSO ASK — template-generated (not scraped from Google; their
        real "People also ask" data isn't reachable through a GCSE widget).
-       Clicking a question just re-searches with that phrasing.
+       Behaves like Google's version now: clicking expands an inline answer
+       in place rather than firing a whole new search. The answer itself
+       comes from the same ddg-instant proxy the knowledge panel uses —
+       best-effort, with a "See full results" link for anything it can't
+       answer directly.
     ───────────────────────────────── */
     function looksLikeQuestion(q) {
       return /^(who|what|when|where|why|how|is|are|can|does|do|did|will|should|which)\b/i.test(q.trim());
@@ -3711,8 +3758,41 @@
       ];
       return `<div class="paa-box">
         <div class="paa-heading">People also ask</div>
-        ${questions.map(qq => `<button class="paa-item" data-q="${escHtml(qq)}">${escHtml(qq)}<span class="paa-arrow">+</span></button>`).join('')}
+        ${questions.map((qq, i) => `
+          <div class="paa-row" data-idx="${i}">
+            <button class="paa-item" data-q="${escHtml(qq)}">
+              <span>${escHtml(qq)}</span>
+              <span class="paa-arrow">+</span>
+            </button>
+            <div class="paa-answer"></div>
+          </div>`).join('')}
       </div>`;
+    }
+
+    async function togglePaaRow(row) {
+      const wasOpen = row.classList.contains('open');
+      row.classList.toggle('open', !wasOpen);
+      if (wasOpen) return; // collapsing needs nothing further
+
+      const answerEl = row.querySelector('.paa-answer');
+      const q = row.querySelector('.paa-item').dataset.q;
+      if (answerEl.dataset.loaded) return; // already fetched once
+      answerEl.dataset.loaded = '1';
+      answerEl.innerHTML = `<div class="paa-loading">Loading…</div>`;
+
+      try {
+        const res = await fetch(`https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/ddg-instant?q=${encodeURIComponent(q)}`, {
+          headers: SUPABASE_FN_HEADERS,
+        });
+        const data = await res.json();
+        const text = data?.AbstractText || data?.Answer || '';
+        answerEl.innerHTML = `
+          ${text ? `<div class="paa-answer-text">${escHtml(text)}</div>` : `<div class="paa-answer-text">No quick answer available for this one.</div>`}
+          <button class="paa-full-link" data-q="${escHtml(q)}">See full results →</button>`;
+      } catch (e) {
+        answerEl.innerHTML = `<button class="paa-full-link" data-q="${escHtml(q)}">See full results →</button>`;
+      }
+      answerEl.querySelector('.paa-full-link')?.addEventListener('click', () => doSearch(q));
     }
 
     /* ─────────────────────────────────
