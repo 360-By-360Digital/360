@@ -65,7 +65,7 @@
   async function loadMail() {
     if (!mailAddress) return;
     $("mailSkeletons").style.display = "block";
-    const { data, error } = await sb.from("inbox")
+    const { data, error } = await sb.from("inbox_readable")
       .select("*").eq("owner_email", mailAddress)
       .order("received_at", { ascending: false });
     $("mailSkeletons").style.display = "none";
