@@ -1,58 +1,78 @@
 # 360
-![Version](https://img.shields.io/badge/version-3.0.0-blue) [![Windows](https://img.shields.io/badge/Windows-Supported-0078D6?logo=windows&logoColor=white)](#)
+
+![Version](https://img.shields.io/badge/version-3.0.0-blue)
+![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)
+![Copyright](https://img.shields.io/badge/Copyright-%C2%A9%202026%20360Digital%2C%20Co.-black)
+[![Windows](https://img.shields.io/badge/Windows-Supported-0078D6?logo=windows&logoColor=white)](#)
 [![Linux](https://img.shields.io/badge/Linux-Supported-FCC624?logo=linux&logoColor=black)](#)
 [![Web](https://img.shields.io/badge/Web-Supported-4285F4?logo=google-chrome&logoColor=white)](#)
-[![Android](https://img.shields.io/badge/Android-Supported-3DDC84?logo=android&logoColor=white)](#) 
-
+[![Android](https://img.shields.io/badge/Android-Supported-3DDC84?logo=android&logoColor=white)](#)
 ![Reddit](https://img.shields.io/badge/Reddit-r%2F360Search-orange)
 
-A multi-tool browser and search engine.
+A privacy-focused browser and search platform that brings powerful tools into one place.
+
 Our Reddit: https://www.reddit.com/r/360Search/
 
-360 is a multi-tool browser (search engine) that has more tools to outperform any browser through conveniently organized UIs — so your work doesn't need to be done on 50+ tabs.
+360 is a multi-tool browser and search engine that combines essential tools into a single, organized workspace—helping you stay productive without juggling dozens of tabs.
 
-With many search engines and browsers losing trust from core users, this is a great opportunity to switch to a fully private, fully open source search engine. Using 360 supports 360Digital, Co. and every contribution counts. Switch to 360 now! (if you want — we're humble and will not be pushy)
+With many search engines and browsers losing the trust of their users, 360 offers a private, open-source alternative built around transparency, performance, and user control. Every contribution helps improve the project and support its future development.
+
+---
+
+## Privacy First
+
+360 is built around a simple philosophy:
+
+- 🔒 No targeted advertising.
+- 🛡️ No selling personal data.
+- 🌍 Fully open source and auditable.
+- 👤 Your privacy comes first.
+
+Unlike many modern browsers and search platforms, 360 is designed to give users control over their data while remaining transparent through open-source development.
 
 ---
 
 ## Features
 
-- 🔍 **Search** — Private, fast search | <em>Other search engines create a profile for you and sell your data for targeted ads. Even DuckDuckGo has a sneaky deal with Microsoft!</em>
+- 🔍 **Search** — Private, fast search | <em>Other search engines create a profile for you and sell your data for targeted ads. Even DuckDuckGo has a partnership with Microsoft for parts of its search results.</em>
 
-- 🤖 **AI** — Built-in AI assistant with conversation history and file uploads. | <em>An AI that's fast and can actually DO things.</em>
+- 🤖 **AI** — Built-in AI assistant with conversation history and file uploads. | <em>An AI that's fast and can actually do things.</em>
 
 - 💬 **Chat** — Real-time global chat with communities, DMs, reactions and moderation | <em>A fully moderated chat with privacy. **TEENS AND ABOVE!!**</em>
 
-- 📰 **News** — Live news feed across multiple categories | <em>News that actually loads instantly and isn't biased.</em>
+- 📰 **News** — Live news feed across multiple categories | <em>News that actually loads instantly.</em>
 
-- 🎮 **Games** — Built-in games including Space Glider, StarBlasted and NYC Dream | <em>The highest quality games our developers can program for you after long periods of researching.</em>
+- 🎮 **Games** — Built-in games including Space Glider, StarBlasted and NYC Dream | <em>High-quality games built by the 360 development team.</em>
 
-- 🌦️ **Weather** — Live weather with map view | <em>Compare how our forecasts are to Google's and then you'll switch.</em>
+- 🌦️ **Weather** — Live weather with map view | <em>Fast, detailed weather information whenever you need it.</em>
 
-- 📈 **Stocks** — Real-time stock quotes | <em>Real stocks, real Bitcoin, real data. All realtime.</em>
+- 📈 **Stocks** — Real-time stock quotes | <em>Real stocks, cryptocurrencies, and market data in real time.</em>
 
 - 🌍 **Translator** — Translate between 80+ languages | <em>Instant translation when you need it most.</em>
 
-- 🔗 **URL Shortener** — Shorten any link instantly | <em>No more memorizing links for your friends! Just this short URL.</em>
+- 🔗 **URL Shortener** — Shorten any link instantly | <em>Create short links in seconds.</em>
 
-- 🎨 **Themes** — 6 color themes, dark mode, and custom cursor styles | <em>For people who actually NEED personalization!</em>
+- 🎨 **Themes** — 6 color themes, dark mode, and custom cursor styles | <em>Personalize 360 to match your style.</em>
 
-- 🖥️ **Desktop App** — Native app for Windows and Linux | <em>Searching in a private search engine isn't so private in any browser...</em>
+- 🖥️ **Desktop App** — Native app for Windows and Linux | <em>Enjoy the full 360 experience outside your browser.</em>
 
 ---
 
 ## APPS TOO!
 
 <img width="978" height="862" alt="image" src="https://github.com/user-attachments/assets/871b6255-f4a9-4b86-a8dc-cbc0aeed2c40" />
-Explore 360 and work efficiently in the 360Suite! 
-- Upload videos or music and manage your content! 
-- Complete school work with step by step problem solving!
-- Jot down important meeting notes!
-- Draw anything you want!
-- Write documents and share them with friends!
-- Have 360 remember your tasks!
-- Send emails through 360Mail with enhanced privacy and spam detection!
-- Deploy and manage sites!
+
+Explore 360 and work efficiently in the 360Suite!
+
+- Upload videos or music and manage your content.
+- Complete school work with step-by-step problem solving.
+- Jot down important meeting notes.
+- Draw anything you want.
+- Write documents and share them with friends.
+- Have 360 remember your tasks.
+- Send emails through 360Mail with enhanced privacy and spam detection.
+- Deploy and manage sites.
+
 ## All through 360!
 
 ---
@@ -60,31 +80,33 @@ Explore 360 and work efficiently in the 360Suite!
 ## Installation
 
 ### Web
-Just visit [360-search.com](https://360-search.com) — no install needed.
+
+Just visit https://360-search.com — no install needed.
 
 ### Windows
-1. Download `360 Setup 3.0.0.exe` from [Releases](https://github.com/360-By-360Digital/360/releases)
-2. Double click and it installs silently
-3. 360 launches automatically when done
+
+1. Download `360 Setup 3.0.0.exe` from Releases.
+2. Double-click and it installs silently.
+3. 360 launches automatically when finished.
 
 ### Linux (Ubuntu/Debian/Zorin/Mint/Pop!_OS)
-1. Download `360-desktop_3.0.0_amd64.deb` from [Releases](https://github.com/360-By-360Digital/360/releases)
-2. Run:
-```bash
-sudo apt update
-```
-Then:
+
+1. Download `360-desktop_3.0.0_amd64.deb` from Releases.
 
 ```bash
+sudo apt update
 sudo dpkg -i 360-desktop_3.0.0_amd64.deb
 ```
-Or install gdebi for double-click install:
+
+Or install GDebi:
+
 ```bash
 sudo apt install gdebi -y
 ```
 
 ### Android
-Coming soon via Samsung Galaxy Store.
+
+Coming soon via the Samsung Galaxy Store.
 
 ---
 
@@ -97,54 +119,69 @@ Coming soon via Samsung Galaxy Store.
 - [ ] Android app (Samsung Galaxy Store)
 - [x] Android APK
 - [ ] Edge / Opera browser extension
-- [x] PWA improvements
+- [x] Progressive Web App improvements
 
 ---
 
 # Releases
-## V.2.0 - 2.0.3:
-<a href="https://github.com/360-By-360Digital/360/releases/tag/V.2.0.3">Release V.2.0.3</a>
 
-<a href="https://github.com/360-By-360Digital/360/releases/tag/V.2.0.3">Release V.2.0.3 — Windows .exe (unstable)</a>
+## V.2.0 - 2.0.3
 
-<a href="https://github.com/360-By-360Digital/360/releases/tag/V.2.0.3">Release V.2.0.3 — Windows .exe (stable)</a>
+- Release V.2.0.3
+- Windows (.exe) — Stable
+- Linux (.deb) — Stable
 
-<a href="https://github.com/360-By-360Digital/360/releases/tag/V.2.0.3">Release V.2.0.3 — Linux .deb (stable)</a>
-## V.3.0 - ?
+## V.3.0
 
-<a href="https://github.com/360DigitalCo/360/releases/tag/V.3.0">Release V.3.0</a>
-
-<a href="https://github.com/360DigitalCo/360/releases/tag/V.3.0">Release V.3.0 — Windows .exe/.msi (stable)</a>
-
-<a href="https://github.com/360DigitalCo/360/releases/tag/V.3.0">Release V.3.0 — Linux .deb (stable)</a>
+- Web
+- Windows (.exe/.msi)
+- Linux (.deb)
 
 ---
 
 ## Email Us
 
-Help: help@360-search.com
+📧 **Help:** <help@360-search.com>
 
-Admin: admin@360-search.com
+🛠️ **Admin:** <admin@360-search.com>
 
-Support: mingze@360-search.com
+💬 **Support:** <mingze@360-search.com>
 
-Support: zakii@360-search.com
-
----
-
-## CREDITS:
-
-Lead Developers & Founders: <a href="https://github.com/Zakii360">Zakii360</a>, <a href="https://github.com/mingzew2">mingzew2</a> <a href="https://github.com/MingzeMC">(MingzeMC)</a>
-
-
-Analytics Advisor and Feature Designer: <a href="https://github.com/GreatesSoup">GreatesSoup</a>
-
-
-Lead Games Developer: <a href="https://github.com/UntitledAngel">UntitledAngel</a> <a href="https://github.com/TheAngelV1">(TheAngelV1)</a>
+💬 **Support:** <zakii@360-search.com>
 
 ---
 
-The rest is for you to find out :) 
-Enjoy 360!!
+## Credits
 
-© 2026 360Digital, Co.
+### Lead Developers & Founders
+
+- **[Zakii360](https://github.com/Zakii360)**
+- **[mingzew2](https://github.com/mingzew2)** *(also known as [MingzeMC](https://github.com/MingzeMC))*
+
+### Analytics Advisor & Feature Designer
+
+- **[GreatesSoup](https://github.com/GreatesSoup)**
+
+### Lead Games Developer
+
+- **[UntitledAngel](https://github.com/UntitledAngel)** *(also known as [TheAngelV1](https://github.com/TheAngelV1))*
+
+---
+
+## License
+
+360 is free and open-source software licensed under the **GNU Affero General Public License Version 3.0 (AGPL-3.0)**.
+
+Copyright © 2026 **360Digital, Co.**
+
+The **360**, **360Digital**, **360Digital, Co.** names, logos, branding, icons, and visual identity are not licensed under the AGPL and may be protected by trademark and other applicable laws. No trademark rights are granted under this license.
+
+See the **LICENSE**, **NOTICE**, and **COPYRIGHT** files for additional information.
+
+---
+
+The rest is for you to find out. :)
+
+**Enjoy 360!**
+
+```
