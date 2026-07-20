@@ -271,7 +271,7 @@ body.dark .mail-search-bar input { color: var(--txtd); background: rgba(255,255,
   position: relative;
 }
 .mail-item:hover { background: var(--glass-bg-hover); }
-.mail-item.active { background: rgba(59,130,246,.08); }
+.mail-item.active { background: rgba(59,130,246,.08); box-shadow: inset 3px 0 0 var(--a); }
 body.dark .mail-item.active { background: rgba(59,130,246,.12); }
 .mail-item.unread .mi-subject { font-weight: 700; }
 .mail-item.unread::before {
