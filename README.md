@@ -41,6 +41,22 @@ With many search engines and browsers losing trust from core users, this is a gr
 
 ---
 
+## APPS TOO!
+
+<img width="978" height="862" alt="image" src="https://github.com/user-attachments/assets/871b6255-f4a9-4b86-a8dc-cbc0aeed2c40" />
+Explore 360 and work efficiently in the 360Suite! 
+- Upload videos or music and manage your content! 
+- Complete school work with step by step problem solving!
+- Jot down important meeting notes!
+- Draw anything you want!
+- Write documents and share them with friends!
+- Have 360 remember your tasks!
+- Send emails through 360Mail with enhanced privacy and spam detection!
+- Deploy and manage sites!
+## All through 360!
+
+---
+
 ## Installation
 
 ### Web
