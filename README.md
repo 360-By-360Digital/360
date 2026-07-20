@@ -14,6 +14,11 @@
 [![X](https://img.shields.io/badge/X-@_360Search-000000?logo=x&logoColor=white)](https://x.com/_360Search)
 
 A privacy-focused browser and search platform that brings powerful tools into one place.
+<p align="center">
+  <a href="https://360-search.com">
+    <img src="https://img.shields.io/badge/🚀%20Launch%20360-Open%20in%20Browser-2563EB?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Launch 360">
+  </a>
+</p>
 
 Our Reddit: https://www.reddit.com/r/360Search/
 
