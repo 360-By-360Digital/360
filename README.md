@@ -7,6 +7,11 @@
 [![Linux](https://img.shields.io/badge/Linux-Supported-FCC624?logo=linux&logoColor=black)](#)
 [![Web](https://img.shields.io/badge/Web-Supported-4285F4?logo=google-chrome&logoColor=white)](#)
 [![Android](https://img.shields.io/badge/Android-Supported-3DDC84?logo=android&logoColor=white)](#)
+
+[![Discord](https://img.shields.io/discord/1501362397422817350?label=Discord&logo=discord&color=5865F2)](https://discord.gg/sgPPtYKRw)
+
+[![Patreon](https://img.shields.io/badge/Patreon-Support%20360-FF424D?logo=patreon&logoColor=white)](https://patreon.com/360Search)
+
 ![Reddit](https://img.shields.io/badge/Reddit-r%2F360Search-orange)
 
 A privacy-focused browser and search platform that brings powerful tools into one place.
