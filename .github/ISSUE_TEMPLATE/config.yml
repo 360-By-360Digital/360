@@ -1,0 +1,22 @@
+blank_issues_enabled: true
+
+contact_links:
+  - name: 💬 Discord Community
+    url: https://discord.gg/sgPPtYKRw
+    about: Join the official 360 Discord server for support, discussions, sneak peeks, and announcements.
+
+  - name: ❤️ Support 360 on Patreon
+    url: https://www.patreon.com/360Search
+    about: Help support the continued development of 360 and receive exclusive updates and behind-the-scenes content.
+
+  - name: 💡 GitHub Discussions
+    url: https://github.com/360DigitalCo/360/discussions
+    about: Ask questions, share ideas, and discuss new features with the community.
+
+  - name: 🔒 Report a Security Issue
+    url: mailto:security@360-search.com
+    about: Please report security vulnerabilities privately instead of opening a public issue.
+
+  - name: 📖 Documentation
+    url: https://github.com/360DigitalCo/360
+    about: Read the documentation and project information before opening an issue.
