@@ -11,7 +11,7 @@
 [![Patreon](https://img.shields.io/badge/Patreon-Support%20360-FF424D?logo=patreon&logoColor=white)](https://patreon.com/360Search)
 ![Reddit](https://img.shields.io/badge/Reddit-r%2F360Search-orange)
 
-🛡️ A privacy-focused browser and search platform that brings powerful tools into one place.
+A privacy-focused browser and search platform that brings powerful tools into one place.
 
 Our Reddit: https://www.reddit.com/r/360Search/
 
@@ -21,7 +21,7 @@ With many search engines and browsers losing the trust of their users, 360 offer
 
 ---
 
-## Privacy First
+## 🛡️ Privacy First
 
 360 is built around a simple philosophy:
 
