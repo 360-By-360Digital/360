@@ -19,6 +19,7 @@ A privacy-focused browser and search platform that brings powerful tools into on
     <img src="https://img.shields.io/badge/🚀%20Launch%20360-Open%20in%20Browser-2563EB?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Launch 360">
   </a>
 </p>
+<p align="center"><img src="Screen%20Recording%202026-07-20%20120719.gif" alt="360 Demo" width="100%"></p>
 
 Our Reddit: https://www.reddit.com/r/360Search/
 
