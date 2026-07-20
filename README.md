@@ -20,6 +20,7 @@ A privacy-focused browser and search platform that brings powerful tools into on
   </a>
 </p>
 <p align="center"><img src="Screen%20Recording%202026-07-20%20120719.gif" alt="360 Demo" width="100%"></p>
+<p align="center">*Note - This is a demo of 360 to show how it's main function works and it's minimally buggy. Please don't wrongly interpert anything about the platform from this. We'll be fixing it soon.</p>
 
 Our Reddit: https://www.reddit.com/r/360Search/
 
