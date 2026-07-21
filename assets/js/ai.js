@@ -156,6 +156,7 @@
         <div class="code-block-wrap">
           <div class="code-block-header">
             <span class="code-block-lang">${label}</span>
+            <button class="code-download-btn" data-copy-target="${id}" data-lang="${label}" title="Download as file">⭳</button>
             <button class="code-copy-btn" data-copy-target="${id}">Copy</button>
           </div>
           <pre><code id="${id}" class="language-${label}">${safeCode}</code></pre>
@@ -165,6 +166,34 @@
 
     marked.use({ renderer });
   }
+
+  /* file extension guess for the code-block download button */
+  const LANG_EXT = {
+    javascript: "js", js: "js", typescript: "ts", ts: "ts", jsx: "jsx", tsx: "tsx",
+    python: "py", py: "py", html: "html", css: "css", json: "json", yaml: "yml", yml: "yml",
+    bash: "sh", sh: "sh", shell: "sh", sql: "sql", java: "java", c: "c", cpp: "cpp", "c++": "cpp",
+    go: "go", rust: "rs", rs: "rs", ruby: "rb", rb: "rb", php: "php", swift: "swift",
+    markdown: "md", md: "md", xml: "xml", text: "txt", plaintext: "txt", code: "txt",
+  };
+
+  on(document, "click", (e) => {
+    const btn = e.target.closest?.(".code-download-btn");
+    if (!btn) return;
+    const id = btn.getAttribute("data-copy-target");
+    const el = id && document.getElementById(id);
+    if (!el) return;
+    const lang = (btn.getAttribute("data-lang") || "txt").toLowerCase();
+    const ext = LANG_EXT[lang] || "txt";
+    const blob = new Blob([el.textContent || ""], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `snippet.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
 
   function renderMarkdown(text) {
     const raw = String(text || "");
@@ -266,6 +295,56 @@
     scrollBottom();
 
     return { div, inner };
+  }
+
+  // Streaming variant — a collapsible "Thinking" panel that fills in live as
+  // reasoning tokens arrive, plus a separate answer area below it that fills
+  // in with the final text. Reasoning isn't available from every provider;
+  // the panel just stays hidden if none ever arrives.
+  function appendStreamingBubble() {
+    if (!aiOutput) return {};
+    hideWelcome();
+
+    const div = document.createElement("div");
+    div.className = "ai-bubble assistant";
+
+    const avatar = document.createElement("div");
+    avatar.className = "ai-avatar";
+    avatar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9z"/></svg>`;
+
+    const inner = document.createElement("div");
+    inner.className = "bubble-inner";
+    inner.innerHTML = `
+      <div class="ai-thinking-box" style="display:none;">
+        <button class="ai-thinking-toggle" type="button">
+          <span class="ai-thinking-spinner"></span>
+          <span class="ai-thinking-label">Thinking…</span>
+          <span class="ai-thinking-arrow">▾</span>
+        </button>
+        <div class="ai-thinking-content"></div>
+      </div>
+      <div class="ai-answer-content"><div class="thinking"><span></span><span></span><span></span></div></div>
+    `;
+
+    div.appendChild(avatar);
+    div.appendChild(inner);
+    aiOutput.appendChild(div);
+    scrollBottom();
+
+    const thinkingBox = inner.querySelector(".ai-thinking-box");
+    const thinkingContent = inner.querySelector(".ai-thinking-content");
+    const thinkingLabel = inner.querySelector(".ai-thinking-label");
+    const answerContent = inner.querySelector(".ai-answer-content");
+
+    let expanded = true;
+    on(inner.querySelector(".ai-thinking-toggle"), "click", () => {
+      expanded = !expanded;
+      thinkingContent.style.display = expanded ? "block" : "none";
+      const arrow = inner.querySelector(".ai-thinking-arrow");
+      if (arrow) arrow.textContent = expanded ? "▾" : "▸";
+    });
+
+    return { div, inner, thinkingBox, thinkingContent, thinkingLabel, answerContent };
   }
 
   /* ── file handling ───────────────────────────────────────────────── */
@@ -421,11 +500,10 @@
 
   const PROVIDERS_DOWN_RE = /all ai providers (are )?temporarily unavailable/i;
 
-  // Retries specifically on the "all providers down" response, up to
-  // 10 attempts total, with a short growing delay between tries. Any
-  // other failure (bad request, network error, etc.) still fails
-  // immediately instead of retrying pointlessly.
-  async function callChatEndpoint(body, attempt = 1) {
+  // Streams the SSE response, calling handlers.onThinking/onText per chunk
+  // as they arrive instead of waiting for the full reply. Retries on the
+  // specific "all providers down" case, same as the old non-streaming path.
+  async function streamChatEndpoint(body, handlers, attempt = 1) {
     const MAX_ATTEMPTS = 10;
 
     const res = await fetch(`${SB_URL}/functions/v1/ai-chatbot`, {
@@ -434,26 +512,49 @@
       body: JSON.stringify(body),
     });
 
-    let data = {};
-    try { data = await res.json(); } catch (_) { data = {}; }
-
-    const msg = String(data.error || data.reply || "");
-    const providersDown = PROVIDERS_DOWN_RE.test(msg);
-
-    if (providersDown && attempt < MAX_ATTEMPTS) {
-      await new Promise(r => setTimeout(r, 400 * attempt));
-      return callChatEndpoint(body, attempt + 1);
+    if (!res.ok || !res.body) {
+      let data = {};
+      try { data = await res.json(); } catch (_) {}
+      const msg = String(data.error || data.reply || res.statusText || "Request failed");
+      if (PROVIDERS_DOWN_RE.test(msg) && attempt < MAX_ATTEMPTS) {
+        await new Promise(r => setTimeout(r, 400 * attempt));
+        return streamChatEndpoint(body, handlers, attempt + 1);
+      }
+      throw new Error(msg);
     }
 
-    if (providersDown) {
-      throw new Error("AI providers are still unavailable after several attempts. Please try again in a bit.");
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+    let sawAnything = false;
+    let sawError = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split("\n");
+      buf = lines.pop() || "";
+      for (const line of lines) {
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (!payload) continue;
+        let evt;
+        try { evt = JSON.parse(payload); } catch (_) { continue; }
+        if (evt.type === "thinking") { sawAnything = true; handlers.onThinking(evt.delta); }
+        else if (evt.type === "text") { sawAnything = true; handlers.onText(evt.delta); }
+        else if (evt.type === "done") { handlers.onDone?.(evt.model); }
+        else if (evt.type === "error") { sawError = evt.message; }
+      }
     }
 
-    if (!res.ok) {
-      throw new Error(data.error || data.reply || res.statusText || "Request failed");
+    if (!sawAnything && sawError) {
+      if (PROVIDERS_DOWN_RE.test(sawError) && attempt < MAX_ATTEMPTS) {
+        await new Promise(r => setTimeout(r, 400 * attempt));
+        return streamChatEndpoint(body, handlers, attempt + 1);
+      }
+      throw new Error(sawError);
     }
-
-    return { data, res };
   }
 
   /* ── send ────────────────────────────────────────────────────────── */
@@ -486,7 +587,7 @@
       captured ? { ...captured, previewUrl: storageUrl || captured.previewUrl } : null
     );
 
-    const { inner: thinkInner } = appendAssistantBubble("", true);
+    const { thinkingBox, thinkingContent, thinkingLabel, answerContent } = appendStreamingBubble();
 
     const isFirstMessage = history.length === 0;
 
@@ -498,6 +599,10 @@
         "line will be extracted and hidden from the user, so do not " +
         "reference it in your actual answer.)";
     }
+
+    let thinkingBuf = "";
+    let textBuf = "";
+    let firstTextChunk = true;
 
     try {
       const body = {
@@ -513,9 +618,26 @@
         };
       }
 
-      const { data } = await callChatEndpoint(body);
+      await streamChatEndpoint(body, {
+        onThinking(delta) {
+          thinkingBuf += delta;
+          if (thinkingBox) thinkingBox.style.display = "block";
+          if (thinkingContent) thinkingContent.textContent = thinkingBuf;
+          scrollBottom();
+        },
+        onText(delta) {
+          if (firstTextChunk) {
+            firstTextChunk = false;
+            if (thinkingLabel) thinkingLabel.textContent = "Thought it through";
+            thinkingBox?.querySelector(".ai-thinking-spinner")?.remove();
+          }
+          textBuf += delta;
+          if (answerContent) answerContent.innerHTML = renderMarkdown(textBuf);
+          scrollBottom();
+        },
+      });
 
-      let reply = data.reply || "No response.";
+      let reply = textBuf || "No response.";
 
       if (isFirstMessage) {
         const m = reply.match(/\[\[TITLE:\s*(.+?)\]\]\s*$/i);
@@ -527,8 +649,9 @@
         }
       }
 
-      if (thinkInner) {
-        thinkInner.innerHTML = renderMarkdown(reply);
+      if (answerContent) {
+        answerContent.innerHTML = renderMarkdown(reply);
+        if (window.hljs) answerContent.querySelectorAll("pre code").forEach(el => { try { hljs.highlightElement(el); } catch (_) {} });
       }
 
       scrollBottom();
@@ -548,8 +671,9 @@
 
       scheduleAutoSave();
     } catch (err) {
-      if (thinkInner) {
-        thinkInner.innerHTML = `<span style="color:#ef4444;">${escHtml(err?.message || "Unknown error")}</span>`;
+      if (thinkingBox) thinkingBox.style.display = "none";
+      if (answerContent) {
+        answerContent.innerHTML = `<span style="color:#ef4444;">${escHtml(err?.message || "Unknown error")}</span>`;
       }
     } finally {
       isSending = false;
