@@ -1,55 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "360",
+  "name": "360 New Tab",
   "short_name": "360",
   "version": "2.0.3",
-  "description": "360 New Tab",
+  "description": "Use 360 as your Chrome New Tab home screen.",
   "chrome_url_overrides": {
     "newtab": "new-tab.html"
   },
   "permissions": [
-    "storage",
-    "activeTab",
-    "tabs",
-    "history",
-    "bookmarks",
-    "downloads",
-    "notifications",
-    "contextMenus",
-    "cookies",
-    "identity",
-    "idle",
-    "management",
-    "nativeMessaging",
-    "offscreen",
-    "scripting",
-    "search",
-    "sessions",
-    "sidePanel",
-    "system.cpu",
-    "system.memory",
-    "system.network",
-    "system.display",
-    "topSites",
-    "webNavigation",
-    "webRequest",
-    "alarms",
-    "background",
-    "clipboardRead",
-    "clipboardWrite",
-    "geolocation",
-    "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess",
-    "declarativeNetRequestFeedback"
+    "storage"
   ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  },
-  "background": {
-    "service_worker": "background.js",
-    "type": "module"
+  "icons": {
+    "16": "../favicon-16x16.png",
+    "32": "../favicon-32x32.png",
+    "192": "../android-chrome-192x192.png",
+    "512": "../android-chrome-512x512.png"
   }
 }
