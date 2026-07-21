@@ -493,6 +493,19 @@ body.dark .code-block-header { color: var(--mutd); }
   opacity: .8;
 }
 .code-copy-btn:hover { opacity: 1; background: var(--hover); }
+.code-download-btn {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: .8;
+}
+.code-download-btn:hover { opacity: 1; background: var(--hover); }
 .code-block-wrap pre {
   margin: 0 !important;
   border-radius: 0 !important;
@@ -501,6 +514,53 @@ body.dark .code-block-header { color: var(--mutd); }
   overflow: auto;
 }
 .code-block-wrap pre code { font-size: 13px !important; }
+
+/* Live thinking panel — visible reasoning stream, collapsible */
+.ai-thinking-box {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+body.dark .ai-thinking-box { border-color: var(--border-dark, var(--border)); }
+.ai-thinking-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--mut);
+  text-align: left;
+}
+body.dark .ai-thinking-toggle { color: var(--mutd); }
+.ai-thinking-toggle:hover { background: var(--hover); }
+.ai-thinking-spinner {
+  width: 10px; height: 10px;
+  border: 2px solid var(--border);
+  border-top-color: var(--a);
+  border-radius: 50%;
+  animation: aiThinkSpin .7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes aiThinkSpin { to { transform: rotate(360deg); } }
+.ai-thinking-label { flex: 1; }
+.ai-thinking-arrow { opacity: .6; font-size: 10px; }
+.ai-thinking-content {
+  padding: 0 14px 12px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--mut);
+  white-space: pre-wrap;
+  max-height: 220px;
+  overflow-y: auto;
+}
+body.dark .ai-thinking-content { color: var(--mutd); }
 
 /* Thinking indicator */
 .thinking {
