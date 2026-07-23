@@ -280,9 +280,11 @@
     if (atts.length) {
       const attWrap = document.createElement("div");
       attWrap.className = "att-list";
+      const risky = atts.filter(a => DANGEROUS_EXT.test(a.filename || ""));
       attWrap.innerHTML = `<div class="att-list-title">📎 ${atts.length} attachment${atts.length>1?"s":""}</div>
+        ${risky.length ? `<div class="att-warning">⚠️ ${risky.length} attachment${risky.length>1?"s are":" is"} an executable file type — only open if you trust the sender.</div>` : ""}
         ${atts.map(a => `
-          <div class="att-chip">
+          <div class="att-chip${DANGEROUS_EXT.test(a.filename||"")?" att-risky":""}">
             <span class="att-icon">${attIcon(a.content_type)}</span>
             <span class="att-name">${esc(a.filename)}</span>
             <span class="att-size">${fmtSize(a.size)}</span>
@@ -512,12 +514,16 @@
     });
   }
 
+  const DANGEROUS_EXT = /\.(exe|bat|cmd|com|scr|pif|vbs|vbe|js|jse|wsf|wsh|msi|ps1|jar|cpl|reg|hta|lnk)$/i;
+
   function setupAttachmentPicker() {
     const input = $("cAttachInput");
     $("cAttachBtn").addEventListener("click", () => input.click());
     input.addEventListener("change", async () => {
       for (const file of Array.from(input.files)) {
         if (file.size > 10 * 1024 * 1024) { alert(`${file.name} is too large (max 10MB).`); continue; }
+        if (DANGEROUS_EXT.test(file.name) &&
+            !confirm(`"${file.name}" is an executable file type. Most email providers block these and recipients may not receive it. Attach anyway?`)) continue;
         const b64 = await fileToBase64(file);
         pendingAttachments.push({ filename: file.name, content_type: file.type || "application/octet-stream", content: b64, size: file.size });
       }
