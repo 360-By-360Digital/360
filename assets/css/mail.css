@@ -642,6 +642,18 @@ body.dark .att-size { color: var(--mutd); }
 .att-list { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--glass-border); max-width: 680px; }
 .att-list-title { font-size: 12px; font-weight: 700; color: var(--mut); margin-bottom: 8px; }
 body.dark .att-list-title { color: var(--mutd); }
+.att-warning {
+  background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.35); color: #ef4444;
+  font-size: 12px; padding: 8px 10px; border-radius: 8px; margin-bottom: 8px;
+}
+.att-chip.att-risky { border-color: rgba(239,68,68,.5); }
+.att-warning {
+  background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.35);
+  color: #ef4444; font-size: 12px; font-weight: 600;
+  padding: 8px 12px; border-radius: 8px; margin-bottom: 10px;
+}
+.att-chip.att-risky { border-color: rgba(239,68,68,.4); }
+.att-chip.att-risky .att-name { color: #ef4444; }
 
 /* ── Compose: expiration / self-destruct / schedule ───────── */
 .compose-options { padding: 10px 16px 0; display: flex; flex-direction: column; gap: 4px; }
