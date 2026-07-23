@@ -132,7 +132,8 @@
       const flags   = (e.status==="scheduled" ? `<span class="mi-flag" title="Scheduled for ${esc(fmtDate(e.scheduled_at))}">⏰</span>` : "")
                     + (e.expires_at ? `<span class="mi-flag" title="Expires ${esc(fmtDate(e.expires_at))}">⏳</span>` : "")
                     + (e.self_destruct ? `<span class="mi-flag" title="Self-destructs after reading">🔥</span>` : "");
-      return `<div class="mail-item${unread?" unread":""}${active?" active":""}" data-id="${e.id}">
+      return `<div class="mail-item${unread?" unread":""}${active?" active":""}${selectedIds.has(e.id)?" selected":""}" data-id="${e.id}">
+        <input type="checkbox" class="mi-check" data-id="${e.id}" ${selectedIds.has(e.id)?"checked":""} />
         <button class="mi-star${e.starred?" starred":""}" data-id="${e.id}">★</button>
         <div class="mi-row1">
           <span class="mi-from">${esc(display)}</span>
@@ -145,12 +146,45 @@
       </div>`;
     }).join("");
     scroll.querySelectorAll(".mail-item").forEach(el =>
-      el.addEventListener("click", ev => { if(ev.target.classList.contains("mi-star")) return; openEmail(el.dataset.id); })
+      el.addEventListener("click", ev => {
+        if(ev.target.classList.contains("mi-star") || ev.target.classList.contains("mi-check")) return;
+        openEmail(el.dataset.id);
+      })
     );
     scroll.querySelectorAll(".mi-star").forEach(btn =>
       btn.addEventListener("click", ev => { ev.stopPropagation(); toggleStar(btn.dataset.id); })
     );
+    scroll.querySelectorAll(".mi-check").forEach(cb =>
+      cb.addEventListener("click", ev => { ev.stopPropagation(); toggleSelect(cb.dataset.id); })
+    );
+    updateBulkBar();
   }
+
+  const selectedIds = new Set();
+
+  function toggleSelect(id) {
+    if (selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
+    renderList();
+  }
+
+  function updateBulkBar() {
+    const bar = $("bulkBar");
+    if (!bar) return;
+    if (!selectedIds.size) { bar.classList.remove("open"); return; }
+    bar.classList.add("open");
+    $("bulkCount").textContent = `${selectedIds.size} selected`;
+  }
+
+  $("bulkDeleteBtn")?.addEventListener("click", () => {
+    if (!selectedIds.size) return;
+    deleteTarget = [...selectedIds];
+    $("confirmOverlay").classList.add("open");
+  });
+  $("bulkClearBtn")?.addEventListener("click", () => { selectedIds.clear(); renderList(); });
+  $("bulkSelectAllBtn")?.addEventListener("click", () => {
+    filteredEmails.forEach(e => selectedIds.add(e.id));
+    renderList();
+  });
 
   // Sanitizer used when RENDERING a received email inside the sandboxed
   // iframe (see buildEmailSrcdoc). Much more permissive than purify() above
@@ -315,9 +349,11 @@
   $("confirmCancel").addEventListener("click", () => { $("confirmOverlay").classList.remove("open"); deleteTarget = null; });
   $("confirmDelete").addEventListener("click", async () => {
     if (!deleteTarget) return;
-    await sb.from("inbox").delete().eq("id", deleteTarget);
-    allEmails = allEmails.filter(e => e.id !== deleteTarget);
-    if (selectedId === deleteTarget) { selectedId = null; hideReadPane(); }
+    const ids = Array.isArray(deleteTarget) ? deleteTarget : [deleteTarget];
+    await sb.from("inbox").delete().in("id", ids);
+    allEmails = allEmails.filter(e => !ids.includes(e.id));
+    if (ids.includes(selectedId)) { selectedId = null; hideReadPane(); }
+    selectedIds.clear();
     deleteTarget = null;
     $("confirmOverlay").classList.remove("open");
     updateBadge(); applyFilter();
