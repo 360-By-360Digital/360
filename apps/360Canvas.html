@@ -388,8 +388,6 @@
     });
   }
 
-  function currentSite(){ return sites.find(s=>s.id===activeSiteId); }
-
   function renderBlockList(){
     const box=document.getElementById('block-list');
     if(!activePage.blocks.length){ box.innerHTML=`<div class="cv-block-empty">No blocks yet.<br>Add one above.</div>`; return; }
