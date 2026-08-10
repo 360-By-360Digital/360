@@ -37,6 +37,8 @@ let slashSuggIdx     = 0;
 let joinedServerIds  = new Set();
 let presenceState    = {};
 let pendingServerIconFile = null;
+let friendsPanel     = null;
+let friendWatchChannel = null;
 const msgElMap       = new Map();
 const profileCache   = {};
 const translateCache = {};
@@ -121,6 +123,7 @@ function closeAllPanels(){
   document.getElementById('members-panel')?.classList.add('hidden');
   document.getElementById('online-panel')?.classList.add('hidden');
   document.getElementById('invite-panel')?.classList.add('hidden');
+  document.getElementById('friends-panel')?.classList.add('hidden');
   document.getElementById('server-ctx-menu')?.remove();
 }
 
@@ -1361,6 +1364,128 @@ function insertMention(username){
   mentionQuery=null; document.getElementById('dc-mention-popup').innerHTML=''; msgInput.focus();
 }
 
+
+
+/* ══════════════════════════════════════════════════════
+   FRIENDS, STATUS, REPORTS & CHAT PROFILE
+══════════════════════════════════════════════════════ */
+function safeSupabaseError(errEl,error,fallback='Something went wrong.'){
+  if(errEl) errEl.textContent=error?.message||fallback;
+}
+function friendshipPairFilter(otherUserId){
+  return `and(requester_id.eq.${currentUserId},addressee_id.eq.${otherUserId}),and(requester_id.eq.${otherUserId},addressee_id.eq.${currentUserId})`;
+}
+function makeFriendListAvatar(profile){
+  const av=document.createElement('div'); av.className='fl-av';
+  if(profile?.avatar_url){const img=document.createElement('img');img.src=profile.avatar_url;img.alt='';av.appendChild(img);}
+  else av.textContent=getInitials(profile?.username);
+  return av;
+}
+function makeFriendListInfo(name,status,statusClass=''){
+  const info=document.createElement('div'); info.className='fl-info';
+  const nm=document.createElement('span'); nm.className='fl-name'; nm.textContent=name||'User';
+  const st=document.createElement('span'); st.className='fl-status'+(statusClass?' '+statusClass:''); st.textContent=status;
+  info.appendChild(nm); info.appendChild(st); return info;
+}
+function initFriendsPanel(){
+  if(friendsPanel?.isConnected) return;
+  if(document.getElementById('friends-panel')){friendsPanel=document.getElementById('friends-panel');return;}
+  const main=document.getElementById('dcMain'); if(!main) return;
+  const p=document.createElement('div'); p.id='friends-panel'; p.className='friends-panel hidden';
+  p.innerHTML=`<div class="friends-header"><span>👥 Friends</span><button id="friends-close" title="Close">✕</button></div>
+    <div class="friends-tabs"><button class="ftab active" data-tab="friends">Friends</button><button class="ftab" data-tab="pending">Pending <span id="friend-pending-count"></span></button><button class="ftab" data-tab="add">Add Friend</button></div>
+    <div class="friends-body"><div id="ftab-friends" class="ftab-content"></div><div id="ftab-pending" class="ftab-content hidden"></div><div id="ftab-add" class="ftab-content hidden"><div class="fadd-form"><input id="fadd-input" placeholder="@username or email" autocomplete="off"/><button class="dc-btn-pri" id="fadd-btn">Send Request</button></div><p id="fadd-err" style="color:#ef4444;font-size:12px;min-height:16px;margin:8px 0 0;"></p></div></div>`;
+  main.appendChild(p); friendsPanel=p;
+  p.querySelector('#friends-close').onclick=()=>p.classList.add('hidden');
+  p.querySelectorAll('.ftab').forEach(tab=>tab.onclick=()=>{
+    p.querySelectorAll('.ftab').forEach(t=>t.classList.remove('active')); tab.classList.add('active');
+    p.querySelectorAll('.ftab-content').forEach(c=>c.classList.add('hidden'));
+    p.querySelector('#ftab-'+tab.dataset.tab)?.classList.remove('hidden');
+    if(tab.dataset.tab==='friends') loadFriendsList();
+    if(tab.dataset.tab==='pending') loadPendingFriends();
+  });
+  p.querySelector('#fadd-btn').onclick=sendFriendRequest;
+  p.querySelector('#fadd-input').onkeydown=e=>{if(e.key==='Enter')sendFriendRequest();};
+}
+async function openFriendsPanel(){
+  if(!currentUserId){location.href='/account';return;}
+  initFriendsPanel(); if(!friendsPanel)return;
+  closeAllPanels(); friendsPanel.classList.remove('hidden');
+  await Promise.all([loadFriendsList(),loadPendingFriends()]);
+}
+async function loadFriendsList(){
+  const el=document.getElementById('ftab-friends'); if(!el||!currentUserId)return;
+  el.innerHTML='<div class="fl-loading">Loading…</div>';
+  const{data,error}=await sb.from('friendships').select('*').eq('status','accepted').or(`requester_id.eq.${currentUserId},addressee_id.eq.${currentUserId}`);
+  if(error){el.innerHTML='<div class="fl-empty">Could not load friends.</div>';return;}
+  if(!data?.length){el.innerHTML='<div class="fl-empty">No friends yet. Add some!</div>';return;}
+  el.innerHTML=''; const friendIds=data.map(f=>f.requester_id===currentUserId?f.addressee_id:f.requester_id);
+  const profiles=await Promise.all(friendIds.map(id=>getProfile(id))); const onlineUids=new Set(Object.keys(presenceState));
+  data.forEach((f,i)=>{const prof=profiles[i]||{}; const fid=friendIds[i]; const online=onlineUids.has(fid);
+    const item=document.createElement('div'); item.className='fl-item';
+    item.appendChild(makeFriendListAvatar(prof)); item.appendChild(makeFriendListInfo(prof.username,online?'● Online':'○ Offline',online?'online':'offline'));
+    const actions=document.createElement('div'); actions.className='fl-actions';
+    const dmBtn=document.createElement('button'); dmBtn.className='dc-action-btn'; dmBtn.title='Message'; dmBtn.textContent='💬'; dmBtn.onclick=e=>{e.stopPropagation();friendsPanel?.classList.add('hidden');startDMWith(prof.username||prof.email||'');};
+    const rmBtn=document.createElement('button'); rmBtn.className='dc-action-btn'; rmBtn.title='Remove'; rmBtn.textContent='✕'; rmBtn.style.color='#ef4444'; rmBtn.onclick=async e=>{e.stopPropagation();await sb.from('friendships').delete().eq('id',f.id);loadFriendsList();showToast('Removed friend.');};
+    actions.append(dmBtn,rmBtn); item.appendChild(actions); item.addEventListener('click',()=>showProfilePopup(fid,item)); el.appendChild(item);
+  });
+}
+async function loadPendingFriends(){
+  const el=document.getElementById('ftab-pending'); if(!el||!currentUserId)return;
+  el.innerHTML='<div class="fl-loading">Loading…</div>';
+  const{data,error}=await sb.from('friendships').select('*').eq('status','pending').or(`requester_id.eq.${currentUserId},addressee_id.eq.${currentUserId}`);
+  if(error){el.innerHTML='<div class="fl-empty">Could not load requests.</div>';return;}
+  const rows=data||[]; const incoming=rows.filter(f=>f.addressee_id===currentUserId); const outgoing=rows.filter(f=>f.requester_id===currentUserId);
+  const countEl=document.getElementById('friend-pending-count'); if(countEl)countEl.textContent=incoming.length?`(${incoming.length})`:'';
+  if(!rows.length){el.innerHTML='<div class="fl-empty">No pending requests.</div>';return;} el.innerHTML='';
+  const addSection=t=>{const h=document.createElement('div');h.className='fl-section';h.textContent=t;el.appendChild(h);};
+  if(incoming.length){addSection('Incoming'); for(const f of incoming){const prof=await getProfile(f.requester_id); const item=document.createElement('div'); item.className='fl-item'; item.append(makeFriendListAvatar(prof),makeFriendListInfo(prof.username,'wants to be friends')); const actions=document.createElement('div');actions.className='fl-actions'; const acc=document.createElement('button');acc.className='dc-btn-pri';acc.style.cssText='padding:4px 10px;font-size:12px;';acc.textContent='✓';acc.onclick=async()=>{await sb.from('friendships').update({status:'accepted'}).eq('id',f.id);loadPendingFriends();loadFriendsList();showToast('🎉 Friend accepted!');}; const dec=document.createElement('button');dec.className='dc-action-btn';dec.style.color='#ef4444';dec.textContent='✕';dec.onclick=async()=>{await sb.from('friendships').delete().eq('id',f.id);loadPendingFriends();showToast('Request declined.');}; actions.append(acc,dec); item.appendChild(actions); el.appendChild(item);}}
+  if(outgoing.length){addSection('Sent'); for(const f of outgoing){const prof=await getProfile(f.addressee_id); const item=document.createElement('div'); item.className='fl-item'; item.append(makeFriendListAvatar(prof),makeFriendListInfo(prof.username,'Request pending…')); const actions=document.createElement('div');actions.className='fl-actions'; const can=document.createElement('button');can.className='dc-action-btn';can.style.color='#ef4444';can.textContent='Cancel';can.onclick=async()=>{await sb.from('friendships').delete().eq('id',f.id);loadPendingFriends();showToast('Request cancelled.');}; actions.appendChild(can); item.appendChild(actions); el.appendChild(item);}}
+}
+async function sendFriendRequest(){
+  const inp=document.getElementById('fadd-input'); const err=document.getElementById('fadd-err'); if(err)err.textContent=''; const q=inp?.value.trim(); if(!q)return;
+  const profile=await resolveUserByEmailOrUsername(q); if(!profile){if(err)err.textContent='User not found.';return;} if(profile.id===currentUserId){if(err)err.textContent="That's you!";return;}
+  const{data:existing,error:e1}=await sb.from('friendships').select('id,status').or(friendshipPairFilter(profile.id)).maybeSingle(); if(e1){safeSupabaseError(err,e1);return;}
+  if(existing){if(err)err.textContent=existing.status==='accepted'?'Already friends!':'Request already exists.';return;}
+  const{error}=await sb.from('friendships').insert({requester_id:currentUserId,addressee_id:profile.id,status:'pending'}); if(error){safeSupabaseError(err,error);return;}
+  inp.value=''; showToast(`✅ Friend request sent to @${profile.username||'user'}!`); loadPendingFriends(); checkPendingFriendRequests();
+}
+async function checkAreFriends(userId){if(!currentUserId||!userId)return false; const{data}=await sb.from('friendships').select('id').eq('status','accepted').or(friendshipPairFilter(userId)).maybeSingle(); return!!data;}
+async function openStatusModal(){
+  if(!currentUserId){location.href='/account';return;} document.getElementById('status-modal')?.remove();
+  const{data:cur}=await sb.from('user_status').select('*').eq('user_id',currentUserId).maybeSingle();
+  const modal=document.createElement('div'); modal.id='status-modal'; modal.className='dc-modal-overlay';
+  modal.innerHTML=`<div class="dc-modal" style="max-width:340px;"><h2>Set Status</h2><div class="status-options">${[['online','🟢','Online'],['idle','🟡','Idle'],['dnd','🔴','Do Not Disturb'],['invisible','⚫','Invisible']].map(([v,e,l])=>`<label class="status-opt ${cur?.status===v||(!cur&&v==='online')?'active':''}"><input type="radio" name="status-pick" value="${v}" ${cur?.status===v||(!cur&&v==='online')?'checked':''}/> ${e} ${l}</label>`).join('')}</div><div class="dc-field" style="margin-top:14px;"><label>Custom Status Text <span style="font-size:11px;font-weight:400;opacity:.6;">(optional)</span></label><input id="status-text-inp" maxlength="80" placeholder="What are you up to?" value="${esc(cur?.custom_text||'')}"/></div><div class="dc-field"><label>Status Emoji</label><input id="status-emoji-inp" maxlength="4" placeholder="😎" value="${esc(cur?.status_emoji||'')}" style="width:80px;"/></div><p id="status-err" style="color:#ef4444;font-size:12px;min-height:14px;"></p><div class="dc-modal-btns"><button class="dc-btn-sec" id="status-cancel">Cancel</button><button class="dc-btn-pri" id="status-save">Save</button></div></div>`;
+  document.body.appendChild(modal); modal.querySelectorAll('.status-opt').forEach(opt=>opt.addEventListener('click',()=>{modal.querySelectorAll('.status-opt').forEach(o=>o.classList.remove('active'));opt.classList.add('active');}));
+  modal.querySelector('#status-cancel').onclick=()=>modal.remove(); modal.querySelector('#status-save').onclick=async()=>{const status=modal.querySelector('input[name="status-pick"]:checked')?.value||'online'; const custom_text=modal.querySelector('#status-text-inp').value.trim()||null; const status_emoji=modal.querySelector('#status-emoji-inp').value.trim()||null; const{error}=await sb.from('user_status').upsert({user_id:currentUserId,status,custom_text,status_emoji,updated_at:new Date().toISOString()},{onConflict:'user_id'}); if(error){modal.querySelector('#status-err').textContent=error.message;return;} showToast('✅ Status updated!'); modal.remove(); updateUserStatusDot(status);};
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+}
+function updateUserStatusDot(status){const colors={online:'#22c55e',idle:'#f59e0b',dnd:'#ef4444',invisible:'#6b7280'}; const chip=document.getElementById('dcUserChip'); if(!chip)return; let dot=chip.querySelector('.dc-user-status-dot'); if(!dot){dot=document.createElement('div');dot.className='dc-user-status-dot';dot.style.cssText='width:10px;height:10px;border-radius:50%;border:2px solid var(--dc-sidebar);flex-shrink:0;margin-left:4px;';chip.appendChild(dot);} dot.style.background=colors[status]||colors.online; chip.querySelector('.dc-user-status')?.style.setProperty('color',colors[status]||colors.online);}
+async function openReportModal(targetUserId,targetUsername,msgText){
+  if(!currentUserId){location.href='/account';return;} document.getElementById('report-modal')?.remove();
+  const modal=document.createElement('div'); modal.id='report-modal'; modal.className='dc-modal-overlay';
+  modal.innerHTML=`<div class="dc-modal" style="max-width:380px;"><h2>🚩 Report ${esc(targetUsername||'User')}</h2><div class="dc-field"><label>Reason</label><select id="report-reason" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--br);background:var(--dc-input-bg);color:inherit;font-family:inherit;font-size:13px;"><option value="harassment">Harassment / Bullying</option><option value="spam">Spam</option><option value="inappropriate">Inappropriate Content</option><option value="hate_speech">Hate Speech</option><option value="nsfw">NSFW / Sexual Content</option><option value="threats">Threats / Violence</option><option value="other">Other</option></select></div><div class="dc-field"><label>Details <span style="font-size:11px;font-weight:400;opacity:.6;">(optional)</span></label><textarea id="report-details" rows="3" maxlength="500" placeholder="Describe what happened…" style="resize:vertical;"></textarea></div>${msgText?`<div class="dc-field"><label>Message context</label><div style="background:var(--dc-ch-hover);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--dc-muted);max-height:80px;overflow:hidden;">${esc(String(msgText).slice(0,200))}</div></div>`:''}<p id="report-err" style="color:#ef4444;font-size:12px;min-height:14px;"></p><div class="dc-modal-btns"><button class="dc-btn-sec" id="report-cancel">Cancel</button><button class="dc-btn-pri" id="report-submit" style="background:#ef4444;">Submit Report</button></div></div>`;
+  document.body.appendChild(modal); modal.querySelector('#report-cancel').onclick=()=>modal.remove(); modal.querySelector('#report-submit').onclick=async()=>{const reason=modal.querySelector('#report-reason').value; const description=modal.querySelector('#report-details').value.trim()||reason; const{error}=await sb.from('reports').insert({type:'user',reporter_id:currentUserId,reporter_username:currentProfile?.username||null,reporter_email:currentProfile?.email||null,reporter_role:currentProfile?.role||'user',reported_user_id:targetUserId,reported_username:targetUsername||null,reason,description,context:msgText||null,status:'open'}); if(error){modal.querySelector('#report-err').textContent=error.message;return;} modal.remove(); showToast('🚩 Report submitted. Mods will review it.');};
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+}
+async function loadChatProfile(userId){if(!userId)return null; const{data}=await sb.from('chat_profiles').select('*').eq('user_id',userId).maybeSingle(); return data||null;}
+async function openEditChatProfile(){
+  if(!currentUserId){location.href='/account';return;} const existing=await loadChatProfile(currentUserId); document.getElementById('chatprofile-modal')?.remove();
+  const modal=document.createElement('div'); modal.id='chatprofile-modal'; modal.className='dc-modal-overlay'; modal.innerHTML=`<div class="dc-modal" style="max-width:380px;"><h2>✏️ Edit Chat Profile</h2><div class="dc-field"><label>Bio <span style="font-size:11px;font-weight:400;opacity:.6;">(max 150 chars)</span></label><textarea id="cp-bio" rows="3" maxlength="150" placeholder="Tell people a bit about yourself…" style="resize:vertical;">${esc(existing?.bio||'')}</textarea></div><div class="dc-field" style="display:flex;gap:12px;"><div style="flex:1;"><label>Status Emoji</label><input id="cp-emoji" maxlength="4" placeholder="😎" value="${esc(existing?.status_emoji||'')}" style="width:100%;"/></div><div style="flex:2;"><label>Status Text</label><input id="cp-status" maxlength="60" placeholder="What's up?" value="${esc(existing?.status_text||'')}" style="width:100%;"/></div></div><p id="cp-err" style="color:#ef4444;font-size:12px;min-height:14px;"></p><div class="dc-modal-btns"><button class="dc-btn-sec" id="cp-cancel">Cancel</button><button class="dc-btn-pri" id="cp-save">Save</button></div></div>`;
+  document.body.appendChild(modal); modal.querySelector('#cp-cancel').onclick=()=>modal.remove(); modal.querySelector('#cp-save').onclick=async()=>{const bio=modal.querySelector('#cp-bio').value.trim()||null; const status_emoji=modal.querySelector('#cp-emoji').value.trim()||null; const status_text=modal.querySelector('#cp-status').value.trim()||null; const{error}=await sb.from('chat_profiles').upsert({user_id:currentUserId,bio,status_emoji,status_text,updated_at:new Date().toISOString()},{onConflict:'user_id'}); if(error){modal.querySelector('#cp-err').textContent=error.message;return;} modal.remove(); showToast('✅ Chat profile updated!');};
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+}
+async function toggleFollow(creatorId,creatorUsername){if(!currentUserId){location.href='/account';return false;} const{data:ex}=await sb.from('follows').select('follower_id').eq('follower_id',currentUserId).eq('creator_id',creatorId).maybeSingle(); if(ex){await sb.from('follows').delete().eq('follower_id',currentUserId).eq('creator_id',creatorId);showToast(`Unfollowed @${creatorUsername||'user'}`);return false;} await sb.from('follows').insert({follower_id:currentUserId,creator_id:creatorId});showToast(`✅ Following @${creatorUsername||'user'}!`);return true;}
+async function getFollowCounts(userId){const[{count:followers},{count:following}]=await Promise.all([sb.from('follows').select('*',{count:'exact',head:true}).eq('creator_id',userId),sb.from('follows').select('*',{count:'exact',head:true}).eq('follower_id',userId)]); return{followers:followers||0,following:following||0};}
+function renderProfileExtras(userId,p,chatP,popup){let bioEl=document.getElementById('pp-bio'); if(!bioEl){bioEl=document.createElement('div');bioEl.id='pp-bio';bioEl.style.cssText='font-size:12px;color:var(--dc-muted);margin:4px 0 8px;line-height:1.5;';document.getElementById('pp-email')?.after(bioEl);} const statusLine=chatP?.status_emoji?`${chatP.status_emoji} ${chatP.status_text||''}`:(chatP?.status_text||''); bioEl.innerHTML=(chatP?.bio?`<div style="margin-bottom:4px;">${esc(chatP.bio)}</div>`:'')+(statusLine?`<div style="color:var(--a);">${esc(statusLine)}</div>`:''); let fcEl=document.getElementById('pp-follows'); if(!fcEl){fcEl=document.createElement('div');fcEl.id='pp-follows';fcEl.style.cssText='display:flex;gap:16px;font-size:12px;margin:6px 0 10px;';bioEl.after(fcEl);} fcEl.innerHTML='<span style="color:var(--dc-muted);">…</span>'; getFollowCounts(userId).then(({followers,following})=>{if(!fcEl.isConnected)return; fcEl.innerHTML=`<span><strong>${followers}</strong> <span style="color:var(--dc-muted);">followers</span></span><span><strong>${following}</strong> <span style="color:var(--dc-muted);">following</span></span>`;}); document.getElementById('pp-action-row')?.remove(); document.getElementById('pp-self-edit')?.remove();}
+async function renderProfileActions(userId,p,popup,dmBtn){const ppBody=document.querySelector('.pp-body'); if(!ppBody)return; if(userId!==currentUserId&&currentUserId){const row=document.createElement('div');row.id='pp-action-row';row.style.cssText='display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;'; const{data:friendship}=await sb.from('friendships').select('id,status,requester_id').or(friendshipPairFilter(userId)).maybeSingle(); const friendBtn=document.createElement('button');friendBtn.className='dc-btn-sec';friendBtn.style.cssText='flex:1;font-size:12px;padding:6px;'; if(!friendship){friendBtn.textContent='➕ Add Friend';friendBtn.onclick=async()=>{await sb.from('friendships').insert({requester_id:currentUserId,addressee_id:userId,status:'pending'});showToast('Friend request sent!');popup.classList.add('hidden');};} else if(friendship.status==='pending'&&friendship.requester_id===currentUserId){friendBtn.textContent='⏳ Pending';friendBtn.disabled=true;} else if(friendship.status==='pending'&&friendship.requester_id===userId){friendBtn.textContent='✓ Accept';friendBtn.onclick=async()=>{await sb.from('friendships').update({status:'accepted'}).eq('id',friendship.id);showToast('Friend accepted!');popup.classList.add('hidden');};} else if(friendship.status==='accepted'){friendBtn.textContent='👥 Friends';friendBtn.disabled=true;} row.appendChild(friendBtn); const{data:followEx}=await sb.from('follows').select('follower_id').eq('follower_id',currentUserId).eq('creator_id',userId).maybeSingle(); const followBtn=document.createElement('button');followBtn.className='dc-btn-sec';followBtn.style.cssText='flex:1;font-size:12px;padding:6px;';followBtn.textContent=followEx?'✓ Following':'+ Follow';followBtn.classList.toggle('active',!!followEx);followBtn.onclick=async()=>{const now=await toggleFollow(userId,p.username);followBtn.textContent=now?'✓ Following':'+ Follow';followBtn.classList.toggle('active',!!now);}; row.appendChild(followBtn); const repBtn=document.createElement('button');repBtn.className='dc-action-btn';repBtn.title='Report';repBtn.textContent='🚩';repBtn.style.cssText='color:#ef4444;padding:6px 8px;';repBtn.onclick=()=>{popup.classList.add('hidden');openReportModal(userId,p.username,null);}; row.appendChild(repBtn); dmBtn.parentNode?ppBody.insertBefore(row,dmBtn.nextSibling):ppBody.appendChild(row);} else if(userId===currentUserId){const editRow=document.createElement('div');editRow.id='pp-self-edit';editRow.style.cssText='display:flex;gap:8px;margin-top:8px;'; const editBtn=document.createElement('button');editBtn.className='dc-btn-sec';editBtn.style.cssText='flex:1;font-size:12px;';editBtn.textContent='✏️ Edit Chat Profile';editBtn.onclick=()=>{popup.classList.add('hidden');openEditChatProfile();}; const statusBtn=document.createElement('button');statusBtn.className='dc-btn-sec';statusBtn.style.cssText='flex:1;font-size:12px;';statusBtn.textContent='🟢 Status';statusBtn.onclick=()=>{popup.classList.add('hidden');openStatusModal();}; editRow.append(editBtn,statusBtn); ppBody.appendChild(editRow);}}
+function addFriendsRailBtn(){const railDMs=document.getElementById('railDMs'); if(!railDMs||document.getElementById('railFriends'))return; const btn=document.createElement('button');btn.id='railFriends';btn.className='rail-dm-btn';btn.title='Friends';btn.textContent='👥';btn.style.marginBottom='4px';btn.onclick=()=>openFriendsPanel(); railDMs.after(btn); checkPendingFriendRequests();}
+function addReportToCtxMenu(){const ctxMenu=document.getElementById('ctx-menu'); if(!ctxMenu||document.getElementById('ctx-report'))return; const rep=document.createElement('div');rep.className='ctx-item';rep.id='ctx-report';rep.textContent='🚩 Report Message';rep.onclick=()=>{ctxMenu.classList.add('hidden');if(ctxTargetMsg)openReportModal(ctxTargetMsg.user_id,ctxTargetMsg.username,ctxTargetMsg.text);}; const lastSep=ctxMenu.querySelector('.ctx-sep:last-of-type'); if(lastSep)lastSep.after(rep); else ctxMenu.appendChild(rep);}
+async function checkPendingFriendRequests(){if(!currentUserId)return; const{count}=await sb.from('friendships').select('*',{count:'exact',head:true}).eq('addressee_id',currentUserId).eq('status','pending'); const btn=document.getElementById('railFriends'); if(!btn)return; let badge=btn.querySelector('.rail-friend-badge'); if(count>0){if(!badge){badge=document.createElement('span');badge.className='rail-friend-badge rail-unread';badge.style.cssText='position:absolute;top:2px;right:2px;';btn.style.position='relative';btn.appendChild(badge);} badge.textContent=count>9?'9+':String(count);} else badge?.remove();}
+function watchFriendRequests(){if(friendWatchChannel||!sb)return; friendWatchChannel=sb.channel('friendship-watch').on('postgres_changes',{event:'*',schema:'public',table:'friendships'},()=>{checkPendingFriendRequests(); if(!document.getElementById('ftab-pending')?.classList.contains('hidden'))loadPendingFriends();}).subscribe(); setTimeout(checkPendingFriendRequests,2000);}
+function patchUserChip(){const chip=document.getElementById('dcUserChip'); if(!chip||chip.dataset.profilePatched)return; chip.dataset.profilePatched='1'; chip.style.cursor='pointer'; chip.addEventListener('click',e=>{if(e.target.closest('.dc-settings-btn'))return; if(currentUserId)showProfilePopup(currentUserId,chip);});}
+function initSocialEnhancements(){addFriendsRailBtn();addReportToCtxMenu();patchUserChip();watchFriendRequests();}
+
 /* ══════════════════════════════════════════════════════
    PROFILE POPUP
 ══════════════════════════════════════════════════════ */
@@ -1377,10 +1502,13 @@ async function showProfilePopup(userId,anchorEl){
   document.getElementById('pp-tag').textContent=p.tag?`[${p.tag}]`:'';
   const re=document.getElementById('pp-role'); re.textContent=p.role||'user'; re.style.background=bc[p.role||'user']||'#3b82f6';
   document.getElementById('pp-email').textContent=p.email||'';
+  const chatP=await loadChatProfile(userId);
+  renderProfileExtras(userId,p,chatP,popup);
   const dmBtn=document.getElementById('pp-dm-btn'); dmBtn.style.display=userId===currentUserId?'none':'block';
-  dmBtn.onclick=async()=>{popup.classList.add('hidden');if(p.email)await startDMWith(p.email);};
+  dmBtn.onclick=async()=>{popup.classList.add('hidden');if(p.username||p.email)await startDMWith(p.username||p.email);};
+  await renderProfileActions(userId,p,popup,dmBtn);
   const rect=anchorEl.getBoundingClientRect();
-  popup.style.top=Math.min(rect.bottom+6,window.innerHeight-320)+'px';
+  popup.style.top=Math.min(rect.bottom+6,window.innerHeight-380)+'px';
   popup.style.left=Math.min(rect.right+8,window.innerWidth-300)+'px';
   popup.classList.remove('hidden');
 }
@@ -1762,6 +1890,7 @@ function updateUserChip(){
     currentUserId=session?.user?.id||null;
     if(currentUserId) currentProfile=await getProfile(currentUserId);
     updateUserChip();
+    initSocialEnhancements();
     if(currentUserId) await seedUnreadCounts();
     await buildRail();
     await buildSidebar(null);
@@ -1774,6 +1903,7 @@ function updateUserChip(){
       currentProfile=currentUserId?await getProfile(currentUserId):null;
       if(currentUserId) profileCache[currentUserId]=currentProfile;
       updateUserChip();
+      initSocialEnhancements();
       if(currentUserId) await seedUnreadCounts();
       await buildRail();
     });
