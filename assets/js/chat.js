@@ -1649,10 +1649,11 @@ document.getElementById('dm-start').onclick=async()=>{
   if(!pendingDMRecipients.length){errEl.textContent='Add at least one person.';return;}
   if(pendingDMRecipients.length===1){await startDMWith(pendingDMRecipients[0].username);pendingDMRecipients=[];renderDMChips();return;}
   const name=document.getElementById('dm-group-name').value.trim()||null;
-  const{data:dm,error}=await sb.from('direct_messages').insert({is_group:true,name,created_by:currentUserId}).select().single();
+  const{data:dmId,error}=await sb.rpc('create_group_dm',{p_name:name});
   if(error){errEl.textContent=error.message;return;}
-  const rows=[currentUserId,...pendingDMRecipients.map(p=>p.id)].map(uid=>({dm_id:dm.id,user_id:uid}));
-  const{error:pErr}=await sb.from('dm_participants').insert(rows);
+  const dm={id:dmId};
+  const rows=pendingDMRecipients.map(p=>({dm_id:dmId,user_id:p.id}));
+  const{error:pErr}=rows.length?await sb.from('dm_participants').insert(rows):{error:null};
   if(pErr){errEl.textContent=pErr.message;return;}
   const groupLabel=name||pendingDMRecipients.map(p=>p.username).join(', ');
   pendingDMRecipients=[]; renderDMChips();
