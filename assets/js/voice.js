@@ -112,6 +112,9 @@ window.Voice = (function() {
     return callSignalChan;
   }
 
+  // Cache outbound inbox channels so we dont re-subscribe on every ICE candidate
+  const _outboxChans = {};
+
   function sendSignal(toId, type, payload) {
     const sb = getSb();
     if (!sb) { console.error('Voice: no supabase client'); return; }
@@ -123,16 +126,23 @@ window.Voice = (function() {
     }};
     // Send on room channel if active
     const roomChan = callRoom ? getSignalChannel(callRoom) : null;
-    if (roomChan) roomChan.send(msg);
-    // ALSO send directly to recipient inbox channel (works before room is joined)
+    if (roomChan) { roomChan.send(msg); }
+
+    // Always also send to inbox for reliability (invite, accept, decline)
+    // Reuse cached channel if already subscribed
+    if (_outboxChans[toId]) {
+      _outboxChans[toId].send(msg);
+      return;
+    }
     const inboxChan = sb.channel(`voice-inbox:${toId}`, { config: { broadcast: { self: false } } });
-    inboxChan.subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        inboxChan.send(msg);
-        // Unsubscribe after send to avoid leaking channels
-        setTimeout(() => sb.removeChannel(inboxChan), 2000);
-      }
+    _outboxChans[toId] = inboxChan;
+    inboxChan.subscribe(status => {
+      if (status === 'SUBSCRIBED') inboxChan.send(msg);
     });
+    // Clean up non-call signals after 10s
+    if (['call-invite','call-accept','call-decline','call-end'].includes(type)) {
+      setTimeout(() => { try { sb.removeChannel(inboxChan); delete _outboxChans[toId]; } catch(e){} }, 10000);
+    }
   }
 
   function subscribeToSignals(roomId) {
@@ -140,36 +150,42 @@ window.Voice = (function() {
   }
 
   /* ── WebRTC ────────────────────────────────────────── */
-  function createPeer(peerId, polite) {
+  async function createPeerAndOffer(peerId) {
+    // Caller side: create peer, add tracks, send offer
     if (peerConnections[peerId]) peerConnections[peerId].close();
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     peerConnections[peerId] = pc;
-
     if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-
-    pc.onicecandidate = ({ candidate }) => {
-      if (candidate) sendSignal(peerId, 'ice', candidate);
-    };
-
-    pc.ontrack = ({ streams }) => playRemoteAudio(peerId, streams[0]);
-
-    pc.onnegotiationneeded = async () => {
-      if (polite) return;
-      try {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        sendSignal(peerId, 'offer', pc.localDescription);
-      } catch(e) { console.error('offer error', e); }
-    };
-
+    pc.onicecandidate = ({ candidate }) => { if (candidate) sendSignal(peerId, 'ice', candidate.toJSON()); };
+    pc.ontrack = ({ streams }) => { if (streams[0]) playRemoteAudio(peerId, streams[0]); };
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === 'connected') updateParticipantUI(peerId, 'connected');
       else if (['failed','disconnected','closed'].includes(pc.connectionState)) {
-        removeParticipantUI(peerId);
-        delete peerConnections[peerId];
+        removeParticipantUI(peerId); delete peerConnections[peerId];
       }
     };
+    try {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      sendSignal(peerId, 'offer', pc.localDescription.toJSON());
+    } catch(e) { console.error('createOffer error', e); }
+    return pc;
+  }
 
+  function createPeerAsCallee(peerId) {
+    // Callee side: create peer, add tracks, wait for offer
+    if (peerConnections[peerId]) peerConnections[peerId].close();
+    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    peerConnections[peerId] = pc;
+    if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    pc.onicecandidate = ({ candidate }) => { if (candidate) sendSignal(peerId, 'ice', candidate.toJSON()); };
+    pc.ontrack = ({ streams }) => { if (streams[0]) playRemoteAudio(peerId, streams[0]); };
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'connected') updateParticipantUI(peerId, 'connected');
+      else if (['failed','disconnected','closed'].includes(pc.connectionState)) {
+        removeParticipantUI(peerId); delete peerConnections[peerId];
+      }
+    };
     return pc;
   }
 
@@ -178,22 +194,22 @@ window.Voice = (function() {
 
     if (type === 'offer') {
       let pc = peerConnections[fromId];
-      if (!pc) pc = createPeer(fromId, true);
+      if (!pc) pc = createPeerAsCallee(fromId);
       await pc.setRemoteDescription(new RTCSessionDescription(payload));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      sendSignal(fromId, 'answer', pc.localDescription);
+      sendSignal(fromId, 'answer', pc.localDescription.toJSON());
 
     } else if (type === 'answer') {
       const pc = peerConnections[fromId];
       if (pc && pc.signalingState !== 'stable') {
-        await pc.setRemoteDescription(new RTCSessionDescription(payload));
+        try { await pc.setRemoteDescription(new RTCSessionDescription(payload)); } catch(e) { console.warn('answer err',e); }
       }
 
     } else if (type === 'ice') {
       const pc = peerConnections[fromId];
-      if (pc && payload) {
-        try { await pc.addIceCandidate(new RTCIceCandidate(payload)); } catch(e) {}
+      if (pc && payload && pc.remoteDescription) {
+        try { await pc.addIceCandidate(new RTCIceCandidate(payload)); } catch(e) { console.warn('ice err',e); }
       }
 
     } else if (type === 'call-invite') {
@@ -201,7 +217,7 @@ window.Voice = (function() {
 
     } else if (type === 'call-accept') {
       addParticipant(fromId, payload.username || 'Friend');
-      createPeer(fromId, false);
+      createPeerAndOffer(fromId); // caller now sends offer
 
     } else if (type === 'call-decline') {
       if (window.showToast) window.showToast('📵 Call declined');
@@ -300,7 +316,7 @@ window.Voice = (function() {
     const selfProf = window.currentProfile || {};
     sendSignal(pendingInvite.fromId, 'call-accept', { username: selfProf.username || 'Friend' });
     addParticipant(pendingInvite.fromId, pendingInvite.username);
-    createPeer(pendingInvite.fromId, true);
+    createPeerAsCallee(pendingInvite.fromId);
     showCallUI(pendingInvite.username);
     pendingInvite = null;
   }
