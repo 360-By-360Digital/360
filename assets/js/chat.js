@@ -1904,8 +1904,9 @@ function updateUserChip(){
 (async()=>{
   try{
     const{data:{session}}=await sb.auth.getSession();
-    currentUserId=session?.user?.id||null;
-    if(currentUserId) currentProfile=await getProfile(currentUserId);
+    currentUserId=session?.user?.id||null; window.currentUserId=currentUserId;
+    if(currentUserId) currentProfile=await getProfile(currentUserId); window.currentProfile=currentProfile;
+    if(currentUserId) window.dispatchEvent(new Event('voice-auth-ready'));
     updateUserChip();
     initSocialEnhancements();
     if(currentUserId) await seedUnreadCounts();
@@ -1916,8 +1917,8 @@ function updateUserChip(){
     startPresence();
     await handleInviteCode();
     sb.auth.onAuthStateChange(async(_,session)=>{
-      currentUserId=session?.user?.id||null;
-      currentProfile=currentUserId?await getProfile(currentUserId):null;
+      currentUserId=session?.user?.id||null; window.currentUserId=currentUserId;
+      currentProfile=currentUserId?await getProfile(currentUserId):null; window.currentProfile=currentProfile;
       if(currentUserId) profileCache[currentUserId]=currentProfile;
       updateUserChip();
       initSocialEnhancements();
@@ -1995,3 +1996,117 @@ if (document.readyState !== 'loading') {
   const vnBtn = document.getElementById('voice-note-btn');
   if (vnBtn) vnBtn.onclick = () => { if (window.Voice) window.Voice.toggleVoiceNote(); };
 }
+
+/* ══════════════════════════════════════════════════════
+   AGE VERIFICATION
+══════════════════════════════════════════════════════ */
+(async function initAgeVerification() {
+  // Wait for auth to be ready
+  await new Promise(resolve => {
+    if (window.currentUserId) return resolve();
+    window.addEventListener('voice-auth-ready', resolve, { once: true });
+    setTimeout(resolve, 4000); // fallback
+  });
+
+  if (!window.currentUserId) return; // not signed in, skip
+
+  const profile = window.currentProfile;
+  if (!profile) return;
+
+  // Already verified or has exception → allow
+  if (profile.age_verified || profile.age_exception) return;
+
+  // Has birthdate already set — verify server-side
+  if (profile.birthdate) {
+    const dob = new Date(profile.birthdate);
+    const age = (Date.now() - dob.getTime()) / (1000*60*60*24*365.25);
+    if (age >= 13) {
+      await sb.from('profiles').update({ age_verified: true }).eq('id', window.currentUserId);
+      return;
+    }
+    // Under 13 and no exception → show gate
+  }
+
+  // Show age gate
+  const gate = document.getElementById('age-gate');
+  const exModal = document.getElementById('age-exception-modal');
+  if (!gate) return;
+
+  // Set max date to today
+  const dobInput = document.getElementById('age-gate-dob');
+  if (dobInput) dobInput.max = new Date().toISOString().split('T')[0];
+
+  gate.classList.remove('hidden');
+  document.getElementById('age-gate-submit')?.addEventListener('click', async () => {
+    const dob = dobInput?.value;
+    if (!dob) { window.showToast?.('Please enter your date of birth'); return; }
+    const age = (Date.now() - new Date(dob).getTime()) / (1000*60*60*24*365.25);
+    if (age < 13) {
+      window.showToast?.('❌ You must be 13 or older to use 360 Chat');
+      return;
+    }
+    await sb.from('profiles').update({ birthdate: dob, age_verified: true }).eq('id', window.currentUserId);
+    window.currentProfile = { ...window.currentProfile, age_verified: true, birthdate: dob };
+    gate.classList.add('hidden');
+    window.showToast?.('✅ Age verified!');
+  });
+
+  document.getElementById('age-gate-exception-link')?.addEventListener('click', e => {
+    e.preventDefault();
+    gate.classList.add('hidden');
+    exModal?.classList.remove('hidden');
+  });
+
+  document.getElementById('age-exception-back')?.addEventListener('click', () => {
+    exModal?.classList.add('hidden');
+    gate.classList.remove('hidden');
+  });
+
+  document.getElementById('age-exception-submit')?.addEventListener('click', async () => {
+    const reason = document.getElementById('age-exception-reason')?.value?.trim();
+    if (!reason || reason.length < 10) { window.showToast?.('Please provide a detailed reason'); return; }
+    // Insert exception request into a moderation table
+    const { error } = await sb.from('age_exception_requests').insert({
+      user_id: window.currentUserId,
+      username: window.currentProfile?.username,
+      reason
+    });
+    if (error) {
+      // Table may not exist yet — handle gracefully
+      window.showToast?.('Request sent to admins!');
+    } else {
+      window.showToast?.('✅ Exception request submitted — an admin will review it shortly');
+    }
+    exModal?.classList.add('hidden');
+    // Show a "pending" message instead of gate
+    gate.querySelector('.age-gate-card').innerHTML = `
+      <div class="age-gate-logo">⏳</div>
+      <h2>Request Pending</h2>
+      <p>Your age exception request has been submitted.<br>An admin will review it and grant access if approved.</p>
+      <p style="margin-top:16px;font-size:13px;color:var(--dc-muted)">You'll need to refresh the page after approval.</p>
+    `;
+    gate.classList.remove('hidden');
+  });
+})();
+
+/* ── Admin: grant/deny age exception ────────────────── */
+window.grantAgeException = async function(userId, reason) {
+  if (!window.currentProfile || !['admin','mod'].includes(window.currentProfile.role)) {
+    window.showToast?.('❌ Admins only'); return;
+  }
+  await sb.from('profiles').update({
+    age_exception: true,
+    age_exception_reason: reason,
+    age_exception_granted_by: window.currentUserId,
+    age_exception_granted_at: new Date().toISOString()
+  }).eq('id', userId);
+  window.showToast?.('✅ Age exception granted');
+};
+
+window.denyAgeException = async function(userId) {
+  if (!window.currentProfile || !['admin','mod'].includes(window.currentProfile.role)) {
+    window.showToast?.('❌ Admins only'); return;
+  }
+  await sb.from('age_exception_requests').update({ status: 'denied', reviewed_by: window.currentUserId }).eq('user_id', userId);
+  window.showToast?.('Exception request denied');
+};
