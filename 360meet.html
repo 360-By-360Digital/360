@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-89NN1P6CEV');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>360 — Meet</title>
+  <link rel="icon" type="image/png" href="favicon-32x32.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/wide.css" />
+  <link rel="stylesheet" href="/assets/css/gallium.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+  <link rel="stylesheet" href="/assets/css/cursor.css" />
+  <link rel="stylesheet" href="/assets/css/meet.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <div class="cursor-dot"></div>
+  <div class="cursor-trail"></div>
+  <div class="cursor-crosshair"></div>
+  <div class="cursor-blob"></div>
+
+  <div class="auth-top-right">
+    <button id="signInBtn"  class="auth-btn">Sign In</button>
+    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
+    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+  </div>
+  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+
+  <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="settings-panel" id="settingsPanel">
+    <h3>Appearance</h3>
+    <div class="settings-label">Theme</div>
+    <div class="theme-swatches">
+      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+    </div>
+    <div class="settings-label" style="margin-top:20px;">Mode</div>
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <span style="font-size:14px;">Dark mode</span>
+      <input type="checkbox" id="darkToggle" />
+    </label>
+    <h3 style="margin-top:25px;">Legal</h3>
+    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
+    <a href="/tos" class="legal-link">📜 Terms of Service</a>
+  </div>
+
+  <div id="auth-popup" class="auth-popup hidden">
+    <div class="auth-box">
+      <h2>Account</h2>
+      <input id="auth-email" type="email" placeholder="Email" />
+      <input id="auth-password" type="password" placeholder="Password" />
+      <button id="auth-login-btn">Log In</button>
+      <button id="auth-signup-btn">Sign Up</button>
+      <p id="auth-error" class="auth-error"></p>
+      <button id="auth-close-btn" class="close-btn">Close</button>
+    </div>
+  </div>
+
+  <!-- ══ MEET PAGE ══ -->
+  <div class="meet-wrap" id="meet-lobby">
+    <h2 class="meet-title">🎥 360Meet</h2>
+    <p class="meet-subtitle">Start or join a video or voice meeting — no account needed.</p>
+
+    <div class="meet-lobby">
+      <div class="meet-card">
+        <div class="meet-preview" id="meet-preview">
+          <video id="meet-preview-video" autoplay playsinline muted style="display:none;"></video>
+          <div class="meet-preview-off" id="meet-preview-off">
+            <div class="avatar-circle" id="meet-preview-initials">?</div>
+            <span>Camera is off</span>
+          </div>
+          <div class="meet-preview-controls">
+            <button class="meet-mini-btn" id="meet-preview-mic" title="Toggle mic">🎙️</button>
+            <button class="meet-mini-btn" id="meet-preview-cam" title="Toggle camera">📹</button>
+          </div>
+        </div>
+        <div class="meet-mode-toggle">
+          <button class="meet-mode-btn active" id="meet-mode-video" data-mode="video">📹 Video call</button>
+          <button class="meet-mode-btn" id="meet-mode-voice" data-mode="voice">🎙️ Voice only</button>
+        </div>
+      </div>
+
+      <div class="meet-card">
+        <div class="meet-field-label">Your name</div>
+        <input class="meet-input" id="meet-name-input" placeholder="e.g. Mingze" maxlength="30" />
+
+        <div class="meet-field-label">New meeting</div>
+        <button class="meet-btn" id="meet-create-btn">Create meeting</button>
+
+        <div class="meet-divider">or</div>
+
+        <div class="meet-field-label">Join with a code</div>
+        <input class="meet-input" id="meet-join-input" placeholder="e.g. AB3-XY9" style="text-transform:uppercase;" />
+        <button class="meet-btn secondary" id="meet-join-btn">Join meeting</button>
+        <div class="meet-error" id="meet-error"></div>
+
+        <div class="meet-recent" id="meet-recent"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="meet-call-room" id="meet-call-room">
+    <div class="meet-call-topbar">
+      <div class="meet-call-room-code" id="meet-invite-btn" title="Copy invite link">
+        <span id="meet-call-room-code-label">—</span> 📋
+      </div>
+      <div class="meet-call-timer" id="meet-call-timer">0:00</div>
+    </div>
+    <div class="meet-participant-count" id="meet-participant-count">👥 1</div>
+    <div class="meet-grid" id="meet-grid"></div>
+    <div class="meet-controls-bar">
+      <button class="meet-ctrl-btn" id="meet-mic-btn" title="Mute">🎙️</button>
+      <button class="meet-ctrl-btn" id="meet-cam-btn" title="Camera">📹</button>
+      <button class="meet-ctrl-btn" id="meet-screen-btn" title="Share screen">🖥️</button>
+      <button class="meet-ctrl-btn leave" id="meet-leave-btn" title="Leave">📵</button>
+    </div>
+  </div>
+
+  <!-- Fallback floating window markup (only used if the browser lacks
+       Document/PiP support entirely — see meet.js) -->
+  <div class="meet-fallback-pip" id="meet-fallback-pip"></div>
+
+  <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/auth-fix.js"></script>
+  <script src="/assets/js/wide.js"></script>
+  <script src="/assets/js/gallium.js"></script>
+  <script src="/assets/js/cookie.js"></script>
+  <script src="/assets/js/cursor.js"></script>
+  <script src="/assets/js/meet.js"></script>
+
+  <script>
+    (function () {
+      const $ = s => document.querySelector(s);
+
+      // Restore/save name
+      const savedName = localStorage.getItem('360_meet_name') || '';
+      $('#meet-name-input').value = savedName;
+      $('#meet-name-input').addEventListener('input', e => localStorage.setItem('360_meet_name', e.target.value));
+
+      $('#meet-preview-initials').textContent = (savedName || '?').slice(0, 2).toUpperCase();
+      $('#meet-name-input').addEventListener('input', e => {
+        $('#meet-preview-initials').textContent = (e.target.value || '?').slice(0, 2).toUpperCase();
+      });
+
+      let mode = 'video';
+      let previewMicOn = true;
+      let previewCamOn = true;
+
+      async function refreshPreview() {
+        if (mode === 'video' && previewCamOn) {
+          await Meet.startPreview(true);
+        } else if (mode === 'voice') {
+          Meet.stopPreview();
+          $('#meet-preview-video').style.display = 'none';
+          $('#meet-preview-off').style.display = 'flex';
+        } else {
+          await Meet.startPreview(false);
+          $('#meet-preview-video').style.display = 'none';
+          $('#meet-preview-off').style.display = 'flex';
+        }
+      }
+      refreshPreview();
+
+      $('#meet-mode-video').onclick = () => {
+        mode = 'video'; Meet.setMode('video');
+        $('#meet-mode-video').classList.add('active');
+        $('#meet-mode-voice').classList.remove('active');
+        refreshPreview();
+      };
+      $('#meet-mode-voice').onclick = () => {
+        mode = 'voice'; Meet.setMode('voice');
+        $('#meet-mode-voice').classList.add('active');
+        $('#meet-mode-video').classList.remove('active');
+        refreshPreview();
+      };
+
+      $('#meet-preview-mic').onclick = () => {
+        previewMicOn = !previewMicOn;
+        $('#meet-preview-mic').textContent = previewMicOn ? '🎙️' : '🔇';
+        $('#meet-preview-mic').classList.toggle('off', !previewMicOn);
+      };
+      $('#meet-preview-cam').onclick = () => {
+        previewCamOn = !previewCamOn;
+        $('#meet-preview-cam').textContent = previewCamOn ? '📹' : '📷';
+        $('#meet-preview-cam').classList.toggle('off', !previewCamOn);
+        refreshPreview();
+      };
+
+      function currentName() { return $('#meet-name-input').value.trim() || 'Guest'; }
+
+      function showError(msg) {
+        const el = $('#meet-error');
+        el.textContent = msg;
+        el.classList.toggle('show', !!msg);
+      }
+
+      $('#meet-create-btn').onclick = async () => {
+        const code = Meet.genRoomCode();
+        await Meet.joinCall(code, currentName(), mode === 'video');
+      };
+
+      $('#meet-join-btn').onclick = async () => {
+        const code = $('#meet-join-input').value.trim();
+        if (!code) { showError('Enter a meeting code first.'); return; }
+        showError('');
+        await Meet.joinCall(code, currentName(), mode === 'video');
+      };
+
+      $('#meet-mic-btn').onclick = () => Meet.toggleMic();
+      $('#meet-cam-btn').onclick = () => Meet.toggleCam();
+      $('#meet-screen-btn').onclick = () => Meet.toggleScreenShare();
+      $('#meet-leave-btn').onclick = () => Meet.leaveCall();
+      $('#meet-invite-btn').onclick = () => Meet.copyInviteLink();
+
+      // Recents
+      function renderRecents() {
+        const list = Meet.getRecents();
+        const wrap = $('#meet-recent');
+        if (!list.length) { wrap.innerHTML = ''; return; }
+        wrap.innerHTML = '<div class="meet-field-label">Recent meetings</div>' + list.map(r => {
+          const ago = Math.max(1, Math.round((Date.now() - r.ts) / 60000));
+          return `<div class="meet-recent-item" data-code="${r.code}">
+            <span class="meet-recent-code">${r.code}</span>
+            <span class="meet-recent-time">${ago}m ago</span>
+          </div>`;
+        }).join('');
+        wrap.querySelectorAll('.meet-recent-item').forEach(item => {
+          item.onclick = () => { $('#meet-join-input').value = item.dataset.code; };
+        });
+      }
+      renderRecents();
+
+      // Auto-join via ?room=CODE
+      const params = new URLSearchParams(location.search);
+      const roomParam = params.get('room');
+      if (roomParam) $('#meet-join-input').value = roomParam.toUpperCase();
+    })();
+  </script>
+</body>
+</html>
