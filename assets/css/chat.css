@@ -1621,3 +1621,57 @@ body.dark {
   min-width: 16px; height: 16px; padding: 0 4px;
   display: flex; align-items: center; justify-content: center;
 }
+
+/* ════════════════════════════════════════════════════════
+   AGE VERIFICATION GATE
+════════════════════════════════════════════════════════ */
+.age-gate {
+  position: fixed; inset: 0; z-index: 99999;
+  background: rgba(0,0,0,.75); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  animation: ag-fade .2s ease;
+}
+.age-gate.hidden { display: none; }
+@keyframes ag-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.age-gate-card {
+  background: var(--dc-sidebar-bg);
+  border: 1.5px solid var(--dc-sep);
+  border-radius: 20px; padding: 40px 36px;
+  max-width: 420px; width: 90%;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0,0,0,.5);
+  animation: ag-up .25s ease;
+}
+@keyframes ag-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.age-gate-logo { font-size: 48px; margin-bottom: 12px; }
+.age-gate-card h2 { font-size: 22px; font-weight: 800; color: var(--dc-text); margin: 0 0 8px; }
+.age-gate-card p { font-size: 14px; color: var(--dc-muted); margin: 0 0 6px; line-height: 1.5; }
+.age-gate-sub { font-size: 13px !important; }
+
+.age-gate-form {
+  display: flex; flex-direction: column; gap: 12px;
+  margin-top: 20px; text-align: left;
+}
+.age-gate-form label { font-size: 12px; font-weight: 700; color: var(--dc-muted); text-transform: uppercase; letter-spacing: .06em; }
+.age-gate-form input[type="date"],
+.age-gate-form textarea {
+  width: 100%; padding: 10px 14px; border-radius: 10px;
+  border: 1.5px solid var(--dc-sep); background: var(--dc-input-bg);
+  color: var(--dc-text); font-size: 14px; box-sizing: border-box;
+  font-family: inherit; resize: vertical;
+}
+.age-gate-form input:focus, .age-gate-form textarea:focus {
+  outline: none; border-color: var(--a);
+}
+.age-gate-btn {
+  padding: 11px 20px; border-radius: 10px; border: none;
+  background: var(--a); color: #fff; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: opacity .15s;
+}
+.age-gate-btn:hover { opacity: .88; }
+.age-gate-btn-secondary { background: var(--dc-input-bg); color: var(--dc-text); border: 1.5px solid var(--dc-sep); }
+.age-gate-note { font-size: 12px !important; margin-top: 16px !important; }
+.age-gate-note a { color: var(--a); text-decoration: none; }
+.age-gate-note a:hover { text-decoration: underline; }
