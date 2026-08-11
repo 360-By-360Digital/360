@@ -141,16 +141,12 @@
       document.getElementById('meet-screen-btn').onclick = () => Meet.toggleScreenShare();
       document.getElementById('meet-leave-btn').onclick = () => Meet.leaveCall();
 
-      // supabaseClient is created inline in main.js — wait for it, then gate the page on auth.
-      function waitForSupabase(cb) {
-        if (window.supabaseClient) return cb();
-        let tries = 0;
-        const iv = setInterval(() => {
-          tries++;
-          if (window.supabaseClient || tries > 100) { clearInterval(iv); cb(); }
-        }, 50);
-      }
-      waitForSupabase(() => Meet.init());
+      // supabaseClient is declared with `const` at the top level of main.js,
+      // so it's a shared global identifier (not a window property) by the
+      // time main.js's own <script> tag finishes running — which happens
+      // before this inline block runs, since script tags execute in order.
+      // No polling needed; just call straight through.
+      Meet.init();
     })();
   </script>
 </body>
