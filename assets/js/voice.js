@@ -24,7 +24,9 @@ window.Voice = (function() {
   // Lazy getter — supabaseClient is defined by main.js which loads before voice.js
   // but we access it at call-time not at parse-time so it's always ready.
   function getSb() {
-    return window.supabaseClient;
+    // supabaseClient is a top-level const in main.js (classic script = on window)
+    // fallback to window.sb which chat.js uses internally
+    return window.supabaseClient || window.sb;
   }
 
   /* ── UI Elements ───────────────────────────────────── */
@@ -371,6 +373,7 @@ window.Voice = (function() {
   let isRecording      = false;
 
   async function startVoiceNote() {
+    if (!window.currentUserId) { if (window.showToast) window.showToast("❌ Sign in to send voice notes"); return; }
     if (isRecording) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -409,7 +412,7 @@ window.Voice = (function() {
 
   async function finishVoiceNote() {
     const sb = getSb();
-    if (!sb) { if (window.showToast) window.showToast('❌ Not connected'); return; }
+    if (!sb || !window.currentUserId) { if (window.showToast) window.showToast('❌ Not connected'); return; }
     const ext = (mediaRecorder?.mimeType || 'audio/webm').includes('ogg') ? 'ogg' : 'webm';
     const blob = new Blob(voiceNoteChunks, { type: mediaRecorder?.mimeType || 'audio/webm' });
     if (blob.size < 500) { if (window.showToast) window.showToast('Voice note too short'); return; }
