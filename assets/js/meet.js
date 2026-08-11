@@ -1,6 +1,7 @@
 /* ════════════════════════════════════════════════════════
-   360Meet v1.0 — WebRTC video/voice meetings + "leave page"
-   floating mini window (Document Picture-in-Picture, like Zoom).
+   360Meet v2 — sign-in required, optional passcode, prepare
+   room, Zoom-style call chamber (host large left / others
+   scroll right; shared screen swaps into the left panel).
    Requires: supabaseClient (global from main.js)
 ════════════════════════════════════════════════════════ */
 
@@ -9,26 +10,43 @@ window.Meet = (function () {
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' }
   ];
+  const ADMIT_TIMEOUT_MS = 9000;
 
-  const RECENTS_KEY = '360_meet_recent_rooms';
+  const ICONS = {
+    mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>',
+    micOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2"/><path d="M19 10v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>',
+    video: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
+    videoOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="M9.5 5H14a2 2 0 0 1 2 2v4.5"/><polygon points="23 7 16 12 23 17 23 7"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
+    screen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+    hangup: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 9c-2.3 0-4.5.36-6.6 1.03a1.5 1.5 0 0 0-1 1.6l.34 2.5a1.5 1.5 0 0 0 1.2 1.27c1.1.2 2.2.36 3.06.36.66 0 1.2-.44 1.37-1.06l.3-1.1a1 1 0 0 1 1.1-.73c.66.1 1.34.13 2.23.13.9 0 1.57-.03 2.23-.13a1 1 0 0 1 1.1.73l.3 1.1c.17.62.71 1.06 1.37 1.06.87 0 1.96-.16 3.06-.36a1.5 1.5 0 0 0 1.2-1.27l.34-2.5a1.5 1.5 0 0 0-1-1.6A20.6 20.6 0 0 0 12 9z"/></svg>',
+    copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+    users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+    join: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>'
+  };
 
-  /* ── State ─────────────────────────────────────────── */
+  const $ = s => document.querySelector(s);
   const myPeerId = crypto.randomUUID();
-  let myName = '';
+
+  /* ── Session state ─────────────────────────────────── */
+  let user = null;          // { id, username }
   let roomCode = null;
-  let mode = 'video'; // 'video' | 'voice'
+  let passcode = '';         // set by host, or entered by joiner
+  let isHost = false;
+  let mode = 'video';        // 'video' | 'voice'
   let localStream = null;
   let screenStream = null;
   let micOn = true;
   let camOn = true;
   let inCall = false;
   let channel = null;
+  let admitTimer = null;
   let callStartTime = null;
   let timerInterval = null;
-  const peers = {}; // peerId -> { pc, stream, name, tile }
-
-  function getSb() { return window.supabaseClient; }
-  const $ = s => document.querySelector(s);
+  const peers = {}; // peerId -> { pc, stream, name, isHost, video, audio, screenSharing, tile }
+  let localScreenSharing = false;
 
   /* ── Toast ─────────────────────────────────────────── */
   function toast(msg) {
@@ -42,20 +60,11 @@ window.Meet = (function () {
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(el._t);
-    el._t = setTimeout(() => el.classList.remove('show'), 2200);
+    el._t = setTimeout(() => el.classList.remove('show'), 2400);
   }
 
-  /* ── Recents ───────────────────────────────────────── */
-  function saveRecent(code) {
-    let list = JSON.parse(localStorage.getItem(RECENTS_KEY) || '[]');
-    list = list.filter(r => r.code !== code);
-    list.unshift({ code, ts: Date.now() });
-    list = list.slice(0, 5);
-    localStorage.setItem(RECENTS_KEY, JSON.stringify(list));
-  }
-  function getRecents() {
-    return JSON.parse(localStorage.getItem(RECENTS_KEY) || '[]');
-  }
+  function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function initials(name) { return (name || '?').trim().slice(0, 2).toUpperCase(); }
 
   function genRoomCode() {
     const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -66,66 +75,346 @@ window.Meet = (function () {
     return out;
   }
 
-  /* ── Local media / lobby preview ──────────────────── */
+  function getSb() { return window.supabaseClient; }
+
+  /* ── Screens ───────────────────────────────────────── */
+  function showScreen(name) {
+    ['meet-gate', 'meet-action-select', 'meet-prepare-screen'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = id === name ? '' : 'none';
+    });
+  }
+
+  /* ── Auth gate ─────────────────────────────────────── */
+  async function init() {
+    const sb = getSb();
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session || !session.user) {
+      renderGate(false);
+      showScreen('meet-gate');
+      return;
+    }
+    user = { id: session.user.id, username: null };
+    let username = session.user.user_metadata?.username
+      || session.user.user_metadata?.full_name
+      || session.user.email?.split('@')[0]
+      || 'User';
+    try {
+      const { data: profile } = await sb.from('profiles').select('username').eq('id', session.user.id).maybeSingle();
+      if (profile?.username) username = profile.username;
+    } catch (e) {}
+    user.username = username;
+
+    renderGate(true);
+    renderActionSelect();
+    showScreen('meet-action-select');
+
+    // Auto-fill join code from ?room= link, jump straight into join prepare.
+    const params = new URLSearchParams(location.search);
+    const roomParam = params.get('room');
+    if (roomParam) openPrepare('join', roomParam.toUpperCase());
+  }
+
+  function renderGate(signedIn) {
+    const el = $('#meet-gate');
+    if (!el) return;
+    if (signedIn) return;
+    el.innerHTML = `
+      <div class="meet-action-icon">${ICONS.lock}</div>
+      <h2 class="meet-title" style="margin:0;">Sign in required</h2>
+      <p>You need a 360 account to start or join a meeting. Meeting participants are always shown by their account username.</p>
+      <button class="meet-btn" id="meet-gate-signin" style="max-width:220px;">Sign in</button>
+    `;
+    $('#meet-gate-signin').onclick = () => window.openAuth ? window.openAuth('signin') : (location.href = 'signin.html');
+  }
+
+  function renderActionSelect() {
+    const el = $('#meet-action-select');
+    if (!el) return;
+    el.innerHTML = `
+      <h2 class="meet-title">360Meet</h2>
+      <p class="meet-subtitle">Start a video call, start a voice chat, or join an existing meeting.</p>
+      <div class="meet-action-grid">
+        <div class="meet-card meet-action-card" id="meet-card-video">
+          <div class="meet-action-icon">${ICONS.video}</div>
+          <div class="meet-action-title">New video call</div>
+          <div class="meet-action-desc">Start a meeting with your camera. Set an optional passcode.</div>
+        </div>
+        <div class="meet-card meet-action-card" id="meet-card-voice">
+          <div class="meet-action-icon">${ICONS.mic}</div>
+          <div class="meet-action-title">New voice chat</div>
+          <div class="meet-action-desc">Audio-only meeting. Lighter weight, same passcode option.</div>
+        </div>
+        <div class="meet-card meet-action-card" id="meet-card-join">
+          <div class="meet-action-icon">${ICONS.join}</div>
+          <div class="meet-action-title">Join meeting</div>
+          <div class="meet-action-desc">Enter a meeting code (and passcode, if the host set one).</div>
+        </div>
+      </div>
+      <div class="meet-signed-in-as">Signed in as <strong>${escapeHtml(user.username)}</strong></div>
+    `;
+    $('#meet-card-video').onclick = () => openPrepare('host-video');
+    $('#meet-card-voice').onclick = () => openPrepare('host-voice');
+    $('#meet-card-join').onclick = () => openPrepare('join');
+  }
+
+  /* ── Prepare room ──────────────────────────────────── */
+  let prepareAction = null; // 'host-video' | 'host-voice' | 'join'
+  let previewCamOn = true;
+  let previewMicOn = true;
+
+  async function openPrepare(action, prefillCode) {
+    prepareAction = action;
+    mode = action === 'host-voice' ? 'voice' : 'video';
+    previewCamOn = mode === 'video';
+    previewMicOn = true;
+    showScreen('meet-prepare-screen');
+    renderPrepare(prefillCode || '');
+    await refreshPreview();
+  }
+
+  function renderPrepare(prefillCode) {
+    const el = $('#meet-prepare-screen');
+    const isJoin = prepareAction === 'join';
+    el.innerHTML = `
+      <button class="meet-back-link" id="meet-back-btn">${ICONS.back} Back</button>
+      <h2 class="meet-title" style="margin-bottom:2px;">${isJoin ? 'Join meeting' : (mode === 'video' ? 'Start video call' : 'Start voice chat')}</h2>
+      <p class="meet-subtitle">Check your camera and microphone before ${isJoin ? 'joining' : 'starting'}.</p>
+      <div class="meet-prepare">
+        <div class="meet-card">
+          <div class="meet-preview" id="meet-preview">
+            <video id="meet-preview-video" autoplay playsinline muted style="display:none;"></video>
+            <div class="meet-preview-off" id="meet-preview-off">
+              <div class="avatar-circle">${initials(user.username)}</div>
+              <span>Camera is off</span>
+            </div>
+            <div class="meet-preview-controls">
+              <button class="meet-mini-btn" id="meet-preview-mic" title="Toggle microphone">${ICONS.mic}</button>
+              ${mode === 'video' ? `<button class="meet-mini-btn" id="meet-preview-cam" title="Toggle camera">${ICONS.video}</button>` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="meet-card">
+          <div class="meet-card-body">
+            <div class="meet-field-label">Joining as</div>
+            <div class="meet-identity-row">
+              <div class="avatar-circle">${initials(user.username)}</div>
+              <div>
+                <div class="meet-identity-name">${escapeHtml(user.username)}</div>
+                <div class="meet-identity-sub">Your account username</div>
+              </div>
+            </div>
+
+            ${isJoin ? `
+              <div class="meet-field-label">Meeting code</div>
+              <input class="meet-input" id="meet-code-input" placeholder="e.g. AB3-XY9" style="text-transform:uppercase;" value="${escapeHtml(prefillCode)}" />
+              <div class="meet-field-label">Passcode (if required)</div>
+              <input class="meet-input" id="meet-passcode-input" placeholder="Leave blank if none" />
+              <button class="meet-btn" id="meet-primary-btn">Join meeting</button>
+            ` : `
+              <div class="meet-field-label">Passcode (optional)</div>
+              <input class="meet-input" id="meet-passcode-input" placeholder="Leave blank for no passcode" />
+              <button class="meet-btn" id="meet-primary-btn">Start meeting</button>
+            `}
+            <div class="meet-error" id="meet-error"></div>
+            <div class="meet-status-line" id="meet-status-line"><span class="meet-spinner"></span><span id="meet-status-text"></span></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    $('#meet-back-btn').onclick = () => { Meet.stopPreview(); showScreen('meet-action-select'); };
+    $('#meet-preview-mic').onclick = () => {
+      previewMicOn = !previewMicOn;
+      $('#meet-preview-mic').classList.toggle('off', !previewMicOn);
+      $('#meet-preview-mic').innerHTML = previewMicOn ? ICONS.mic : ICONS.micOff;
+      if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = previewMicOn);
+    };
+    const camBtn = $('#meet-preview-cam');
+    if (camBtn) {
+      camBtn.onclick = () => {
+        previewCamOn = !previewCamOn;
+        camBtn.classList.toggle('off', !previewCamOn);
+        camBtn.innerHTML = previewCamOn ? ICONS.video : ICONS.videoOff;
+        refreshPreview();
+      };
+    }
+    $('#meet-primary-btn').onclick = isJoin ? handleJoinSubmit : handleHostSubmit;
+  }
+
+  async function refreshPreview() {
+    if (mode === 'video' && previewCamOn) {
+      await startPreview(true);
+    } else {
+      await startPreview(false);
+      const v = $('#meet-preview-video');
+      const off = $('#meet-preview-off');
+      if (v) v.style.display = 'none';
+      if (off) off.style.display = 'flex';
+    }
+  }
+
   async function startPreview(withVideo) {
-    stopPreview();
+    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     try {
       localStream = await navigator.mediaDevices.getUserMedia({
         video: withVideo ? { width: 640, height: 400 } : false,
         audio: true
       });
     } catch (e) {
-      toast('⚠️ Could not access camera/mic: ' + e.message);
+      toast('Could not access camera/microphone: ' + e.message);
       localStream = null;
       return null;
     }
+    localStream.getAudioTracks().forEach(t => t.enabled = previewMicOn);
     const v = $('#meet-preview-video');
-    if (v && withVideo) { v.srcObject = localStream; v.play().catch(() => {}); }
-    updatePreviewUI();
+    if (v && withVideo) {
+      v.srcObject = localStream;
+      v.style.display = 'block';
+      const off = $('#meet-preview-off');
+      if (off) off.style.display = 'none';
+      v.play().catch(() => {});
+    }
     return localStream;
   }
 
   function stopPreview() {
-    if (localStream && !inCall) {
-      localStream.getTracks().forEach(t => t.stop());
-      localStream = null;
-    }
+    if (localStream && !inCall) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
   }
 
-  function updatePreviewUI() {
-    const off = $('#meet-preview-off');
-    const vidEl = $('#meet-preview-video');
-    const hasVideo = mode === 'video' && localStream && localStream.getVideoTracks().some(t => t.enabled);
-    if (off) off.style.display = hasVideo ? 'none' : 'flex';
-    if (vidEl) vidEl.style.display = hasVideo ? 'block' : 'none';
+  function showError(msg) {
+    const el = $('#meet-error');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.toggle('show', !!msg);
+  }
+  function showStatus(msg) {
+    const line = $('#meet-status-line');
+    const text = $('#meet-status-text');
+    if (!line) return;
+    if (msg) { text.textContent = msg; line.classList.add('show'); }
+    else line.classList.remove('show');
+  }
+  function setPrimaryBusy(busy) {
+    const btn = $('#meet-primary-btn');
+    if (btn) btn.disabled = busy;
   }
 
-  /* ── Signaling ─────────────────────────────────────── */
-  function getChannel() {
-    if (channel) return channel;
+  /* ── Host: start meeting ───────────────────────────── */
+  async function handleHostSubmit() {
+    showError('');
+    if (!localStream) { showError('Camera/microphone access is required.'); return; }
+    roomCode = genRoomCode();
+    passcode = ($('#meet-passcode-input')?.value || '').trim();
+    isHost = true;
+    micOn = previewMicOn;
+    camOn = previewCamOn;
+    enterCallRoom();
+    subscribeChannel();
+  }
+
+  /* ── Joiner: request admission ─────────────────────── */
+  async function handleJoinSubmit() {
+    showError('');
+    const code = ($('#meet-code-input')?.value || '').trim().toUpperCase();
+    const enteredPasscode = ($('#meet-passcode-input')?.value || '').trim();
+    if (!code) { showError('Enter a meeting code.'); return; }
+    if (!localStream) { showError('Camera/microphone access is required.'); return; }
+
+    roomCode = code;
+    isHost = false;
+    micOn = previewMicOn;
+    camOn = previewCamOn;
+
+    setPrimaryBusy(true);
+    showStatus('Waiting for the host to admit you...');
+
+    const sb = getSb();
+    const joinChannel = sb.channel(`meet:${roomCode}`, {
+      config: { broadcast: { self: false } }
+    });
+
+    let settled = false;
+    joinChannel.on('broadcast', { event: 'join-response' }, ({ payload }) => {
+      if (payload.to !== myPeerId || settled) return;
+      settled = true;
+      clearTimeout(admitTimer);
+      if (payload.approved) {
+        showStatus('');
+        setPrimaryBusy(false);
+        channel = joinChannel; // reuse the already-subscribed channel
+        passcode = enteredPasscode;
+        enterCallRoom();
+        attachChannelHandlers();
+        trackPresence();
+      } else {
+        setPrimaryBusy(false);
+        showStatus('');
+        showError(payload.reason === 'passcode' ? 'Incorrect passcode.' : 'Unable to join this meeting.');
+        sb.removeChannel(joinChannel);
+      }
+    });
+
+    joinChannel.subscribe(status => {
+      if (status === 'SUBSCRIBED') {
+        joinChannel.send({
+          type: 'broadcast', event: 'join-request',
+          payload: { from: myPeerId, name: user.username, passcode: enteredPasscode }
+        });
+        admitTimer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          setPrimaryBusy(false);
+          showStatus('');
+          showError('No response from the host. The meeting may not have started, or the code is wrong.');
+          sb.removeChannel(joinChannel);
+        }, ADMIT_TIMEOUT_MS);
+      }
+    });
+  }
+
+  /* ── Signaling channel (host side sets it up directly) ── */
+  function subscribeChannel() {
     const sb = getSb();
     channel = sb.channel(`meet:${roomCode}`, {
       config: { broadcast: { self: false }, presence: { key: myPeerId } }
     });
+    // Host listens for admission requests.
+    channel.on('broadcast', { event: 'join-request' }, ({ payload }) => {
+      const approved = !passcode || payload.passcode === passcode;
+      channel.send({
+        type: 'broadcast', event: 'join-response',
+        payload: { to: payload.from, approved, reason: approved ? null : 'passcode' }
+      });
+    });
+    attachChannelHandlers();
+    channel.subscribe(status => { if (status === 'SUBSCRIBED') trackPresence(); });
+  }
+
+  function attachChannelHandlers() {
     channel
       .on('broadcast', { event: 'signal' }, ({ payload }) => {
         if (payload.to !== myPeerId) return;
-        handleSignal(payload.from, payload.type, payload.data, payload.name);
+        handleSignal(payload.from, payload.type, payload.data);
+      })
+      .on('broadcast', { event: 'meta' }, ({ payload }) => {
+        if (peers[payload.from]) Object.assign(peers[payload.from], payload.data);
+        renderStage();
       })
       .on('presence', { event: 'sync' }, () => evaluatePresence())
       .on('presence', { event: 'join' }, () => evaluatePresence())
       .on('presence', { event: 'leave' }, ({ key }) => removePeer(key));
-    channel.subscribe(status => {
-      if (status === 'SUBSCRIBED') {
-        channel.track({ name: myName, video: mode === 'video' && camOn, audio: micOn });
-      }
-    });
-    return channel;
+  }
+
+  function trackPresence() {
+    channel.track({ name: user.username, isHost, video: mode === 'video' && camOn, audio: micOn, screenSharing: false });
   }
 
   function sendSignal(toId, type, data) {
-    if (!channel) return;
-    channel.send({ type: 'broadcast', event: 'signal', payload: { from: myPeerId, to: toId, type, data, name: myName } });
+    channel?.send({ type: 'broadcast', event: 'signal', payload: { from: myPeerId, to: toId, type, data } });
+  }
+  function broadcastMeta() {
+    channel?.send({ type: 'broadcast', event: 'meta', payload: { from: myPeerId, data: { video: mode === 'video' && camOn, audio: micOn, screenSharing: localScreenSharing } } });
   }
 
   function evaluatePresence() {
@@ -134,19 +423,20 @@ window.Meet = (function () {
       if (key === myPeerId) return;
       const meta = state[key][0] || {};
       if (!peers[key]) {
-        // Deterministic glare-free rule: higher id initiates the offer.
-        if (myPeerId > key) createPeerConnection(key, meta.name, true);
-        else createPeerConnection(key, meta.name, false); // wait for their offer
+        const initiator = myPeerId > key;
+        createPeerConnection(key, meta, initiator);
+      } else {
+        Object.assign(peers[key], meta);
       }
     });
+    renderStage();
     updateParticipantCount();
   }
 
   /* ── WebRTC mesh ───────────────────────────────────── */
-  function createPeerConnection(peerId, name, initiator) {
+  function createPeerConnection(peerId, meta, initiator) {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-    peers[peerId] = { pc, stream: null, name: name || 'Guest', tile: null };
-    ensureTile(peerId, name);
+    peers[peerId] = { pc, stream: null, name: meta.name || 'Guest', isHost: !!meta.isHost, video: !!meta.video, audio: meta.audio !== false, screenSharing: !!meta.screenSharing, tile: null };
 
     if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
 
@@ -154,15 +444,11 @@ window.Meet = (function () {
 
     pc.ontrack = (e) => {
       peers[peerId].stream = e.streams[0];
-      const tile = ensureTile(peerId, peers[peerId].name);
-      const v = tile.querySelector('video');
-      if (v.srcObject !== e.streams[0]) v.srcObject = e.streams[0];
-      tile.querySelector('.meet-tile-avatar')?.remove();
+      renderStage();
     };
 
     pc.onconnectionstatechange = () => {
       if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) {
-        // give a brief grace period for reconnection before tearing down
         setTimeout(() => {
           if (peers[peerId] && peers[peerId].pc.connectionState !== 'connected') removePeer(peerId);
         }, 4000);
@@ -178,17 +464,13 @@ window.Meet = (function () {
         } catch (e) { console.error('Meet offer error', e); }
       };
     }
-
-    updateParticipantCount();
     return pc;
   }
 
-  async function handleSignal(fromId, type, payload, name) {
+  async function handleSignal(fromId, type, payload) {
     if (type === 'offer') {
-      let entry = peers[fromId];
-      if (!entry) createPeerConnection(fromId, name, false);
+      if (!peers[fromId]) createPeerConnection(fromId, {}, false);
       const pc = peers[fromId].pc;
-      if (name) peers[fromId].name = name;
       await pc.setRemoteDescription(new RTCSessionDescription(payload));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
@@ -201,8 +483,6 @@ window.Meet = (function () {
     } else if (type === 'ice') {
       const entry = peers[fromId];
       if (entry && payload) { try { await entry.pc.addIceCandidate(new RTCIceCandidate(payload)); } catch (e) {} }
-    } else if (type === 'mic') {
-      updateTileMicBadge(fromId, payload.on);
     }
   }
 
@@ -210,54 +490,130 @@ window.Meet = (function () {
     const entry = peers[peerId];
     if (!entry) return;
     try { entry.pc.close(); } catch (e) {}
-    entry.tile?.remove();
     delete peers[peerId];
+    renderStage();
     updateParticipantCount();
   }
 
-  /* ── Grid tiles ────────────────────────────────────── */
-  function ensureTile(peerId, name) {
-    let tile = document.getElementById(`meet-tile-${peerId}`);
-    if (tile) return tile;
-    const grid = $('#meet-grid');
-    tile = document.createElement('div');
-    tile.className = 'meet-tile';
-    tile.id = `meet-tile-${peerId}`;
-    const initials = (name || 'G').slice(0, 2).toUpperCase();
-    tile.innerHTML = `
-      <video autoplay playsinline></video>
-      <div class="meet-tile-avatar"><div class="avatar-circle">${initials}</div></div>
-      <div class="meet-tile-label">${escapeHtml(name || 'Guest')}</div>
-    `;
-    grid.appendChild(tile);
-    if (peers[peerId]) peers[peerId].tile = tile;
-    return tile;
-  }
+  /* ── Call room ─────────────────────────────────────── */
+  function enterCallRoom() {
+    inCall = true;
+    showScreen(null);
+    document.getElementById('meet-action-select').style.display = 'none';
+    document.getElementById('meet-prepare-screen').style.display = 'none';
+    document.getElementById('meet-gate').style.display = 'none';
+    const room = $('#meet-call-room');
+    room.classList.add('active');
+    $('#meet-call-room-code-label').textContent = roomCode;
+    $('#meet-lock-icon').style.display = passcode ? '' : 'none';
 
-  function updateTileMicBadge(peerId, on) {
-    const tile = document.getElementById(`meet-tile-${peerId}`);
-    if (!tile) return;
-    let badge = tile.querySelector('.meet-mic-off-badge');
-    if (!on) {
-      if (!badge) {
-        badge = document.createElement('div');
-        badge.className = 'meet-mic-off-badge';
-        badge.textContent = '🔇';
-        tile.appendChild(badge);
-      }
+    const micBtn = $('#meet-mic-btn');
+    micBtn.classList.toggle('off', !micOn);
+    micBtn.innerHTML = micOn ? ICONS.mic : ICONS.micOff;
+
+    const camBtn = $('#meet-cam-btn');
+    if (mode === 'video') {
+      camBtn.style.display = '';
+      camBtn.classList.toggle('off', !camOn);
+      camBtn.innerHTML = camOn ? ICONS.video : ICONS.videoOff;
     } else {
-      badge?.remove();
+      camBtn.style.display = 'none';
     }
+
+    renderStage();
+    updateParticipantCount();
+    startTimer();
+    window.addEventListener('beforeunload', leaveCall);
   }
 
-  function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function currentHostId() {
+    if (isHost) return myPeerId;
+    const found = Object.keys(peers).find(k => peers[k].isHost);
+    return found || null;
+  }
+  function currentSharerId() {
+    if (localScreenSharing) return myPeerId;
+    return Object.keys(peers).find(k => peers[k].screenSharing) || null;
+  }
+
+  function tileHtml(opts) {
+    const { key, name, host, isLocal, hasVideoTrack, mic, size, screen } = opts;
+    const cls = ['meet-tile', size === 'main' ? 'meet-tile-main' : 'meet-tile-side', isLocal ? 'local' : '', screen ? 'screen' : ''].filter(Boolean).join(' ');
+    return `
+      <div class="${cls}" id="meet-tile-${key}">
+        <video autoplay playsinline ${isLocal && !screen ? 'muted' : ''}></video>
+        <div class="meet-tile-avatar" style="display:${hasVideoTrack ? 'none' : 'flex'}"><div class="avatar-circle">${initials(name)}</div></div>
+        <div class="meet-tile-label">${escapeHtml(name)}${host ? '<span class="host-badge">Host</span>' : ''}</div>
+        ${!mic ? `<div class="meet-mic-off-badge">${ICONS.micOff}</div>` : ''}
+      </div>`;
+  }
+
+  function renderStage() {
+    if (!inCall) return;
+    const main = $('#meet-stage-main');
+    const side = $('#meet-stage-side');
+    const hostId = currentHostId();
+    const sharerId = currentSharerId();
+    const otherKeys = Object.keys(peers);
+
+    if (sharerId) {
+      // Screen-share layout: shared screen large left; host + others on the right.
+      const sharerName = sharerId === myPeerId ? user.username : peers[sharerId].name;
+      main.innerHTML = tileHtml({ key: 'share-' + sharerId, name: sharerName, host: sharerId === hostId, isLocal: sharerId === myPeerId, hasVideoTrack: true, mic: true, size: 'main', screen: true });
+      const mainVideo = main.querySelector('video');
+      mainVideo.srcObject = sharerId === myPeerId ? screenStream : peers[sharerId].stream;
+
+      let sideHtml = '';
+      const hostIsLocal = hostId === myPeerId;
+      const hostName = hostIsLocal ? user.username : (peers[hostId]?.name || 'Host');
+      const hostHasVideo = hostIsLocal ? (mode === 'video' && camOn) : !!peers[hostId]?.video;
+      const hostMic = hostIsLocal ? micOn : (peers[hostId]?.audio !== false);
+      if (hostId) sideHtml += tileHtml({ key: 'side-' + hostId, name: hostName, host: true, isLocal: hostIsLocal, hasVideoTrack: hostHasVideo, mic: hostMic, size: 'side' });
+
+      otherKeys.filter(k => k !== hostId).forEach(k => {
+        const p = peers[k];
+        sideHtml += tileHtml({ key: 'side-' + k, name: p.name, host: false, isLocal: false, hasVideoTrack: !!p.video, mic: p.audio !== false, size: 'side' });
+      });
+      if (!isHost && hostId !== myPeerId) {
+        sideHtml += tileHtml({ key: 'side-' + myPeerId, name: user.username, host: false, isLocal: true, hasVideoTrack: mode === 'video' && camOn, mic: micOn, size: 'side' });
+      }
+      side.innerHTML = sideHtml || `<div class="meet-side-empty">No other participants yet</div>`;
+    } else {
+      // Default layout: host large left; everyone else scrolls on the right.
+      const hostIsLocal = hostId === myPeerId;
+      const hostName = hostIsLocal ? user.username : (peers[hostId]?.name || 'Host');
+      const hostHasVideo = hostIsLocal ? (mode === 'video' && camOn) : !!peers[hostId]?.video;
+      const hostMic = hostIsLocal ? micOn : (peers[hostId]?.audio !== false);
+      main.innerHTML = hostId ? tileHtml({ key: hostId, name: hostName, host: true, isLocal: hostIsLocal, hasVideoTrack: hostHasVideo, mic: hostMic, size: 'main' }) : '';
+      const mainVideo = main.querySelector('video');
+      if (mainVideo) mainVideo.srcObject = hostIsLocal ? localStream : peers[hostId]?.stream || null;
+
+      let sideHtml = '';
+      otherKeys.filter(k => k !== hostId).forEach(k => {
+        const p = peers[k];
+        sideHtml += tileHtml({ key: k, name: p.name, host: false, isLocal: false, hasVideoTrack: !!p.video, mic: p.audio !== false, size: 'side' });
+      });
+      if (!isHost) {
+        sideHtml += tileHtml({ key: myPeerId, name: user.username, host: false, isLocal: true, hasVideoTrack: mode === 'video' && camOn, mic: micOn, size: 'side' });
+      }
+      side.innerHTML = sideHtml || `<div class="meet-side-empty">No other participants yet</div>`;
+    }
+
+    // Wire up remote <video> srcObjects for every side tile.
+    otherKeys.forEach(k => {
+      const p = peers[k];
+      const vids = document.querySelectorAll(`[id$="-${k}"] video, #meet-tile-${k} video`);
+      vids.forEach(v => { if (p.stream && v.srcObject !== p.stream) v.srcObject = p.stream; });
+    });
+    const localVids = document.querySelectorAll(`[id$="-${myPeerId}"] video, #meet-tile-${myPeerId} video`);
+    localVids.forEach(v => { if (localStream && v.srcObject !== localStream && !v.closest('.screen')) v.srcObject = localStream; });
+  }
 
   function updateParticipantCount() {
-    const el = $('#meet-participant-count');
-    if (el) el.textContent = `👥 ${Object.keys(peers).length + 1}`;
+    const el = $('#meet-participant-count-label');
+    if (el) el.textContent = String(Object.keys(peers).length + 1);
   }
 
-  /* ── Timer ─────────────────────────────────────────── */
   function startTimer() {
     callStartTime = Date.now();
     timerInterval = setInterval(() => {
@@ -268,49 +624,64 @@ window.Meet = (function () {
   }
   function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
 
-  /* ── Join / Leave ──────────────────────────────────── */
-  async function joinCall(code, name, wantsVideo) {
-    roomCode = code.toUpperCase();
-    myName = (name || 'Guest').slice(0, 30);
-    mode = wantsVideo ? 'video' : 'voice';
-
-    if (!localStream || (wantsVideo && localStream.getVideoTracks().length === 0)) {
-      await startPreview(wantsVideo);
-    }
-    if (!localStream) { toast('⚠️ Need camera/mic access to join'); return; }
-
-    inCall = true;
-    saveRecent(roomCode);
-
-    $('#meet-lobby').style.display = 'none';
-    const room = $('#meet-call-room');
-    room.classList.add('active');
-    $('#meet-call-room-code-label').textContent = roomCode;
-
-    const localTile = ensureLocalTile();
-    localTile.querySelector('video').srcObject = localStream;
-
-    getChannel();
-    startTimer();
-    updateParticipantCount();
-    setupLeavePageWatcher();
-    window.addEventListener('beforeunload', leaveCall);
+  /* ── Controls ──────────────────────────────────────── */
+  function toggleMic() {
+    if (!localStream) return;
+    micOn = !micOn;
+    localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+    const btn = $('#meet-mic-btn');
+    btn.classList.toggle('off', !micOn);
+    btn.innerHTML = micOn ? ICONS.mic : ICONS.micOff;
+    broadcastMeta();
   }
 
-  function ensureLocalTile() {
-    let tile = document.getElementById('meet-tile-local');
-    if (tile) return tile;
-    const grid = $('#meet-grid');
-    tile = document.createElement('div');
-    tile.className = 'meet-tile local';
-    tile.id = 'meet-tile-local';
-    tile.innerHTML = `
-      <video autoplay playsinline muted></video>
-      <div class="meet-tile-avatar" id="meet-local-avatar" style="display:none"><div class="avatar-circle">${(myName || 'Y').slice(0,2).toUpperCase()}</div></div>
-      <div class="meet-tile-label">You</div>
-    `;
-    grid.prepend(tile);
-    return tile;
+  function toggleCam() {
+    if (mode !== 'video') return;
+    camOn = !camOn;
+    if (localStream) localStream.getVideoTracks().forEach(t => t.enabled = camOn);
+    const btn = $('#meet-cam-btn');
+    btn.classList.toggle('off', !camOn);
+    btn.innerHTML = camOn ? ICONS.video : ICONS.videoOff;
+    broadcastMeta();
+    renderStage();
+  }
+
+  async function toggleScreenShare() {
+    const btn = $('#meet-screen-btn');
+    if (localScreenSharing) {
+      screenStream?.getTracks().forEach(t => t.stop());
+      screenStream = null;
+      localScreenSharing = false;
+      const camTrack = localStream?.getVideoTracks()[0];
+      Object.values(peers).forEach(({ pc }) => {
+        const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+        if (sender && camTrack) sender.replaceTrack(camTrack);
+      });
+      btn.classList.remove('active-toggle');
+      broadcastMeta();
+      renderStage();
+      return;
+    }
+    if (currentSharerId()) { toast('Someone else is already sharing their screen.'); return; }
+    try {
+      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+    } catch (e) { return; }
+    localScreenSharing = true;
+    const screenTrack = screenStream.getVideoTracks()[0];
+    Object.values(peers).forEach(({ pc }) => {
+      const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+      if (sender) sender.replaceTrack(screenTrack);
+      else if (localStream) pc.addTrack(screenTrack, localStream);
+    });
+    btn.classList.add('active-toggle');
+    broadcastMeta();
+    renderStage();
+    screenTrack.onended = () => toggleScreenShare();
+  }
+
+  function copyInviteLink() {
+    const url = `${location.origin}${location.pathname}?room=${encodeURIComponent(roomCode)}`;
+    navigator.clipboard?.writeText(url).then(() => toast('Invite link copied')).catch(() => toast(url));
   }
 
   function leaveCall() {
@@ -321,204 +692,22 @@ window.Meet = (function () {
     if (channel) { getSb().removeChannel(channel); channel = null; }
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
-    closeAnyPip();
+    localScreenSharing = false;
     $('#meet-call-room').classList.remove('active');
-    $('#meet-lobby').style.display = '';
-    $('#meet-grid').innerHTML = '';
     window.removeEventListener('beforeunload', leaveCall);
-    toast('📵 Left the meeting');
-  }
-
-  /* ── Controls ──────────────────────────────────────── */
-  function toggleMic() {
-    if (!localStream) return;
-    micOn = !micOn;
-    localStream.getAudioTracks().forEach(t => t.enabled = micOn);
-    const btn = $('#meet-mic-btn');
-    btn?.classList.toggle('off', !micOn);
-    if (btn) btn.textContent = micOn ? '🎙️' : '🔇';
-    channel?.send({ type: 'broadcast', event: 'signal', payload: { from: myPeerId, to: '*', type: 'mic', data: { on: micOn } } });
-    Object.keys(peers).forEach(pid => sendSignal(pid, 'mic', { on: micOn }));
-  }
-
-  async function toggleCam() {
-    if (mode !== 'video') return;
-    camOn = !camOn;
-    if (localStream) localStream.getVideoTracks().forEach(t => t.enabled = camOn);
-    const btn = $('#meet-cam-btn');
-    btn?.classList.toggle('off', !camOn);
-    if (btn) btn.textContent = camOn ? '📹' : '📷';
-    const avatar = $('#meet-local-avatar');
-    if (avatar) avatar.style.display = camOn ? 'none' : 'flex';
-  }
-
-  async function toggleScreenShare() {
-    const btn = $('#meet-screen-btn');
-    if (screenStream) {
-      screenStream.getTracks().forEach(t => t.stop());
-      screenStream = null;
-      const camTrack = localStream?.getVideoTracks()[0];
-      Object.values(peers).forEach(({ pc }) => {
-        const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
-        if (sender && camTrack) sender.replaceTrack(camTrack);
-      });
-      const localVideo = document.querySelector('#meet-tile-local video');
-      if (localVideo && camTrack) localVideo.srcObject = localStream;
-      btn?.classList.remove('active-toggle');
-      return;
-    }
-    try {
-      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-    } catch (e) { return; }
-    const screenTrack = screenStream.getVideoTracks()[0];
-    Object.values(peers).forEach(({ pc }) => {
-      const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
-      if (sender) sender.replaceTrack(screenTrack);
-      else if (localStream) pc.addTrack(screenTrack, localStream);
-    });
-    const localVideo = document.querySelector('#meet-tile-local video');
-    if (localVideo) localVideo.srcObject = screenStream;
-    btn?.classList.add('active-toggle');
-    screenTrack.onended = () => toggleScreenShare();
-  }
-
-  function copyInviteLink() {
-    const url = `${location.origin}${location.pathname}?room=${encodeURIComponent(roomCode)}`;
-    navigator.clipboard?.writeText(url).then(() => toast('🔗 Invite link copied')).catch(() => toast(url));
-  }
-
-  /* ── "Leave the page" floating window (like Zoom) ────
-     Primary path: Document Picture-in-Picture (Chrome/Edge 116+)
-     — a real always-on-top OS-level window, bottom-right by
-     default, that survives switching tabs/apps.
-     Fallback: native <video> Picture-in-Picture on the most
-     relevant video element (works in Safari/Firefox too), which
-     also floats bottom-right in every major browser.
-     ==================================================== */
-  let pipWindow = null;
-  let pipReturnParent = null;
-  let fallbackPipEl = null;
-
-  function setupLeavePageWatcher() {
-    document.addEventListener('visibilitychange', onVisibilityChange);
-  }
-
-  async function onVisibilityChange() {
-    if (!inCall) return;
-    if (document.hidden) {
-      await openLeaveWindow();
-    } else {
-      closeAnyPip();
-    }
-  }
-
-  function pickFeaturedVideo() {
-    // Prefer the first connected remote video; fall back to local.
-    const remote = Object.values(peers).find(p => p.stream);
-    if (remote) return document.querySelector(`#meet-tile-${Object.keys(peers).find(k => peers[k] === remote)} video`);
-    return document.querySelector('#meet-tile-local video');
-  }
-
-  async function openLeaveWindow() {
-    if (pipWindow || fallbackPipEl) return;
-
-    if ('documentPictureInPicture' in window) {
-      try {
-        pipWindow = await window.documentPictureInPicture.requestWindow({ width: 300, height: 200 });
-        const style = pipWindow.document.createElement('style');
-        style.textContent = `
-          body { margin:0; background:#05070d; font-family:sans-serif; overflow:hidden; }
-          .pip-grid { display:flex; flex-wrap:wrap; gap:4px; padding:4px; box-sizing:border-box; }
-          video { width:100%; border-radius:8px; background:#11141d; object-fit:cover; }
-          .pip-bar { position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:center; gap:8px; padding:6px; background:rgba(0,0,0,.35); }
-          .pip-bar button { width:34px; height:34px; border-radius:50%; border:none; cursor:pointer; background:rgba(255,255,255,.15); color:#fff; font-size:15px; }
-          .pip-bar button.leave { background:#ef4444; }
-          .pip-label { position:fixed; top:4px; left:8px; color:#cfd4e0; font-size:10px; }
-        `;
-        pipWindow.document.head.appendChild(style);
-
-        const container = pipWindow.document.createElement('div');
-        container.className = 'pip-grid';
-        pipWindow.document.body.appendChild(container);
-
-        const label = pipWindow.document.createElement('div');
-        label.className = 'pip-label';
-        label.textContent = `360Meet · ${roomCode}`;
-        pipWindow.document.body.appendChild(label);
-
-        // Move the real <video> elements (up to 4) into the PiP window —
-        // same-origin documentPictureInPicture shares the JS realm, so
-        // moving nodes keeps their live srcObject intact.
-        pipReturnParent = [];
-        const allVideos = [
-          document.querySelector('#meet-tile-local video'),
-          ...Object.keys(peers).map(k => document.querySelector(`#meet-tile-${k} video`))
-        ].filter(Boolean).slice(0, 4);
-        allVideos.forEach(v => {
-          pipReturnParent.push([v, v.parentElement, v.nextSibling]);
-          container.appendChild(v);
-        });
-
-        const bar = pipWindow.document.createElement('div');
-        bar.className = 'pip-bar';
-        bar.innerHTML = `<button id="pip-mic">${micOn ? '🎙️' : '🔇'}</button><button class="leave" id="pip-leave">📵</button>`;
-        pipWindow.document.body.appendChild(bar);
-        bar.querySelector('#pip-mic').onclick = () => { toggleMic(); bar.querySelector('#pip-mic').textContent = micOn ? '🎙️' : '🔇'; };
-        bar.querySelector('#pip-leave').onclick = () => { leaveCall(); };
-
-        pipWindow.addEventListener('pagehide', () => { restoreFromPip(); });
-      } catch (e) {
-        pipWindow = null;
-        openFallbackPip();
-      }
-    } else {
-      openFallbackPip();
-    }
-  }
-
-  function restoreFromPip() {
-    if (pipReturnParent) {
-      pipReturnParent.forEach(([v, parent, next]) => {
-        if (parent) parent.insertBefore(v, next || null);
-      });
-      pipReturnParent = null;
-    }
-    pipWindow = null;
-  }
-
-  function openFallbackPip() {
-    const video = pickFeaturedVideo();
-    if (!video || !video.requestPictureInPicture) return;
-    video.requestPictureInPicture().then(() => {
-      fallbackPipEl = video;
-      video.addEventListener('leavepictureinpicture', () => { fallbackPipEl = null; }, { once: true });
-    }).catch(() => {});
-  }
-
-  function closeAnyPip() {
-    if (pipWindow) { try { pipWindow.close(); } catch (e) {} restoreFromPip(); }
-    if (fallbackPipEl && document.pictureInPictureElement) {
-      document.exitPictureInPicture().catch(() => {});
-    }
-    fallbackPipEl = null;
+    toast('You left the meeting');
+    renderActionSelect();
+    showScreen('meet-action-select');
   }
 
   /* ── Public API ────────────────────────────────────── */
   return {
-    myPeerId,
-    genRoomCode,
-    getRecents,
-    startPreview,
+    init,
     stopPreview,
-    updatePreviewUI,
-    joinCall,
-    leaveCall,
     toggleMic,
     toggleCam,
     toggleScreenShare,
     copyInviteLink,
-    setMode: (m) => { mode = m; },
-    getMode: () => mode,
-    isInCall: () => inCall
+    leaveCall
   };
 })();
