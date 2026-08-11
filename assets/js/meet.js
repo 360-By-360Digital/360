@@ -1,8 +1,8 @@
 /* ════════════════════════════════════════════════════════
-   360Meet v2 — sign-in required, optional passcode, prepare
-   room, Zoom-style call chamber (host large left / others
-   scroll right; shared screen swaps into the left panel).
-   Requires: supabaseClient (global from main.js)
+   360Meet v3 — sign-in required, optional passcode, prepare
+   room, Zoom-style call chamber, profile-picture avatars,
+   and host-approved screen sharing for non-host participants.
+   Requires: supabaseClient + getGravatarUrl (globals from main.js)
 ════════════════════════════════════════════════════════ */
 
 window.Meet = (function () {
@@ -11,6 +11,7 @@ window.Meet = (function () {
     { urls: 'stun:stun1.l.google.com:19302' }
   ];
   const ADMIT_TIMEOUT_MS = 9000;
+  const SCREEN_REQUEST_TIMEOUT_MS = 20000;
 
   const ICONS = {
     mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>',
@@ -23,7 +24,6 @@ window.Meet = (function () {
     users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
     lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
-    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
     join: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>'
   };
 
@@ -31,11 +31,11 @@ window.Meet = (function () {
   const myPeerId = crypto.randomUUID();
 
   /* ── Session state ─────────────────────────────────── */
-  let user = null;          // { id, username }
+  let user = null;           // { id, username, avatarUrl }
   let roomCode = null;
-  let passcode = '';         // set by host, or entered by joiner
+  let passcode = '';
   let isHost = false;
-  let mode = 'video';        // 'video' | 'voice'
+  let mode = 'video';
   let localStream = null;
   let screenStream = null;
   let micOn = true;
@@ -43,12 +43,25 @@ window.Meet = (function () {
   let inCall = false;
   let channel = null;
   let admitTimer = null;
+  let screenRequestTimer = null;
+  let pendingJoin = null;    // { settled, passcode }
   let callStartTime = null;
   let timerInterval = null;
-  const peers = {}; // peerId -> { pc, stream, name, isHost, video, audio, screenSharing, tile }
+  let mediaLock = Promise.resolve(); // serializes getUserMedia calls
+  const peers = {};          // peerId -> { pc, stream, name, avatarUrl, isHost, video, audio, screenSharing, tile }
   let localScreenSharing = false;
 
-  /* ── Toast ─────────────────────────────────────────── */
+  /* ── Helpers ───────────────────────────────────────── */
+  function getSb() {
+    // main.js declares `const supabaseClient = ...` at the top level of a
+    // classic script — const/let don't attach to `window`, but they ARE
+    // visible as a plain global identifier to every later classic script
+    // on the page (shared global scope), so reference it directly.
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) return supabaseClient;
+    if (window.supabaseClient) return window.supabaseClient;
+    return null;
+  }
+
   function toast(msg) {
     let el = document.getElementById('meet-toast');
     if (!el) {
@@ -60,11 +73,17 @@ window.Meet = (function () {
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(el._t);
-    el._t = setTimeout(() => el.classList.remove('show'), 2400);
+    el._t = setTimeout(() => el.classList.remove('show'), 2600);
   }
 
   function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
   function initials(name) { return (name || '?').trim().slice(0, 2).toUpperCase(); }
+
+  function avatarHtml(name, url) {
+    return url
+      ? `<img class="avatar-img" src="${url}" alt="${escapeHtml(name || '')}" onerror="this.remove()" />`
+      : escapeHtml(initials(name));
+  }
 
   function genRoomCode() {
     const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -75,15 +94,22 @@ window.Meet = (function () {
     return out;
   }
 
-  function getSb() {
-    // main.js declares `const supabaseClient = ...` at the top level of a
-    // classic script. const/let bindings don't attach to `window`, but they
-    // ARE visible as a plain global identifier to every other classic
-    // script on the page (they share one global scope), so reference it
-    // directly rather than via window.*.
-    if (typeof supabaseClient !== 'undefined' && supabaseClient) return supabaseClient;
-    if (window.supabaseClient) return window.supabaseClient;
-    return null;
+  function mediaErrorMessage(e) {
+    switch (e && e.name) {
+      case 'NotAllowedError':
+      case 'SecurityError':
+        return 'Camera/microphone permission was blocked. Check the site permissions in your browser (the padlock icon in the address bar) and allow camera and microphone access.';
+      case 'NotFoundError':
+      case 'OverconstrainedError':
+        return 'No camera or microphone was found on this device.';
+      case 'NotReadableError':
+        return 'Your camera or microphone is already in use by another app or browser tab. Close it and try again.';
+      default:
+        if (!window.isSecureContext) {
+          return 'Camera/microphone access requires a secure (https) connection.';
+        }
+        return 'Could not access your camera/microphone' + (e && e.message ? ': ' + e.message : '.');
+    }
   }
 
   /* ── Screens ───────────────────────────────────────── */
@@ -109,22 +135,34 @@ window.Meet = (function () {
       showScreen('meet-gate');
       return;
     }
-    user = { id: session.user.id, username: null };
+
     let username = session.user.user_metadata?.username
       || session.user.user_metadata?.full_name
       || session.user.email?.split('@')[0]
       || 'User';
-    try {
-      const { data: profile } = await sb.from('profiles').select('username').eq('id', session.user.id).maybeSingle();
-      if (profile?.username) username = profile.username;
-    } catch (e) {}
-    user.username = username;
+    let avatarUrl = session.user.user_metadata?.avatar_url || null;
 
-    renderGate(true);
+    try {
+      const { data: profile } = await sb.from('profiles').select('username, avatar_url').eq('id', session.user.id).maybeSingle();
+      if (profile?.username) username = profile.username;
+      if (profile?.avatar_url) avatarUrl = profile.avatar_url;
+    } catch (e) {}
+
+    if (!avatarUrl) {
+      try {
+        if (typeof getGravatarUrl === 'function') {
+          const gUrl = await getGravatarUrl(session.user.email || '', 120);
+          const probe = await fetch(gUrl, { method: 'HEAD' });
+          if (probe.ok) avatarUrl = gUrl;
+        }
+      } catch (e) {}
+    }
+
+    user = { id: session.user.id, username, avatarUrl };
+
     renderActionSelect();
     showScreen('meet-action-select');
 
-    // Auto-fill join code from ?room= link, jump straight into join prepare.
     const params = new URLSearchParams(location.search);
     const roomParam = params.get('room');
     if (roomParam) openPrepare('join', roomParam.toUpperCase());
@@ -132,12 +170,11 @@ window.Meet = (function () {
 
   function renderGate(signedIn) {
     const el = $('#meet-gate');
-    if (!el) return;
-    if (signedIn) return;
+    if (!el || signedIn) return;
     el.innerHTML = `
       <div class="meet-action-icon">${ICONS.lock}</div>
       <h2 class="meet-title" style="margin:0;">Sign in required</h2>
-      <p>You need a 360 account to start or join a meeting. Meeting participants are always shown by their account username.</p>
+      <p>You need a 360 account to start or join a meeting. Meeting participants are always shown by their account username and profile picture.</p>
       <button class="meet-btn" id="meet-gate-signin" style="max-width:220px;">Sign in</button>
     `;
     $('#meet-gate-signin').onclick = () => window.openAuth ? window.openAuth('signin') : (location.href = 'signin.html');
@@ -166,7 +203,10 @@ window.Meet = (function () {
           <div class="meet-action-desc">Enter a meeting code (and passcode, if the host set one).</div>
         </div>
       </div>
-      <div class="meet-signed-in-as">Signed in as <strong>${escapeHtml(user.username)}</strong></div>
+      <div class="meet-signed-in-as">
+        <div class="avatar-circle" style="width:22px;height:22px;font-size:9px;display:inline-flex;vertical-align:middle;margin-right:6px;overflow:hidden;">${avatarHtml(user.username, user.avatarUrl)}</div>
+        Signed in as <strong>${escapeHtml(user.username)}</strong>
+      </div>
     `;
     $('#meet-card-video').onclick = () => openPrepare('host-video');
     $('#meet-card-voice').onclick = () => openPrepare('host-voice');
@@ -174,7 +214,7 @@ window.Meet = (function () {
   }
 
   /* ── Prepare room ──────────────────────────────────── */
-  let prepareAction = null; // 'host-video' | 'host-voice' | 'join'
+  let prepareAction = null;
   let previewCamOn = true;
   let previewMicOn = true;
 
@@ -200,7 +240,7 @@ window.Meet = (function () {
           <div class="meet-preview" id="meet-preview">
             <video id="meet-preview-video" autoplay playsinline muted style="display:none;"></video>
             <div class="meet-preview-off" id="meet-preview-off">
-              <div class="avatar-circle">${initials(user.username)}</div>
+              <div class="avatar-circle" style="width:60px;height:60px;font-size:20px;overflow:hidden;">${avatarHtml(user.username, user.avatarUrl)}</div>
               <span>Camera is off</span>
             </div>
             <div class="meet-preview-controls">
@@ -213,7 +253,7 @@ window.Meet = (function () {
           <div class="meet-card-body">
             <div class="meet-field-label">Joining as</div>
             <div class="meet-identity-row">
-              <div class="avatar-circle">${initials(user.username)}</div>
+              <div class="avatar-circle" style="width:30px;height:30px;font-size:12px;overflow:hidden;">${avatarHtml(user.username, user.avatarUrl)}</div>
               <div>
                 <div class="meet-identity-name">${escapeHtml(user.username)}</div>
                 <div class="meet-identity-sub">Your account username</div>
@@ -238,7 +278,7 @@ window.Meet = (function () {
       </div>
     `;
 
-    $('#meet-back-btn').onclick = () => { Meet.stopPreview(); showScreen('meet-action-select'); };
+    $('#meet-back-btn').onclick = () => { stopPreview(); showScreen('meet-action-select'); };
     $('#meet-preview-mic').onclick = () => {
       previewMicOn = !previewMicOn;
       $('#meet-preview-mic').classList.toggle('off', !previewMicOn);
@@ -269,18 +309,39 @@ window.Meet = (function () {
     }
   }
 
-  async function startPreview(withVideo) {
+  // getUserMedia calls are serialized through mediaLock so a rapid
+  // toggle (or the auto-run on screen open) never overlaps two calls —
+  // overlapping requests are a common real-world cause of NotReadableError
+  // even when OS/browser permission is already granted.
+  function startPreview(withVideo) {
+    mediaLock = mediaLock.then(() => doStartPreview(withVideo)).catch(() => {});
+    return mediaLock;
+  }
+
+  async function doStartPreview(withVideo) {
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      const msg = mediaErrorMessage({});
+      showError(msg);
+      toast(msg);
+      return null;
+    }
+
     try {
       localStream = await navigator.mediaDevices.getUserMedia({
         video: withVideo ? { width: 640, height: 400 } : false,
         audio: true
       });
     } catch (e) {
-      toast('Could not access camera/microphone: ' + e.message);
+      const msg = mediaErrorMessage(e);
+      showError(msg);
+      toast(msg);
       localStream = null;
       return null;
     }
+
+    showError('');
     localStream.getAudioTracks().forEach(t => t.enabled = previewMicOn);
     const v = $('#meet-preview-video');
     if (v && withVideo) {
@@ -315,6 +376,72 @@ window.Meet = (function () {
     if (btn) btn.disabled = busy;
   }
 
+  /* ── Unified channel setup ─────────────────────────────
+     Built and fully wired with .on() handlers BEFORE calling
+     .subscribe(), for both host and joiner. Registering presence
+     config only after the channel already exists — or adding .on()
+     bindings only after SUBSCRIBED — is what caused the previous
+     "both sides can't see each other" bug: the joiner's channel
+     was created without a presence key and its handlers were
+     attached only after admission, so its presence track() never
+     produced a reliable join/sync event on the host's side.
+  ==================================================== */
+  function buildChannel() {
+    const sb = getSb();
+    channel = sb.channel(`meet:${roomCode}`, {
+      config: { broadcast: { self: false }, presence: { key: myPeerId } }
+    });
+
+    channel.on('broadcast', { event: 'join-request' }, ({ payload }) => {
+      if (!isHost) return; // only the host admits people
+      const approved = !passcode || payload.passcode === passcode;
+      channel.send({
+        type: 'broadcast', event: 'join-response',
+        payload: { to: payload.from, approved, reason: approved ? null : 'passcode' }
+      });
+    });
+
+    channel.on('broadcast', { event: 'join-response' }, ({ payload }) => {
+      if (payload.to === myPeerId) handleJoinResponse(payload);
+    });
+
+    channel.on('broadcast', { event: 'signal' }, ({ payload }) => {
+      if (payload.to === myPeerId) handleSignal(payload.from, payload.type, payload.data);
+    });
+
+    channel.on('broadcast', { event: 'meta' }, ({ payload }) => {
+      if (peers[payload.from]) Object.assign(peers[payload.from], payload.data);
+      renderStage();
+    });
+
+    // Screen-share permission handshake (non-host asks the host).
+    channel.on('broadcast', { event: 'screen-request' }, ({ payload }) => {
+      if (!isHost) return;
+      showScreenRequestModal(payload.from, payload.name);
+    });
+    channel.on('broadcast', { event: 'screen-response' }, ({ payload }) => {
+      if (payload.to !== myPeerId) return;
+      handleScreenResponse(payload.approved);
+    });
+
+    channel.on('presence', { event: 'sync' }, () => evaluatePresence());
+    channel.on('presence', { event: 'join' }, () => evaluatePresence());
+    channel.on('presence', { event: 'leave' }, ({ key }) => removePeer(key));
+
+    return channel;
+  }
+
+  function trackPresence() {
+    channel.track({
+      name: user.username,
+      avatarUrl: user.avatarUrl,
+      isHost,
+      video: mode === 'video' && camOn,
+      audio: micOn,
+      screenSharing: false
+    });
+  }
+
   /* ── Host: start meeting ───────────────────────────── */
   async function handleHostSubmit() {
     showError('');
@@ -324,8 +451,8 @@ window.Meet = (function () {
     isHost = true;
     micOn = previewMicOn;
     camOn = previewCamOn;
-    enterCallRoom();
-    subscribeChannel();
+    buildChannel();
+    channel.subscribe(status => { if (status === 'SUBSCRIBED') { enterCallRoom(); trackPresence(); } });
   }
 
   /* ── Joiner: request admission ─────────────────────── */
@@ -344,85 +471,44 @@ window.Meet = (function () {
     setPrimaryBusy(true);
     showStatus('Waiting for the host to admit you...');
 
-    const sb = getSb();
-    const joinChannel = sb.channel(`meet:${roomCode}`, {
-      config: { broadcast: { self: false } }
-    });
-
-    let settled = false;
-    joinChannel.on('broadcast', { event: 'join-response' }, ({ payload }) => {
-      if (payload.to !== myPeerId || settled) return;
-      settled = true;
-      clearTimeout(admitTimer);
-      if (payload.approved) {
-        showStatus('');
-        setPrimaryBusy(false);
-        channel = joinChannel; // reuse the already-subscribed channel
-        passcode = enteredPasscode;
-        enterCallRoom();
-        attachChannelHandlers();
-        trackPresence();
-      } else {
-        setPrimaryBusy(false);
-        showStatus('');
-        showError(payload.reason === 'passcode' ? 'Incorrect passcode.' : 'Unable to join this meeting.');
-        sb.removeChannel(joinChannel);
-      }
-    });
-
-    joinChannel.subscribe(status => {
+    pendingJoin = { settled: false, passcode: enteredPasscode };
+    buildChannel();
+    channel.subscribe(status => {
       if (status === 'SUBSCRIBED') {
-        joinChannel.send({
+        channel.send({
           type: 'broadcast', event: 'join-request',
           payload: { from: myPeerId, name: user.username, passcode: enteredPasscode }
         });
         admitTimer = setTimeout(() => {
-          if (settled) return;
-          settled = true;
+          if (!pendingJoin || pendingJoin.settled) return;
+          pendingJoin.settled = true;
           setPrimaryBusy(false);
           showStatus('');
           showError('No response from the host. The meeting may not have started, or the code is wrong.');
-          sb.removeChannel(joinChannel);
+          getSb().removeChannel(channel);
+          channel = null;
         }, ADMIT_TIMEOUT_MS);
       }
     });
   }
 
-  /* ── Signaling channel (host side sets it up directly) ── */
-  function subscribeChannel() {
-    const sb = getSb();
-    channel = sb.channel(`meet:${roomCode}`, {
-      config: { broadcast: { self: false }, presence: { key: myPeerId } }
-    });
-    // Host listens for admission requests.
-    channel.on('broadcast', { event: 'join-request' }, ({ payload }) => {
-      const approved = !passcode || payload.passcode === passcode;
-      channel.send({
-        type: 'broadcast', event: 'join-response',
-        payload: { to: payload.from, approved, reason: approved ? null : 'passcode' }
-      });
-    });
-    attachChannelHandlers();
-    channel.subscribe(status => { if (status === 'SUBSCRIBED') trackPresence(); });
-  }
-
-  function attachChannelHandlers() {
-    channel
-      .on('broadcast', { event: 'signal' }, ({ payload }) => {
-        if (payload.to !== myPeerId) return;
-        handleSignal(payload.from, payload.type, payload.data);
-      })
-      .on('broadcast', { event: 'meta' }, ({ payload }) => {
-        if (peers[payload.from]) Object.assign(peers[payload.from], payload.data);
-        renderStage();
-      })
-      .on('presence', { event: 'sync' }, () => evaluatePresence())
-      .on('presence', { event: 'join' }, () => evaluatePresence())
-      .on('presence', { event: 'leave' }, ({ key }) => removePeer(key));
-  }
-
-  function trackPresence() {
-    channel.track({ name: user.username, isHost, video: mode === 'video' && camOn, audio: micOn, screenSharing: false });
+  function handleJoinResponse(payload) {
+    if (!pendingJoin || pendingJoin.settled) return;
+    pendingJoin.settled = true;
+    clearTimeout(admitTimer);
+    if (payload.approved) {
+      showStatus('');
+      setPrimaryBusy(false);
+      passcode = pendingJoin.passcode;
+      enterCallRoom();
+      trackPresence();
+    } else {
+      setPrimaryBusy(false);
+      showStatus('');
+      showError(payload.reason === 'passcode' ? 'Incorrect passcode.' : 'Unable to join this meeting.');
+      getSb().removeChannel(channel);
+      channel = null;
+    }
   }
 
   function sendSignal(toId, type, data) {
@@ -433,6 +519,7 @@ window.Meet = (function () {
   }
 
   function evaluatePresence() {
+    if (!channel) return;
     const state = channel.presenceState();
     Object.keys(state).forEach(key => {
       if (key === myPeerId) return;
@@ -444,6 +531,8 @@ window.Meet = (function () {
         Object.assign(peers[key], meta);
       }
     });
+    // Drop peers that disappeared from presence but never fired 'leave'.
+    Object.keys(peers).forEach(key => { if (!state[key]) removePeer(key); });
     renderStage();
     updateParticipantCount();
   }
@@ -451,7 +540,16 @@ window.Meet = (function () {
   /* ── WebRTC mesh ───────────────────────────────────── */
   function createPeerConnection(peerId, meta, initiator) {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-    peers[peerId] = { pc, stream: null, name: meta.name || 'Guest', isHost: !!meta.isHost, video: !!meta.video, audio: meta.audio !== false, screenSharing: !!meta.screenSharing, tile: null };
+    peers[peerId] = {
+      pc, stream: null,
+      name: meta.name || 'Guest',
+      avatarUrl: meta.avatarUrl || null,
+      isHost: !!meta.isHost,
+      video: !!meta.video,
+      audio: meta.audio !== false,
+      screenSharing: !!meta.screenSharing,
+      tile: null
+    };
 
     if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
 
@@ -513,7 +611,6 @@ window.Meet = (function () {
   /* ── Call room ─────────────────────────────────────── */
   function enterCallRoom() {
     inCall = true;
-    showScreen(null);
     document.getElementById('meet-action-select').style.display = 'none';
     document.getElementById('meet-prepare-screen').style.display = 'none';
     document.getElementById('meet-gate').style.display = 'none';
@@ -552,12 +649,12 @@ window.Meet = (function () {
   }
 
   function tileHtml(opts) {
-    const { key, name, host, isLocal, hasVideoTrack, mic, size, screen } = opts;
+    const { key, name, avatarUrl, host, isLocal, hasVideoTrack, mic, size, screen } = opts;
     const cls = ['meet-tile', size === 'main' ? 'meet-tile-main' : 'meet-tile-side', isLocal ? 'local' : '', screen ? 'screen' : ''].filter(Boolean).join(' ');
     return `
       <div class="${cls}" id="meet-tile-${key}">
         <video autoplay playsinline ${isLocal && !screen ? 'muted' : ''}></video>
-        <div class="meet-tile-avatar" style="display:${hasVideoTrack ? 'none' : 'flex'}"><div class="avatar-circle">${initials(name)}</div></div>
+        <div class="meet-tile-avatar" style="display:${hasVideoTrack ? 'none' : 'flex'}"><div class="avatar-circle">${avatarHtml(name, avatarUrl)}</div></div>
         <div class="meet-tile-label">${escapeHtml(name)}${host ? '<span class="host-badge">Host</span>' : ''}</div>
         ${!mic ? `<div class="meet-mic-off-badge">${ICONS.micOff}</div>` : ''}
       </div>`;
@@ -572,49 +669,48 @@ window.Meet = (function () {
     const otherKeys = Object.keys(peers);
 
     if (sharerId) {
-      // Screen-share layout: shared screen large left; host + others on the right.
       const sharerName = sharerId === myPeerId ? user.username : peers[sharerId].name;
-      main.innerHTML = tileHtml({ key: 'share-' + sharerId, name: sharerName, host: sharerId === hostId, isLocal: sharerId === myPeerId, hasVideoTrack: true, mic: true, size: 'main', screen: true });
+      main.innerHTML = tileHtml({ key: 'share-' + sharerId, name: sharerName, avatarUrl: null, host: sharerId === hostId, isLocal: sharerId === myPeerId, hasVideoTrack: true, mic: true, size: 'main', screen: true });
       const mainVideo = main.querySelector('video');
       mainVideo.srcObject = sharerId === myPeerId ? screenStream : peers[sharerId].stream;
 
       let sideHtml = '';
       const hostIsLocal = hostId === myPeerId;
       const hostName = hostIsLocal ? user.username : (peers[hostId]?.name || 'Host');
+      const hostAvatar = hostIsLocal ? user.avatarUrl : (peers[hostId]?.avatarUrl || null);
       const hostHasVideo = hostIsLocal ? (mode === 'video' && camOn) : !!peers[hostId]?.video;
       const hostMic = hostIsLocal ? micOn : (peers[hostId]?.audio !== false);
-      if (hostId) sideHtml += tileHtml({ key: 'side-' + hostId, name: hostName, host: true, isLocal: hostIsLocal, hasVideoTrack: hostHasVideo, mic: hostMic, size: 'side' });
+      if (hostId) sideHtml += tileHtml({ key: 'side-' + hostId, name: hostName, avatarUrl: hostAvatar, host: true, isLocal: hostIsLocal, hasVideoTrack: hostHasVideo, mic: hostMic, size: 'side' });
 
       otherKeys.filter(k => k !== hostId).forEach(k => {
         const p = peers[k];
-        sideHtml += tileHtml({ key: 'side-' + k, name: p.name, host: false, isLocal: false, hasVideoTrack: !!p.video, mic: p.audio !== false, size: 'side' });
+        sideHtml += tileHtml({ key: 'side-' + k, name: p.name, avatarUrl: p.avatarUrl, host: false, isLocal: false, hasVideoTrack: !!p.video, mic: p.audio !== false, size: 'side' });
       });
       if (!isHost && hostId !== myPeerId) {
-        sideHtml += tileHtml({ key: 'side-' + myPeerId, name: user.username, host: false, isLocal: true, hasVideoTrack: mode === 'video' && camOn, mic: micOn, size: 'side' });
+        sideHtml += tileHtml({ key: 'side-' + myPeerId, name: user.username, avatarUrl: user.avatarUrl, host: false, isLocal: true, hasVideoTrack: mode === 'video' && camOn, mic: micOn, size: 'side' });
       }
       side.innerHTML = sideHtml || `<div class="meet-side-empty">No other participants yet</div>`;
     } else {
-      // Default layout: host large left; everyone else scrolls on the right.
       const hostIsLocal = hostId === myPeerId;
       const hostName = hostIsLocal ? user.username : (peers[hostId]?.name || 'Host');
+      const hostAvatar = hostIsLocal ? user.avatarUrl : (peers[hostId]?.avatarUrl || null);
       const hostHasVideo = hostIsLocal ? (mode === 'video' && camOn) : !!peers[hostId]?.video;
       const hostMic = hostIsLocal ? micOn : (peers[hostId]?.audio !== false);
-      main.innerHTML = hostId ? tileHtml({ key: hostId, name: hostName, host: true, isLocal: hostIsLocal, hasVideoTrack: hostHasVideo, mic: hostMic, size: 'main' }) : '';
+      main.innerHTML = hostId ? tileHtml({ key: hostId, name: hostName, avatarUrl: hostAvatar, host: true, isLocal: hostIsLocal, hasVideoTrack: hostHasVideo, mic: hostMic, size: 'main' }) : '';
       const mainVideo = main.querySelector('video');
       if (mainVideo) mainVideo.srcObject = hostIsLocal ? localStream : peers[hostId]?.stream || null;
 
       let sideHtml = '';
       otherKeys.filter(k => k !== hostId).forEach(k => {
         const p = peers[k];
-        sideHtml += tileHtml({ key: k, name: p.name, host: false, isLocal: false, hasVideoTrack: !!p.video, mic: p.audio !== false, size: 'side' });
+        sideHtml += tileHtml({ key: k, name: p.name, avatarUrl: p.avatarUrl, host: false, isLocal: false, hasVideoTrack: !!p.video, mic: p.audio !== false, size: 'side' });
       });
       if (!isHost) {
-        sideHtml += tileHtml({ key: myPeerId, name: user.username, host: false, isLocal: true, hasVideoTrack: mode === 'video' && camOn, mic: micOn, size: 'side' });
+        sideHtml += tileHtml({ key: myPeerId, name: user.username, avatarUrl: user.avatarUrl, host: false, isLocal: true, hasVideoTrack: mode === 'video' && camOn, mic: micOn, size: 'side' });
       }
       side.innerHTML = sideHtml || `<div class="meet-side-empty">No other participants yet</div>`;
     }
 
-    // Wire up remote <video> srcObjects for every side tile.
     otherKeys.forEach(k => {
       const p = peers[k];
       const vids = document.querySelectorAll(`[id$="-${k}"] video, #meet-tile-${k} video`);
@@ -661,23 +757,18 @@ window.Meet = (function () {
     renderStage();
   }
 
-  async function toggleScreenShare() {
-    const btn = $('#meet-screen-btn');
-    if (localScreenSharing) {
-      screenStream?.getTracks().forEach(t => t.stop());
-      screenStream = null;
-      localScreenSharing = false;
-      const camTrack = localStream?.getVideoTracks()[0];
-      Object.values(peers).forEach(({ pc }) => {
-        const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
-        if (sender && camTrack) sender.replaceTrack(camTrack);
-      });
-      btn.classList.remove('active-toggle');
-      broadcastMeta();
-      renderStage();
-      return;
-    }
+  /* ── Screen sharing (host: instant; participant: ask first) ── */
+  function toggleScreenShare() {
+    if (localScreenSharing) { stopScreenShare(); return; }
     if (currentSharerId()) { toast('Someone else is already sharing their screen.'); return; }
+    if (isHost) {
+      startScreenShare();
+    } else {
+      requestScreenShare();
+    }
+  }
+
+  async function startScreenShare() {
     try {
       screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
     } catch (e) { return; }
@@ -688,10 +779,65 @@ window.Meet = (function () {
       if (sender) sender.replaceTrack(screenTrack);
       else if (localStream) pc.addTrack(screenTrack, localStream);
     });
-    btn.classList.add('active-toggle');
+    $('#meet-screen-btn').classList.add('active-toggle');
     broadcastMeta();
     renderStage();
-    screenTrack.onended = () => toggleScreenShare();
+    screenTrack.onended = () => stopScreenShare();
+  }
+
+  function stopScreenShare() {
+    screenStream?.getTracks().forEach(t => t.stop());
+    screenStream = null;
+    localScreenSharing = false;
+    const camTrack = localStream?.getVideoTracks()[0];
+    Object.values(peers).forEach(({ pc }) => {
+      const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+      if (sender && camTrack) sender.replaceTrack(camTrack);
+    });
+    $('#meet-screen-btn').classList.remove('active-toggle');
+    broadcastMeta();
+    renderStage();
+  }
+
+  function requestScreenShare() {
+    const hostId = currentHostId();
+    if (!hostId || hostId === myPeerId) { startScreenShare(); return; }
+    toast('Asking the host for permission to share your screen...');
+    channel?.send({ type: 'broadcast', event: 'screen-request', payload: { from: myPeerId, name: user.username } });
+    clearTimeout(screenRequestTimer);
+    screenRequestTimer = setTimeout(() => toast('The host did not respond to your screen share request.'), SCREEN_REQUEST_TIMEOUT_MS);
+  }
+
+  function handleScreenResponse(approved) {
+    clearTimeout(screenRequestTimer);
+    if (approved) { toast('Screen sharing approved.'); startScreenShare(); }
+    else toast('The host denied your screen share request.');
+  }
+
+  /* Custom in-page popup shown to the host when someone asks to share. */
+  function showScreenRequestModal(fromId, name) {
+    const overlay = document.getElementById('meet-screen-modal');
+    if (!overlay) return;
+    document.getElementById('meet-screen-modal-name').textContent = name || 'A participant';
+    overlay.classList.add('show');
+
+    let resolved = false;
+    const timer = setTimeout(() => { finish(false); }, SCREEN_REQUEST_TIMEOUT_MS);
+
+    function finish(approved) {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timer);
+      overlay.classList.remove('show');
+      channel?.send({ type: 'broadcast', event: 'screen-response', payload: { to: fromId, approved } });
+      allowBtn.onclick = null;
+      denyBtn.onclick = null;
+    }
+
+    const allowBtn = document.getElementById('meet-screen-allow-btn');
+    const denyBtn = document.getElementById('meet-screen-deny-btn');
+    allowBtn.onclick = () => finish(true);
+    denyBtn.onclick = () => finish(false);
   }
 
   function copyInviteLink() {
