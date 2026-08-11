@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Welcome — 360</title>
+  <link rel="stylesheet" href="/assets/css/main.css"/>
+  <link rel="stylesheet" href="/assets/css/wide.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);font-family:var(--font);}
+    .ob-wrap{max-width:540px;width:90%;}
+    .ob-progress{display:flex;gap:6px;margin-bottom:28px;}
+    .ob-step-dot{flex:1;height:4px;border-radius:2px;background:var(--dc-sep);transition:background .3s;}
+    .ob-step-dot.done{background:var(--a);}
+    .ob-card{background:var(--dc-sidebar-bg);border:1.5px solid var(--dc-sep);border-radius:20px;padding:36px;box-shadow:0 24px 64px rgba(0,0,0,.4);animation:ob-in .25s ease;}
+    @keyframes ob-in{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+    .ob-icon{font-size:48px;margin-bottom:14px;}
+    .ob-title{font-size:22px;font-weight:800;color:var(--dc-text);margin-bottom:8px;}
+    .ob-sub{font-size:14px;color:var(--dc-muted);line-height:1.6;margin-bottom:20px;}
+    .ob-rules{background:var(--dc-input-bg);border-radius:10px;padding:14px;font-size:13px;color:var(--dc-text);white-space:pre-wrap;max-height:200px;overflow-y:auto;margin-bottom:20px;line-height:1.6;}
+    .ob-roles{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;}
+    .ob-role{padding:8px 14px;border-radius:10px;border:1.5px solid var(--dc-sep);background:var(--dc-input-bg);cursor:pointer;font-size:13px;color:var(--dc-text);transition:all .15s;}
+    .ob-role.selected{border-color:var(--a);background:rgba(var(--a-rgb),.12);color:var(--a);}
+    .ob-channels{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+    .ob-ch{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid var(--dc-sep);background:var(--dc-input-bg);cursor:pointer;font-size:13px;color:var(--dc-text);transition:all .15s;}
+    .ob-ch.selected{border-color:var(--a);}
+    .ob-ch input[type=checkbox]{accent-color:var(--a);}
+    .ob-btn{display:block;width:100%;padding:13px;border-radius:12px;border:none;background:var(--a);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s;margin-top:8px;}
+    .ob-btn:hover{opacity:.88;}
+    .ob-btn-sec{background:var(--dc-input-bg);color:var(--dc-text);border:1.5px solid var(--dc-sep);}
+    .ob-agree{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--dc-muted);margin-bottom:16px;}
+    .ob-agree input{margin-top:2px;accent-color:var(--a);}
+  </style>
+</head>
+<body>
+<div class="ob-wrap">
+  <div class="ob-progress" id="ob-progress"></div>
+  <div class="ob-card" id="ob-card"><div style="text-align:center;font-size:32px;">⏳</div></div>
+</div>
+<script>
+const SB_URL='https://wiswfpfsjiowtrdyqpxy.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+let server=null, session=null, currentStep=0, selectedRoles=[], selectedChannels=[];
+const steps=[];
+
+async function init(){
+  const{data:{session:s}}=await sb.auth.getSession();
+  session=s;
+  if(!session){location.href='/account';return;}
+  const serverId=new URLSearchParams(location.search).get('server');
+  if(!serverId){location.href='/chat';return;}
+  const{data:sv}=await sb.from('servers').select('*').eq('id',serverId).maybeSingle();
+  server=sv;
+  if(!server){location.href='/chat';return;}
+
+  // Build steps
+  steps.push({id:'welcome',render:renderWelcome});
+  if(server.onboarding_rules) steps.push({id:'rules',render:renderRules});
+  const obRoles=server.onboarding_roles||[];
+  if(obRoles.length) steps.push({id:'roles',render:renderRoles});
+  const obChannels=server.onboarding_channels||[];
+  if(obChannels.length) steps.push({id:'channels',render:renderChannels});
+  steps.push({id:'done',render:renderDone});
+
+  renderProgress();
+  renderStep();
+}
+
+function renderProgress(){
+  const el=document.getElementById('ob-progress');
+  el.innerHTML=steps.map((_,i)=>`<div class="ob-step-dot${i<=currentStep?' done':''}"></div>`).join('');
+}
+
+function renderStep(){ steps[currentStep].render(); }
+
+function nextStep(){currentStep++;renderProgress();document.getElementById('ob-card').style.animation='none';requestAnimationFrame(()=>{document.getElementById('ob-card').style.animation='';renderStep();});}
+
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+
+function renderWelcome(){
+  document.getElementById('ob-card').innerHTML=`
+    <div class="ob-icon">${server.icon||'🌐'}</div>
+    <div class="ob-title">Welcome to ${esc(server.name)}!</div>
+    <div class="ob-sub">${server.onboarding_welcome_text?esc(server.onboarding_welcome_text):'We\'re glad you\'re here. Let\'s get you set up.'}</div>
+    ${server.description?`<div class="ob-sub" style="margin-top:-8px;">${esc(server.description)}</div>`:''}
+    <button class="ob-btn" onclick="nextStep()">Get Started →</button>
+  `;
+}
+
+function renderRules(){
+  document.getElementById('ob-card').innerHTML=`
+    <div class="ob-icon">📜</div>
+    <div class="ob-title">Server Rules</div>
+    <div class="ob-sub">Please read and agree to the rules before continuing.</div>
+    <div class="ob-rules">${esc(server.onboarding_rules)}</div>
+    <label class="ob-agree"><input type="checkbox" id="rules-agree"/> I have read and agree to the server rules.</label>
+    <button class="ob-btn" onclick="agreeRules()">I Agree →</button>
+  `;
+}
+function agreeRules(){
+  if(!document.getElementById('rules-agree').checked){alert('Please agree to the rules to continue.');return;}
+  nextStep();
+}
+
+function renderRoles(){
+  const roles=server.onboarding_roles||[];
+  document.getElementById('ob-card').innerHTML=`
+    <div class="ob-icon">🎭</div>
+    <div class="ob-title">Pick your interests</div>
+    <div class="ob-sub">Select roles that describe you. You can change these later.</div>
+    <div class="ob-roles">${roles.map(r=>`<div class="ob-role" onclick="toggleRole(this,'${esc(r.id||r.name)}')">${esc(r.emoji||'')} ${esc(r.name)}</div>`).join('')}</div>
+    <button class="ob-btn" onclick="saveRolesAndNext()">Continue →</button>
+    <button class="ob-btn ob-btn-sec" style="margin-top:8px;" onclick="nextStep()">Skip</button>
+  `;
+}
+function toggleRole(el,id){el.classList.toggle('selected');if(el.classList.contains('selected'))selectedRoles.push(id);else selectedRoles=selectedRoles.filter(r=>r!==id);}
+async function saveRolesAndNext(){
+  // Store selected roles in server_members.meta or a separate table as needed
+  nextStep();
+}
+
+function renderChannels(){
+  const channels=server.onboarding_channels||[];
+  document.getElementById('ob-card').innerHTML=`
+    <div class="ob-icon">📣</div>
+    <div class="ob-title">Choose your channels</div>
+    <div class="ob-sub">Subscribe to channels you want to see in your sidebar.</div>
+    <div class="ob-channels">${channels.map(c=>`<label class="ob-ch"><input type="checkbox" onchange="toggleChannel('${esc(c.id)}',this.checked)" checked/># ${esc(c.name)}<span style="color:var(--dc-muted);font-size:11px;margin-left:auto;">${esc(c.description||'')}</span></label>`).join('')}</div>
+    <button class="ob-btn" onclick="saveChannelsAndNext()">Continue →</button>
+  `;
+  selectedChannels=channels.map(c=>c.id);
+}
+function toggleChannel(id,checked){if(checked)selectedChannels.push(id);else selectedChannels=selectedChannels.filter(c=>c!==id);}
+async function saveChannelsAndNext(){ nextStep(); }
+
+async function renderDone(){
+  await sb.from('server_members').update({onboarding_done:true}).eq('server_id',server.id).eq('user_id',session.user.id);
+  document.getElementById('ob-card').innerHTML=`
+    <div class="ob-icon">🎉</div>
+    <div class="ob-title">You're all set!</div>
+    <div class="ob-sub">Welcome to <strong>${esc(server.name)}</strong>. Enjoy your stay!</div>
+    <button class="ob-btn" onclick="location.href='/chat/${server.slug||'?server='+server.id}'">Go to Server →</button>
+  `;
+}
+
+init();
+</script>
+</body>
+</html>
