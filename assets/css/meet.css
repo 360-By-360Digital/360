@@ -469,8 +469,139 @@ body.dark .meet-modal-text { color: var(--mutd); }
 .meet-modal-actions .meet-btn { margin-top: 0; }
 
 
+/* ── Host bulk-action bar ──────────────────────────── */
+.meet-host-controls {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 20px 4px;
+}
+.meet-host-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--br);
+  background: rgba(255,255,255,.5);
+  color: var(--txt);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+body.dark .meet-host-action-btn { background: rgba(255,255,255,.06); color: var(--txtd); }
+.meet-host-action-btn:hover { background: rgba(239,68,68,.14); border-color: #ef4444; color: #ef4444; }
+.meet-host-action-btn:active { transform: scale(.97); }
+
+/* ── Chat badge on the toolbar button ──────────────── */
+.meet-chat-btn, #meet-chat-btn { position: relative; }
+.meet-chat-badge {
+  position: absolute; top: -4px; right: -4px;
+  min-width: 16px; height: 16px; padding: 0 3px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px; font-weight: 700;
+  align-items: center; justify-content: center;
+  display: none;
+}
+
+/* ── In-call chat drawer ────────────────────────────── */
+.meet-chat-panel {
+  position: absolute;
+  top: 0; right: -320px;
+  width: 300px;
+  height: 100%;
+  background: var(--bg);
+  border: 1px solid var(--br);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,.25);
+  transition: right .2s ease;
+  z-index: 20;
+}
+body.dark .meet-chat-panel { background: var(--bgd); }
+.meet-chat-panel.open { right: 0; }
+
+.meet-chat-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--br);
+  font-size: 13px; font-weight: 700;
+  color: var(--txt);
+}
+body.dark .meet-chat-header { color: var(--txtd); }
+.meet-chat-close-btn {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: none; cursor: pointer;
+  background: transparent;
+  color: var(--mut);
+  display: flex; align-items: center; justify-content: center;
+}
+.meet-chat-close-btn:hover { background: rgba(59,130,246,.12); color: var(--a); }
+
+.meet-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.meet-chat-msg { display: flex; gap: 8px; align-items: flex-start; }
+.meet-chat-msg.own { flex-direction: row-reverse; text-align: right; }
+.meet-chat-avatar { width: 26px; height: 26px; font-size: 10px; flex-shrink: 0; }
+.meet-chat-bubble-wrap { display: flex; flex-direction: column; gap: 3px; max-width: 78%; }
+.meet-chat-msg.own .meet-chat-bubble-wrap { align-items: flex-end; }
+.meet-chat-meta { display: flex; gap: 6px; align-items: baseline; }
+.meet-chat-msg.own .meet-chat-meta { flex-direction: row-reverse; }
+.meet-chat-name { font-size: 11px; font-weight: 700; color: var(--txt); }
+body.dark .meet-chat-name { color: var(--txtd); }
+.meet-chat-time { font-size: 10px; color: var(--mut); }
+body.dark .meet-chat-time { color: var(--mutd); }
+.meet-chat-bubble {
+  background: rgba(59,130,246,.1);
+  border-radius: 12px;
+  padding: 7px 11px;
+  font-size: 13px;
+  color: var(--txt);
+  word-break: break-word;
+}
+body.dark .meet-chat-bubble { background: rgba(255,255,255,.07); color: var(--txtd); }
+.meet-chat-msg.own .meet-chat-bubble {
+  background: linear-gradient(120deg, var(--a), var(--a2));
+  color: #050816;
+}
+
+.meet-chat-input-row {
+  display: flex; gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--br);
+}
+.meet-chat-input-row .meet-input { flex: 1; padding: 9px 12px; }
+.meet-chat-send-btn {
+  width: 38px; height: 38px; border-radius: 10px;
+  border: none; cursor: pointer;
+  background: linear-gradient(120deg, var(--a), var(--a2));
+  color: #050816;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.meet-chat-send-btn:active { transform: scale(.95); }
+
+@media (max-width: 760px) {
+  .meet-chat-panel { width: 260px; right: -280px; }
+}
+
 @media (max-width: 600px) {
   .meet-wrap { padding: 74px 14px 30px; }
   .meet-controls-bar { gap: 8px; }
   .meet-ctrl-btn { width: 44px; height: 44px; }
+  .meet-host-controls { flex-wrap: wrap; }
+  .meet-chat-panel { position: fixed; right: -100%; top: auto; bottom: 0; width: 100%; height: 60%; border-radius: 14px 14px 0 0; }
+  .meet-chat-panel.open { right: 0; }
 }
