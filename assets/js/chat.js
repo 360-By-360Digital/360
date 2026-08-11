@@ -703,6 +703,21 @@ function buildMsgEl(msg,container){
     ref.addEventListener('click',()=>jumpToMsg(msg.reply_to_id)); body.appendChild(ref);
   }
   if(msg.text){const d=document.createElement('div');d.className='dc-msg-text';d.innerHTML=renderText(msg.text);body.appendChild(d);}
+  if(msg.voice_note_url){
+    const dur=msg.voice_note_duration||0;
+    const m=Math.floor(dur/60); const s=dur%60;
+    const vn=document.createElement('div'); vn.className='dc-voice-note';
+    const heights=[14,20,10,24,16,8,22,12,18,20,10,14,22,8,18,14,20,10];
+    const bars=heights.map(h=>`<span class="vn-bar" style="height:${h}px"></span>`).join('');
+    vn.innerHTML=`<button class="vn-play-btn" title="Play">▶</button><div class="vn-waveform">${bars}</div><span class="vn-duration">${m}:${String(s).padStart(2,'0')}</span>`;
+    const playBtn=vn.querySelector('.vn-play-btn');
+    let audio=null;
+    playBtn.onclick=()=>{
+      if(!audio){audio=new Audio(msg.voice_note_url);audio.onended=()=>{playBtn.textContent='▶';}}
+      if(audio.paused){audio.play();playBtn.textContent='⏸';}else{audio.pause();playBtn.textContent='▶';}
+    };
+    body.appendChild(vn);
+  }
   if(msg.file_url){
     if(isImageUrl(msg.file_url)){
       const img=document.createElement('img'); img.className='dc-msg-img'; img.src=msg.file_url; img.loading='lazy';
@@ -1427,7 +1442,8 @@ async function loadFriendsList(){
     const actions=document.createElement('div'); actions.className='fl-actions';
     const dmBtn=document.createElement('button'); dmBtn.className='dc-action-btn'; dmBtn.title='Message'; dmBtn.textContent='💬'; dmBtn.onclick=e=>{e.stopPropagation();friendsPanel?.classList.add('hidden');startDMWith(prof.username||prof.email||'');};
     const rmBtn=document.createElement('button'); rmBtn.className='dc-action-btn'; rmBtn.title='Remove'; rmBtn.textContent='✕'; rmBtn.style.color='#ef4444'; rmBtn.onclick=async e=>{e.stopPropagation();await sb.from('friendships').delete().eq('id',f.id);loadFriendsList();showToast('Removed friend.');};
-    actions.append(dmBtn,rmBtn); item.appendChild(actions); item.addEventListener('click',()=>showProfilePopup(fid,item)); el.appendChild(item);
+    const callBtn=document.createElement('button'); callBtn.className='fl-call-btn'; callBtn.title='Voice call'; callBtn.textContent='📞'; callBtn.onclick=e=>{e.stopPropagation();friendsPanel?.classList.add('hidden');if(window.Voice)window.Voice.startCall(fid,prof.username||'Friend');};
+    actions.append(dmBtn,callBtn,rmBtn); item.appendChild(actions); item.addEventListener('click',()=>showProfilePopup(fid,item)); el.appendChild(item);
   });
 }
 async function loadPendingFriends(){
@@ -1934,4 +1950,47 @@ async function seedUnreadCounts(){
       }
     }
   }catch(e){console.error('seedUnreadCounts error:',e);}
+}
+
+/* ══════════════════════════════════════════════════════
+   VOICE NOTE — send as message
+══════════════════════════════════════════════════════ */
+window.sendVoiceNoteMessage = async function(url, durationSecs) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { showToast('Sign in to send voice notes'); return; }
+  const p = await getProfile(session.user.id);
+  const payload = {
+    user_id: session.user.id,
+    username: p.username || session.user.email,
+    avatar_url: p.avatar_url || null,
+    tag: p.tag || null,
+    role: p.role || 'user',
+    text: '',
+    voice_note_url: url,
+    voice_note_duration: Math.round(durationSecs)
+  };
+  if (activeRoom.type === 'dm') {
+    payload.dm_id = activeRoom.id;
+    await sb.from('dm_messages').insert(payload);
+  } else {
+    if (activeRoom.type === 'channel') payload.channel_id = activeRoom.id;
+    else if (activeRoom.type === 'server') payload.server_id = activeRoom.id;
+    await sb.from('messages').insert(payload);
+  }
+  showToast('🎤 Voice note sent!');
+};
+
+/* ══════════════════════════════════════════════════════
+   VOICE — init after DOM ready
+══════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.Voice) window.Voice.init();
+  const vnBtn = document.getElementById('voice-note-btn');
+  if (vnBtn) vnBtn.onclick = () => { if (window.Voice) window.Voice.toggleVoiceNote(); };
+}, { once: true });
+// Also init immediately in case DOMContentLoaded already fired
+if (document.readyState !== 'loading') {
+  if (window.Voice) window.Voice.init();
+  const vnBtn = document.getElementById('voice-note-btn');
+  if (vnBtn) vnBtn.onclick = () => { if (window.Voice) window.Voice.toggleVoiceNote(); };
 }
