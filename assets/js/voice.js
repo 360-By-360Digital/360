@@ -96,34 +96,35 @@ window.Voice = (function() {
   }
 
   /* ── Signaling via Supabase ────────────────────────── */
-  async function sendSignal(toId, type, payload) {
+  // Broadcast-based signaling — instant, no DB polling needed
+  function getSignalChannel(roomId) {
     const sb = getSb();
-    if (!sb) { console.error('Voice: supabaseClient not ready'); return; }
-    await sb.from('voice_signals').insert({
-      room_id: callRoom,
-      from_id: window.currentUserId,
-      to_id: toId,
+    if (!sb) return null;
+    // One persistent broadcast channel per room
+    if (callSignalChan) return callSignalChan;
+    callSignalChan = sb.channel(`voice-broadcast:${roomId}`, { config: { broadcast: { self: false } } });
+    callSignalChan
+      .on('broadcast', { event: 'signal' }, ({ payload }) => {
+        if (payload.to !== window.currentUserId) return;
+        handleSignal(payload.from, payload.type, payload.data);
+      })
+      .subscribe();
+    return callSignalChan;
+  }
+
+  function sendSignal(toId, type, payload) {
+    const chan = getSignalChannel(callRoom);
+    if (!chan) { console.error('Voice: no signal channel'); return; }
+    chan.send({ type: 'broadcast', event: 'signal', payload: {
+      from: window.currentUserId,
+      to: toId,
       type,
-      payload: JSON.stringify(payload)
-    });
+      data: payload
+    }});
   }
 
   function subscribeToSignals(roomId) {
-    const sb = getSb();
-    if (!sb) { console.error('Voice: supabaseClient not ready'); return; }
-    if (callSignalChan) { sb.removeChannel(callSignalChan); }
-    callSignalChan = sb.channel(`voice:${roomId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'voice_signals',
-        filter: `room_id=eq.${roomId}`
-      }, async ({ new: row }) => {
-        if (row.to_id !== window.currentUserId) return;
-        const payload = JSON.parse(row.payload || '{}');
-        await handleSignal(row.from_id, row.type, payload);
-      })
-      .subscribe();
+    getSignalChannel(roomId); // sets up callSignalChan
   }
 
   /* ── WebRTC ────────────────────────────────────────── */
