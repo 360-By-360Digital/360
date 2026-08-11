@@ -75,7 +75,16 @@ window.Meet = (function () {
     return out;
   }
 
-  function getSb() { return window.supabaseClient; }
+  function getSb() {
+    // main.js declares `const supabaseClient = ...` at the top level of a
+    // classic script. const/let bindings don't attach to `window`, but they
+    // ARE visible as a plain global identifier to every other classic
+    // script on the page (they share one global scope), so reference it
+    // directly rather than via window.*.
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) return supabaseClient;
+    if (window.supabaseClient) return window.supabaseClient;
+    return null;
+  }
 
   /* ── Screens ───────────────────────────────────────── */
   function showScreen(name) {
@@ -88,6 +97,12 @@ window.Meet = (function () {
   /* ── Auth gate ─────────────────────────────────────── */
   async function init() {
     const sb = getSb();
+    if (!sb) {
+      console.error('360Meet: supabaseClient not found — check that main.js loaded before meet.js.');
+      renderGate(false);
+      showScreen('meet-gate');
+      return;
+    }
     const { data: { session } } = await sb.auth.getSession();
     if (!session || !session.user) {
       renderGate(false);
