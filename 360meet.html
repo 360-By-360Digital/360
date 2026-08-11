@@ -36,7 +36,7 @@
     <button id="signUpBtn"  class="auth-btn">Sign Up</button>
     <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
   </div>
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+  <button class="sidebar-toggle" id="sidebarToggle">Menu</button>
 
   <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
 
@@ -59,8 +59,8 @@
       <input type="checkbox" id="darkToggle" />
     </label>
     <h3 style="margin-top:25px;">Legal</h3>
-    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
-    <a href="/tos" class="legal-link">📜 Terms of Service</a>
+    <a href="/privacypolicy" class="legal-link">Privacy Policy</a>
+    <a href="/tos" class="legal-link">Terms of Service</a>
   </div>
 
   <div id="auth-popup" class="auth-popup hidden">
@@ -76,68 +76,54 @@
   </div>
 
   <!-- ══ MEET PAGE ══ -->
-  <div class="meet-wrap" id="meet-lobby">
-    <h2 class="meet-title">🎥 360Meet</h2>
-    <p class="meet-subtitle">Start or join a video or voice meeting — no account needed.</p>
+  <div class="meet-wrap">
 
-    <div class="meet-lobby">
-      <div class="meet-card">
-        <div class="meet-preview" id="meet-preview">
-          <video id="meet-preview-video" autoplay playsinline muted style="display:none;"></video>
-          <div class="meet-preview-off" id="meet-preview-off">
-            <div class="avatar-circle" id="meet-preview-initials">?</div>
-            <span>Camera is off</span>
-          </div>
-          <div class="meet-preview-controls">
-            <button class="meet-mini-btn" id="meet-preview-mic" title="Toggle mic">🎙️</button>
-            <button class="meet-mini-btn" id="meet-preview-cam" title="Toggle camera">📹</button>
-          </div>
-        </div>
-        <div class="meet-mode-toggle">
-          <button class="meet-mode-btn active" id="meet-mode-video" data-mode="video">📹 Video call</button>
-          <button class="meet-mode-btn" id="meet-mode-voice" data-mode="voice">🎙️ Voice only</button>
-        </div>
-      </div>
+    <!-- Sign-in gate (shown when the user is not authenticated) -->
+    <div class="meet-card meet-gate" id="meet-gate" style="display:none;"></div>
 
-      <div class="meet-card">
-        <div class="meet-field-label">Your name</div>
-        <input class="meet-input" id="meet-name-input" placeholder="e.g. Mingze" maxlength="30" />
+    <!-- Action lobby: New video call / New voice chat / Join meeting -->
+    <div id="meet-action-select" style="display:none;"></div>
 
-        <div class="meet-field-label">New meeting</div>
-        <button class="meet-btn" id="meet-create-btn">Create meeting</button>
+    <!-- Prepare room: camera/mic check, name (read-only), passcode -->
+    <div id="meet-prepare-screen" style="display:none;"></div>
 
-        <div class="meet-divider">or</div>
-
-        <div class="meet-field-label">Join with a code</div>
-        <input class="meet-input" id="meet-join-input" placeholder="e.g. AB3-XY9" style="text-transform:uppercase;" />
-        <button class="meet-btn secondary" id="meet-join-btn">Join meeting</button>
-        <div class="meet-error" id="meet-error"></div>
-
-        <div class="meet-recent" id="meet-recent"></div>
-      </div>
-    </div>
   </div>
 
+  <!-- Zoom-style call chamber -->
   <div class="meet-call-room" id="meet-call-room">
     <div class="meet-call-topbar">
-      <div class="meet-call-room-code" id="meet-invite-btn" title="Copy invite link">
-        <span id="meet-call-room-code-label">—</span> 📋
+      <div class="meet-call-meta">
+        <button class="meet-call-room-code" id="meet-invite-btn" title="Copy invite link">
+          <span id="meet-lock-icon" style="display:none;">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          <span id="meet-call-room-code-label">—</span>
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <div class="meet-call-timer" id="meet-call-timer">0:00</div>
       </div>
-      <div class="meet-call-timer" id="meet-call-timer">0:00</div>
+      <div class="meet-participant-count">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span id="meet-participant-count-label">1</span>
+      </div>
     </div>
-    <div class="meet-participant-count" id="meet-participant-count">👥 1</div>
-    <div class="meet-grid" id="meet-grid"></div>
+
+    <div class="meet-stage">
+      <div class="meet-stage-main" id="meet-stage-main"></div>
+      <div class="meet-stage-side" id="meet-stage-side"></div>
+    </div>
+
     <div class="meet-controls-bar">
-      <button class="meet-ctrl-btn" id="meet-mic-btn" title="Mute">🎙️</button>
-      <button class="meet-ctrl-btn" id="meet-cam-btn" title="Camera">📹</button>
-      <button class="meet-ctrl-btn" id="meet-screen-btn" title="Share screen">🖥️</button>
-      <button class="meet-ctrl-btn leave" id="meet-leave-btn" title="Leave">📵</button>
+      <button class="meet-ctrl-btn" id="meet-mic-btn" title="Mute microphone"></button>
+      <button class="meet-ctrl-btn" id="meet-cam-btn" title="Turn off camera"></button>
+      <button class="meet-ctrl-btn" id="meet-screen-btn" title="Share screen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </button>
+      <button class="meet-ctrl-btn leave" id="meet-leave-btn" title="Leave meeting">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" stroke="none"><path d="M12 9c-2.3 0-4.5.36-6.6 1.03a1.5 1.5 0 0 0-1 1.6l.34 2.5a1.5 1.5 0 0 0 1.2 1.27c1.1.2 2.2.36 3.06.36.66 0 1.2-.44 1.37-1.06l.3-1.1a1 1 0 0 1 1.1-.73c.66.1 1.34.13 2.23.13.9 0 1.57-.03 2.23-.13a1 1 0 0 1 1.1.73l.3 1.1c.17.62.71 1.06 1.37 1.06.87 0 1.96-.16 3.06-.36a1.5 1.5 0 0 0 1.2-1.27l.34-2.5a1.5 1.5 0 0 0-1-1.6A20.6 20.6 0 0 0 12 9z"/></svg>
+      </button>
     </div>
   </div>
-
-  <!-- Fallback floating window markup (only used if the browser lacks
-       Document/PiP support entirely — see meet.js) -->
-  <div class="meet-fallback-pip" id="meet-fallback-pip"></div>
 
   <script src="/assets/js/main.js"></script>
   <script src="/assets/js/auth-fix.js"></script>
@@ -149,110 +135,22 @@
 
   <script>
     (function () {
-      const $ = s => document.querySelector(s);
+      document.getElementById('meet-invite-btn').onclick = () => Meet.copyInviteLink();
+      document.getElementById('meet-mic-btn').onclick = () => Meet.toggleMic();
+      document.getElementById('meet-cam-btn').onclick = () => Meet.toggleCam();
+      document.getElementById('meet-screen-btn').onclick = () => Meet.toggleScreenShare();
+      document.getElementById('meet-leave-btn').onclick = () => Meet.leaveCall();
 
-      // Restore/save name
-      const savedName = localStorage.getItem('360_meet_name') || '';
-      $('#meet-name-input').value = savedName;
-      $('#meet-name-input').addEventListener('input', e => localStorage.setItem('360_meet_name', e.target.value));
-
-      $('#meet-preview-initials').textContent = (savedName || '?').slice(0, 2).toUpperCase();
-      $('#meet-name-input').addEventListener('input', e => {
-        $('#meet-preview-initials').textContent = (e.target.value || '?').slice(0, 2).toUpperCase();
-      });
-
-      let mode = 'video';
-      let previewMicOn = true;
-      let previewCamOn = true;
-
-      async function refreshPreview() {
-        if (mode === 'video' && previewCamOn) {
-          await Meet.startPreview(true);
-        } else if (mode === 'voice') {
-          Meet.stopPreview();
-          $('#meet-preview-video').style.display = 'none';
-          $('#meet-preview-off').style.display = 'flex';
-        } else {
-          await Meet.startPreview(false);
-          $('#meet-preview-video').style.display = 'none';
-          $('#meet-preview-off').style.display = 'flex';
-        }
+      // supabaseClient is created inline in main.js — wait for it, then gate the page on auth.
+      function waitForSupabase(cb) {
+        if (window.supabaseClient) return cb();
+        let tries = 0;
+        const iv = setInterval(() => {
+          tries++;
+          if (window.supabaseClient || tries > 100) { clearInterval(iv); cb(); }
+        }, 50);
       }
-      refreshPreview();
-
-      $('#meet-mode-video').onclick = () => {
-        mode = 'video'; Meet.setMode('video');
-        $('#meet-mode-video').classList.add('active');
-        $('#meet-mode-voice').classList.remove('active');
-        refreshPreview();
-      };
-      $('#meet-mode-voice').onclick = () => {
-        mode = 'voice'; Meet.setMode('voice');
-        $('#meet-mode-voice').classList.add('active');
-        $('#meet-mode-video').classList.remove('active');
-        refreshPreview();
-      };
-
-      $('#meet-preview-mic').onclick = () => {
-        previewMicOn = !previewMicOn;
-        $('#meet-preview-mic').textContent = previewMicOn ? '🎙️' : '🔇';
-        $('#meet-preview-mic').classList.toggle('off', !previewMicOn);
-      };
-      $('#meet-preview-cam').onclick = () => {
-        previewCamOn = !previewCamOn;
-        $('#meet-preview-cam').textContent = previewCamOn ? '📹' : '📷';
-        $('#meet-preview-cam').classList.toggle('off', !previewCamOn);
-        refreshPreview();
-      };
-
-      function currentName() { return $('#meet-name-input').value.trim() || 'Guest'; }
-
-      function showError(msg) {
-        const el = $('#meet-error');
-        el.textContent = msg;
-        el.classList.toggle('show', !!msg);
-      }
-
-      $('#meet-create-btn').onclick = async () => {
-        const code = Meet.genRoomCode();
-        await Meet.joinCall(code, currentName(), mode === 'video');
-      };
-
-      $('#meet-join-btn').onclick = async () => {
-        const code = $('#meet-join-input').value.trim();
-        if (!code) { showError('Enter a meeting code first.'); return; }
-        showError('');
-        await Meet.joinCall(code, currentName(), mode === 'video');
-      };
-
-      $('#meet-mic-btn').onclick = () => Meet.toggleMic();
-      $('#meet-cam-btn').onclick = () => Meet.toggleCam();
-      $('#meet-screen-btn').onclick = () => Meet.toggleScreenShare();
-      $('#meet-leave-btn').onclick = () => Meet.leaveCall();
-      $('#meet-invite-btn').onclick = () => Meet.copyInviteLink();
-
-      // Recents
-      function renderRecents() {
-        const list = Meet.getRecents();
-        const wrap = $('#meet-recent');
-        if (!list.length) { wrap.innerHTML = ''; return; }
-        wrap.innerHTML = '<div class="meet-field-label">Recent meetings</div>' + list.map(r => {
-          const ago = Math.max(1, Math.round((Date.now() - r.ts) / 60000));
-          return `<div class="meet-recent-item" data-code="${r.code}">
-            <span class="meet-recent-code">${r.code}</span>
-            <span class="meet-recent-time">${ago}m ago</span>
-          </div>`;
-        }).join('');
-        wrap.querySelectorAll('.meet-recent-item').forEach(item => {
-          item.onclick = () => { $('#meet-join-input').value = item.dataset.code; };
-        });
-      }
-      renderRecents();
-
-      // Auto-join via ?room=CODE
-      const params = new URLSearchParams(location.search);
-      const roomParam = params.get('room');
-      if (roomParam) $('#meet-join-input').value = roomParam.toUpperCase();
+      waitForSupabase(() => Meet.init());
     })();
   </script>
 </body>
