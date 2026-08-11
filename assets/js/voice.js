@@ -113,14 +113,26 @@ window.Voice = (function() {
   }
 
   function sendSignal(toId, type, payload) {
-    const chan = getSignalChannel(callRoom);
-    if (!chan) { console.error('Voice: no signal channel'); return; }
-    chan.send({ type: 'broadcast', event: 'signal', payload: {
+    const sb = getSb();
+    if (!sb) { console.error('Voice: no supabase client'); return; }
+    const msg = { type: 'broadcast', event: 'signal', payload: {
       from: window.currentUserId,
       to: toId,
       type,
       data: payload
-    }});
+    }};
+    // Send on room channel if active
+    const roomChan = callRoom ? getSignalChannel(callRoom) : null;
+    if (roomChan) roomChan.send(msg);
+    // ALSO send directly to recipient inbox channel (works before room is joined)
+    const inboxChan = sb.channel(`voice-inbox:${toId}`, { config: { broadcast: { self: false } } });
+    inboxChan.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        inboxChan.send(msg);
+        // Unsubscribe after send to avoid leaking channels
+        setTimeout(() => sb.removeChannel(inboxChan), 2000);
+      }
+    });
   }
 
   function subscribeToSignals(roomId) {
@@ -305,6 +317,7 @@ window.Voice = (function() {
 
   /* ── Start Call ────────────────────────────────────── */
   async function startCall(friendId, friendUsername) {
+    if (!window.currentUserId) { if (window.showToast) window.showToast('❌ Sign in to make calls'); return; }
     if (isInCall) { if (window.showToast) window.showToast('Already in a call!'); return; }
     try {
       localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
@@ -374,7 +387,8 @@ window.Voice = (function() {
   let isRecording      = false;
 
   async function startVoiceNote() {
-    if (!window.currentUserId) { if (window.showToast) window.showToast("❌ Sign in to send voice notes"); return; }
+    const uid = window.currentUserId;
+    if (!uid) { if (window.showToast) window.showToast('❌ Sign in to use voice notes'); return; }
     if (isRecording) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -413,12 +427,13 @@ window.Voice = (function() {
 
   async function finishVoiceNote() {
     const sb = getSb();
-    if (!sb || !window.currentUserId) { if (window.showToast) window.showToast('❌ Not connected'); return; }
+    const uid = window.currentUserId;
+    if (!sb || !uid) { if (window.showToast) window.showToast('❌ Sign in to send voice notes'); return; }
     const ext = (mediaRecorder?.mimeType || 'audio/webm').includes('ogg') ? 'ogg' : 'webm';
     const blob = new Blob(voiceNoteChunks, { type: mediaRecorder?.mimeType || 'audio/webm' });
     if (blob.size < 500) { if (window.showToast) window.showToast('Voice note too short'); return; }
     if (window.showToast) window.showToast('⏫ Uploading voice note…');
-    const fileName = `voice-notes/${window.currentUserId}/${Date.now()}.${ext}`;
+    const fileName = `voice-notes/${uid}/${Date.now()}.${ext}`;
     const { error } = await sb.storage.from('chat-attachments').upload(fileName, blob, { contentType: blob.type });
     if (error) {
       // Bucket may not exist yet — try creating it
@@ -441,12 +456,28 @@ window.Voice = (function() {
   }
 
   /* ── Init ──────────────────────────────────────────── */
+  function setupGlobalListener() {
+    const sb = getSb();
+    const uid = window.currentUserId;
+    if (!sb || !uid) return;
+    // Global incoming-call listener on a per-user broadcast channel
+    // This lets anyone call us even outside an active callRoom
+    const listenChan = sb.channel(`voice-inbox:${uid}`, { config: { broadcast: { self: false } } });
+    listenChan.on('broadcast', { event: 'signal' }, ({ payload }) => {
+      if (payload.to !== window.currentUserId) return;
+      handleSignal(payload.from, payload.type, payload.data);
+    }).subscribe();
+  }
+
   function init() {
     injectCallUI();
     injectIncomingCallUI();
-    // Wire voice note button (may already be in DOM)
     const vnBtn = document.getElementById('voice-note-btn');
     if (vnBtn) vnBtn.onclick = toggleVoiceNote;
+    // Try immediately (user may already be authed on page reload)
+    if (window.currentUserId) setupGlobalListener();
+    // Also hook into auth state changes from chat.js
+    window.addEventListener('voice-auth-ready', setupGlobalListener, { once: true });
   }
 
   return { init, startCall, endCall, toggleVoiceNote, isInCall: () => isInCall, isRecording: () => isRecording };
