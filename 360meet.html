@@ -125,13 +125,25 @@
     </div>
   </div>
 
+  <!-- Screen-share permission popup (shown to the host only) -->
+  <div class="meet-modal-overlay" id="meet-screen-modal">
+    <div class="meet-modal-card">
+      <div class="meet-modal-title"><span id="meet-screen-modal-name"></span> wants to share their screen</div>
+      <p class="meet-modal-text">Everyone in the meeting will see their screen if you allow this.</p>
+      <div class="meet-modal-actions">
+        <button class="meet-btn secondary" id="meet-screen-deny-btn">Deny</button>
+        <button class="meet-btn" id="meet-screen-allow-btn">Allow</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/assets/js/main.js"></script>
   <script src="/assets/js/auth-fix.js"></script>
   <script src="/assets/js/wide.js"></script>
   <script src="/assets/js/gallium.js"></script>
   <script src="/assets/js/cookie.js"></script>
   <script src="/assets/js/cursor.js"></script>
-  <script src="/assets/js/meet.js"></script>
+  <script src="/assets/js/meet.js?v=3"></script>
 
   <script>
     (function () {
