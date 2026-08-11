@@ -24,7 +24,10 @@ window.Meet = (function () {
     users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
     lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
-    join: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>'
+    join: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>',
+    chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
+    send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+    close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
   };
 
   const $ = s => document.querySelector(s);
@@ -424,6 +427,29 @@ window.Meet = (function () {
       handleScreenResponse(payload.approved);
     });
 
+    // In-call chat.
+    channel.on('broadcast', { event: 'chat' }, ({ payload }) => {
+      appendChatMessage(payload, false);
+    });
+
+    // Host bulk controls — force-applied client-side; people can still
+    // re-enable their own mic/camera afterward unless muted again.
+    channel.on('broadcast', { event: 'force-mute' }, () => {
+      if (isHost) return;
+      if (micOn) { setMicEnabled(false); toast('The host muted everyone.'); }
+    });
+    channel.on('broadcast', { event: 'force-camera-off' }, () => {
+      if (isHost) return;
+      if (mode === 'video' && camOn) { setCamEnabled(false); toast('The host turned off everyone\u2019s camera.'); }
+    });
+
+    // Host ended the meeting — everyone else is kicked back to the lobby.
+    channel.on('broadcast', { event: 'meeting-ended' }, () => {
+      if (isHost) return;
+      toast('The host ended the meeting.');
+      leaveCall(true);
+    });
+
     channel.on('presence', { event: 'sync' }, () => evaluatePresence());
     channel.on('presence', { event: 'join' }, () => evaluatePresence());
     channel.on('presence', { event: 'leave' }, ({ key }) => removePeer(key));
@@ -632,10 +658,13 @@ window.Meet = (function () {
       camBtn.style.display = 'none';
     }
 
+    const hostControls = $('#meet-host-controls');
+    if (hostControls) hostControls.style.display = isHost ? '' : 'none';
+
     renderStage();
     updateParticipantCount();
     startTimer();
-    window.addEventListener('beforeunload', leaveCall);
+    window.addEventListener('beforeunload', onBeforeUnload);
   }
 
   function currentHostId() {
@@ -736,25 +765,87 @@ window.Meet = (function () {
   function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
 
   /* ── Controls ──────────────────────────────────────── */
-  function toggleMic() {
+  function setMicEnabled(on) {
     if (!localStream) return;
-    micOn = !micOn;
+    micOn = on;
     localStream.getAudioTracks().forEach(t => t.enabled = micOn);
     const btn = $('#meet-mic-btn');
-    btn.classList.toggle('off', !micOn);
-    btn.innerHTML = micOn ? ICONS.mic : ICONS.micOff;
+    if (btn) { btn.classList.toggle('off', !micOn); btn.innerHTML = micOn ? ICONS.mic : ICONS.micOff; }
     broadcastMeta();
   }
+  function toggleMic() { setMicEnabled(!micOn); }
 
-  function toggleCam() {
+  function setCamEnabled(on) {
     if (mode !== 'video') return;
-    camOn = !camOn;
+    camOn = on;
     if (localStream) localStream.getVideoTracks().forEach(t => t.enabled = camOn);
     const btn = $('#meet-cam-btn');
-    btn.classList.toggle('off', !camOn);
-    btn.innerHTML = camOn ? ICONS.video : ICONS.videoOff;
+    if (btn) { btn.classList.toggle('off', !camOn); btn.innerHTML = camOn ? ICONS.video : ICONS.videoOff; }
     broadcastMeta();
     renderStage();
+  }
+  function toggleCam() { setCamEnabled(!camOn); }
+
+  /* ── Host bulk controls ────────────────────────────── */
+  function hostMuteAll() {
+    if (!isHost || !channel) return;
+    channel.send({ type: 'broadcast', event: 'force-mute', payload: {} });
+    toast('Muted everyone.');
+  }
+  function hostCamerasOff() {
+    if (!isHost || !channel) return;
+    channel.send({ type: 'broadcast', event: 'force-camera-off', payload: {} });
+    toast('Turned off everyone\u2019s camera.');
+  }
+
+  /* ── Chat ──────────────────────────────────────────── */
+  let chatOpen = false;
+  let unreadChat = 0;
+
+  function toggleChatPanel() {
+    chatOpen = !chatOpen;
+    const panel = $('#meet-chat-panel');
+    if (panel) panel.classList.toggle('open', chatOpen);
+    const btn = $('#meet-chat-btn');
+    if (chatOpen) {
+      unreadChat = 0;
+      const badge = $('#meet-chat-badge');
+      if (badge) badge.style.display = 'none';
+      btn?.classList.add('active-toggle');
+      setTimeout(() => $('#meet-chat-input')?.focus(), 50);
+    } else {
+      btn?.classList.remove('active-toggle');
+    }
+  }
+
+  function sendChatMessage(text) {
+    text = (text || '').trim();
+    if (!text || !channel) return;
+    const payload = { from: myPeerId, name: user.username, avatarUrl: user.avatarUrl, text, ts: Date.now() };
+    channel.send({ type: 'broadcast', event: 'chat', payload });
+    appendChatMessage(payload, true);
+  }
+
+  function appendChatMessage(payload, isLocal) {
+    const list = $('#meet-chat-messages');
+    if (!list) return;
+    const time = new Date(payload.ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const row = document.createElement('div');
+    row.className = 'meet-chat-msg' + (isLocal ? ' own' : '');
+    row.innerHTML = `
+      <div class="avatar-circle meet-chat-avatar">${avatarHtml(payload.name, payload.avatarUrl)}</div>
+      <div class="meet-chat-bubble-wrap">
+        <div class="meet-chat-meta"><span class="meet-chat-name">${escapeHtml(payload.name || 'Guest')}</span><span class="meet-chat-time">${time}</span></div>
+        <div class="meet-chat-bubble">${escapeHtml(payload.text)}</div>
+      </div>`;
+    list.appendChild(row);
+    list.scrollTop = list.scrollHeight;
+
+    if (!isLocal && !chatOpen) {
+      unreadChat++;
+      const badge = $('#meet-chat-badge');
+      if (badge) { badge.textContent = String(unreadChat); badge.style.display = 'flex'; }
+    }
   }
 
   /* ── Screen sharing (host: instant; participant: ask first) ── */
@@ -845,8 +936,17 @@ window.Meet = (function () {
     navigator.clipboard?.writeText(url).then(() => toast('Invite link copied')).catch(() => toast(url));
   }
 
-  function leaveCall() {
+  // kicked=true means this call is being torn down because the HOST ended
+  // the meeting (received via the 'meeting-ended' broadcast) — in that case
+  // we must not re-broadcast 'meeting-ended' ourselves or show the generic
+  // "you left" toast, since a more specific one was already shown.
+  function leaveCall(kicked) {
     if (!inCall) return;
+    if (isHost && !kicked && channel) {
+      // Kick everyone else out and shut the meeting down before tearing
+      // down our own connection.
+      channel.send({ type: 'broadcast', event: 'meeting-ended', payload: {} });
+    }
     inCall = false;
     stopTimer();
     Object.keys(peers).forEach(removePeer);
@@ -854,12 +954,20 @@ window.Meet = (function () {
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
     localScreenSharing = false;
+    chatOpen = false;
+    unreadChat = 0;
+    const chatList = $('#meet-chat-messages');
+    if (chatList) chatList.innerHTML = '';
+    $('#meet-chat-panel')?.classList.remove('open');
     $('#meet-call-room').classList.remove('active');
-    window.removeEventListener('beforeunload', leaveCall);
-    toast('You left the meeting');
+    window.removeEventListener('beforeunload', onBeforeUnload);
+    if (!kicked) toast('You left the meeting');
+    isHost = false;
     renderActionSelect();
     showScreen('meet-action-select');
   }
+
+  function onBeforeUnload() { leaveCall(); }
 
   /* ── Public API ────────────────────────────────────── */
   return {
@@ -868,7 +976,11 @@ window.Meet = (function () {
     toggleMic,
     toggleCam,
     toggleScreenShare,
+    hostMuteAll,
+    hostCamerasOff,
+    toggleChatPanel,
+    sendChatMessage,
     copyInviteLink,
-    leaveCall
+    leaveCall: () => leaveCall(false)
   };
 })();
