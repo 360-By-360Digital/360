@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Bot Marketplace — 360</title>
+  <link rel="stylesheet" href="/assets/css/main.css"/>
+  <link rel="stylesheet" href="/assets/css/wide.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);font-family:var(--font);color:var(--dc-text);}
+    .mp-header{padding:32px 40px 20px;border-bottom:1px solid var(--dc-sep);display:flex;align-items:center;gap:16px;background:var(--dc-sidebar-bg);}
+    .mp-header h1{font-size:24px;font-weight:800;}
+    .mp-header a{color:var(--dc-muted);font-size:14px;text-decoration:none;margin-left:auto;}
+    .mp-header a:hover{color:var(--dc-text);}
+    .mp-search{flex:1;max-width:320px;padding:8px 14px;border-radius:10px;border:1.5px solid var(--dc-sep);background:var(--dc-input-bg);color:var(--dc-text);font-size:14px;}
+    .mp-search:focus{outline:none;border-color:var(--a);}
+    .mp-body{padding:32px 40px;max-width:1200px;margin:0 auto;}
+    .mp-cats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
+    .mp-cat{padding:6px 14px;border-radius:20px;border:1.5px solid var(--dc-sep);background:var(--dc-input-bg);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;}
+    .mp-cat.active,.mp-cat:hover{background:var(--a);color:#fff;border-color:var(--a);}
+    .mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;}
+    .mp-bot-card{background:var(--dc-sidebar-bg);border:1.5px solid var(--dc-sep);border-radius:16px;padding:20px;transition:border-color .15s,transform .15s;cursor:pointer;}
+    .mp-bot-card:hover{border-color:var(--a);transform:translateY(-2px);}
+    .mp-bot-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+    .mp-bot-avatar{width:48px;height:48px;border-radius:12px;background:var(--dc-input-bg);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;flex-shrink:0;}
+    .mp-bot-avatar img{width:100%;height:100%;object-fit:cover;border-radius:12px;}
+    .mp-bot-name{font-weight:700;font-size:15px;}
+    .mp-bot-handle{font-size:12px;color:var(--dc-muted);}
+    .mp-bot-verified{color:var(--a);font-size:12px;}
+    .mp-bot-desc{font-size:13px;color:var(--dc-muted);line-height:1.5;margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .mp-bot-footer{display:flex;align-items:center;justify-content:space-between;}
+    .mp-bot-cat{font-size:11px;background:var(--dc-input-bg);padding:3px 8px;border-radius:20px;color:var(--dc-muted);}
+    .mp-bot-installs{font-size:11px;color:var(--dc-muted);}
+    .mp-add-btn{padding:6px 14px;border-radius:8px;border:none;background:var(--a);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;}
+    .mp-add-btn:hover{opacity:.85;}
+    .mp-add-btn.installed{background:var(--dc-input-bg);color:var(--dc-text);border:1.5px solid var(--dc-sep);}
+    .mp-empty{text-align:center;padding:60px 20px;color:var(--dc-muted);font-size:15px;}
+    /* Bot detail modal */
+    .mp-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:1000;display:flex;align-items:center;justify-content:center;}
+    .mp-modal-bg.hidden{display:none;}
+    .mp-modal{background:var(--dc-sidebar-bg);border:1.5px solid var(--dc-sep);border-radius:20px;padding:36px;max-width:500px;width:90%;max-height:90vh;overflow-y:auto;}
+    .mp-modal h2{font-size:20px;font-weight:800;margin-bottom:8px;}
+    .mp-modal p{font-size:14px;color:var(--dc-muted);line-height:1.6;margin-bottom:16px;}
+    .mp-modal-actions{display:flex;gap:10px;flex-wrap:wrap;}
+    .mp-modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--dc-muted);}
+    select.mp-server-sel{padding:8px 12px;border-radius:8px;border:1.5px solid var(--dc-sep);background:var(--dc-input-bg);color:var(--dc-text);font-size:13px;margin-bottom:12px;width:100%;}
+  </style>
+</head>
+<body>
+<div class="mp-header">
+  <span style="font-size:28px">🤖</span>
+  <h1>Bot Marketplace</h1>
+  <input class="mp-search" id="mp-search" placeholder="Search bots…" oninput="filterBots()"/>
+  <a href="/chat">← Back to Chat</a>
+</div>
+<div class="mp-body">
+  <div class="mp-cats" id="mp-cats">
+    <div class="mp-cat active" onclick="setCategory(this,'all')">All</div>
+  </div>
+  <div class="mp-grid" id="mp-grid"><div class="mp-empty">Loading…</div></div>
+</div>
+
+<!-- Bot detail modal -->
+<div class="mp-modal-bg hidden" id="mp-modal">
+  <div class="mp-modal" id="mp-modal-inner" style="position:relative;"></div>
+</div>
+
+<script>
+const SB_URL='https://wiswfpfsjiowtrdyqpxy.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+let allBots=[], myInstalls=new Set(), myServers=[], session=null, activeCategory='all', searchQ='';
+
+async function init(){
+  const{data:{session:s}}=await sb.auth.getSession(); session=s;
+  const[{data:bots},{data:installs},{data:servers}]=await Promise.all([
+    sb.from('bots').select('*').order('featured',{ascending:false}).order('install_count',{ascending:false}),
+    session?sb.from('bot_server_installs').select('bot_id,server_id').eq('installed_by',session.user.id):{data:[]},
+    session?sb.from('server_members').select('server_id,servers(id,name,icon)').eq('user_id',session.user.id):{data:[]}
+  ]);
+  allBots=bots||[];
+  (installs||[]).forEach(i=>myInstalls.add(i.bot_id+'_'+i.server_id));
+  myServers=(servers||[]).map(r=>r.servers).filter(Boolean);
+  // Build categories
+  const cats=[...new Set((bots||[]).map(b=>b.category).filter(Boolean))];
+  const catEl=document.getElementById('mp-cats');
+  cats.forEach(c=>{const d=document.createElement('div');d.className='mp-cat';d.textContent=c;d.onclick=()=>setCategory(d,c);catEl.appendChild(d);});
+  render();
+}
+
+function setCategory(el,cat){activeCategory=cat;document.querySelectorAll('.mp-cat').forEach(d=>d.classList.remove('active'));el.classList.add('active');render();}
+function filterBots(){searchQ=document.getElementById('mp-search').value.toLowerCase();render();}
+
+function render(){
+  const grid=document.getElementById('mp-grid');
+  let bots=allBots;
+  if(activeCategory!=='all') bots=bots.filter(b=>b.category===activeCategory);
+  if(searchQ) bots=bots.filter(b=>(b.name+b.description+b.handle).toLowerCase().includes(searchQ));
+  if(!bots.length){grid.innerHTML='<div class="mp-empty">No bots found.</div>';return;}
+  grid.innerHTML=bots.map(b=>botCard(b)).join('');
+}
+
+function botCard(b){
+  const av=b.avatar_url?`<img src="${b.avatar_url}" alt=""/>`:b.handle?.slice(0,2).toUpperCase()||'🤖';
+  const avWrap=b.avatar_url?`<div class="mp-bot-avatar"><img src="${esc(b.avatar_url)}"/></div>`:`<div class="mp-bot-avatar">${av}</div>`;
+  return `<div class="mp-bot-card" onclick="openBot('${b.id}')">
+    <div class="mp-bot-top">
+      ${avWrap}
+      <div>
+        <div class="mp-bot-name">${esc(b.name)}${b.verified?' <span class="mp-bot-verified">✓</span>':''}</div>
+        <div class="mp-bot-handle">@${esc(b.handle||b.id)}</div>
+      </div>
+    </div>
+    <div class="mp-bot-desc">${esc(b.description||'')}</div>
+    <div class="mp-bot-footer">
+      <span class="mp-bot-cat">${esc(b.category||'General')}</span>
+      <span class="mp-bot-installs">⬇️ ${b.install_count||0}</span>
+    </div>
+  </div>`;
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+
+async function openBot(botId){
+  const bot=allBots.find(b=>b.id===botId);
+  if(!bot) return;
+  const modal=document.getElementById('mp-modal');
+  const inner=document.getElementById('mp-modal-inner');
+  const serverOptions=myServers.map(s=>`<option value="${s.id}">${esc(s.icon||'')} ${esc(s.name)}</option>`).join('');
+  const isInstalled=sid=>myInstalls.has(botId+'_'+sid);
+  inner.innerHTML=`
+    <button class="mp-modal-close" onclick="document.getElementById('mp-modal').classList.add('hidden')">✕</button>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+      ${bot.avatar_url?`<img src="${esc(bot.avatar_url)}" style="width:56px;height:56px;border-radius:14px;"/>` : `<div style="width:56px;height:56px;border-radius:14px;background:var(--dc-input-bg);display:flex;align-items:center;justify-content:center;font-size:24px;">${(bot.handle||'?').slice(0,2).toUpperCase()}</div>`}
+      <div>
+        <h2>${esc(bot.name)}${bot.verified?' ✅':''}</h2>
+        <div style="font-size:13px;color:var(--dc-muted);">@${esc(bot.handle||'')} · ${esc(bot.category||'General')} · ${bot.install_count||0} installs</div>
+      </div>
+    </div>
+    <p>${esc(bot.description||'No description.')}</p>
+    ${bot.website_url?`<p><a href="${esc(bot.website_url)}" target="_blank" style="color:var(--a);">🔗 Website</a></p>`:''}
+    ${session&&myServers.length?`
+      <div style="margin-top:8px;">
+        <label style="font-size:12px;font-weight:700;color:var(--dc-muted);text-transform:uppercase;letter-spacing:.05em;">Add to server</label>
+        <select class="mp-server-sel" id="bot-server-sel">${serverOptions}</select>
+        <div class="mp-modal-actions">
+          <button class="mp-add-btn" id="bot-add-btn" onclick="installBot('${botId}')">Add to Server</button>
+          ${bot.website_url?`<a href="${esc(bot.website_url)}" target="_blank" class="mp-add-btn" style="text-decoration:none;background:var(--dc-input-bg);color:var(--dc-text);border:1.5px solid var(--dc-sep);">View Docs</a>`:''}
+        </div>
+      </div>
+    `:!session?`<button class="mp-add-btn" onclick="location.href='/account'">Sign in to Add Bots</button>`:'<p style="color:var(--dc-muted);font-size:13px;">You need to own a server to add bots.</p>'}
+  `;
+  modal.classList.remove('hidden');
+  // Update button state based on selected server
+  document.getElementById('bot-server-sel')?.addEventListener('change',e=>{
+    const btn=document.getElementById('bot-add-btn');
+    if(btn) btn.textContent=isInstalled(e.target.value)?'Remove from Server':'Add to Server';
+  });
+  const initSel=document.getElementById('bot-server-sel');
+  if(initSel){const btn=document.getElementById('bot-add-btn');if(btn)btn.textContent=isInstalled(initSel.value)?'Remove from Server':'Add to Server';}
+}
+
+async function installBot(botId){
+  if(!session){location.href='/account';return;}
+  const serverId=document.getElementById('bot-server-sel')?.value;
+  if(!serverId) return;
+  const key=botId+'_'+serverId;
+  const btn=document.getElementById('bot-add-btn');
+  if(myInstalls.has(key)){
+    await sb.from('bot_server_installs').delete().eq('bot_id',botId).eq('server_id',serverId);
+    myInstalls.delete(key);
+    if(btn) btn.textContent='Add to Server';
+  } else {
+    const{error}=await sb.from('bot_server_installs').insert({bot_id:botId,server_id:serverId,installed_by:session.user.id});
+    if(error){alert('Error: '+error.message);return;}
+    myInstalls.add(key);
+    if(btn) btn.textContent='Remove from Server';
+    await sb.from('bots').update({install_count:(allBots.find(b=>b.id===botId)?.install_count||0)+1}).eq('id',botId);
+  }
+}
+
+document.getElementById('mp-modal').onclick=e=>{if(e.target===document.getElementById('mp-modal'))document.getElementById('mp-modal').classList.add('hidden');};
+init();
+</script>
+</body>
+</html>
