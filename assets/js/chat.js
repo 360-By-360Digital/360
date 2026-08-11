@@ -5,6 +5,7 @@
 ════════════════════════════════════════════════════════ */
 window.SKIP_AUTH_CHIP = true;
 const sb = supabaseClient;
+window.sb = sb; // expose for voice.js
 const SB_URL = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
 
 /* ── State ─────────────────────────────────────────── */
