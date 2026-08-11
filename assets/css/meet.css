@@ -431,6 +431,44 @@ body.dark .meet-ctrl-btn { background: rgba(255,255,255,.06); color: var(--txtd)
 }
 .meet-toast.show { opacity: 1; transform: translateX(-50%) translateY(4px); }
 
+.avatar-circle { overflow: hidden; }
+.avatar-circle .avatar-img,
+.avatar-circle img.avatar-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+/* ── Screen-share request popup ────────────────────── */
+.meet-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(5,7,13,.55);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 8000;
+  padding: 20px;
+}
+.meet-modal-overlay.show { display: flex; }
+.meet-modal-card {
+  background: var(--bg);
+  color: var(--txt);
+  border: 1px solid var(--br);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+}
+body.dark .meet-modal-card { background: var(--bgd); color: var(--txtd); }
+.meet-modal-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.meet-modal-text { font-size: 12px; color: var(--mut); margin-bottom: 18px; }
+body.dark .meet-modal-text { color: var(--mutd); }
+.meet-modal-actions { display: flex; gap: 10px; }
+.meet-modal-actions .meet-btn { margin-top: 0; }
+
+
 @media (max-width: 600px) {
   .meet-wrap { padding: 74px 14px 30px; }
   .meet-controls-bar { gap: 8px; }
