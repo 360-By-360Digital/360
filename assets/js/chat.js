@@ -2040,16 +2040,51 @@ if (document.readyState !== 'loading') {
   document.getElementById('age-gate-submit')?.addEventListener('click', async () => {
     const dob = dobInput?.value;
     if (!dob) { window.showToast?.('Please enter your date of birth'); return; }
-    const age = (Date.now() - new Date(dob).getTime()) / (1000*60*60*24*365.25);
+    const dobDate = new Date(dob);
+    const ageMs = Date.now() - dobDate.getTime();
+    const age = ageMs / (1000*60*60*24*365.25);
     if (age < 13) {
       window.showToast?.('❌ You must be 13 or older to use 360 Chat');
       return;
     }
-    await sb.from('profiles').update({ birthdate: dob, age_verified: true }).eq('id', window.currentUserId);
-    window.currentProfile = { ...window.currentProfile, age_verified: true, birthdate: dob };
-    gate.classList.add('hidden');
-    window.showToast?.('✅ Age verified!');
+    if (age > 120) { window.showToast?.('❌ Invalid date of birth'); return; }
+    // Step 2: knowledge verification quiz
+    await runAgeVerificationQuiz(dob, dobDate, Math.floor(age));
   });
+
+
+  async function runAgeVerificationQuiz(dob, dobDate, ageYears) {
+    const card = gate.querySelector('.age-gate-card');
+    const birthYear = dobDate.getFullYear();
+    const birthMonth = dobDate.toLocaleString('default', { month: 'long' });
+    const currentYear = new Date().getFullYear();
+    // Generate 3 verification questions derived from their stated DOB
+    const q1answer = birthYear;                            // "What year were you born?"
+    const q2answer = currentYear - birthYear;              // "How old are you turning this year?"  
+    const q3answer = 12 - dobDate.getMonth();             // "How many months until the end of the year from your birth month?"
+
+    card.innerHTML = '<div class="age-gate-logo">🔎</div><h2>Quick Verification</h2><p>Answer these to confirm your date of birth.</p><div class="age-gate-form"><label>What year were you born?</label><input type="number" id="agev-q1" placeholder="e.g. '+birthYear+'" min="1900" max="'+currentYear+'" /><label>How old will you turn this calendar year?</label><input type="number" id="agev-q2" min="0" max="120" /><label>What month were you born in?</label><input type="text" id="agev-q3" placeholder="e.g. January" /><button class=\"age-gate-btn\" id="agev-submit">Verify</button></div>';
+    gate.classList.remove('hidden');
+
+    document.getElementById('agev-submit').onclick = async () => {
+      const a1 = parseInt(document.getElementById('agev-q1').value);
+      const a2 = parseInt(document.getElementById('agev-q2').value);
+      const a3 = document.getElementById('agev-q3').value.trim().toLowerCase();
+      const correctMonth = birthMonth.toLowerCase();
+      let score = 0;
+      if (a1 === q1answer) score++;
+      if (a2 === q2answer || a2 === q2answer - 1) score++; // allow off-by-1 for birthday not yet passed
+      if (a3 === correctMonth || correctMonth.startsWith(a3) && a3.length >= 3) score++;
+      if (score < 2) {
+        window.showToast?.('❌ Answers don\'t match your date of birth — please try again');
+        return;
+      }
+      await sb.from('profiles').update({ birthdate: dob, age_verified: true }).eq('id', window.currentUserId);
+      window.currentProfile = { ...window.currentProfile, age_verified: true, birthdate: dob };
+      gate.classList.add('hidden');
+      window.showToast?.('✅ Age verified! Welcome to 360 Chat');
+    };
+  }
 
   document.getElementById('age-gate-exception-link')?.addEventListener('click', e => {
     e.preventDefault();
