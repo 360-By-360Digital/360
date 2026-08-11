@@ -1675,3 +1675,9 @@ body.dark {
 .age-gate-note { font-size: 12px !important; margin-top: 16px !important; }
 .age-gate-note a { color: var(--a); text-decoration: none; }
 .age-gate-note a:hover { text-decoration: underline; }
+
+/* ── Edited indicator ── */
+.dc-msg-edited {
+  font-size: 10px; color: var(--dc-muted);
+  margin-left: 5px; font-style: italic;
+}
