@@ -703,7 +703,7 @@ function buildMsgEl(msg,container){
     ref.innerHTML=`<span class="rr-author">↩ @${esc(msg.reply_to_username||'?')} </span>${esc((msg.reply_to_text||'').slice(0,80))}`;
     ref.addEventListener('click',()=>jumpToMsg(msg.reply_to_id)); body.appendChild(ref);
   }
-  if(msg.text){const d=document.createElement('div');d.className='dc-msg-text';d.innerHTML=renderText(msg.text);body.appendChild(d);}
+  if(msg.text){const d=document.createElement('div');d.className='dc-msg-text';d.innerHTML=renderText(msg.text);if(msg.edited_at){const ed=document.createElement('span');ed.className='dc-msg-edited';ed.textContent='(edited)';d.appendChild(ed);}body.appendChild(d);}
   if(msg.voice_note_url){
     const dur=msg.voice_note_duration||0;
     const m=Math.floor(dur/60); const s=dur%60;
@@ -830,6 +830,7 @@ function openCtxMenu(e,msg){
   menu.style.top=Math.min(e.clientY,window.innerHeight-menu.offsetHeight-8)+'px';
   menu.style.left=Math.min(e.clientX,window.innerWidth-menu.offsetWidth-8)+'px';
   document.getElementById('ctx-delete').style.display=(msg.user_id===currentUserId||isAdminOrMod(currentProfile))?'flex':'none';
+  document.getElementById('ctx-edit').style.display=(msg.user_id===currentUserId)?'flex':'none';
   setTimeout(()=>document.addEventListener('click',()=>menu.classList.add('hidden'),{once:true}),10);
 }
 document.getElementById('ctx-reply').onclick=()=>ctxTargetMsg&&setReply(ctxTargetMsg);
@@ -842,19 +843,48 @@ document.getElementById('ctx-copy').onclick=()=>{
   navigator.clipboard.writeText(t).then(()=>showToast('📋 Copied!'));
 };
 document.getElementById('ctx-delete').onclick=()=>ctxTargetMsg&&deleteMsg(ctxTargetMsg.id);
+document.getElementById('ctx-edit').onclick=()=>{
+  if(!ctxTargetMsg) return;
+  document.getElementById('ctx-menu').classList.add('hidden');
+  const isDm=activeRoom.type==='dm';
+  editMsg(ctxTargetMsg.id, ctxTargetMsg.text||'', isDm);
+};
 
 /* ══════════════════════════════════════════════════════
    DELETE MESSAGE
 ══════════════════════════════════════════════════════ */
+
+async function editMsg(msgId, currentText, isDm){
+  const newText = prompt('Edit message:', currentText);
+  if(!newText || newText.trim()===currentText.trim()) return;
+  const table = isDm ? 'dm_messages' : 'messages';
+  const{error}=await sb.from(table).update({text:newText.trim(), edited_at:new Date().toISOString()}).eq('id',msgId).eq('user_id',currentUserId);
+  if(error){showToast('❌ '+error.message);return;}
+  // Update DOM immediately
+  const el=document.querySelector(`[data-msg-id="${msgId}"]`);
+  if(el){
+    const t=el.querySelector('.dc-msg-text');
+    if(t) t.innerHTML=renderText(newText.trim());
+    if(!el.querySelector('.dc-msg-edited')){
+      const ed=document.createElement('span');
+      ed.className='dc-msg-edited';ed.textContent='(edited)';
+      (t||el).appendChild(ed);
+    }
+  }
+}
 async function deleteMsg(msgId){
   if(!confirm('Delete this message?')) return;
   if(activeRoom.type==='dm'){
-    await sb.from('dm_messages').delete().eq('id',msgId);
+    const{error}=await sb.from('dm_messages').delete().eq('id',msgId);
+    if(error){showToast('❌ '+error.message);return;}
     removeMsgAndRegroup(String(msgId));
   } else {
-    await sb.from('messages').update({deleted_at:new Date().toISOString()}).eq('id',msgId);
-    // Realtime UPDATE fires deleted_at which we handle via soft-delete visibility
-    // But we also remove immediately client-side for snappiness
+    const{error}=await sb.from('messages').update({deleted_at:new Date().toISOString()}).eq('id',msgId);
+    if(error){
+      // Fallback: try hard delete (owner-only)
+      const{error:e2}=await sb.from('messages').delete().eq('id',msgId).eq('user_id',currentUserId);
+      if(e2){showToast('❌ Cannot delete: '+e2.message);return;}
+    }
     removeMsgAndRegroup(String(msgId));
   }
 }
@@ -2145,3 +2175,29 @@ window.denyAgeException = async function(userId) {
   await sb.from('age_exception_requests').update({ status: 'denied', reviewed_by: window.currentUserId }).eq('user_id', userId);
   window.showToast?.('Exception request denied');
 };
+
+/* ══════════════════════════════════════════════════════
+   CLIPBOARD IMAGE PASTE
+══════════════════════════════════════════════════════ */
+document.addEventListener('paste', async (e) => {
+  if(!currentUserId) return;
+  if(!activeRoom) return;
+  const items = [...(e.clipboardData?.items||[])];
+  const imgItem = items.find(i => i.type.startsWith('image/'));
+  if(!imgItem) return;
+  e.preventDefault();
+  const file = imgItem.getAsFile();
+  if(!file) return;
+  const ext = file.type.split('/')[1] || 'png';
+  const fileName = `paste-${currentUserId}-${Date.now()}.${ext}`;
+  showToast('📋 Uploading pasted image…');
+  const{data,error}=await sb.storage.from('chat-uploads').upload(fileName, file, {contentType:file.type});
+  if(error){showToast('❌ Paste upload failed: '+error.message);return;}
+  const{data:urlData}=sb.storage.from('chat-uploads').getPublicUrl(fileName);
+  const url=urlData?.publicUrl;
+  if(!url) return;
+  const payload={user_id:currentUserId,username:currentProfile?.username,avatar_url:currentProfile?.avatar_url||null,tag:currentProfile?.tag||null,role:currentProfile?.role||'user',text:'',file_url:url};
+  if(activeRoom.type==='dm'){payload.dm_id=activeRoom.id;await sb.from('dm_messages').insert(payload);}
+  else{if(activeRoom.type==='channel')payload.channel_id=activeRoom.id;else if(activeRoom.type==='server')payload.server_id=activeRoom.id;await sb.from('messages').insert(payload);}
+  showToast('✅ Image sent!');
+});
