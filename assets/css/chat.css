@@ -1385,3 +1385,140 @@ body.dark {
 
 /* dc-input-box position context for popups */
 .dc-input-box { position: relative; }
+
+/* ════════════════════════════════════════════════════════
+   VOICE — Call UI, Incoming Call, Voice Note Button
+════════════════════════════════════════════════════════ */
+
+/* ── Active Call Overlay ─── */
+.voice-call-ui {
+  position: fixed; bottom: 20px; right: 20px; z-index: 9900;
+  background: var(--dc-header-bg);
+  border: 1.5px solid var(--dc-sep);
+  border-radius: 16px;
+  padding: 14px 18px;
+  min-width: 260px; max-width: 320px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.35);
+  display: flex; flex-direction: column; gap: 12px;
+  animation: vc-slide-in .25s ease;
+}
+.voice-call-ui.hidden { display: none; }
+@keyframes vc-slide-in {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.vc-header {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600;
+}
+.vc-status { color: #ef4444; font-size: 12px; animation: vc-pulse 1.5s infinite; }
+@keyframes vc-pulse {
+  0%,100% { opacity: 1; } 50% { opacity: .4; }
+}
+.vc-room-name { flex: 1; color: var(--dc-text); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vc-timer { color: var(--dc-muted); font-size: 12px; font-variant-numeric: tabular-nums; margin-left: auto; }
+.vc-participants {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.vc-participant {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; width: 56px;
+}
+.vc-p-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--a); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px;
+}
+.vc-p-name { font-size: 10px; color: var(--dc-muted); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 56px; }
+.vc-p-indicator { font-size: 12px; }
+.vc-controls {
+  display: flex; justify-content: center; gap: 12px;
+}
+.vc-btn {
+  width: 42px; height: 42px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--dc-input-bg); font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, transform .1s;
+}
+.vc-btn:hover { background: var(--dc-ch-hover); transform: scale(1.07); }
+.vc-btn.vc-end { background: #ef4444; }
+.vc-btn.vc-end:hover { background: #dc2626; }
+
+/* ── Incoming Call Toast ─── */
+.incoming-call-ui {
+  position: fixed; top: 24px; right: 24px; z-index: 9950;
+  background: var(--dc-header-bg);
+  border: 1.5px solid var(--a);
+  border-radius: 16px; padding: 16px 18px;
+  display: flex; align-items: center; gap: 14px;
+  min-width: 280px; max-width: 340px;
+  box-shadow: 0 8px 36px rgba(0,0,0,.4);
+  animation: ic-bounce .3s ease;
+}
+.incoming-call-ui.hidden { display: none; }
+@keyframes ic-bounce {
+  0%   { transform: translateY(-20px); opacity: 0; }
+  70%  { transform: translateY(4px); }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.ic-avatar {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: var(--a); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; flex-shrink: 0;
+}
+.ic-info { flex: 1; }
+.ic-name { font-weight: 700; font-size: 15px; color: var(--dc-text); }
+.ic-subtitle { font-size: 12px; color: var(--dc-muted); }
+.ic-actions { display: flex; gap: 8px; }
+.ic-btn {
+  width: 40px; height: 40px; border-radius: 50%; border: none;
+  cursor: pointer; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .1s;
+}
+.ic-btn:hover { transform: scale(1.1); }
+.ic-accept { background: #22c55e; }
+.ic-decline { background: #ef4444; }
+
+/* ── Call button in friends panel ─── */
+.fl-call-btn {
+  background: none; border: 1.5px solid var(--a);
+  color: var(--a); border-radius: 7px;
+  padding: 4px 8px; font-size: 13px; cursor: pointer;
+  transition: background .15s;
+}
+.fl-call-btn:hover { background: var(--a); color: #fff; }
+
+/* ── Voice Note Button ─── */
+#voice-note-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 18px; padding: 6px; border-radius: 8px;
+  color: var(--dc-muted); transition: color .15s, background .15s;
+  line-height: 1; display: flex; align-items: center;
+}
+#voice-note-btn:hover { color: var(--a); background: var(--dc-ch-hover); }
+#voice-note-btn.recording { color: #ef4444; animation: vc-pulse 1s infinite; }
+
+/* ── Voice Note Message Player ─── */
+.dc-voice-note {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--dc-input-bg);
+  border: 1px solid var(--dc-sep);
+  border-radius: 10px; padding: 8px 12px;
+  margin-top: 4px; max-width: 280px;
+}
+.vn-play-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--a); color: #fff; border: none; cursor: pointer;
+  font-size: 13px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: transform .1s;
+}
+.vn-play-btn:hover { transform: scale(1.08); }
+.vn-waveform { flex: 1; height: 28px; position: relative; overflow: hidden; }
+.vn-bar {
+  display: inline-block; width: 3px; border-radius: 2px;
+  background: var(--a); margin: 0 1px;
+  vertical-align: middle; opacity: .5;
+}
+.vn-duration { font-size: 11px; color: var(--dc-muted); flex-shrink: 0; }
