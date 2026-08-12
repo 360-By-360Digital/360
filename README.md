@@ -1,6 +1,6 @@
 # 360
 
-![Version](https://img.shields.io/badge/version-3.0.0-blue)
+![Version](https://img.shields.io/badge/version-3.6.0-blue)
 ![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)
 ![Copyright](https://img.shields.io/badge/Copyright-%C2%A9%202026%20360Digital%2C%20Co.-black)
 [![Windows](https://img.shields.io/badge/Windows-Supported-0078D6?logo=windows&logoColor=white)](#)
