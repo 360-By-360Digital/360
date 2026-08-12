@@ -475,7 +475,15 @@ function showPasscodeGate(server){
 /* ══════════════════════════════════════════════════════
    SWITCH ROOM
 ══════════════════════════════════════════════════════ */
-function switchRoom(room){ updateUrlForRoom(room);
+function switchRoom(room){ 
+  updateUrlForRoom(room);
+  // Persist so reload restores position
+  try { sessionStorage.setItem('360_last_room', JSON.stringify({
+    type: room.type, id: room.id, name: room.name, icon: room.icon,
+    serverId: room.serverId, serverName: room.serverName,
+    serverSlug: room.serverSlug||null, topic: room.topic||null,
+    otherId: room.otherId||null, isGroup: room.isGroup||false
+  })); } catch(e) {}
   activeRoom=room; lastMsgUserId=null; lastMsgDate=null; replyingTo=null; isSending=false;
   closeAllPanels();
   document.getElementById('dc-reply-bar').classList.add('hidden');
@@ -2013,7 +2021,25 @@ function updateUserChip(){
     // Check for invite code in URL
     const _invCode = new URLSearchParams(location.search).get('invite') || new URLSearchParams(location.search).get('code');
     if (_invCode) await handleInviteJoinFlow(_invCode);
-    await handleUrlRouting();
+    const _routed = await handleUrlRouting();
+    // If URL had no routing info, restore last room from sessionStorage
+    if (!_routed) {
+      try {
+        const saved = sessionStorage.getItem('360_last_room');
+        if (saved) {
+          const room = JSON.parse(saved);
+          // Validate room still accessible before restoring
+          if (room.type === 'channel' && room.id) {
+            const { data: ch } = await sb.from('channels').select('id,name').eq('id', room.id).maybeSingle();
+            if (ch) { switchRoom(room); }
+          } else if (room.type === 'dm' && room.id) {
+            switchRoom(room);
+          } else if (room.type === 'public') {
+            switchRoom(room);
+          }
+        }
+      } catch(e) {}
+    }
     sb.auth.onAuthStateChange(async(_,session)=>{
       currentUserId=session?.user?.id||null; window.currentUserId=currentUserId;
       currentProfile=currentUserId?await getProfile(currentUserId):null; window.currentProfile=currentProfile;
@@ -2526,55 +2552,91 @@ async function fetchLinkPreview(url) {
   if (_previewCache[url] !== undefined) return _previewCache[url];
   if (_previewQueue.has(url)) return null;
   _previewQueue.add(url);
-  try {
-    // Use allorigins as a CORS proxy to read og: tags
-    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const r = await fetch(proxy, { signal: AbortSignal.timeout(5000) });
-    const j = await r.json();
-    const html = j.contents || '';
-    const meta = (prop) => {
-      const m = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']+)["']`, 'i'))
-               || html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${prop}["']`, 'i'));
-      return m?.[1] || null;
-    };
-    const title   = meta('og:title')       || meta('twitter:title')       || html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] || null;
-    const desc    = meta('og:description') || meta('twitter:description') || null;
-    const image   = meta('og:image')       || meta('twitter:image')       || null;
-    const siteName= meta('og:site_name')   || null;
-    const result  = (title||desc||image) ? { url, title, desc, image, siteName } : null;
-    _previewCache[url] = result;
-    return result;
-  } catch(e) {
-    _previewCache[url] = null;
+
+  // Try multiple CORS proxies in order — ad blockers may kill some
+  // Supabase edge fn first — same origin, never blocked by ad blockers
+  const proxies = [
+    (u) => `${SB_URL}/functions/v1/link-preview?url=${encodeURIComponent(u)}`,
+    (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+  ];
+
+  const parseMeta = (html, prop) => {
+    const patterns = [
+      new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']{1,500})["']`,'i'),
+      new RegExp(`<meta[^>]+content=["']([^"']{1,500})["'][^>]+(?:property|name)=["']${prop}["']`,'i'),
+    ];
+    for (const rx of patterns) { const m=html.match(rx); if(m) return m[1]; }
     return null;
-  } finally {
-    _previewQueue.delete(url);
+  };
+
+  for (const makeProxy of proxies) {
+    try {
+      const proxyUrl = makeProxy(url);
+      const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(6000) });
+      if (!r.ok) continue;
+      // codetabs returns text directly, corsproxy returns text, allorigins returns JSON
+      let html = '';
+      const ct = r.headers.get('content-type')||'';
+      if (ct.includes('json')) {
+        const j = await r.json();
+        // Our Supabase fn returns {url,title,desc,image,siteName} directly
+        if (j.title || j.desc || j.image) {
+          const result = (j.title||j.desc||j.image) ? { url:j.url||url, title:j.title, desc:j.desc, image:j.image, siteName:j.siteName } : null;
+          _previewCache[url] = result;
+          _previewQueue.delete(url);
+          return result;
+        }
+        // allorigins-style {contents: "...html..."}
+        html = j.contents || j.body || '';
+      } else { html = await r.text(); }
+      if (!html || html.length < 100) continue;
+
+      const title    = parseMeta(html,'og:title')       || parseMeta(html,'twitter:title')       || html.match(/<title[^>]*>([^<]{1,200})<\/title>/i)?.[1]?.trim() || null;
+      const desc     = parseMeta(html,'og:description') || parseMeta(html,'twitter:description') || null;
+      const image    = parseMeta(html,'og:image')       || parseMeta(html,'twitter:image')       || null;
+      const siteName = parseMeta(html,'og:site_name')   || null;
+      const favicon  = html.match(/<link[^>]+rel=["'](?:shortcut )?icon["'][^>]+href=["']([^"']+)["']/i)?.[1] || null;
+
+      const result = (title||desc||image) ? { url, title, desc, image, siteName, favicon } : null;
+      _previewCache[url] = result;
+      _previewQueue.delete(url);
+      return result;
+    } catch(e) { /* try next proxy */ }
   }
+  _previewCache[url] = null;
+  _previewQueue.delete(url);
+  return null;
 }
 
 function buildPreviewEl(preview) {
   const wrap = document.createElement('div');
   wrap.className = 'dc-link-preview';
+  const domain = (() => { try { return new URL(preview.url).hostname.replace('www.',''); } catch(e){ return ''; } })();
+  const siteLabel = preview.siteName || domain;
   wrap.innerHTML = `
-    ${preview.image ? `<img class="dc-lp-img" src="${preview.image}" alt="" loading="lazy" onerror="this.remove()"/>` : ''}
+    ${preview.image ? `<img class="dc-lp-img" src="${esc(preview.image)}" alt="" loading="lazy" onerror="this.style.display='none'"/>` : ''}
     <div class="dc-lp-body">
-      ${preview.siteName ? `<div class="dc-lp-site">${esc(preview.siteName)}</div>` : ''}
-      ${preview.title    ? `<div class="dc-lp-title"><a href="${esc(preview.url)}" target="_blank" rel="noopener" class="dc-link">${esc(preview.title)}</a></div>` : ''}
-      ${preview.desc     ? `<div class="dc-lp-desc">${esc(preview.desc.slice(0,200))}</div>` : ''}
+      ${siteLabel ? `<div class="dc-lp-site">${esc(siteLabel)}</div>` : ''}
+      ${preview.title ? `<div class="dc-lp-title"><a href="${esc(preview.url)}" target="_blank" rel="noopener" class="dc-link">${esc(preview.title)}</a></div>` : ''}
+      ${preview.desc  ? `<div class="dc-lp-desc">${esc(preview.desc.slice(0,200))}</div>` : ''}
+      <div class="dc-lp-url">${esc(preview.url.slice(0,60))}${preview.url.length>60?'…':''}</div>
     </div>`;
   return wrap;
 }
 
-async function attachLinkPreviews(msgEl, text) {
-  if (!text) return;
-  const urls = [...new Set((text.match(/https?:\/\/[^\s<>"]+/g)||[]))].slice(0,1); // one preview max
+async function attachLinkPreviews(msgEl, rawText) {
+  if (!rawText) return;
+  // Extract URLs from RAW text only — never from rendered HTML
+  const urlRx = /https?:\/\/[^\s<>"')\]]+/g;
+  const urls = [...new Set((rawText.match(urlRx)||[]))]
+    .filter(u => !/</.test(u)) // reject anything that got HTML mixed in
+    .filter(u => !/\.(png|jpe?g|gif|webp|svg|mp4|mp3|webm)(\?|$)/i.test(u)) // skip media
+    .slice(0,1);
   for (const url of urls) {
-    // Skip image URLs — already rendered inline
-    if (/\.(png|jpg|jpeg|gif|webp|svg)$/i.test(url)) continue;
+    if (msgEl.querySelector('.dc-link-preview')) continue; // already has one
     const preview = await fetchLinkPreview(url);
     if (!preview) continue;
-    const existing = msgEl.querySelector('.dc-link-preview');
-    if (existing) continue;
     msgEl.appendChild(buildPreviewEl(preview));
   }
 }
