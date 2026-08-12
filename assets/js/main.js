@@ -3,7 +3,7 @@
    ============================================================ */
 
 //CHANGE THE FOLLOWING TO CHANGE ALL THE PAGE'S VERSION!!
-const version = "3.0.0";
+const version = "3.5.0";
 
 //Get's the current page's URL (Not including domain)
 let currentUrl = window.location.pathname + window.location.search + window.location.hash;
