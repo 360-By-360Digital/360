@@ -19,14 +19,35 @@ const popupConfig = {
 };
 
 /* ============================================================
-   1. FORMATTING & UNICODE PARSER (§ AND & CODES)
+   1. MINECRAFT UNICODE & FORMATTING PARSER (§ AND & CODES)
    Supports Java, Bedrock, Hex (&#123456 / §#123456), & styles.
    ============================================================ */
 
+function escapeHtml(value) {
+  if (value === null || value === undefined) return "";
+  return String(value).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[ch]));
+}
+
+function getStyleString(styles) {
+  let str = "";
+  if (styles.color) str += `color:${styles.color};`;
+  if (styles.bold) str += `font-weight:bold;`;
+  if (styles.italic) str += `font-style:italic;`;
+  let textDec = [];
+  if (styles.strikethrough) textDec.push("line-through");
+  if (styles.underline) textDec.push("underline");
+  if (textDec.length) str += `text-decoration:${textDec.join(" ")};`;
+  return str;
+}
+
 /**
- * Parses Minecraft formatting codes (& and §) into HTML.
- * @param {string} text - The input string containing codes.
- * @param {boolean} keepCodes - If true, displays the code token itself (blurred/dimmed) while styling following text.
+ * Parses Minecraft formatting codes (& and §) into styled HTML spans.
  */
 function parseMinecraftCodes(text, keepCodes = false) {
   if (!text || typeof text !== "string") return "";
@@ -53,24 +74,21 @@ function parseMinecraftCodes(text, keepCodes = false) {
     obfuscated: false
   };
 
-  // Match Hex tags (&#123456 / §#123456) or single color/style codes (&c / §c / &l etc.)
-  const regex = /([§&]#(?:[0-9a-fA-F]{6})|[§&][0-9a-fA-Fk-rK-Rg-uG-U])/g;
+  // Uses \u00A7 for § to ensure safe encoding
+  const regex = /([\u00A7&]#(?:[0-9a-fA-F]{6})|[\u00A7&][0-9a-fA-Fk-rK-Rg-uG-U])/g;
   const tokens = text.split(regex);
 
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     if (!token) continue;
 
-    if (token.match(/^([§&]#(?:[0-9a-fA-F]{6})|[§&][0-9a-fA-Fk-rK-Rg-uG-U])$/)) {
+    if (token.match(/^([\u00A7&]#(?:[0-9a-fA-F]{6})|[\u00A7&][0-9a-fA-Fk-rK-Rg-uG-U])$/)) {
       const code = token.slice(1).toLowerCase();
 
-      // Update active formatting state
       if (code.startsWith('#')) {
         activeStyles.color = code;
-        resetFormats(activeStyles);
       } else if (colorMap[code] !== undefined) {
         activeStyles.color = colorMap[code];
-        resetFormats(activeStyles);
       } else if (code === 'k') {
         activeStyles.obfuscated = true;
       } else if (code === 'l') {
@@ -85,7 +103,6 @@ function parseMinecraftCodes(text, keepCodes = false) {
         activeStyles = { color: "", bold: false, strikethrough: false, underline: false, italic: false, obfuscated: false };
       }
 
-      // If keepCodes is true (Input Mode), render the raw unicode code dimmed + blurred
       if (keepCodes) {
         html += `<span class="mc-code-token" style="opacity:0.6; filter:blur(0.3px); font-size:0.9em; font-family:monospace; user-select:none; font-style:normal; font-weight:normal; text-decoration:none;">${escapeHtml(token)}</span>`;
       }
@@ -105,26 +122,6 @@ function parseMinecraftCodes(text, keepCodes = false) {
   return html;
 }
 
-function resetFormats(styles) {
-  styles.bold = false;
-  styles.strikethrough = false;
-  styles.underline = false;
-  styles.italic = false;
-  styles.obfuscated = false;
-}
-
-function getStyleString(styles) {
-  let str = "";
-  if (styles.color) str += `color:${styles.color};`;
-  if (styles.bold) str += `font-weight:bold;`;
-  if (styles.italic) str += `font-style:italic;`;
-  let textDec = [];
-  if (styles.strikethrough) textDec.push("line-through");
-  if (styles.underline) textDec.push("underline");
-  if (textDec.length) str += `text-decoration:${textDec.join(" ")};`;
-  return str;
-}
-
 /* Format static DOM elements with [data-mc] or .mc-text */
 function applyMinecraftFormattingToDom() {
   document.querySelectorAll("[data-mc], .mc-text").forEach(el => {
@@ -134,35 +131,11 @@ function applyMinecraftFormattingToDom() {
 }
 
 /* ============================================================
-   2. POPUP CONFIGURATION & LOCAL STORAGE
+   2. POPUP SYSTEM & TITLE-CHANGE DETECTOR
    ============================================================ */
+const POPUP_TITLE_STORAGE_KEY = "360_popup_last_title";
 
-const POPUP_STORAGE_KEY = "360_popup_config";
-const POPUP_SEEN_KEY = "360_popup_seen";
-
-function getPopupSettings() {
-  const saved = safeParseJSON(localStorage.getItem(POPUP_STORAGE_KEY), null);
-  return saved || popupConfig;
-}
-
-function savePopupSettings(config) {
-  localStorage.setItem(POPUP_STORAGE_KEY, JSON.stringify(config));
-  // Reset seen status when settings are modified/saved
-  localStorage.removeItem(POPUP_SEEN_KEY);
-}
-
-function hasSeenPopup() {
-  return localStorage.getItem(POPUP_SEEN_KEY) === "true";
-}
-
-function markPopupSeen() {
-  localStorage.setItem(POPUP_SEEN_KEY, "true");
-}
-
-/* ============================================================
-   3. CUSTOM POPUP SYSTEM
-   ============================================================ */
-function showCustomPopup({ title = "", body = "", buttonText = "OK", onClose = null, isAnnouncement = false }) {
+function showCustomPopup({ title = "", body = "", buttonText = "OK", onClose = null }) {
   let modal = document.getElementById("custom-popup-modal");
   if (!modal) {
     modal = document.createElement("div");
@@ -171,7 +144,6 @@ function showCustomPopup({ title = "", body = "", buttonText = "OK", onClose = n
     document.body.appendChild(modal);
   }
 
-  // Parsed without codes visible for popups
   const parsedTitle = parseMinecraftCodes(title, false);
   const parsedBody = parseMinecraftCodes(body, false);
 
@@ -189,9 +161,6 @@ function showCustomPopup({ title = "", body = "", buttonText = "OK", onClose = n
 
   const close = () => {
     modal.style.display = "none";
-    if (isAnnouncement) {
-      markPopupSeen();
-    }
     if (typeof onClose === "function") onClose();
   };
 
@@ -212,104 +181,43 @@ window.alert = function(message) {
   });
 };
 
-// Automatic Announcement Popup on Page Load (Only if NOT seen yet)
-(function initAnnouncementPopup() {
-  const settings = getPopupSettings();
-  if (settings.enabled && !hasSeenPopup()) {
-    const trigger = () => {
-      showCustomPopup({
-        title: settings.title,
-        body: settings.body,
-        buttonText: "Close",
-        isAnnouncement: true
-      });
-    };
-    if (document.readyState === "loading") {
-      window.addEventListener("DOMContentLoaded", trigger);
-    } else {
-      trigger();
-    }
+/* Checks title changes in popupConfig and activates popup once per title change */
+function checkAndShowAnnouncement() {
+  if (typeof popupConfig === "undefined" || !popupConfig || !popupConfig.enabled) {
+    // When popup is false, store just a space
+    localStorage.setItem(POPUP_TITLE_STORAGE_KEY, " ");
+    return;
   }
-})();
 
-/* ============================================================
-   4. SETTINGS PANEL & LIVE INPUT PREVIEW CONTROLS
-   ============================================================ */
-function initPopupSettingsSection() {
-  const panel = document.querySelector(".settings-panel");
-  if (!panel || panel.querySelector("#popupSettingsSection")) return;
+  const currentTitle = popupConfig.title || "";
+  const lastStoredTitle = localStorage.getItem(POPUP_TITLE_STORAGE_KEY);
 
-  const current = getPopupSettings();
-
-  const section = document.createElement("div");
-  section.id = "popupSettingsSection";
-  section.className = "settings-section";
-  section.innerHTML = `
-    <h3 style="margin-top:15px; font-weight:600;">Announcement Popup</h3>
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-      <span style="font-size:13px;">Enable Popup</span>
-      <input type="checkbox" id="popupToggle" ${current.enabled ? "checked" : ""}>
-    </div>
-    
-    <div style="font-size:12px; margin-bottom:4px; opacity:0.8;">Title (supports & & §)</div>
-    <input type="text" id="popupTitleInput" class="settings-select" value="${escapeHtml(current.title)}" placeholder="Title" style="margin-bottom:4px;">
-    <div id="popupTitlePreview" class="mc-input-preview" style="margin-bottom:8px; font-size:13px; min-height:20px; padding:4px 8px; border-radius:6px; background:rgba(0,0,0,0.1);"></div>
-
-    <div style="font-size:12px; margin-bottom:4px; opacity:0.8;">Body (supports & & §)</div>
-    <textarea id="popupBodyInput" class="settings-select" rows="3" style="resize:vertical; margin-bottom:4px;">${escapeHtml(current.body)}</textarea>
-    <div id="popupBodyPreview" class="mc-input-preview" style="margin-bottom:10px; font-size:13px; min-height:36px; padding:4px 8px; border-radius:6px; background:rgba(0,0,0,0.1); white-space:pre-wrap;"></div>
-
-    <div style="display:flex; gap:8px;">
-      <button id="savePopupBtn" class="custom-modal-btn-primary" style="flex:1; padding:6px; font-size:12px;">Save & Reset Seen</button>
-      <button id="previewPopupBtn" class="custom-modal-btn-secondary" style="flex:1; padding:6px; font-size:12px;">Preview</button>
-    </div>
-  `;
-
-  panel.insertBefore(section, panel.firstChild);
-
-  const toggle = section.querySelector("#popupToggle");
-  const titleInput = section.querySelector("#popupTitleInput");
-  const titlePreview = section.querySelector("#popupTitlePreview");
-  const bodyInput = section.querySelector("#popupBodyInput");
-  const bodyPreview = section.querySelector("#popupBodyPreview");
-
-  // Live input handler — uses keepCodes = true so unicode tags stay visible but formatted
-  const updatePreviews = () => {
-    titlePreview.innerHTML = parseMinecraftCodes(titleInput.value, true);
-    bodyPreview.innerHTML = parseMinecraftCodes(bodyInput.value, true);
-  };
-
-  titleInput.addEventListener("input", updatePreviews);
-  bodyInput.addEventListener("input", updatePreviews);
-  updatePreviews();
-
-  section.querySelector("#savePopupBtn").onclick = () => {
-    savePopupSettings({
-      enabled: toggle.checked,
-      title: titleInput.value,
-      body: bodyInput.value
-    });
-    showCustomPopup({ title: "&aSuccess", body: "Popup settings saved! Dismiss memory has been reset." });
-  };
-
-  section.querySelector("#previewPopupBtn").onclick = () => {
+  // If a title change is detected (or popup hasn't been shown for this title yet)
+  if (lastStoredTitle !== currentTitle) {
     showCustomPopup({
-      title: titleInput.value,
-      body: bodyInput.value,
-      buttonText: "Close Preview"
+      title: currentTitle,
+      body: popupConfig.body || "",
+      buttonText: "Close"
     });
-  };
+    // Store the newly activated title
+    localStorage.setItem(POPUP_TITLE_STORAGE_KEY, currentTitle);
+  }
 }
 
+// Initialize on page load
 if (document.readyState === "loading") {
   window.addEventListener("DOMContentLoaded", () => {
-    initPopupSettingsSection();
+    checkAndShowAnnouncement();
     applyMinecraftFormattingToDom();
   });
 } else {
-  initPopupSettingsSection();
+  checkAndShowAnnouncement();
   applyMinecraftFormattingToDom();
 }
+
+/* ======================================================================================================================= */
+/* ======================================================================================================================= */
+/* ======================================================================================================================= */
 
 //Get's the current page's URL (Not including domain)
 let currentUrl = window.location.pathname + window.location.search + window.location.hash;
