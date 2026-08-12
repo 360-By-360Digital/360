@@ -769,17 +769,58 @@ function updateThreadPill(el,msg){
   } else { pill.style.display='none'; }
 }
 function renderText(raw){
-  let t=esc(raw);
+  if(!raw) return '';
+  // Protect code blocks first
+  const codeBlocks=[];
+  let t=raw.replace(/```([\s\S]*?)```/g,(_,c)=>{
+    const i=codeBlocks.length;
+    codeBlocks.push(`<pre class="dc-pre"><code>${esc(c.trim())}</code></pre>`);
+    return `\x00CODE${i}\x00`;
+  });
+  const inlineCodes=[];
+  t=t.replace(/`([^`\n]+)`/g,(_,c)=>{
+    const i=inlineCodes.length;
+    inlineCodes.push(`<code class="dc-code">${esc(c)}</code>`);
+    return `\x00INLINE${i}\x00`;
+  });
+  t=esc(t);
   t=applyShortcodes(t);
+  // Headings
+  t=t.replace(/^### (.+)$/gm,'<h3 class="dc-h3">$1</h3>');
+  t=t.replace(/^## (.+)$/gm,'<h2 class="dc-h2">$1</h2>');
+  t=t.replace(/^# (.+)$/gm,'<h1 class="dc-h1">$1</h1>');
+  // Bold+italic combos
+  t=t.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
   t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  t=t.replace(/__(.+?)__/g,'<strong>$1</strong>');
   t=t.replace(/\*(.+?)\*/g,'<em>$1</em>');
-  t=t.replace(/`([^`]+)`/g,'<code>$1</code>');
-  t=t.replace(/```([\s\S]*?)```/g,'<pre>$1</pre>');
+  t=t.replace(/_(.+?)_/g,'<em>$1</em>');
+  // Strikethrough
+  t=t.replace(/~~(.+?)~~/g,'<del>$1</del>');
+  // Underline (Discord-style __text__)
+  // Spoiler ||text||
+  t=t.replace(/\|\|(.+?)\|\|/g,(m,s)=>`<span class="dc-spoiler" onclick="this.classList.toggle('revealed')">${s}</span>`);
+  // Blockquote
+  t=t.replace(/^&gt; (.+)$/gm,'<blockquote class="dc-blockquote">$1</blockquote>');
+  // Unordered lists
+  t=t.replace(/^[\-\*] (.+)$/gm,'<li class="dc-li">$1</li>');
+  t=t.replace(/(<li[^>]*>.*<\/li>\n?)+/g,'<ul class="dc-ul">$&</ul>');
+  // Ordered lists
+  t=t.replace(/^\d+\. (.+)$/gm,'<li class="dc-li">$1</li>');
+  // Mentions
   t=t.replace(/@(\w+)/g,(m,name)=>{
     const isMe=currentProfile&&name.toLowerCase()===(currentProfile.username||'').toLowerCase();
-    return `<span style="${isMe?'color:#fbbf24;background:rgba(251,191,36,.18);':'color:var(--a);background:rgba(59,130,246,.12);'}border-radius:3px;padding:0 3px;font-weight:${isMe?'700':'600'};">${m}</span>`;
+    return `<span class="dc-mention${isMe?' dc-mention-me':''}">${m}</span>`;
   });
-  t=t.replace(/https?:\/\/[^\s<>"]+/g,url=>`<a href="${url}" target="_blank" rel="noopener">${url}</a>`);
+  // Channel links #channel-name
+  t=t.replace(/#([a-zA-Z0-9\-_]+)/g,'<span class="dc-ch-link">#$1</span>');
+  // URLs
+  t=t.replace(/https?:\/\/[^\s<>"\x00]+/g,url=>`<a href="${url}" target="_blank" rel="noopener noreferrer" class="dc-link">${url}</a>`);
+  // Line breaks
+  t=t.replace(/\n/g,'<br/>');
+  // Restore code blocks
+  t=t.replace(/\x00CODE(\d+)\x00/g,(_,i)=>codeBlocks[+i]);
+  t=t.replace(/\x00INLINE(\d+)\x00/g,(_,i)=>inlineCodes[+i]);
   return t;
 }
 function patchMsgEl(el,msg){const d=el.querySelector('.dc-msg-text');if(d&&msg.text)d.innerHTML=renderText(msg.text);}
@@ -2083,21 +2124,28 @@ if (document.readyState !== 'loading') {
 
   if (!window.currentUserId) return; // not signed in, skip
 
+  // Fast-path: localStorage flag means we already verified this session/device
+  try {
+    if (localStorage.getItem('360_age_ok_'+window.currentUserId) === '1') return;
+  } catch(e) {}
+
   const profile = window.currentProfile;
   if (!profile) return;
 
-  // Already verified or has exception → allow
+  // Already verified or has exception → allow (persistent, saved to DB)
   if (profile.age_verified || profile.age_exception) return;
 
-  // Has birthdate already set — verify server-side
+  // Has birthdate already set — auto-verify if ≥13, no gate needed
   if (profile.birthdate) {
     const dob = new Date(profile.birthdate);
     const age = (Date.now() - dob.getTime()) / (1000*60*60*24*365.25);
     if (age >= 13) {
+      // Save verified=true so this check never runs again
       await sb.from('profiles').update({ age_verified: true }).eq('id', window.currentUserId);
+      window.currentProfile.age_verified = true;
       return;
     }
-    // Under 13 and no exception → show gate
+    // Under 13 and no exception → fall through to show gate
   }
 
   // Show age gate
@@ -2152,8 +2200,11 @@ if (document.readyState !== 'loading') {
         window.showToast?.('❌ Answers don\'t match your date of birth — please try again');
         return;
       }
+      // Persist age_verified=true so gate NEVER shows again for this account
       await sb.from('profiles').update({ birthdate: dob, age_verified: true }).eq('id', window.currentUserId);
       window.currentProfile = { ...window.currentProfile, age_verified: true, birthdate: dob };
+      // Also cache in localStorage as a fast-path fallback
+      try { localStorage.setItem('360_age_ok_'+window.currentUserId, '1'); } catch(e) {}
       gate.classList.add('hidden');
       window.showToast?.('✅ Age verified! Welcome to 360 Chat');
     };
