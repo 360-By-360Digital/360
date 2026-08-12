@@ -111,19 +111,19 @@ async function joinServer(invId, serverId, slug, code) {
   // Check onboarding
   const { data: server } = await sb.from('servers').select('onboarding_enabled,slug').eq('id', serverId).maybeSingle();
   if(server?.onboarding_enabled) {
-    location.href = `/onboarding?server=${serverId}`;
+    location.href = `/onboarding?server=${serverId}&from=invite`;
   } else {
     goToServer(serverId, slug || server?.slug || '');
   }
 }
 
 function goToServer(serverId, slug) {
-  if(slug) location.href = `/chat/${slug}`;
-  else location.href = `/chat?server=${serverId}`;
+  if(slug) location.href = `/chat?s=${encodeURIComponent(slug)}`;
+  else location.href = `/chat?s=${encodeURIComponent(serverId)}`;
 }
 
 function signInAndJoin(code) {
-  location.href = `/account?from=/invite/${code}`;
+  location.href = `/account?from=/chat%3Finvite%3D${code}`;
 }
 
 init();
