@@ -1,6 +1,13 @@
 /* ============================================================
-   360 — MAIN.CSS V.2.0.3
+   360 — MAIN.CSS V.3.6.0        
    Complete merged stylesheet — main.css + styles.css
+      ____    __   ___  
+     |___ \  / /  / _ \ 
+       __) |/ /_ | | | |
+      |__ <| '_ \| | | |
+      ___) | (_) | |_| |
+     |____/ \___/ \___/ 
+                    
    ============================================================ */
 
 /* ============================================================
@@ -80,6 +87,7 @@ body.dark {
   transform: translateX(-100%);
   transition: transform .3s ease;
   z-index: 60;
+  overflow-y: auto;
 }
 body.dark .sidebar { background: rgba(9,9,11,.97); }
 .sidebar.open { transform: translateX(0); }
