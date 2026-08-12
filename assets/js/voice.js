@@ -126,12 +126,18 @@ window.Voice = (function() {
     }};
     // Send on room channel if active
     const roomChan = callRoom ? getSignalChannel(callRoom) : null;
-    if (roomChan) { roomChan.send(msg); }
+    if (roomChan) {
+      // Only send if already subscribed to avoid REST fallback
+      if (roomChan.state === 'joined') roomChan.send(msg);
+      else roomChan.subscribe(s => { if(s==='SUBSCRIBED') roomChan.send(msg); });
+    }
 
     // Always also send to inbox for reliability (invite, accept, decline)
     // Reuse cached channel if already subscribed
     if (_outboxChans[toId]) {
-      _outboxChans[toId].send(msg);
+      const c = _outboxChans[toId];
+      if (c.state === 'joined') c.send(msg);
+      else c.subscribe(s => { if(s==='SUBSCRIBED') c.send(msg); });
       return;
     }
     const inboxChan = sb.channel(`voice-inbox:${toId}`, { config: { broadcast: { self: false } } });
