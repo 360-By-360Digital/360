@@ -126,16 +126,35 @@ function parseMinecraftCodes(text, keepCodes = false) {
   return html;
 }
 
-/* Format DOM elements with [data-mc] or .mc-text, anywhere in the document */
-const MC_SELECTOR = "[data-mc], .mc-text";
+/* Formats ANY tag, anywhere in the document — no [data-mc]/.mc-text
+   opt-in required. Any element whose own text contains a code (§/& style)
+   gets parsed automatically. Containers that only wrap other elements are
+   left alone; only "leaf" text-holding elements are touched. */
+const MC_CODE_TEST = /[§&](?:#[0-9a-fA-F]{6}|[0-9a-fA-Fg-uG-U])/;
+const MC_SKIP_TAGS = new Set([
+  "SCRIPT", "STYLE", "NOSCRIPT", "IFRAME", "SVG", "TEXTAREA", "INPUT",
+  "CANVAS", "TEMPLATE", "MC-CODE-TOKEN"
+]);
+
+function isMcLeafElement(el) {
+  if (!el || el.nodeType !== 1) return false;
+  if (MC_SKIP_TAGS.has(el.tagName)) return false;
+  if (el.isContentEditable) return false;
+  if (el.closest && el.closest(".mc-code-token")) return false;
+  // Only elements that contain text directly or exclusively text-node
+  // children qualify — elements with element children are just containers
+  // and get skipped in favor of their individual text-holding children.
+  for (const child of el.childNodes) {
+    if (child.nodeType === 1) return false;
+  }
+  return true;
+}
 
 function formatMcElement(el) {
-  // Re-read the raw text whenever it changes (not just the first time),
-  // so edits/updates to an already-tagged element still get parsed.
   const raw = el.textContent;
   if (el.dataset.mcOriginal !== raw && el.dataset.mcParsed === "1") {
-    // The visible text no longer matches what we last rendered (i.e. someone
-    // set new textContent), so treat it as a fresh source string.
+    // Visible text no longer matches what we last rendered, so it was
+    // updated externally — treat it as a fresh source string.
     el.dataset.mcOriginal = raw;
   } else if (!el.dataset.mcOriginal) {
     el.dataset.mcOriginal = raw;
@@ -148,35 +167,44 @@ function formatMcElement(el) {
   el.dataset.mcParsed = "1";
 }
 
-function applyMinecraftFormattingToDom(root = document) {
-  // Format the root itself if it matches, plus all matching descendants.
-  if (root.nodeType === 1 && root.matches && root.matches(MC_SELECTOR)) {
+function applyMinecraftFormattingToDom(root = document.body) {
+  if (!root) return;
+
+  if (isMcLeafElement(root) && MC_CODE_TEST.test(root.textContent)) {
     formatMcElement(root);
+    return;
   }
-  const scope = root.querySelectorAll ? root : document;
-  scope.querySelectorAll(MC_SELECTOR).forEach(formatMcElement);
+
+  const candidates = root.querySelectorAll
+    ? root.querySelectorAll("*")
+    : [];
+  candidates.forEach(el => {
+    if (isMcLeafElement(el) && MC_CODE_TEST.test(el.textContent)) {
+      formatMcElement(el);
+    }
+  });
+
+  setupMcInputs(root);
 }
 
 /* Keep formatting live: watch the whole document for new/changed elements
-   that use [data-mc] or .mc-text, so codes work everywhere, not just on
-   elements present at initial page load. */
+   anywhere, so codes work on every tag, not just elements present at
+   initial page load. */
 function initMinecraftFormattingObserver() {
   if (window.__mcObserverInitialized) return;
   window.__mcObserverInitialized = true;
 
   const observer = new MutationObserver(mutations => {
     for (const mutation of mutations) {
-      // New elements added to the page
       mutation.addedNodes && mutation.addedNodes.forEach(node => {
         if (node.nodeType !== 1) return;
         applyMinecraftFormattingToDom(node);
       });
 
-      // Text content changed inside an already-tagged element
       if (mutation.type === "characterData") {
         const el = mutation.target.parentElement;
-        if (el && el.closest && el.closest(MC_SELECTOR)) {
-          formatMcElement(el.closest(MC_SELECTOR));
+        if (el && isMcLeafElement(el) && MC_CODE_TEST.test(el.textContent)) {
+          formatMcElement(el);
         }
       }
     }
@@ -195,6 +223,90 @@ function refreshMinecraftFormatting(el) {
   delete el.dataset.mcOriginal;
   delete el.dataset.mcParsed;
   formatMcElement(el);
+}
+
+/* ============================================================
+   1b. LIVE CODE PREVIEW FOR <input>/<textarea>/[contenteditable]
+   Shows the color applied to the text while the codes themselves
+   (&c, §l, &#123456...) stay visible but blurred/dimmed, right in
+   the typing area — an overlay div mirrors the field underneath it.
+   ============================================================ */
+const MC_INPUT_COPY_PROPS = [
+  "font", "fontKerning", "letterSpacing", "lineHeight", "textTransform",
+  "wordSpacing", "textIndent", "padding", "border", "borderRadius",
+  "boxSizing", "whiteSpace", "textAlign", "direction"
+];
+
+function setupMcInputOverlay(field) {
+  if (field.dataset.mcOverlayReady === "1") return;
+  field.dataset.mcOverlayReady = "1";
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "mc-input-wrapper";
+  wrapper.style.position = "relative";
+  wrapper.style.display = field.tagName === "TEXTAREA" ? "block" : "inline-block";
+
+  const backdrop = document.createElement("div");
+  backdrop.className = "mc-input-backdrop";
+  backdrop.style.position = "absolute";
+  backdrop.style.top = "0";
+  backdrop.style.left = "0";
+  backdrop.style.right = "0";
+  backdrop.style.bottom = field.tagName === "TEXTAREA" ? "0" : "auto";
+  backdrop.style.overflow = "hidden";
+  backdrop.style.pointerEvents = "none";
+  backdrop.style.whiteSpace = field.tagName === "TEXTAREA" ? "pre-wrap" : "pre";
+  backdrop.style.wordWrap = "break-word";
+  backdrop.style.background = "transparent";
+
+  field.parentNode.insertBefore(wrapper, field);
+  wrapper.appendChild(backdrop);
+  wrapper.appendChild(field);
+
+  const syncBoxStyle = () => {
+    const computed = getComputedStyle(field);
+    MC_INPUT_COPY_PROPS.forEach(prop => {
+      backdrop.style[prop] = computed[prop];
+    });
+    backdrop.style.width = field.tagName === "TEXTAREA" ? "100%" : computed.width;
+    backdrop.style.height = field.tagName === "TEXTAREA" ? "100%" : computed.height;
+    backdrop.style.color = computed.color;
+  };
+
+  const render = () => {
+    backdrop.innerHTML = parseMinecraftCodes(field.value, true);
+    backdrop.scrollTop = field.scrollTop;
+    backdrop.scrollLeft = field.scrollLeft;
+  };
+
+  syncBoxStyle();
+  render();
+
+  // Field text stays fully transparent (only the caret is visible) so the
+  // colored + blurred-code backdrop underneath does the actual displaying.
+  field.style.position = "relative";
+  field.style.background = "transparent";
+  field.style.color = "transparent";
+  field.style.caretColor = getComputedStyle(field).color === "rgba(0, 0, 0, 0)"
+    ? "#000"
+    : getComputedStyle(field).color;
+  wrapper.style.background = window.getComputedStyle(field).backgroundColor;
+
+  field.addEventListener("input", render);
+  field.addEventListener("scroll", () => {
+    backdrop.scrollTop = field.scrollTop;
+    backdrop.scrollLeft = field.scrollLeft;
+  });
+  window.addEventListener("resize", syncBoxStyle);
+}
+
+/* Auto-wires the overlay onto text inputs/textareas so typed codes show a
+   live colored + blurred-code preview. Opt out per-field with data-mc-plain. */
+function setupMcInputs(root = document) {
+  const scope = root.querySelectorAll ? root : document;
+  const selector = 'textarea:not([data-mc-plain]), input[type="text"]:not([data-mc-plain])';
+  const fields = root.matches && root.matches(selector) ? [root] : Array.from(scope.querySelectorAll(selector));
+  fields.forEach(setupMcInputOverlay);
 }
 
 /* ============================================================
@@ -272,16 +384,17 @@ function checkAndShowAnnouncement() {
 }
 
 // Initialize on page load
-if (document.readyState === "loading") {
-  window.addEventListener("DOMContentLoaded", () => {
-    checkAndShowAnnouncement();
-    applyMinecraftFormattingToDom();
-    initMinecraftFormattingObserver();
-  });
-} else {
+function initMinecraftFormatting() {
   checkAndShowAnnouncement();
-  applyMinecraftFormattingToDom();
+  applyMinecraftFormattingToDom(document.body);
+  setupMcInputs(document);
   initMinecraftFormattingObserver();
+}
+
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", initMinecraftFormatting);
+} else {
+  initMinecraftFormatting();
 }
 
 /* ======================================================================================================================= */
