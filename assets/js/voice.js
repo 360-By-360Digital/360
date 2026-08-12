@@ -1,393 +1,309 @@
 /* ════════════════════════════════════════════════════════
-   360 Voice v1.1 — WebRTC voice calls + voice notes
-   Requires: supabaseClient (global from main.js)
-   Place at: /assets/js/voice.js
+   360 Voice v2.0 — Group WebRTC calls + voice notes
+   Place at: /assets/js/voice.js  (loads after chat.js)
+   Requires: window.supabaseClient, window.sb, window.currentUserId
 ════════════════════════════════════════════════════════ */
 
-window.Voice = (function() {
+window.Voice = (function () {
 
-  /* ── State ─────────────────────────────────────────── */
-  let localStream      = null;
-  let peerConnections  = {};
-  let callRoom         = null;
-  let callSignalChan   = null;
-  let isMuted          = false;
-  let isInCall         = false;
-  let callParticipants = new Map();
-  let ongoingCallId    = null;
-
-  const ICE_SERVERS = [
+  /* ── Config ────────────────────────────────────────── */
+  const ICE = [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
   ];
 
-  // Lazy getter — supabaseClient is defined by main.js which loads before voice.js
-  // but we access it at call-time not at parse-time so it's always ready.
-  function getSb() {
-    // supabaseClient is a top-level const in main.js (classic script = on window)
-    // fallback to window.sb which chat.js uses internally
-    return window.supabaseClient || window.sb;
-  }
+  /* ── State ─────────────────────────────────────────── */
+  let localStream     = null;   // our mic MediaStream
+  let peers           = {};     // peerId → { pc: RTCPeerConnection, audio: HTMLAudioElement }
+  let callRoom        = null;
+  let roomChan        = null;   // supabase broadcast channel for this room
+  let inboxChan       = null;   // personal inbox for receiving invites
+  let isInCall        = false;
+  let isMuted         = false;
+  let pendingInvite   = null;
 
-  /* ── UI Elements ───────────────────────────────────── */
-  function getCallUI() { return document.getElementById('voice-call-ui'); }
+  let timerInterval   = null;
+  let timerStart      = null;
 
-  function injectCallUI() {
-    if (document.getElementById('voice-call-ui')) return;
-    const ui = document.createElement('div');
-    ui.id = 'voice-call-ui';
-    ui.className = 'voice-call-ui hidden';
-    ui.innerHTML = `
-      <div class="vc-header">
-        <span class="vc-status" id="vc-status">🔴 In Call</span>
-        <span class="vc-room-name" id="vc-room-name"></span>
-        <span class="vc-timer" id="vc-timer">0:00</span>
-      </div>
-      <div class="vc-participants" id="vc-participants"></div>
-      <div class="vc-controls">
-        <button class="vc-btn" id="vc-mute" title="Mute">🎙️</button>
-        <button class="vc-btn vc-end" id="vc-end" title="End call">📵</button>
-      </div>
-    `;
-    document.body.appendChild(ui);
-    document.getElementById('vc-mute').onclick = toggleMute;
-    document.getElementById('vc-end').onclick = endCall;
-  }
+  /* ── Supabase ──────────────────────────────────────── */
+  function getSb() { return window.supabaseClient || window.sb; }
+  function myId()  { return window.currentUserId; }
 
-  function injectIncomingCallUI() {
-    if (document.getElementById('incoming-call-ui')) return;
-    const ui = document.createElement('div');
-    ui.id = 'incoming-call-ui';
-    ui.className = 'incoming-call-ui hidden';
-    ui.innerHTML = `
-      <div class="ic-avatar" id="ic-avatar">?</div>
-      <div class="ic-info">
-        <div class="ic-name" id="ic-caller-name">Someone</div>
-        <div class="ic-subtitle">Incoming voice call</div>
-      </div>
-      <div class="ic-actions">
-        <button class="ic-btn ic-accept" id="ic-accept" title="Accept">📞</button>
-        <button class="ic-btn ic-decline" id="ic-decline" title="Decline">📵</button>
-      </div>
-    `;
-    document.body.appendChild(ui);
-    document.getElementById('ic-accept').onclick = acceptIncomingCall;
-    document.getElementById('ic-decline').onclick = declineIncomingCall;
-  }
-
-  /* ── Timer ─────────────────────────────────────────── */
-  let callTimerInterval = null;
-  let callStartTime = null;
-
-  function startTimer() {
-    callStartTime = Date.now();
-    callTimerInterval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
-      const m = Math.floor(elapsed / 60);
-      const s = elapsed % 60;
-      const el = document.getElementById('vc-timer');
-      if (el) el.textContent = `${m}:${s.toString().padStart(2,'0')}`;
-    }, 1000);
-  }
-
-  function stopTimer() {
-    clearInterval(callTimerInterval);
-    callTimerInterval = null;
-  }
-
-  /* ── Signaling via Supabase ────────────────────────── */
-  // Broadcast-based signaling — instant, no DB polling needed
-  function getSignalChannel(roomId) {
+  /* ── Broadcast helpers ─────────────────────────────── */
+  function signal(toId, type, data) {
+    // Send on room channel (if in call) AND personal inbox of recipient
+    const msg = { type: 'broadcast', event: 'sig', payload: { from: myId(), to: toId, type, data } };
+    if (roomChan && roomChan.state === 'joined') roomChan.send(msg);
+    // Also reach their inbox directly for reliability
     const sb = getSb();
-    if (!sb) return null;
-    // One persistent broadcast channel per room
-    if (callSignalChan) return callSignalChan;
-    callSignalChan = sb.channel(`voice-broadcast:${roomId}`, { config: { broadcast: { self: false } } });
-    callSignalChan
-      .on('broadcast', { event: 'signal' }, ({ payload }) => {
-        if (payload.to !== window.currentUserId) return;
-        handleSignal(payload.from, payload.type, payload.data);
-      })
-      .subscribe();
-    return callSignalChan;
-  }
-
-  // Cache outbound inbox channels so we dont re-subscribe on every ICE candidate
-  const _outboxChans = {};
-
-  function sendSignal(toId, type, payload) {
-    const sb = getSb();
-    if (!sb) { console.error('Voice: no supabase client'); return; }
-    const msg = { type: 'broadcast', event: 'signal', payload: {
-      from: window.currentUserId,
-      to: toId,
-      type,
-      data: payload
-    }};
-    // Send on room channel if active
-    const roomChan = callRoom ? getSignalChannel(callRoom) : null;
-    if (roomChan) {
-      // Only send if already subscribed to avoid REST fallback
-      if (roomChan.state === 'joined') roomChan.send(msg);
-      else roomChan.subscribe(s => { if(s==='SUBSCRIBED') roomChan.send(msg); });
-    }
-
-    // Always also send to inbox for reliability (invite, accept, decline)
-    // Reuse cached channel if already subscribed
-    if (_outboxChans[toId]) {
-      const c = _outboxChans[toId];
-      if (c.state === 'joined') c.send(msg);
-      else c.subscribe(s => { if(s==='SUBSCRIBED') c.send(msg); });
-      return;
-    }
-    const inboxChan = sb.channel(`voice-inbox:${toId}`, { config: { broadcast: { self: false } } });
-    _outboxChans[toId] = inboxChan;
-    inboxChan.subscribe(status => {
-      if (status === 'SUBSCRIBED') inboxChan.send(msg);
+    if (!sb) return;
+    const key = `voice-inbox:${toId}`;
+    const tmp = sb.channel(key, { config: { broadcast: { self: false } } });
+    tmp.subscribe(s => {
+      if (s === 'SUBSCRIBED') {
+        tmp.send(msg);
+        setTimeout(() => { try { sb.removeChannel(tmp); } catch(e){} }, 3000);
+      }
     });
-    // Clean up non-call signals after 10s
-    if (['call-invite','call-accept','call-decline','call-end'].includes(type)) {
-      setTimeout(() => { try { sb.removeChannel(inboxChan); delete _outboxChans[toId]; } catch(e){} }, 10000);
+  }
+
+  function joinRoomChannel(roomId) {
+    const sb = getSb();
+    if (!sb) return;
+    if (roomChan) sb.removeChannel(roomChan);
+    roomChan = sb.channel(`voice-room:${roomId}`, { config: { broadcast: { self: false } } });
+    roomChan.on('broadcast', { event: 'sig' }, ({ payload: p }) => {
+      if (p.to !== myId()) return;
+      handleSignal(p.from, p.type, p.data);
+    }).subscribe();
+  }
+
+  /* ── WebRTC peer creation ──────────────────────────── */
+  async function createPeer(peerId, isCallerSide) {
+    if (peers[peerId]) { peers[peerId].pc.close(); cleanupPeer(peerId); }
+
+    const pc = new RTCPeerConnection({ iceServers: ICE });
+    peers[peerId] = { pc, audio: null };
+
+    // ── CRITICAL: add local tracks BEFORE creating offer
+    if (localStream) {
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
     }
-  }
 
-  function subscribeToSignals(roomId) {
-    getSignalChannel(roomId); // sets up callSignalChan
-  }
+    pc.onicecandidate = ({ candidate }) => {
+      if (candidate) signal(peerId, 'ice', candidate.toJSON());
+    };
 
-  /* ── WebRTC ────────────────────────────────────────── */
-  async function createPeerAndOffer(peerId) {
-    // Caller side: create peer, add tracks, send offer
-    if (peerConnections[peerId]) peerConnections[peerId].close();
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-    peerConnections[peerId] = pc;
-    if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-    pc.onicecandidate = ({ candidate }) => { if (candidate) sendSignal(peerId, 'ice', candidate.toJSON()); };
-    pc.ontrack = ({ streams }) => { if (streams[0]) playRemoteAudio(peerId, streams[0]); };
+    pc.ontrack = ({ streams, track }) => {
+      // Get or create audio element for this peer
+      let audio = peers[peerId]?.audio;
+      if (!audio) {
+        audio = document.createElement('audio');
+        audio.id = `voice-audio-${peerId}`;
+        audio.autoplay = true;
+        audio.style.display = 'none';
+        document.body.appendChild(audio);
+        if (peers[peerId]) peers[peerId].audio = audio;
+      }
+      // Attach the remote stream
+      if (streams && streams[0]) {
+        audio.srcObject = streams[0];
+      } else {
+        // fallback: build MediaStream from track
+        if (!audio.srcObject) audio.srcObject = new MediaStream();
+        audio.srcObject.addTrack(track);
+      }
+      audio.play().catch(e => console.warn('audio play failed', e));
+      updateParticipantIcon(peerId, '🔊');
+    };
+
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'connected') updateParticipantUI(peerId, 'connected');
-      else if (['failed','disconnected','closed'].includes(pc.connectionState)) {
-        removeParticipantUI(peerId); delete peerConnections[peerId];
+      const state = pc.connectionState;
+      if (state === 'connected') updateParticipantIcon(peerId, '🔊');
+      if (['disconnected', 'failed', 'closed'].includes(state)) {
+        cleanupPeer(peerId);
+        removeParticipantUI(peerId);
+        if (Object.keys(peers).length === 0 && isInCall) endCall();
       }
     };
-    try {
+
+    if (isCallerSide) {
+      // We initiate — create offer now that tracks are added
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      sendSignal(peerId, 'offer', pc.localDescription.toJSON());
-    } catch(e) { console.error('createOffer error', e); }
+      signal(peerId, 'offer', pc.localDescription.toJSON());
+    }
+
     return pc;
   }
 
-  function createPeerAsCallee(peerId) {
-    // Callee side: create peer, add tracks, wait for offer
-    if (peerConnections[peerId]) peerConnections[peerId].close();
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-    peerConnections[peerId] = pc;
-    if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-    pc.onicecandidate = ({ candidate }) => { if (candidate) sendSignal(peerId, 'ice', candidate.toJSON()); };
-    pc.ontrack = ({ streams }) => { if (streams[0]) playRemoteAudio(peerId, streams[0]); };
-    pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'connected') updateParticipantUI(peerId, 'connected');
-      else if (['failed','disconnected','closed'].includes(pc.connectionState)) {
-        removeParticipantUI(peerId); delete peerConnections[peerId];
-      }
-    };
-    return pc;
-  }
-
-  async function handleSignal(fromId, type, payload) {
-    if (!isInCall && type !== 'call-invite' && type !== 'call-decline') return;
-
+  /* ── Signal handling ───────────────────────────────── */
+  async function handleSignal(fromId, type, data) {
+    if (type === 'call-invite') {
+      if (isInCall) { signal(fromId, 'call-busy', {}); return; }
+      pendingInvite = { fromId, roomId: data.room_id, callerName: data.caller_name || 'Someone', participants: data.participants || [] };
+      showIncomingUI();
+      return;
+    }
+    if (type === 'call-busy') {
+      showToast('📵 User is in another call');
+      cleanupPeer(fromId);
+      return;
+    }
+    if (type === 'call-decline') {
+      showToast(`📵 ${data.name || 'User'} declined`);
+      cleanupPeer(fromId);
+      removeParticipantUI(fromId);
+      if (Object.keys(peers).length === 0) endCall();
+      return;
+    }
+    if (type === 'call-end') {
+      cleanupPeer(fromId);
+      removeParticipantUI(fromId);
+      if (Object.keys(peers).length === 0) endCall();
+      return;
+    }
+    // call-accept: callee accepted, now create peer and offer as caller
+    if (type === 'call-accept') {
+      addParticipantUI(fromId, data.name || 'Friend');
+      await createPeer(fromId, true); // isCallerSide=true → sends offer
+      return;
+    }
+    // WebRTC signaling
     if (type === 'offer') {
-      let pc = peerConnections[fromId];
-      if (!pc) pc = createPeerAsCallee(fromId);
-      await pc.setRemoteDescription(new RTCSessionDescription(payload));
+      // We're callee — create peer (don't send offer, wait for remote)
+      const pc = await createPeer(fromId, false);
+      await pc.setRemoteDescription(new RTCSessionDescription(data));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      sendSignal(fromId, 'answer', pc.localDescription.toJSON());
-
-    } else if (type === 'answer') {
-      const pc = peerConnections[fromId];
-      if (pc && pc.signalingState !== 'stable') {
-        try { await pc.setRemoteDescription(new RTCSessionDescription(payload)); } catch(e) { console.warn('answer err',e); }
+      signal(fromId, 'answer', pc.localDescription.toJSON());
+      return;
+    }
+    if (type === 'answer') {
+      const p = peers[fromId];
+      if (!p) return;
+      if (p.pc.signalingState !== 'stable') {
+        try { await p.pc.setRemoteDescription(new RTCSessionDescription(data)); } catch(e) { console.warn('answer err', e); }
       }
-
-    } else if (type === 'ice') {
-      const pc = peerConnections[fromId];
-      if (pc && payload && pc.remoteDescription) {
-        try { await pc.addIceCandidate(new RTCIceCandidate(payload)); } catch(e) { console.warn('ice err',e); }
-      }
-
-    } else if (type === 'call-invite') {
-      handleIncomingCallInvite(fromId, payload);
-
-    } else if (type === 'call-accept') {
-      addParticipant(fromId, payload.username || 'Friend');
-      createPeerAndOffer(fromId); // caller now sends offer
-
-    } else if (type === 'call-decline') {
-      if (window.showToast) window.showToast('📵 Call declined');
-      if (Object.keys(peerConnections).length === 0) endCall();
-
-    } else if (type === 'call-end') {
-      removeParticipantUI(fromId);
-      if (peerConnections[fromId]) { peerConnections[fromId].close(); delete peerConnections[fromId]; }
-      if (Object.keys(peerConnections).length === 0) endCall();
+      return;
+    }
+    if (type === 'ice') {
+      const p = peers[fromId];
+      if (!p || !p.pc.remoteDescription) return;
+      try { await p.pc.addIceCandidate(new RTCIceCandidate(data)); } catch(e) { console.warn('ice err', e); }
+      return;
+    }
+    // New participant joined group call — connect to them as caller
+    if (type === 'participant-joined') {
+      if (fromId === myId()) return;
+      if (!isInCall) return;
+      addParticipantUI(fromId, data.name || 'Friend');
+      await createPeer(fromId, true);
+      return;
     }
   }
 
-  /* ── Remote Audio ──────────────────────────────────── */
-  function playRemoteAudio(peerId, stream) {
-    let audio = document.getElementById(`remote-audio-${peerId}`);
-    if (!audio) {
-      audio = document.createElement('audio');
-      audio.id = `remote-audio-${peerId}`;
-      audio.autoplay = true;
-      audio.style.display = 'none';
-      document.body.appendChild(audio);
-    }
-    audio.srcObject = stream;
-  }
-
-  function removeRemoteAudio(peerId) {
-    document.getElementById(`remote-audio-${peerId}`)?.remove();
-  }
-
-  /* ── Participants UI ───────────────────────────────── */
-  function addParticipant(userId, username) {
-    callParticipants.set(userId, { username });
-    renderParticipants();
-  }
-
-  function renderParticipants() {
-    const el = document.getElementById('vc-participants');
-    if (!el) return;
-    el.innerHTML = '';
-    const selfProf = window.currentProfile || {};
-    el.appendChild(makeParticipantBubble(window.currentUserId, selfProf.username || 'You', true));
-    callParticipants.forEach((info, uid) => el.appendChild(makeParticipantBubble(uid, info.username, false)));
-  }
-
-  function makeParticipantBubble(uid, username, isSelf) {
-    const wrap = document.createElement('div');
-    wrap.className = 'vc-participant';
-    wrap.id = `vcp-${uid}`;
-    const initials = (username||'?').slice(0,2).toUpperCase();
-    wrap.innerHTML = `
-      <div class="vc-p-avatar">${initials}</div>
-      <div class="vc-p-name">${isSelf ? 'You' : username}</div>
-      <div class="vc-p-indicator" id="vci-${uid}">🎙️</div>
-    `;
-    return wrap;
-  }
-
-  function updateParticipantUI(uid, state) {
-    const el = document.getElementById(`vci-${uid}`);
-    if (el) el.textContent = state === 'connected' ? '🔊' : '🔇';
-  }
-
-  function removeParticipantUI(uid) {
-    document.getElementById(`vcp-${uid}`)?.remove();
-    removeRemoteAudio(uid);
-    callParticipants.delete(uid);
-  }
-
-  /* ── Incoming Call ─────────────────────────────────── */
-  let pendingInvite = null;
-
-  function handleIncomingCallInvite(fromId, payload) {
-    if (isInCall) { sendSignal(fromId, 'call-decline', {}); return; }
-    pendingInvite = { fromId, roomId: payload.room_id, username: payload.username || 'Friend' };
-    const nameEl = document.getElementById('ic-caller-name');
-    const avEl   = document.getElementById('ic-avatar');
-    if (nameEl) nameEl.textContent = pendingInvite.username;
-    if (avEl)   avEl.textContent   = (pendingInvite.username||'?').slice(0,2).toUpperCase();
-    callRoom = payload.room_id;
-    subscribeToSignals(callRoom);
-    document.getElementById('incoming-call-ui')?.classList.remove('hidden');
-  }
-
-  async function acceptIncomingCall() {
-    if (!pendingInvite) return;
-    document.getElementById('incoming-call-ui')?.classList.add('hidden');
+  /* ── Start a call ──────────────────────────────────── */
+  async function startCall(friendId, friendName) {
+    if (!myId()) { showToast('❌ Sign in to make calls'); return; }
+    if (isInCall)  { showToast('Already in a call'); return; }
     try {
       localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     } catch(e) {
-      if (window.showToast) window.showToast('❌ Microphone access denied');
+      showToast('❌ Microphone access denied');
       return;
     }
     isInCall = true;
-    callRoom = pendingInvite.roomId;
-    ongoingCallId = callRoom;
-    const selfProf = window.currentProfile || {};
-    sendSignal(pendingInvite.fromId, 'call-accept', { username: selfProf.username || 'Friend' });
-    addParticipant(pendingInvite.fromId, pendingInvite.username);
-    createPeerAsCallee(pendingInvite.fromId);
-    showCallUI(pendingInvite.username);
-    pendingInvite = null;
-  }
-
-  function declineIncomingCall() {
-    if (!pendingInvite) return;
-    document.getElementById('incoming-call-ui')?.classList.add('hidden');
-    sendSignal(pendingInvite.fromId, 'call-decline', {});
-    const sb = getSb();
-    if (callSignalChan && sb) { sb.removeChannel(callSignalChan); callSignalChan = null; }
-    callRoom = null;
-    pendingInvite = null;
-  }
-
-  /* ── Start Call ────────────────────────────────────── */
-  async function startCall(friendId, friendUsername) {
-    if (!window.currentUserId) { if (window.showToast) window.showToast('❌ Sign in to make calls'); return; }
-    if (isInCall) { if (window.showToast) window.showToast('Already in a call!'); return; }
-    try {
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    } catch(e) {
-      if (window.showToast) window.showToast('❌ Microphone access denied');
-      return;
-    }
-    isInCall = true;
-    callRoom = [window.currentUserId, friendId].sort().join('_');
-    ongoingCallId = callRoom;
-    subscribeToSignals(callRoom);
-    const selfProf = window.currentProfile || {};
-    sendSignal(friendId, 'call-invite', { room_id: callRoom, username: selfProf.username || 'You' });
-    addParticipant(friendId, friendUsername);
-    showCallUI(friendUsername);
-    if (window.showToast) window.showToast(`📞 Calling ${friendUsername}…`);
-  }
-
-  function showCallUI(roomLabel) {
-    const ui = getCallUI();
-    if (!ui) return;
-    const nameEl = document.getElementById('vc-room-name');
-    if (nameEl) nameEl.textContent = roomLabel;
-    renderParticipants();
-    ui.classList.remove('hidden');
-    startTimer();
-  }
-
-  /* ── End Call ──────────────────────────────────────── */
-  function endCall() {
-    const sb = getSb();
-    Object.keys(peerConnections).forEach(peerId => {
-      try { sendSignal(peerId, 'call-end', {}); } catch(e) {}
-      peerConnections[peerId].close();
+    callRoom  = [myId(), friendId].sort().join('_');
+    joinRoomChannel(callRoom);
+    // Send invite
+    signal(friendId, 'call-invite', {
+      room_id: callRoom,
+      caller_name: window.currentProfile?.username || 'Someone',
+      participants: [myId()]
     });
-    peerConnections = {};
+    addParticipantUI(myId(), window.currentProfile?.username || 'You', true);
+    showCallUI(friendName);
+    showToast(`📞 Calling ${friendName}…`);
+  }
+
+  /* ── Group call: call multiple friends ─────────────── */
+  async function startGroupCall(friendIds, friendNames) {
+    if (!myId()) { showToast('❌ Sign in to make calls'); return; }
+    if (isInCall) { showToast('Already in a call'); return; }
+    if (!friendIds.length) return;
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch(e) {
+      showToast('❌ Microphone access denied');
+      return;
+    }
+    isInCall = true;
+    callRoom  = 'group_' + [myId(), ...friendIds].sort().join('_');
+    joinRoomChannel(callRoom);
+    addParticipantUI(myId(), window.currentProfile?.username || 'You', true);
+    friendIds.forEach((fid, i) => {
+      signal(fid, 'call-invite', {
+        room_id: callRoom,
+        caller_name: window.currentProfile?.username || 'Someone',
+        participants: [myId(), ...friendIds]
+      });
+      addParticipantUI(fid, friendNames[i] || 'Friend');
+    });
+    showCallUI(friendIds.length === 1 ? (friendNames[0] || 'Friend') : `Group call (${friendIds.length + 1})`);
+  }
+
+  /* ── Accept incoming call ──────────────────────────── */
+  async function acceptCall() {
+    if (!pendingInvite) return;
+    hideIncomingUI();
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch(e) {
+      showToast('❌ Microphone access denied');
+      return;
+    }
+    isInCall = true;
+    callRoom  = pendingInvite.roomId;
+    joinRoomChannel(callRoom);
+
+    // Tell caller we accepted (they will create peer + send offer)
+    signal(pendingInvite.fromId, 'call-accept', {
+      name: window.currentProfile?.username || 'Friend'
+    });
+
+    // Add caller's participant UI
+    addParticipantUI(pendingInvite.fromId, pendingInvite.callerName);
+    addParticipantUI(myId(), window.currentProfile?.username || 'You', true);
+
+    // Notify others in group call (if any)
+    const others = (pendingInvite.participants || []).filter(id => id !== myId() && id !== pendingInvite.fromId);
+    others.forEach(pid => {
+      signal(pid, 'participant-joined', { name: window.currentProfile?.username || 'Friend' });
+      addParticipantUI(pid, 'Friend');
+      createPeer(pid, true);
+    });
+
+    showCallUI(pendingInvite.callerName);
+    pendingInvite = null;
+  }
+
+  /* ── Decline incoming call ─────────────────────────── */
+  function declineCall() {
+    if (!pendingInvite) return;
+    signal(pendingInvite.fromId, 'call-decline', { name: window.currentProfile?.username || 'You' });
+    hideIncomingUI();
+    const sb = getSb();
+    if (inboxChan && sb) { /* keep inbox running */ }
+    pendingInvite = null;
+  }
+
+  /* ── End call ──────────────────────────────────────── */
+  function endCall() {
+    Object.keys(peers).forEach(pid => {
+      try { signal(pid, 'call-end', {}); } catch(e) {}
+      cleanupPeer(pid);
+    });
+    peers = {};
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-    if (callSignalChan && sb) { sb.removeChannel(callSignalChan); callSignalChan = null; }
-    document.querySelectorAll('[id^="remote-audio-"]').forEach(el => el.remove());
     isInCall = false;
-    isMuted = false;
+    isMuted  = false;
     callRoom = null;
-    ongoingCallId = null;
-    callParticipants.clear();
+    const sb = getSb();
+    if (roomChan && sb) { sb.removeChannel(roomChan); roomChan = null; }
     stopTimer();
     getCallUI()?.classList.add('hidden');
-    document.getElementById('incoming-call-ui')?.classList.add('hidden');
-    if (window.showToast) window.showToast('📵 Call ended');
+    hideIncomingUI();
+    showToast('📵 Call ended');
+  }
+
+  function cleanupPeer(peerId) {
+    const p = peers[peerId];
+    if (!p) return;
+    try { p.pc.close(); } catch(e) {}
+    if (p.audio) { p.audio.srcObject = null; p.audio.remove(); }
+    delete peers[peerId];
   }
 
   /* ── Mute ──────────────────────────────────────────── */
@@ -399,114 +315,213 @@ window.Voice = (function() {
     if (btn) btn.textContent = isMuted ? '🔇' : '🎙️';
   }
 
+  /* ── Timer ─────────────────────────────────────────── */
+  function startTimer() {
+    timerStart = Date.now();
+    timerInterval = setInterval(() => {
+      const el = document.getElementById('vc-timer');
+      if (!el) return;
+      const s = Math.floor((Date.now() - timerStart) / 1000);
+      el.textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+    }, 1000);
+  }
+  function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+  /* ── Call UI ───────────────────────────────────────── */
+  function getCallUI() { return document.getElementById('voice-call-ui'); }
+
+  function showCallUI(label) {
+    injectCallUI();
+    const ui = getCallUI();
+    ui.classList.remove('hidden');
+    const nm = document.getElementById('vc-room-name');
+    if (nm) nm.textContent = label;
+    renderParticipants();
+    startTimer();
+  }
+
+  function injectCallUI() {
+    if (document.getElementById('voice-call-ui')) return;
+    const ui = document.createElement('div');
+    ui.id = 'voice-call-ui';
+    ui.className = 'voice-call-ui hidden';
+    ui.innerHTML = `
+      <div class="vc-header">
+        <span class="vc-status">🔴</span>
+        <span class="vc-room-name" id="vc-room-name"></span>
+        <span class="vc-timer" id="vc-timer">0:00</span>
+      </div>
+      <div class="vc-participants" id="vc-participants"></div>
+      <div class="vc-controls">
+        <button class="vc-btn" id="vc-mute" title="Mute" onclick="Voice.toggleMute()">🎙️</button>
+        <button class="vc-btn vc-end" title="End" onclick="Voice.endCall()">📵</button>
+      </div>`;
+    document.body.appendChild(ui);
+  }
+
+  function injectIncomingUI() {
+    if (document.getElementById('incoming-call-ui')) return;
+    const ui = document.createElement('div');
+    ui.id = 'incoming-call-ui';
+    ui.className = 'incoming-call-ui hidden';
+    ui.innerHTML = `
+      <div class="ic-avatar" id="ic-avatar">?</div>
+      <div class="ic-info">
+        <div class="ic-name" id="ic-caller-name">Someone</div>
+        <div class="ic-subtitle">Incoming voice call</div>
+      </div>
+      <div class="ic-actions">
+        <button class="ic-btn ic-accept" title="Accept" onclick="Voice.acceptCall()">📞</button>
+        <button class="ic-btn ic-decline" title="Decline" onclick="Voice.declineCall()">📵</button>
+      </div>`;
+    document.body.appendChild(ui);
+  }
+
+  function showIncomingUI() {
+    injectIncomingUI();
+    const nameEl = document.getElementById('ic-caller-name');
+    const avEl   = document.getElementById('ic-avatar');
+    if (nameEl) nameEl.textContent = pendingInvite.callerName;
+    if (avEl)   avEl.textContent   = (pendingInvite.callerName||'?').slice(0,2).toUpperCase();
+    document.getElementById('incoming-call-ui')?.classList.remove('hidden');
+  }
+  function hideIncomingUI() {
+    document.getElementById('incoming-call-ui')?.classList.add('hidden');
+  }
+
+  /* ── Participants ───────────────────────────────────── */
+  const participantMap = new Map(); // id → name
+  function addParticipantUI(uid, name, isSelf) {
+    participantMap.set(uid, { name, isSelf });
+    renderParticipants();
+  }
+  function removeParticipantUI(uid) {
+    participantMap.delete(uid);
+    renderParticipants();
+  }
+  function renderParticipants() {
+    const el = document.getElementById('vc-participants');
+    if (!el) return;
+    el.innerHTML = '';
+    participantMap.forEach(({ name, isSelf }, uid) => {
+      const div = document.createElement('div');
+      div.className = 'vc-participant';
+      div.id = `vcp-${uid}`;
+      div.innerHTML = `<div class="vc-p-avatar">${(name||'?').slice(0,2).toUpperCase()}</div>
+        <div class="vc-p-name">${isSelf?'You':name}</div>
+        <div class="vc-p-indicator" id="vci-${uid}">${isSelf?(isMuted?'🔇':'🎙️'):'⏳'}</div>`;
+      el.appendChild(div);
+    });
+  }
+  function updateParticipantIcon(uid, icon) {
+    const el = document.getElementById(`vci-${uid}`);
+    if (el) el.textContent = icon;
+  }
+
+  function showToast(msg) { if (window.showToast) window.showToast(msg); }
+
   /* ════════════════════════════════════════════════════
      VOICE NOTES
   ════════════════════════════════════════════════════ */
   let mediaRecorder    = null;
-  let voiceNoteChunks  = [];
-  let voiceNoteTimer   = null;
-  let voiceNoteSeconds = 0;
+  let voiceChunks      = [];
+  let voiceTimer       = null;
+  let voiceSeconds     = 0;
   let isRecording      = false;
 
   async function startVoiceNote() {
-    const uid = window.currentUserId;
-    if (!uid) { if (window.showToast) window.showToast('❌ Sign in to use voice notes'); return; }
+    if (!myId()) { showToast('❌ Sign in to send voice notes'); return; }
     if (isRecording) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Pick a supported MIME type
       const mime = ['audio/webm;codecs=opus','audio/webm','audio/ogg'].find(t => MediaRecorder.isTypeSupported(t)) || '';
       mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
-      voiceNoteChunks = [];
-      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) voiceNoteChunks.push(e.data); };
-      mediaRecorder.onstop = finishVoiceNote;
+      voiceChunks = [];
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) voiceChunks.push(e.data); };
+      mediaRecorder.onstop = uploadVoiceNote;
       mediaRecorder.start();
       isRecording = true;
-      voiceNoteSeconds = 0;
-      voiceNoteTimer = setInterval(() => {
-        voiceNoteSeconds++;
+      voiceSeconds = 0;
+      voiceTimer = setInterval(() => {
+        voiceSeconds++;
         const btn = document.getElementById('voice-note-btn');
-        if (btn) btn.title = `Recording… ${voiceNoteSeconds}s (click to stop)`;
-        if (voiceNoteSeconds >= 120) stopVoiceNote();
+        if (btn) btn.title = `Recording ${voiceSeconds}s — click to stop`;
+        if (voiceSeconds >= 120) stopVoiceNote();
       }, 1000);
       const btn = document.getElementById('voice-note-btn');
       if (btn) { btn.textContent = '⏹️'; btn.classList.add('recording'); }
-      if (window.showToast) window.showToast('🎤 Recording… click 🎤 to stop');
-    } catch(e) {
-      if (window.showToast) window.showToast('❌ Microphone access denied');
-    }
+      showToast('🎤 Recording… tap 🎤 to stop');
+    } catch(e) { showToast('❌ Microphone access denied'); }
   }
 
   function stopVoiceNote() {
     if (!isRecording || !mediaRecorder) return;
     mediaRecorder.stop();
     mediaRecorder.stream.getTracks().forEach(t => t.stop());
-    clearInterval(voiceNoteTimer);
+    clearInterval(voiceTimer);
     isRecording = false;
     const btn = document.getElementById('voice-note-btn');
-    if (btn) { btn.textContent = '🎤'; btn.title = 'Voice note'; btn.classList.remove('recording'); }
+    if (btn) { btn.textContent = '🎤'; btn.classList.remove('recording'); }
   }
 
-  async function finishVoiceNote() {
+  async function uploadVoiceNote() {
     const sb = getSb();
-    const uid = window.currentUserId;
-    if (!sb || !uid) { if (window.showToast) window.showToast('❌ Sign in to send voice notes'); return; }
-    const ext = (mediaRecorder?.mimeType || 'audio/webm').includes('ogg') ? 'ogg' : 'webm';
-    const blob = new Blob(voiceNoteChunks, { type: mediaRecorder?.mimeType || 'audio/webm' });
-    if (blob.size < 500) { if (window.showToast) window.showToast('Voice note too short'); return; }
-    if (window.showToast) window.showToast('⏫ Uploading voice note…');
-    const fileName = `voice-notes/${uid}/${Date.now()}.${ext}`;
-    const { error } = await sb.storage.from('chat-attachments').upload(fileName, blob, { contentType: blob.type });
-    if (error) {
-      // Bucket may not exist yet — try creating it
-      if (error.message?.includes('not found') || error.statusCode === 404) {
-        if (window.showToast) window.showToast('❌ Storage bucket "chat-attachments" not found. Create it in Supabase dashboard → Storage.');
-      } else {
-        if (window.showToast) window.showToast('❌ Upload failed: ' + error.message);
-      }
-      return;
-    }
-    const { data: urlData } = sb.storage.from('chat-attachments').getPublicUrl(fileName);
+    const uid = myId();
+    if (!sb || !uid) { showToast('❌ Not signed in'); return; }
+    const ext = (mediaRecorder?.mimeType||'').includes('ogg') ? 'ogg' : 'webm';
+    const blob = new Blob(voiceChunks, { type: mediaRecorder?.mimeType || 'audio/webm' });
+    if (blob.size < 500) { showToast('Voice note too short'); return; }
+    showToast('⏫ Uploading…');
+    const path = `voice-notes/${uid}/${Date.now()}.${ext}`;
+    const { error } = await sb.storage.from('chat-attachments').upload(path, blob, { contentType: blob.type });
+    if (error) { showToast('❌ Upload failed: ' + error.message); return; }
+    const { data: urlData } = sb.storage.from('chat-attachments').getPublicUrl(path);
     const url = urlData?.publicUrl;
-    if (!url) return;
-    if (window.sendVoiceNoteMessage) window.sendVoiceNoteMessage(url, voiceNoteSeconds);
+    if (url && window.sendVoiceNoteMessage) window.sendVoiceNoteMessage(url, voiceSeconds);
   }
 
   function toggleVoiceNote() {
-    if (isRecording) stopVoiceNote();
-    else startVoiceNote();
+    if (isRecording) stopVoiceNote(); else startVoiceNote();
   }
 
   /* ── Init ──────────────────────────────────────────── */
-  function setupGlobalListener() {
+  function setupInbox() {
     const sb = getSb();
-    const uid = window.currentUserId;
+    const uid = myId();
     if (!sb || !uid) return;
-    // Global incoming-call listener on a per-user broadcast channel
-    // This lets anyone call us even outside an active callRoom
-    const listenChan = sb.channel(`voice-inbox:${uid}`, { config: { broadcast: { self: false } } });
-    listenChan.on('broadcast', { event: 'signal' }, ({ payload }) => {
-      if (payload.to !== window.currentUserId) return;
-      handleSignal(payload.from, payload.type, payload.data);
+    if (inboxChan) return; // already set up
+    inboxChan = sb.channel(`voice-inbox:${uid}`, { config: { broadcast: { self: false } } });
+    inboxChan.on('broadcast', { event: 'sig' }, ({ payload: p }) => {
+      if (p.to !== uid) return;
+      handleSignal(p.from, p.type, p.data);
     }).subscribe();
   }
 
   function init() {
     injectCallUI();
-    injectIncomingCallUI();
-    const vnBtn = document.getElementById('voice-note-btn');
-    if (vnBtn) vnBtn.onclick = toggleVoiceNote;
-    // Try immediately (user may already be authed on page reload)
-    if (window.currentUserId) setupGlobalListener();
-    // Also hook into auth state changes from chat.js
-    window.addEventListener('voice-auth-ready', setupGlobalListener, { once: true });
+    injectIncomingUI();
+    const btn = document.getElementById('voice-note-btn');
+    if (btn) btn.onclick = toggleVoiceNote;
+    if (myId()) setupInbox();
+    window.addEventListener('voice-auth-ready', setupInbox, { once: true });
   }
 
-  return { init, startCall, endCall, toggleVoiceNote, isInCall: () => isInCall, isRecording: () => isRecording };
+  /* ── Public API ────────────────────────────────────── */
+  return {
+    init,
+    startCall,
+    startGroupCall,
+    acceptCall,
+    declineCall,
+    endCall,
+    toggleMute,
+    toggleVoiceNote,
+    isInCall: () => isInCall,
+  };
 
 })();
 
-// Auto-init once DOM is ready
+// Auto-init
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => window.Voice.init(), { once: true });
 } else {
