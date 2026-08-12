@@ -271,7 +271,7 @@ async function buildSidebar(server){
       addCategoryHeader(body,cat,canManage?()=>openAddChannelModal(server):null);
       chs.forEach(ch=>{
         const item=makeChanItem(ch,activeRoom.id===ch.id,
-          ()=>switchRoom({type:'channel',id:ch.id,name:ch.name,icon:'#',serverName:server.name,serverId:server.id,topic:ch.topic||''}));
+          ()=>switchRoom({type:'channel',id:ch.id,name:ch.name,icon:'#',serverName:server.name,serverId:server.id,serverSlug:server.slug||null,topic:ch.topic||''}));
         const ck='channel:'+ch.id;
         if(unreadCounts[ck]>0){
           const badge=document.createElement('span'); badge.className='ch-unread-badge';
@@ -445,7 +445,7 @@ async function joinServer(serverId){
 async function enterServer(server){
   setActiveServer(server.id); await buildSidebar(server);
   const{data:chs}=await sb.from('channels').select('*').eq('server_id',server.id).order('position').order('name').limit(1);
-  if(chs?.length) switchRoom({type:'channel',id:chs[0].id,name:chs[0].name,icon:'#',serverName:server.name,serverId:server.id,topic:chs[0].topic||''});
+  if(chs?.length) switchRoom({type:'channel',id:chs[0].id,name:chs[0].name,icon:'#',serverName:server.name,serverId:server.id,serverSlug:server.slug||null,topic:chs[0].topic||''});
 }
 function showPasscodeGate(server){
   document.getElementById('passcode-gate')?.remove();
@@ -707,7 +707,7 @@ function buildMsgEl(msg,container){
     ref.innerHTML=`<span class="rr-author">↩ @${esc(msg.reply_to_username||'?')} </span>${esc((msg.reply_to_text||'').slice(0,80))}`;
     ref.addEventListener('click',()=>jumpToMsg(msg.reply_to_id)); body.appendChild(ref);
   }
-  if(msg.text){const d=document.createElement('div');d.className='dc-msg-text';d.innerHTML=renderText(msg.text);if(msg.edited_at){const ed=document.createElement('span');ed.className='dc-msg-edited';ed.textContent='(edited)';d.appendChild(ed);}body.appendChild(d);}
+  if(msg.text){const d=document.createElement('div');d.className='dc-msg-text';d.innerHTML=renderText(msg.text);if(msg.edited_at){const ed=document.createElement('span');ed.className='dc-msg-edited';ed.textContent='(edited)';d.appendChild(ed);}body.appendChild(d);if(msg.text.includes('http')) setTimeout(()=>attachLinkPreviews(body,msg.text),0);}
   if(msg.voice_note_url){
     const dur=msg.voice_note_duration||0;
     const m=Math.floor(dur/60); const s=dur%60;
@@ -815,6 +815,25 @@ function renderText(raw){
   // Channel links #channel-name
   t=t.replace(/#([a-zA-Z0-9\-_]+)/g,'<span class="dc-ch-link">#$1</span>');
   // URLs
+  // Images  ![alt](url)
+  t=t.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,(m,alt,src)=>{
+    if(!/^https?:\/\//i.test(src)) return m;
+    return `<img class="dc-md-img" src="${src}" alt="${alt}" loading="lazy" onerror="this.style.display='none'"/>`;
+  });
+  // Links [text](url)
+  t=t.replace(/\[([^\]]+)\]\(([^)]+)\)/g,(m,text,href)=>{
+    if(!/^https?:\/\//i.test(href)) return m;
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="dc-link">${text}</a>`;
+  });
+  // Tables
+  const tableRx=/^(\|.+\|)\n(\|[-: |]+\|)\n((\|.+\|\n?)+)/gm;
+  t=t.replace(tableRx,(m,header,sep,body)=>{
+    const parseRow=r=>r.replace(/^\|(.+)\|$/,'$1').split('|').map(c=>`<td class="dc-td">${c.trim()}</td>`).join('');
+    const heads=header.replace(/^\|(.+)\|$/,'$1').split('|').map(c=>`<th class="dc-th">${c.trim()}</th>`).join('');
+    const rows=body.trim().split('\n').map(r=>`<tr>${parseRow(r)}</tr>`).join('');
+    return `<div class="dc-table-wrap"><table class="dc-table"><thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  });
+  // Plain URLs (after [text](url) so those are already handled)
   t=t.replace(/https?:\/\/[^\s<>"\x00]+/g,url=>`<a href="${url}" target="_blank" rel="noopener noreferrer" class="dc-link">${url}</a>`);
   // Line breaks
   t=t.replace(/\n/g,'<br/>');
@@ -1991,6 +2010,9 @@ function updateUserChip(){
     setTimeout(()=>window.ChatNotif?.onRoomSwitch(activeRoom),0);
     startPresence();
     await handleInviteCode();
+    // Check for invite code in URL
+    const _invCode = new URLSearchParams(location.search).get('invite') || new URLSearchParams(location.search).get('code');
+    if (_invCode) await handleInviteJoinFlow(_invCode);
     await handleUrlRouting();
     sb.auth.onAuthStateChange(async(_,session)=>{
       currentUserId=session?.user?.id||null; window.currentUserId=currentUserId;
@@ -2034,38 +2056,105 @@ async function seedUnreadCounts(){
 /* ══════════════════════════════════════════════════════
    SERVER URL ROUTING — /chat/slug  or  /chat/slug/channel
 ══════════════════════════════════════════════════════ */
-async function handleUrlRouting() {
-  const path = location.pathname; // e.g. /chat/my-server or /chat/my-server/general
-  const m = path.match(/^\/chat\/([^\/]+)(?:\/([^\/]+))?/);
-  if (!m) return false;
-  const [, serverSlug, channelSlug] = m;
-  if (!serverSlug) return false;
-  const { data: server } = await sb.from('servers').select('*').eq('slug', serverSlug).maybeSingle();
-  if (!server) return false;
-  if (channelSlug) {
-    const { data: ch } = await sb.from('channels').select('*').eq('server_id', server.id).eq('name', channelSlug).maybeSingle();
-    if (ch) { switchRoom({ type:'channel', id:ch.id, name:ch.name, icon:'#', serverName:server.name, serverId:server.id }); return true; }
+
+async function handleInviteJoinFlow(code) {
+  const { data: inv } = await sb.from('server_invites').select('*').eq('code', code).maybeSingle();
+  if (!inv) return;
+  if (inv.expires_at && new Date(inv.expires_at) < new Date()) { showToast('⏰ Invite expired'); return; }
+  // Auto-join
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+  await sb.from('server_members').upsert({ server_id: inv.server_id, user_id: session.user.id }, { onConflict: 'server_id,user_id' });
+  await sb.from('server_invites').update({ used: true, used_by: session.user.id }).eq('id', inv.id);
+  // Check onboarding
+  const { data: server } = await sb.from('servers').select('*').eq('id', inv.server_id).maybeSingle();
+  if (server?.onboarding_enabled) {
+    const { data: mem } = await sb.from('server_members').select('onboarding_done').eq('server_id', server.id).eq('user_id', session.user.id).maybeSingle();
+    if (!mem?.onboarding_done) {
+      location.href = '/onboarding?server=' + server.id;
+      return;
+    }
   }
-  buildSidebar(server);
+  showToast('✅ Joined ' + (server?.name || 'server') + '!');
+  // Remove invite param from URL cleanly
+  const p = new URLSearchParams(location.search);
+  p.delete('invite'); p.delete('code');
+  const newUrl = '/chat?' + (server?.slug ? 's=' + server.slug : 'server=' + inv.server_id);
+  history.replaceState(null, '', newUrl);
+}
+
+// ── URL routing using query params — no server config needed, no 404 on reload
+// Format: /chat?s=server-slug&c=channel-name  or  /chat?dm=userId
+
+async function handleUrlRouting() {
+  const params = new URLSearchParams(location.search);
+  const serverSlug = params.get('s');
+  const channelName = params.get('c');
+  const dmId = params.get('dm');
+
+  if (dmId) {
+    const { data: dm } = await sb.from('dm_channels').select('*').eq('id', dmId).maybeSingle();
+    if (dm) { switchRoom({ type:'dm', id:dm.id, name:'DM', icon:'@', serverId:null, serverName:'Direct Messages' }); return true; }
+  }
+  if (!serverSlug) return false;
+
+  const { data: server } = await sb.from('servers').select('*').or(`slug.eq.${serverSlug},id.eq.${serverSlug}`).maybeSingle();
+  if (!server) return false;
+
+  // Build sidebar first so channels load
+  await buildSidebarAndWait(server);
+
+  if (channelName) {
+    const { data: ch } = await sb.from('channels').select('*')
+      .eq('server_id', server.id)
+      .ilike('name', channelName)
+      .maybeSingle();
+    if (ch) {
+      switchRoom({ type:'channel', id:ch.id, name:ch.name, icon:'#', serverName:server.name, serverId:server.id });
+      return true;
+    }
+  }
   return true;
 }
 
-// Update browser URL when switching to a server/channel
-const _origSwitchRoom = window._origSwitchRoom || null;
+async function buildSidebarAndWait(server) {
+  return new Promise(resolve => {
+    buildSidebar(server);
+    // Give sidebar a tick to render
+    setTimeout(resolve, 50);
+  });
+}
+
+// Update URL on every room switch — synchronous, no async DB call
 function updateUrlForRoom(room) {
   if (!room) return;
+  let url = '/chat';
+  let title = '360 Chat';
   if (room.serverId) {
-    sb.from('servers').select('slug,name').eq('id', room.serverId).maybeSingle().then(({data:s}) => {
-      if (!s?.slug) return;
-      const chSlug = room.type === 'channel' ? '/' + (room.name||'').toLowerCase().replace(/[^a-z0-9]/g,'-') : '';
-      const url = `/chat/${s.slug}${chSlug}`;
-      history.replaceState(null, '', url);
-      document.title = (room.name ? '#'+room.name+' — ' : '') + (s.name||'360 Chat');
-    });
+    // Use slug if we have it, fall back to server id
+    const slug = room.serverSlug || room.serverId;
+    url = `/chat?s=${encodeURIComponent(slug)}`;
+    if (room.type === 'channel' && room.name) {
+      url += `&c=${encodeURIComponent(room.name)}`;
+      title = `#${room.name} — ${room.serverName || '360'}`;
+    } else {
+      title = room.serverName || '360 Chat';
+    }
+    // Eagerly fetch slug if we only have id, update URL silently
+    if (!room.serverSlug && room.serverId) {
+      sb.from('servers').select('slug').eq('id', room.serverId).maybeSingle().then(({ data: s }) => {
+        if (s?.slug && location.search.includes(room.serverId)) {
+          const newUrl = location.href.replace(room.serverId, s.slug);
+          history.replaceState(null, '', newUrl);
+        }
+      });
+    }
   } else if (room.type === 'dm') {
-    history.replaceState(null, '', `/chat`);
-    document.title = '360 Chat';
+    url = '/chat';
+    title = room.name ? `${room.name} — DM` : '360 Chat';
   }
+  history.replaceState(null, '', url);
+  document.title = title;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -2425,4 +2514,67 @@ async function saveOnboarding(serverId) {
   if (error) { showToast('❌ ' + error.message); return; }
   document.getElementById('ob-setup-modal')?.classList.add('hidden');
   showToast('✅ Onboarding saved!');
+}
+
+/* ══════════════════════════════════════════════════════
+   LINK PREVIEWS — unfurl URLs in messages
+══════════════════════════════════════════════════════ */
+const _previewCache = {};
+const _previewQueue = new Set();
+
+async function fetchLinkPreview(url) {
+  if (_previewCache[url] !== undefined) return _previewCache[url];
+  if (_previewQueue.has(url)) return null;
+  _previewQueue.add(url);
+  try {
+    // Use allorigins as a CORS proxy to read og: tags
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const r = await fetch(proxy, { signal: AbortSignal.timeout(5000) });
+    const j = await r.json();
+    const html = j.contents || '';
+    const meta = (prop) => {
+      const m = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']+)["']`, 'i'))
+               || html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${prop}["']`, 'i'));
+      return m?.[1] || null;
+    };
+    const title   = meta('og:title')       || meta('twitter:title')       || html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] || null;
+    const desc    = meta('og:description') || meta('twitter:description') || null;
+    const image   = meta('og:image')       || meta('twitter:image')       || null;
+    const siteName= meta('og:site_name')   || null;
+    const result  = (title||desc||image) ? { url, title, desc, image, siteName } : null;
+    _previewCache[url] = result;
+    return result;
+  } catch(e) {
+    _previewCache[url] = null;
+    return null;
+  } finally {
+    _previewQueue.delete(url);
+  }
+}
+
+function buildPreviewEl(preview) {
+  const wrap = document.createElement('div');
+  wrap.className = 'dc-link-preview';
+  wrap.innerHTML = `
+    ${preview.image ? `<img class="dc-lp-img" src="${preview.image}" alt="" loading="lazy" onerror="this.remove()"/>` : ''}
+    <div class="dc-lp-body">
+      ${preview.siteName ? `<div class="dc-lp-site">${esc(preview.siteName)}</div>` : ''}
+      ${preview.title    ? `<div class="dc-lp-title"><a href="${esc(preview.url)}" target="_blank" rel="noopener" class="dc-link">${esc(preview.title)}</a></div>` : ''}
+      ${preview.desc     ? `<div class="dc-lp-desc">${esc(preview.desc.slice(0,200))}</div>` : ''}
+    </div>`;
+  return wrap;
+}
+
+async function attachLinkPreviews(msgEl, text) {
+  if (!text) return;
+  const urls = [...new Set((text.match(/https?:\/\/[^\s<>"]+/g)||[]))].slice(0,1); // one preview max
+  for (const url of urls) {
+    // Skip image URLs — already rendered inline
+    if (/\.(png|jpg|jpeg|gif|webp|svg)$/i.test(url)) continue;
+    const preview = await fetchLinkPreview(url);
+    if (!preview) continue;
+    const existing = msgEl.querySelector('.dc-link-preview');
+    if (existing) continue;
+    msgEl.appendChild(buildPreviewEl(preview));
+  }
 }
