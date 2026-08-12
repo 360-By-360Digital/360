@@ -126,12 +126,75 @@ function parseMinecraftCodes(text, keepCodes = false) {
   return html;
 }
 
-/* Format static DOM elements with [data-mc] or .mc-text */
-function applyMinecraftFormattingToDom() {
-  document.querySelectorAll("[data-mc], .mc-text").forEach(el => {
-    if (!el.dataset.mcOriginal) el.dataset.mcOriginal = el.textContent;
-    el.innerHTML = parseMinecraftCodes(el.dataset.mcOriginal, false);
+/* Format DOM elements with [data-mc] or .mc-text, anywhere in the document */
+const MC_SELECTOR = "[data-mc], .mc-text";
+
+function formatMcElement(el) {
+  // Re-read the raw text whenever it changes (not just the first time),
+  // so edits/updates to an already-tagged element still get parsed.
+  const raw = el.textContent;
+  if (el.dataset.mcOriginal !== raw && el.dataset.mcParsed === "1") {
+    // The visible text no longer matches what we last rendered (i.e. someone
+    // set new textContent), so treat it as a fresh source string.
+    el.dataset.mcOriginal = raw;
+  } else if (!el.dataset.mcOriginal) {
+    el.dataset.mcOriginal = raw;
+  }
+
+  const html = parseMinecraftCodes(el.dataset.mcOriginal, false);
+  if (el.innerHTML !== html) {
+    el.innerHTML = html;
+  }
+  el.dataset.mcParsed = "1";
+}
+
+function applyMinecraftFormattingToDom(root = document) {
+  // Format the root itself if it matches, plus all matching descendants.
+  if (root.nodeType === 1 && root.matches && root.matches(MC_SELECTOR)) {
+    formatMcElement(root);
+  }
+  const scope = root.querySelectorAll ? root : document;
+  scope.querySelectorAll(MC_SELECTOR).forEach(formatMcElement);
+}
+
+/* Keep formatting live: watch the whole document for new/changed elements
+   that use [data-mc] or .mc-text, so codes work everywhere, not just on
+   elements present at initial page load. */
+function initMinecraftFormattingObserver() {
+  if (window.__mcObserverInitialized) return;
+  window.__mcObserverInitialized = true;
+
+  const observer = new MutationObserver(mutations => {
+    for (const mutation of mutations) {
+      // New elements added to the page
+      mutation.addedNodes && mutation.addedNodes.forEach(node => {
+        if (node.nodeType !== 1) return;
+        applyMinecraftFormattingToDom(node);
+      });
+
+      // Text content changed inside an already-tagged element
+      if (mutation.type === "characterData") {
+        const el = mutation.target.parentElement;
+        if (el && el.closest && el.closest(MC_SELECTOR)) {
+          formatMcElement(el.closest(MC_SELECTOR));
+        }
+      }
+    }
   });
+
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    characterData: true
+  });
+}
+
+/* Manually re-run formatting after you inject new content, e.g.:
+   el.textContent = "&cHello"; refreshMinecraftFormatting(el); */
+function refreshMinecraftFormatting(el) {
+  delete el.dataset.mcOriginal;
+  delete el.dataset.mcParsed;
+  formatMcElement(el);
 }
 
 /* ============================================================
@@ -213,10 +276,12 @@ if (document.readyState === "loading") {
   window.addEventListener("DOMContentLoaded", () => {
     checkAndShowAnnouncement();
     applyMinecraftFormattingToDom();
+    initMinecraftFormattingObserver();
   });
 } else {
   checkAndShowAnnouncement();
   applyMinecraftFormattingToDom();
+  initMinecraftFormattingObserver();
 }
 
 /* ======================================================================================================================= */
@@ -1136,4 +1201,3 @@ initPinnedAppsSettings();
 initAppsPagePinButtons();
 
 console.log("%c360 V.3.0.0 — main.js loaded.", "color:#4ade80;font-weight:bold;font-size:14px;");
-
