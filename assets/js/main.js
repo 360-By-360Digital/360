@@ -18,11 +18,7 @@ const popupConfig = {
   body: "&eWelcome to 360 V.3.6.0! &aEnjoy the new updates and customize your experience in Settings."
 };
 
-/* ============================================================
-   1. MINECRAFT UNICODE & FORMATTING PARSER (§ AND & CODES)
-   Supports Java, Bedrock, Hex (&#123456 / §#123456), & styles.
-   ============================================================ */
-
+/* Helper function to safely escape HTML special characters */
 function escapeHtml(value) {
   if (value === null || value === undefined) return "";
   return String(value).replace(/[&<>"']/g, ch => ({
@@ -33,6 +29,11 @@ function escapeHtml(value) {
     "'": "&#39;"
   }[ch]));
 }
+
+/* ============================================================
+   1. FORMATTING & UNICODE PARSER (§ AND & CODES)
+   Supports Java, Bedrock, Hex (&#123456 / §#123456), & styles.
+   ============================================================ */
 
 function getStyleString(styles) {
   let str = "";
@@ -47,7 +48,9 @@ function getStyleString(styles) {
 }
 
 /**
- * Parses Minecraft formatting codes (& and §) into styled HTML spans.
+ * Parses Minecraft formatting codes (& and §) into HTML.
+ * @param {string} text - The input string containing codes.
+ * @param {boolean} keepCodes - If true, displays the code token itself (blurred/dimmed).
  */
 function parseMinecraftCodes(text, keepCodes = false) {
   if (!text || typeof text !== "string") return "";
@@ -74,17 +77,18 @@ function parseMinecraftCodes(text, keepCodes = false) {
     obfuscated: false
   };
 
-  // Uses \u00A7 for § to ensure safe encoding
-  const regex = /([\u00A7&]#(?:[0-9a-fA-F]{6})|[\u00A7&][0-9a-fA-Fk-rK-Rg-uG-U])/g;
+  // Match Hex tags (&#123456 / §#123456) or single color/style codes (&c / §c / &l etc.)
+  const regex = /([§&]#(?:[0-9a-fA-F]{6})|[§&][0-9a-fA-Fg-uG-U])/g;
   const tokens = text.split(regex);
 
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     if (!token) continue;
 
-    if (token.match(/^([\u00A7&]#(?:[0-9a-fA-F]{6})|[\u00A7&][0-9a-fA-Fk-rK-Rg-uG-U])$/)) {
+    if (token.match(/^([§&]#(?:[0-9a-fA-F]{6})|[§&][0-9a-fA-Fg-uG-U])$/)) {
       const code = token.slice(1).toLowerCase();
 
+      // Update active formatting state (Without wiping active bold/italic styles)
       if (code.startsWith('#')) {
         activeStyles.color = code;
       } else if (colorMap[code] !== undefined) {
@@ -102,7 +106,7 @@ function parseMinecraftCodes(text, keepCodes = false) {
       } else if (code === 'r') {
         activeStyles = { color: "", bold: false, strikethrough: false, underline: false, italic: false, obfuscated: false };
       }
-
+        
       if (keepCodes) {
         html += `<span class="mc-code-token" style="opacity:0.6; filter:blur(0.3px); font-size:0.9em; font-family:monospace; user-select:none; font-style:normal; font-weight:normal; text-decoration:none;">${escapeHtml(token)}</span>`;
       }
