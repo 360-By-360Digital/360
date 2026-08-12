@@ -1132,3 +1132,4 @@ initPinnedAppsSettings();
 initAppsPagePinButtons();
 
 console.log("%c360 V.3.0.0 — main.js loaded.", "color:#4ade80;font-weight:bold;font-size:14px;");
+
