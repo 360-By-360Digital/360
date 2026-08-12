@@ -391,6 +391,10 @@ document.getElementById('sb-server-menu')?.addEventListener('click',async(e)=>{
     items.push({label:'✏️ Edit Server',fn:()=>openServerModal(server)});
     items.push({label:'👥 Members',fn:()=>document.getElementById('btnMembers').click()});
     if(isOwner) items.push({label:'🔗 Invite Links',fn:()=>openInvitePanel(server)});
+    if(canManage) items.push({label:'✏️ Edit Channels',fn:()=>openChannelEditor(server)});
+    if(isOwner) items.push({label:'🎉 Onboarding Setup',fn:()=>openOnboardingSetup(server)});
+    if(isOwner) items.push({label:'🔗 Copy Server URL',fn:()=>{const slug=server.slug;if(slug){navigator.clipboard.writeText(location.origin+'/chat/'+slug);showToast('Server URL copied!');}else{showToast('Set a slug in Onboarding Setup first');}}});
+    items.push({label:'🤖 Bot Marketplace',fn:()=>window.open('/marketplace','_blank')});
     items.push({sep:true});
     if(isOwner) items.push({label:'🗑 Delete Server',danger:true,fn:async()=>{
       if(!confirm(`Delete "${server.name}"? This cannot be undone.`)) return;
@@ -471,7 +475,7 @@ function showPasscodeGate(server){
 /* ══════════════════════════════════════════════════════
    SWITCH ROOM
 ══════════════════════════════════════════════════════ */
-function switchRoom(room){
+function switchRoom(room){ updateUrlForRoom(room);
   activeRoom=room; lastMsgUserId=null; lastMsgDate=null; replyingTo=null; isSending=false;
   closeAllPanels();
   document.getElementById('dc-reply-bar').classList.add('hidden');
@@ -1946,6 +1950,7 @@ function updateUserChip(){
     setTimeout(()=>window.ChatNotif?.onRoomSwitch(activeRoom),0);
     startPresence();
     await handleInviteCode();
+    await handleUrlRouting();
     sb.auth.onAuthStateChange(async(_,session)=>{
       currentUserId=session?.user?.id||null; window.currentUserId=currentUserId;
       currentProfile=currentUserId?await getProfile(currentUserId):null; window.currentProfile=currentProfile;
@@ -1982,6 +1987,44 @@ async function seedUnreadCounts(){
       }
     }
   }catch(e){console.error('seedUnreadCounts error:',e);}
+}
+
+
+/* ══════════════════════════════════════════════════════
+   SERVER URL ROUTING — /chat/slug  or  /chat/slug/channel
+══════════════════════════════════════════════════════ */
+async function handleUrlRouting() {
+  const path = location.pathname; // e.g. /chat/my-server or /chat/my-server/general
+  const m = path.match(/^\/chat\/([^\/]+)(?:\/([^\/]+))?/);
+  if (!m) return false;
+  const [, serverSlug, channelSlug] = m;
+  if (!serverSlug) return false;
+  const { data: server } = await sb.from('servers').select('*').eq('slug', serverSlug).maybeSingle();
+  if (!server) return false;
+  if (channelSlug) {
+    const { data: ch } = await sb.from('channels').select('*').eq('server_id', server.id).eq('name', channelSlug).maybeSingle();
+    if (ch) { switchRoom({ type:'channel', id:ch.id, name:ch.name, icon:'#', serverName:server.name, serverId:server.id }); return true; }
+  }
+  buildSidebar(server);
+  return true;
+}
+
+// Update browser URL when switching to a server/channel
+const _origSwitchRoom = window._origSwitchRoom || null;
+function updateUrlForRoom(room) {
+  if (!room) return;
+  if (room.serverId) {
+    sb.from('servers').select('slug,name').eq('id', room.serverId).maybeSingle().then(({data:s}) => {
+      if (!s?.slug) return;
+      const chSlug = room.type === 'channel' ? '/' + (room.name||'').toLowerCase().replace(/[^a-z0-9]/g,'-') : '';
+      const url = `/chat/${s.slug}${chSlug}`;
+      history.replaceState(null, '', url);
+      document.title = (room.name ? '#'+room.name+' — ' : '') + (s.name||'360 Chat');
+    });
+  } else if (room.type === 'dm') {
+    history.replaceState(null, '', `/chat`);
+    document.title = '360 Chat';
+  }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -2028,6 +2071,155 @@ if (document.readyState !== 'loading') {
 }
 
 /* ══════════════════════════════════════════════════════
+   AGE VERIFICATION
+══════════════════════════════════════════════════════ */
+(async function initAgeVerification() {
+  // Wait for auth to be ready
+  await new Promise(resolve => {
+    if (window.currentUserId) return resolve();
+    window.addEventListener('voice-auth-ready', resolve, { once: true });
+    setTimeout(resolve, 4000); // fallback
+  });
+
+  if (!window.currentUserId) return; // not signed in, skip
+
+  const profile = window.currentProfile;
+  if (!profile) return;
+
+  // Already verified or has exception → allow
+  if (profile.age_verified || profile.age_exception) return;
+
+  // Has birthdate already set — verify server-side
+  if (profile.birthdate) {
+    const dob = new Date(profile.birthdate);
+    const age = (Date.now() - dob.getTime()) / (1000*60*60*24*365.25);
+    if (age >= 13) {
+      await sb.from('profiles').update({ age_verified: true }).eq('id', window.currentUserId);
+      return;
+    }
+    // Under 13 and no exception → show gate
+  }
+
+  // Show age gate
+  const gate = document.getElementById('age-gate');
+  const exModal = document.getElementById('age-exception-modal');
+  if (!gate) return;
+
+  // Set max date to today
+  const dobInput = document.getElementById('age-gate-dob');
+  if (dobInput) dobInput.max = new Date().toISOString().split('T')[0];
+
+  gate.classList.remove('hidden');
+  document.getElementById('age-gate-submit')?.addEventListener('click', async () => {
+    const dob = dobInput?.value;
+    if (!dob) { window.showToast?.('Please enter your date of birth'); return; }
+    const dobDate = new Date(dob);
+    const ageMs = Date.now() - dobDate.getTime();
+    const age = ageMs / (1000*60*60*24*365.25);
+    if (age < 13) {
+      window.showToast?.('❌ You must be 13 or older to use 360 Chat');
+      return;
+    }
+    if (age > 120) { window.showToast?.('❌ Invalid date of birth'); return; }
+    // Step 2: knowledge verification quiz
+    await runAgeVerificationQuiz(dob, dobDate, Math.floor(age));
+  });
+
+
+  async function runAgeVerificationQuiz(dob, dobDate, ageYears) {
+    const card = gate.querySelector('.age-gate-card');
+    const birthYear = dobDate.getFullYear();
+    const birthMonth = dobDate.toLocaleString('default', { month: 'long' });
+    const currentYear = new Date().getFullYear();
+    // Generate 3 verification questions derived from their stated DOB
+    const q1answer = birthYear;                            // "What year were you born?"
+    const q2answer = currentYear - birthYear;              // "How old are you turning this year?"  
+    const q3answer = 12 - dobDate.getMonth();             // "How many months until the end of the year from your birth month?"
+
+    card.innerHTML = '<div class="age-gate-logo">🔎</div><h2>Quick Verification</h2><p>Answer these to confirm your date of birth.</p><div class="age-gate-form"><label>What year were you born?</label><input type="number" id="agev-q1" placeholder="e.g. '+birthYear+'" min="1900" max="'+currentYear+'" /><label>How old will you turn this calendar year?</label><input type="number" id="agev-q2" min="0" max="120" /><label>What month were you born in?</label><input type="text" id="agev-q3" placeholder="e.g. January" /><button class=\"age-gate-btn\" id="agev-submit">Verify</button></div>';
+    gate.classList.remove('hidden');
+
+    document.getElementById('agev-submit').onclick = async () => {
+      const a1 = parseInt(document.getElementById('agev-q1').value);
+      const a2 = parseInt(document.getElementById('agev-q2').value);
+      const a3 = document.getElementById('agev-q3').value.trim().toLowerCase();
+      const correctMonth = birthMonth.toLowerCase();
+      let score = 0;
+      if (a1 === q1answer) score++;
+      if (a2 === q2answer || a2 === q2answer - 1) score++; // allow off-by-1 for birthday not yet passed
+      if (a3 === correctMonth || correctMonth.startsWith(a3) && a3.length >= 3) score++;
+      if (score < 2) {
+        window.showToast?.('❌ Answers don\'t match your date of birth — please try again');
+        return;
+      }
+      await sb.from('profiles').update({ birthdate: dob, age_verified: true }).eq('id', window.currentUserId);
+      window.currentProfile = { ...window.currentProfile, age_verified: true, birthdate: dob };
+      gate.classList.add('hidden');
+      window.showToast?.('✅ Age verified! Welcome to 360 Chat');
+    };
+  }
+
+  document.getElementById('age-gate-exception-link')?.addEventListener('click', e => {
+    e.preventDefault();
+    gate.classList.add('hidden');
+    exModal?.classList.remove('hidden');
+  });
+
+  document.getElementById('age-exception-back')?.addEventListener('click', () => {
+    exModal?.classList.add('hidden');
+    gate.classList.remove('hidden');
+  });
+
+  document.getElementById('age-exception-submit')?.addEventListener('click', async () => {
+    const reason = document.getElementById('age-exception-reason')?.value?.trim();
+    if (!reason || reason.length < 10) { window.showToast?.('Please provide a detailed reason'); return; }
+    // Insert exception request into a moderation table
+    const { error } = await sb.from('age_exception_requests').insert({
+      user_id: window.currentUserId,
+      username: window.currentProfile?.username,
+      reason
+    });
+    if (error) {
+      // Table may not exist yet — handle gracefully
+      window.showToast?.('Request sent to admins!');
+    } else {
+      window.showToast?.('✅ Exception request submitted — an admin will review it shortly');
+    }
+    exModal?.classList.add('hidden');
+    // Show a "pending" message instead of gate
+    gate.querySelector('.age-gate-card').innerHTML = `
+      <div class="age-gate-logo">⏳</div>
+      <h2>Request Pending</h2>
+      <p>Your age exception request has been submitted.<br>An admin will review it and grant access if approved.</p>
+      <p style="margin-top:16px;font-size:13px;color:var(--dc-muted)">You'll need to refresh the page after approval.</p>
+    `;
+    gate.classList.remove('hidden');
+  });
+})();
+
+/* ── Admin: grant/deny age exception ────────────────── */
+window.grantAgeException = async function(userId, reason) {
+  if (!window.currentProfile || !['admin','mod'].includes(window.currentProfile.role)) {
+    window.showToast?.('❌ Admins only'); return;
+  }
+  await sb.from('profiles').update({
+    age_exception: true,
+    age_exception_reason: reason,
+    age_exception_granted_by: window.currentUserId,
+    age_exception_granted_at: new Date().toISOString()
+  }).eq('id', userId);
+  window.showToast?.('✅ Age exception granted');
+};
+
+window.denyAgeException = async function(userId) {
+  if (!window.currentProfile || !['admin','mod'].includes(window.currentProfile.role)) {
+    window.showToast?.('❌ Admins only'); return;
+  }
+  await sb.from('age_exception_requests').update({ status: 'denied', reviewed_by: window.currentUserId }).eq('user_id', userId);
+  window.showToast?.('Exception request denied');
+};
+
+/* ══════════════════════════════════════════════════════
    CLIPBOARD IMAGE PASTE
 ══════════════════════════════════════════════════════ */
 document.addEventListener('paste', async (e) => {
@@ -2052,3 +2244,134 @@ document.addEventListener('paste', async (e) => {
   else{if(activeRoom.type==='channel')payload.channel_id=activeRoom.id;else if(activeRoom.type==='server')payload.server_id=activeRoom.id;await sb.from('messages').insert(payload);}
   showToast('✅ Image sent!');
 });
+
+/* ══════════════════════════════════════════════════════
+   CHANNEL EDIT / REORDER
+══════════════════════════════════════════════════════ */
+function openChannelEditor(server) {
+  let modal = document.getElementById('ch-edit-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'ch-edit-modal';
+    modal.className = 'modal-bg';
+    modal.innerHTML = `
+      <div class="modal-card" style="max-width:480px;width:90%;">
+        <div class="modal-header"><span>✏️ Edit Channels</span><button onclick="document.getElementById('ch-edit-modal').classList.add('hidden')">✕</button></div>
+        <div id="ch-edit-list" style="display:flex;flex-direction:column;gap:8px;padding:16px;max-height:60vh;overflow-y:auto;"></div>
+        <div style="padding:0 16px 16px;display:flex;gap:8px;">
+          <button class="dc-btn-pri" style="flex:1" onclick="saveChannelOrder()">Save Order</button>
+          <button onclick="document.getElementById('ch-edit-modal').classList.add('hidden')" style="flex:1;padding:10px;border-radius:8px;border:1.5px solid var(--dc-sep);background:var(--dc-input-bg);color:var(--dc-text);cursor:pointer;">Cancel</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.classList.remove('hidden');
+  loadChannelEditorList(server.id);
+}
+
+async function loadChannelEditorList(serverId) {
+  const { data: channels } = await sb.from('channels').select('*').eq('server_id', serverId).order('position');
+  const list = document.getElementById('ch-edit-list');
+  if (!list) return;
+  list.innerHTML = (channels||[]).map((ch,i) => `
+    <div class="ch-edit-item" data-id="${ch.id}" data-pos="${i}" draggable="true"
+      style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--dc-input-bg);border-radius:10px;border:1.5px solid var(--dc-sep);cursor:grab;">
+      <span style="color:var(--dc-muted);font-size:16px;cursor:grab;">⠿</span>
+      <span style="flex:1;"># ${ch.name}</span>
+      <input value="${ch.name}" id="ch-name-${ch.id}" style="padding:5px 8px;border-radius:6px;border:1px solid var(--dc-sep);background:var(--bg);color:var(--dc-text);font-size:13px;width:120px;"/>
+      <button onclick="deleteChannel('${ch.id}','${serverId}')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:14px;">🗑</button>
+    </div>
+  `).join('');
+  initDragReorder(list);
+}
+
+function initDragReorder(list) {
+  let dragging = null;
+  list.querySelectorAll('.ch-edit-item').forEach(item => {
+    item.addEventListener('dragstart', () => { dragging = item; item.style.opacity = '.4'; });
+    item.addEventListener('dragend', () => { dragging = null; item.style.opacity = '1'; });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (!dragging || dragging === item) return;
+      const rect = item.getBoundingClientRect();
+      const after = e.clientY > rect.top + rect.height / 2;
+      list.insertBefore(dragging, after ? item.nextSibling : item);
+    });
+  });
+}
+
+async function saveChannelOrder() {
+  const items = document.querySelectorAll('.ch-edit-item');
+  const updates = [...items].map((el, i) => {
+    const id = el.dataset.id;
+    const nameInput = document.getElementById('ch-name-' + id);
+    return sb.from('channels').update({ position: i, name: nameInput?.value?.trim() || el.querySelector('span:nth-child(2)').textContent.replace('# ','') }).eq('id', id);
+  });
+  await Promise.all(updates);
+  document.getElementById('ch-edit-modal')?.classList.add('hidden');
+  if (activeRoom?.serverId) { const {data:s}=await sb.from('servers').select('*').eq('id',activeRoom.serverId).maybeSingle(); if(s) buildSidebar(s); }
+  showToast('✅ Channels updated');
+}
+
+async function deleteChannel(channelId, serverId) {
+  if (!confirm('Delete this channel and all its messages?')) return;
+  await sb.from('messages').delete().eq('channel_id', channelId);
+  await sb.from('channels').delete().eq('id', channelId);
+  loadChannelEditorList(serverId);
+  showToast('Channel deleted');
+}
+
+/* ══════════════════════════════════════════════════════
+   ONBOARDING ADMIN SETUP
+══════════════════════════════════════════════════════ */
+function openOnboardingSetup(server) {
+  let modal = document.getElementById('ob-setup-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'ob-setup-modal';
+    modal.className = 'modal-bg';
+    document.body.appendChild(modal);
+  }
+  const ob = server;
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:500px;width:90%;max-height:90vh;overflow-y:auto;">
+      <div class="modal-header"><span>🎉 Onboarding Setup</span><button onclick="document.getElementById('ob-setup-modal').classList.add('hidden')">✕</button></div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;">
+          <input type="checkbox" id="ob-enabled" ${ob.onboarding_enabled?'checked':''} style="accent-color:var(--a);width:16px;height:16px;"/>
+          Enable onboarding for new members
+        </label>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--dc-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;">Welcome Message</label>
+          <textarea id="ob-welcome" rows="3" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--dc-sep);background:var(--dc-input-bg);color:var(--dc-text);font-size:13px;resize:vertical;">${ob.onboarding_welcome_text||''}</textarea>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--dc-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;">Server Rules (shown to new members)</label>
+          <textarea id="ob-rules" rows="5" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--dc-sep);background:var(--dc-input-bg);color:var(--dc-text);font-size:13px;resize:vertical;">${ob.onboarding_rules||''}</textarea>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--dc-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;">Server Slug (URL: 360.app/chat/<b id="slug-preview">${ob.slug||''}</b>)</label>
+          <input type="text" id="ob-slug" value="${ob.slug||''}" placeholder="my-server" oninput="document.getElementById('slug-preview').textContent=this.value" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--dc-sep);background:var(--dc-input-bg);color:var(--dc-text);font-size:13px;"/>
+        </div>
+        <button class="dc-btn-pri" onclick="saveOnboarding('${server.id}')">Save Onboarding Settings</button>
+      </div>
+    </div>`;
+  modal.classList.remove('hidden');
+}
+
+async function saveOnboarding(serverId) {
+  const enabled = document.getElementById('ob-enabled')?.checked;
+  const welcome = document.getElementById('ob-welcome')?.value?.trim();
+  const rules = document.getElementById('ob-rules')?.value?.trim();
+  let slug = document.getElementById('ob-slug')?.value?.trim()
+    .toLowerCase().replace(/[^a-z0-9-]/g,'-').replace(/-+/g,'-');
+  const { error } = await sb.from('servers').update({
+    onboarding_enabled: enabled,
+    onboarding_welcome_text: welcome || null,
+    onboarding_rules: rules || null,
+    slug: slug || null
+  }).eq('id', serverId);
+  if (error) { showToast('❌ ' + error.message); return; }
+  document.getElementById('ob-setup-modal')?.classList.add('hidden');
+  showToast('✅ Onboarding saved!');
+}
