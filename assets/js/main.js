@@ -11,6 +11,261 @@
 //CHANGE THE FOLLOWING TO CHANGE ALL THE PAGE'S VERSION!!
 const version = "3.6.0";
 
+//EDIT THE FOLLOWING TO CHANGE THE POPUP SETTINGS!
+const popupConfig = {
+  enabled: true,
+  title: "&l&c360 Announcement",
+  body: "&eWelcome to 360 V.3.6.0! &aEnjoy the new updates and customize your experience in Settings."
+};
+
+/* ============================================================
+   1. POPUP CONFIGURATION & LOCAL STORAGE
+   ============================================================ */
+const POPUP_STORAGE_KEY = "360_popup_config";
+
+function getPopupSettings() {
+  const saved = safeParseJSON(localStorage.getItem(POPUP_STORAGE_KEY), null);
+  return saved || popupConfig;
+}
+
+function savePopupSettings(config) {
+  localStorage.setItem(POPUP_STORAGE_KEY, JSON.stringify(config));
+}
+
+/* ============================================================
+   2. FORMATTING & UNICODE PARSER (§ AND & CODES)
+   Supports Java, Bedrock, Hex (&#123456), and style codes.
+   ============================================================ */
+function parseMinecraftCodes(text, keepCodes = false) {
+  if (!text || typeof text !== "string") return "";
+
+  const colorMap = {
+    // Java Edition Colors
+    '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
+    '4': '#AA0000', '5': '#AA00AA', '6': '#FFAA00', '7': '#AAAAAA',
+    '8': '#555555', '9': '#5555FF', 'a': '#55FF55', 'b': '#55FFFF',
+    'c': '#FF5555', 'd': '#FF55FF', 'e': '#FFFF55', 'f': '#FFFFFF',
+    // Bedrock Edition Colors
+    'g': '#DDD605', 'h': '#E3D4D1', 'i': '#CECECE', 'j': '#443A3B',
+    'p': '#DEB12D', 'q': '#47A036', 's': '#2CBAA8', 't': '#21497B',
+    'u': '#9A5CC6'
+  };
+
+  let html = "";
+  let activeStyles = {
+    color: "",
+    bold: false,
+    strikethrough: false,
+    underline: false,
+    italic: false,
+    obfuscated: false
+  };
+
+  // Match Hex tags (&#123456 / §#123456) or single codes (&c / §c / &l etc.)
+  const regex = /([§&]#(?:[0-9a-fA-F]{6})|[§&][0-9a-fA-Fk-rK-Rg-uG-U])/g;
+  const tokens = text.split(regex);
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (!token) continue;
+
+    if (token.match(/^([§&]#(?:[0-9a-fA-F]{6})|[§&][0-9a-fA-Fk-rK-Rg-uG-U])$/)) {
+      const code = token.slice(1).toLowerCase();
+
+      if (code.startsWith('#')) {
+        activeStyles.color = code;
+        resetFormats(activeStyles);
+      } else if (colorMap[code] !== undefined) {
+        activeStyles.color = colorMap[code];
+        resetFormats(activeStyles);
+      } else if (code === 'k') {
+        activeStyles.obfuscated = true;
+      } else if (code === 'l') {
+        activeStyles.bold = true;
+      } else if (code === 'm') {
+        activeStyles.strikethrough = true;
+      } else if (code === 'n') {
+        activeStyles.underline = true;
+      } else if (code === 'o') {
+        activeStyles.italic = true;
+      } else if (code === 'r') {
+        activeStyles = { color: "", bold: false, strikethrough: false, underline: false, italic: false, obfuscated: false };
+      }
+
+      if (keepCodes) {
+        const styleStr = getStyleString(activeStyles);
+        html += `<span style="${styleStr} opacity:0.75; font-size:0.95em;">${escapeHtml(token)}</span>`;
+      }
+    } else {
+      const styleStr = getStyleString(activeStyles);
+      const escapedText = escapeHtml(token);
+      const classes = activeStyles.obfuscated ? ' class="mc-obfuscated"' : '';
+
+      if (styleStr || classes) {
+        html += `<span${classes} style="${styleStr}">${escapedText}</span>`;
+      } else {
+        html += escapedText;
+      }
+    }
+  }
+
+  return html;
+}
+
+function resetFormats(styles) {
+  styles.bold = false;
+  styles.strikethrough = false;
+  styles.underline = false;
+  styles.italic = false;
+  styles.obfuscated = false;
+}
+
+function getStyleString(styles) {
+  let str = "";
+  if (styles.color) str += `color:${styles.color};`;
+  if (styles.bold) str += `font-weight:bold;`;
+  if (styles.italic) str += `font-style:italic;`;
+  let textDec = [];
+  if (styles.strikethrough) textDec.push("line-through");
+  if (styles.underline) textDec.push("underline");
+  if (textDec.length) str += `text-decoration:${textDec.join(" ")};`;
+  return str;
+}
+
+function applyMinecraftFormattingToDom() {
+  document.querySelectorAll("[data-mc], .mc-text").forEach(el => {
+    if (!el.dataset.mcOriginal) el.dataset.mcOriginal = el.textContent;
+    el.innerHTML = parseMinecraftCodes(el.dataset.mcOriginal);
+  });
+}
+
+/* ============================================================
+   3. CUSTOM POPUP SYSTEM (Replaces window.alert)
+   ============================================================ */
+function showCustomPopup({ title = "", body = "", buttonText = "OK", onClose = null }) {
+  let modal = document.getElementById("custom-popup-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "custom-popup-modal";
+    modal.className = "custom-modal-backdrop";
+    document.body.appendChild(modal);
+  }
+
+  const parsedTitle = parseMinecraftCodes(title);
+  const parsedBody = parseMinecraftCodes(body);
+
+  modal.innerHTML = `
+    <div class="custom-modal-card">
+      ${parsedTitle ? `<div class="custom-modal-title">${parsedTitle}</div>` : ""}
+      ${parsedBody ? `<div class="custom-modal-body">${parsedBody}</div>` : ""}
+      <div class="custom-modal-actions">
+        <button id="customModalOkBtn" class="custom-modal-btn-primary">${escapeHtml(buttonText)}</button>
+      </div>
+    </div>
+  `;
+
+  modal.style.display = "flex";
+
+  const close = () => {
+    modal.style.display = "none";
+    if (typeof onClose === "function") onClose();
+  };
+
+  const okBtn = modal.querySelector("#customModalOkBtn");
+  if (okBtn) okBtn.onclick = close;
+
+  modal.onclick = e => {
+    if (e.target === modal) close();
+  };
+}
+
+// Override standard alert() with custom popup modal
+window.alert = function(message) {
+  showCustomPopup({
+    title: "&cAlert",
+    body: String(message),
+    buttonText: "OK"
+  });
+};
+
+// Automatic Announcement Popup on Page Load
+(function initAnnouncementPopup() {
+  const settings = getPopupSettings();
+  if (settings.enabled) {
+    const trigger = () => {
+      showCustomPopup({
+        title: settings.title,
+        body: settings.body,
+        buttonText: "Close"
+      });
+    };
+    if (document.readyState === "loading") {
+      window.addEventListener("DOMContentLoaded", trigger);
+    } else {
+      trigger();
+    }
+  }
+})();
+
+/* ============================================================
+   4. SETTINGS PANEL CONTROLS FOR POPUP
+   ============================================================ */
+function initPopupSettingsSection() {
+  const panel = document.querySelector(".settings-panel");
+  if (!panel || panel.querySelector("#popupSettingsSection")) return;
+
+  const current = getPopupSettings();
+
+  const section = document.createElement("div");
+  section.id = "popupSettingsSection";
+  section.className = "settings-section";
+  section.innerHTML = `
+    <h3 style="margin-top:15px; font-weight:600;">Announcement Popup</h3>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+      <span style="font-size:13px;">Enable Popup</span>
+      <input type="checkbox" id="popupToggle" ${current.enabled ? "checked" : ""}>
+    </div>
+    <div style="font-size:12px; margin-bottom:4px; opacity:0.8;">Message Title (supports & & §)</div>
+    <input type="text" id="popupTitleInput" class="settings-select" value="${escapeHtml(current.title)}" placeholder="Title" style="margin-bottom:8px;">
+    <div style="font-size:12px; margin-bottom:4px; opacity:0.8;">Message Body (supports & & §)</div>
+    <textarea id="popupBodyInput" class="settings-select" rows="3" style="resize:vertical; margin-bottom:10px;">${escapeHtml(current.body)}</textarea>
+    <div style="display:flex; gap:8px;">
+      <button id="savePopupBtn" class="custom-modal-btn-primary" style="flex:1; padding:6px; font-size:12px;">Save</button>
+      <button id="previewPopupBtn" class="custom-modal-btn-secondary" style="flex:1; padding:6px; font-size:12px;">Preview</button>
+    </div>
+  `;
+
+  panel.insertBefore(section, panel.firstChild);
+
+  const toggle = section.querySelector("#popupToggle");
+  const titleInput = section.querySelector("#popupTitleInput");
+  const bodyInput = section.querySelector("#popupBodyInput");
+
+  section.querySelector("#savePopupBtn").onclick = () => {
+    savePopupSettings({
+      enabled: toggle.checked,
+      title: titleInput.value,
+      body: bodyInput.value
+    });
+    showCustomPopup({ title: "&aSuccess", body: "Popup settings saved!" });
+  };
+
+  section.querySelector("#previewPopupBtn").onclick = () => {
+    showCustomPopup({
+      title: titleInput.value,
+      body: bodyInput.value,
+      buttonText: "Close Preview"
+    });
+  };
+}
+
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", initPopupSettingsSection);
+} else {
+  initPopupSettingsSection();
+}
+
+
 //Get's the current page's URL (Not including domain)
 let currentUrl = window.location.pathname + window.location.search + window.location.hash;
 
