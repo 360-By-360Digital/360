@@ -12,6 +12,8 @@
 ![Reddit](https://img.shields.io/badge/Reddit-r%2F360Search-orange)
 [![YouTube](https://img.shields.io/badge/YouTube-@360Search-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@360Search)
 [![X](https://img.shields.io/badge/X-@_360Search-000000?logo=x&logoColor=white)](https://x.com/_360Search)
+[![Instagram](https://img.shields.io/badge/Instagram-Follow-E4405F?style=flat&logo=instagram&logoColor=white)](https://instagram.com/_360search)
+
 
 A privacy-focused browser and search platform that brings powerful tools into one place.
 <p align="center">
