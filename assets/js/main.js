@@ -1,5 +1,5 @@
 /* ============================================================
-   360 — MAIN.JS 360v.3.6.0
+   360 — MAIN.JS V.3.6.0
       ____    __   ___  
      |___ \  / /  / _ \ 
        __) |/ /_ | | | |
@@ -241,56 +241,57 @@ function setupMcInputOverlay(field) {
   if (field.dataset.mcOverlayReady === "1") return;
   field.dataset.mcOverlayReady = "1";
 
-  const wrapper = document.createElement("div");
-  wrapper.className = "mc-input-wrapper";
-  wrapper.style.position = "relative";
-  wrapper.style.display = field.tagName === "TEXTAREA" ? "block" : "inline-block";
+  // IMPORTANT: we never wrap or move the field itself. Wrapping it in a new
+  // container broke flex/grid sizing rules and sibling CSS that targeted the
+  // field directly (this is what caused the chat input to disappear and the
+  // search bar to glitch). Instead we drop a positioned sibling overlay next
+  // to the field and keep it pinned to the field's live position/size.
+  const parent = field.parentElement;
+  if (!parent) return;
+  if (getComputedStyle(parent).position === "static") {
+    parent.dataset.mcParentPositioned = "1";
+    parent.style.position = "relative";
+  }
 
   const backdrop = document.createElement("div");
   backdrop.className = "mc-input-backdrop";
   backdrop.style.position = "absolute";
-  backdrop.style.top = "0";
-  backdrop.style.left = "0";
-  backdrop.style.right = "0";
-  backdrop.style.bottom = field.tagName === "TEXTAREA" ? "0" : "auto";
-  backdrop.style.overflow = "hidden";
   backdrop.style.pointerEvents = "none";
+  backdrop.style.overflow = "hidden";
   backdrop.style.whiteSpace = field.tagName === "TEXTAREA" ? "pre-wrap" : "pre";
   backdrop.style.wordWrap = "break-word";
   backdrop.style.background = "transparent";
+  backdrop.style.zIndex = "0";
+  field.style.position = "relative";
+  field.style.zIndex = "1";
+  field.style.background = "transparent";
+  const originalColor = getComputedStyle(field).color;
+  field.style.color = "transparent";
+  field.style.caretColor = originalColor === "rgba(0, 0, 0, 0)" ? "#000" : originalColor;
 
-  field.parentNode.insertBefore(wrapper, field);
-  wrapper.appendChild(backdrop);
-  wrapper.appendChild(field);
+  parent.insertBefore(backdrop, field);
 
   const syncBoxStyle = () => {
     const computed = getComputedStyle(field);
     MC_INPUT_COPY_PROPS.forEach(prop => {
       backdrop.style[prop] = computed[prop];
     });
-    backdrop.style.width = field.tagName === "TEXTAREA" ? "100%" : computed.width;
-    backdrop.style.height = field.tagName === "TEXTAREA" ? "100%" : computed.height;
     backdrop.style.color = computed.color;
+    backdrop.style.top = field.offsetTop + "px";
+    backdrop.style.left = field.offsetLeft + "px";
+    backdrop.style.width = field.offsetWidth + "px";
+    backdrop.style.height = field.offsetHeight + "px";
+    field.style.caretColor = computed.color === "rgba(0, 0, 0, 0)" ? "#000" : computed.color;
   };
 
   const render = () => {
     backdrop.innerHTML = parseMinecraftCodes(field.value, true);
     backdrop.scrollTop = field.scrollTop;
     backdrop.scrollLeft = field.scrollLeft;
+    syncBoxStyle();
   };
 
-  syncBoxStyle();
   render();
-
-  // Field text stays fully transparent (only the caret is visible) so the
-  // colored + blurred-code backdrop underneath does the actual displaying.
-  field.style.position = "relative";
-  field.style.background = "transparent";
-  field.style.color = "transparent";
-  field.style.caretColor = getComputedStyle(field).color === "rgba(0, 0, 0, 0)"
-    ? "#000"
-    : getComputedStyle(field).color;
-  wrapper.style.background = window.getComputedStyle(field).backgroundColor;
 
   field.addEventListener("input", render);
   field.addEventListener("scroll", () => {
@@ -298,13 +299,21 @@ function setupMcInputOverlay(field) {
     backdrop.scrollLeft = field.scrollLeft;
   });
   window.addEventListener("resize", syncBoxStyle);
+
+  // Auto-growing textareas (e.g. chat message boxes) change size without a
+  // window resize event, so watch the field itself too.
+  if (typeof ResizeObserver !== "undefined") {
+    new ResizeObserver(syncBoxStyle).observe(field);
+  }
 }
 
-/* Auto-wires the overlay onto text inputs/textareas so typed codes show a
-   live colored + blurred-code preview. Opt out per-field with data-mc-plain. */
+/* Wires the live-preview overlay onto fields that opt in via [data-mc-input]
+   or class .mc-input — NOT every input/textarea site-wide. Auto-applying to
+   every field (including the main search bar) broke unrelated layouts, so
+   this is opt-in only. */
 function setupMcInputs(root = document) {
   const scope = root.querySelectorAll ? root : document;
-  const selector = 'textarea:not([data-mc-plain]), input[type="text"]:not([data-mc-plain])';
+  const selector = "[data-mc-input], .mc-input";
   const fields = root.matches && root.matches(selector) ? [root] : Array.from(scope.querySelectorAll(selector));
   fields.forEach(setupMcInputOverlay);
 }
