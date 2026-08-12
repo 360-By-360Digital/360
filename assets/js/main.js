@@ -37,7 +37,8 @@ const PINNED_APP_CATALOG = [
   { label: "360Docs", href: "/apps/360Docs", icon: "📃" },
   { label: "360Do", href: "/apps/360Do", icon: "💡" },
   { label: "360Mail", href: "/apps/360mail-claim", icon: "✉️" },
-  { label: "360Studio", href: "/apps/360Studio", icon: "🎛️" }
+  { label: "360Studio", href: "/apps/360Studio", icon: "🎛️" },
+  { label: "360Meet", href: "/apps/360Meet", icon: "👥" }
 ];
 
 function safeParseJSON(raw, fallback) {
