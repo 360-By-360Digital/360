@@ -382,7 +382,7 @@
 <script src="/assets/js/main.js"></script>
 <script src="/assets/js/auth-fix.js"></script>
 <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/gallium.js"></script>
 <script src="/assets/js/cookie.js"></script>
 <script src="/assets/js/cursor.js"></script>
 <script src="/assets/js/chat.js"></script>
@@ -486,38 +486,6 @@
   if (settingsPanel) settingsPanel.style.zIndex = '6000';
 })();
 </script>
-
-  <!-- Age Verification Gate -->
-  <div id="age-gate" class="age-gate hidden">
-    <div class="age-gate-card">
-      <div class="age-gate-logo">🔞</div>
-      <h2>Age Verification Required</h2>
-      <p>You must be <strong>13 or older</strong> to use 360 Chat.</p>
-      <p class="age-gate-sub">Please confirm your date of birth.</p>
-      <div class="age-gate-form">
-        <label>Date of Birth</label>
-        <input type="date" id="age-gate-dob" max="" />
-        <button class="age-gate-btn" id="age-gate-submit">Confirm Age</button>
-      </div>
-      <p class="age-gate-note">
-        Under 13? <a href="#" id="age-gate-exception-link">Request an admin exception →</a>
-      </p>
-    </div>
-  </div>
-  <!-- Age Exception Request Modal -->
-  <div id="age-exception-modal" class="age-gate hidden">
-    <div class="age-gate-card">
-      <div class="age-gate-logo">📋</div>
-      <h2>Request Age Exception</h2>
-      <p>An admin can grant you access with a verified reason (e.g. parental consent, educational use).</p>
-      <div class="age-gate-form">
-        <label>Reason for exception</label>
-        <textarea id="age-exception-reason" rows="4" placeholder="Explain why you should be granted access..."></textarea>
-        <button class="age-gate-btn" id="age-exception-submit">Submit Request</button>
-        <button class="age-gate-btn age-gate-btn-secondary" id="age-exception-back">← Back</button>
-      </div>
-    </div>
-  </div>
 
 </body>
 </html>
