@@ -38,6 +38,8 @@ const PINNED_APP_CATALOG = [
   { label: "360Do", href: "/apps/360Do", icon: "💡" },
   { label: "360Mail", href: "/apps/360mail-claim", icon: "✉️" },
   { label: "360Studio", href: "/apps/360Studio", icon: "🎛️" },
+  { label: "360MySite", href: "/apps/360MySite", icon: "🌐" },
+  { label: "360Canvas", href: "/apps/360Canvas", icon: "🎨" },
   { label: "360Meet", href: "/apps/360Meet", icon: "👥" }
 ];
 
