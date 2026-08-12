@@ -311,6 +311,13 @@ if (document.readyState === "loading") {
   applyMinecraftFormattingToDom();
 }
 
+//Get's the current page's URL (Not including domain)
+let currentUrl = window.location.pathname + window.location.search + window.location.hash;
+
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const body = document.body;
+
 /* ============================================================
    SIDEBAR — SINGLE SOURCE OF TRUTH
    Every page just contains an empty <span id="sidebar-slot"></span>
