@@ -1,9 +1,15 @@
 /* ============================================================
-   360 — MAIN.JS V.3.0.0
+   360 — MAIN.JS V.3.6.0
+      ____    __   ___  
+     |___ \  / /  / _ \ 
+       __) |/ /_ | | | |
+      |__ <| '_ \| | | |
+      ___) | (_) | |_| |
+     |____/ \___/ \___/ 
    ============================================================ */
 
 //CHANGE THE FOLLOWING TO CHANGE ALL THE PAGE'S VERSION!!
-const version = "3.5.0";
+const version = "3.6.0";
 
 //Get's the current page's URL (Not including domain)
 let currentUrl = window.location.pathname + window.location.search + window.location.hash;
