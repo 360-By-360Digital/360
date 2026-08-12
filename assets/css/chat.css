@@ -1681,3 +1681,10 @@ body.dark {
   font-size: 10px; color: var(--dc-muted);
   margin-left: 5px; font-style: italic;
 }
+
+/* ── Channel editor drag items ── */
+.ch-edit-item { user-select: none; }
+.ch-edit-item:active { cursor: grabbing; }
+
+/* ── Server ctx menu new items ── */
+.server-ctx-menu .ctx-item { white-space: nowrap; }
