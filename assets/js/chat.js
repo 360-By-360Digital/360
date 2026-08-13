@@ -1451,6 +1451,7 @@ function toggleGrammar() {
   showToast(on ? '✏️ Grammar correction off' : '✏️ Grammar correction on');
   updateGrammarBtn();
 }
+window.toggleGrammar = toggleGrammar;
 function updateGrammarBtn() {
   const btn = document.getElementById('grammar-btn');
   if (!btn) return;
@@ -2705,10 +2706,10 @@ function buildPreviewEl(preview) {
   const domain = (() => { try { return new URL(preview.url).hostname.replace('www.',''); } catch(e){ return ''; } })();
   const siteLabel = preview.siteName || domain;
   wrap.innerHTML = `
-    ${preview.image ? `<img class="dc-lp-img" src="${esc(preview.image)}" alt="" loading="lazy" onerror="this.style.display='none'"/>` : ''}
+    ${preview.image ? `<img class="dc-lp-img" src="${preview.image}" alt="" loading="lazy" onerror="this.style.display='none'"/>` : ''}
     <div class="dc-lp-body">
       ${siteLabel ? `<div class="dc-lp-site">${esc(siteLabel)}</div>` : ''}
-      ${preview.title ? `<div class="dc-lp-title"><a href="${esc(preview.url)}" target="_blank" rel="noopener" class="dc-link">${esc(preview.title)}</a></div>` : ''}
+      ${preview.title ? `<div class="dc-lp-title"><a href="${preview.url}" target="_blank" rel="noopener" class="dc-link">${esc(preview.title)}</a></div>` : ''}
       ${preview.desc  ? `<div class="dc-lp-desc">${esc(preview.desc.slice(0,200))}</div>` : ''}
       <div class="dc-lp-url">${esc(preview.url.slice(0,60))}${preview.url.length>60?'…':''}</div>
     </div>`;
@@ -2720,8 +2721,9 @@ async function attachLinkPreviews(msgEl, rawText) {
   // Extract URLs from RAW text only — never from rendered HTML
   const urlRx = /https?:\/\/[^\s<>"')\]]+/g;
   const urls = [...new Set((rawText.match(urlRx)||[]))]
-    .filter(u => !/</.test(u)) // reject anything that got HTML mixed in
-    .filter(u => !/\.(png|jpe?g|gif|webp|svg|mp4|mp3|webm)(\?|$)/i.test(u)) // skip media
+    .filter(u => !/<|%3C|%3c/.test(u))      // reject HTML-encoded or raw HTML
+    .filter(u => !/\.(png|jpe?g|gif|webp|svg|mp4|mp3|webm)(\?|$)/i.test(u))
+    .filter(u => { try { new URL(u); return true; } catch(e) { return false; } }) // must be valid URL
     .slice(0,1);
   for (const url of urls) {
     if (msgEl.querySelector('.dc-link-preview')) continue; // already has one
@@ -2738,7 +2740,7 @@ const GIPHY_KEY = 'yYDIeMP7wEWRDqJuToCyfMTmOqSQkZRj';
 const TENOR_KEY = 'AIzaSyAyimkuYQYF_FXVALexPzHeGVXH_HN3tmc'; // fallback
 let gifPickerOpen = false;
 
-function toggleGifPicker() {
+window.toggleGifPicker = function toggleGifPicker() {
   let picker = document.getElementById('gif-picker');
   if (!picker) {
     picker = document.createElement('div');
@@ -2864,7 +2866,7 @@ async function sendGif(gifUrl, title) {
 ══════════════════════════════════════════════════════ */
 let searchPanel = null;
 
-function openSearchPanel() {
+window.openSearchPanel = function openSearchPanel() {
   if (searchPanel) { searchPanel.classList.toggle('hidden'); return; }
   searchPanel = document.createElement('div');
   searchPanel.id = 'search-panel';
@@ -2884,6 +2886,7 @@ function openSearchPanel() {
   document.querySelector('.dc-main')?.appendChild(searchPanel);
 }
 
+window.runMessageSearch = runMessageSearch;
 let searchTimer = null;
 async function runMessageSearch(query) {
   clearTimeout(searchTimer);
