@@ -8,7 +8,9 @@
 window.Meet = (function () {
   const ICE_SERVERS = [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun.cloudflare.com:3478' }
   ];
   const ADMIT_TIMEOUT_MS = 9000;
   const SCREEN_REQUEST_TIMEOUT_MS = 20000;
@@ -27,7 +29,9 @@ window.Meet = (function () {
     join: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>',
     chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
     send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
-    close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+    close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    fullscreen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>',
+    exitFullscreen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>'
   };
 
   const $ = s => document.querySelector(s);
@@ -53,6 +57,14 @@ window.Meet = (function () {
   let mediaLock = Promise.resolve(); // serializes getUserMedia calls
   const peers = {};          // peerId -> { pc, stream, name, avatarUrl, isHost, video, audio, screenSharing, tile }
   let localScreenSharing = false;
+  let micLocked = false;     // true on non-host clients when the host has locked mics off
+  let camLocked = false;     // true on non-host clients when the host has locked cameras off
+  let hostMicLocked = false; // host's own toggle state for the "Mute all" bulk control
+  let hostCamLocked = false; // host's own toggle state for the "Cameras off" bulk control
+  let allowedScreenViewers = null; // Set of peerIds permitted to actually see the current share
+  let pendingScreenSharerName = null; // name of whoever is awaiting host approval to share
+  const audioMeters = {}; // key -> { ctx, analyser, source, bars, rafId }
+  let blackTrack = null; // reusable 1-frame black video track sent to non-permitted screen-share viewers
 
   /* ── Helpers ───────────────────────────────────────── */
   function getSb() {
@@ -223,7 +235,10 @@ window.Meet = (function () {
 
   async function openPrepare(action, prefillCode) {
     prepareAction = action;
-    mode = action === 'host-voice' ? 'voice' : 'video';
+    // For 'join' we don't know the meeting's real mode yet (only the host
+    // knows) — default to voice-only so no camera option is ever shown
+    // until the host's join-response confirms this is a video meeting.
+    mode = action === 'host-video' ? 'video' : 'voice';
     previewCamOn = mode === 'video';
     previewMicOn = true;
     showScreen('meet-prepare-screen');
@@ -400,7 +415,7 @@ window.Meet = (function () {
       const approved = !passcode || payload.passcode === passcode;
       channel.send({
         type: 'broadcast', event: 'join-response',
-        payload: { to: payload.from, approved, reason: approved ? null : 'passcode' }
+        payload: { to: payload.from, approved, reason: approved ? null : 'passcode', mode }
       });
     });
 
@@ -417,7 +432,8 @@ window.Meet = (function () {
       renderStage();
     });
 
-    // Screen-share permission handshake (non-host asks the host).
+    // Screen-share permission handshake (everyone asks the host, even
+    // the host asking for itself is routed through the same request path).
     channel.on('broadcast', { event: 'screen-request' }, ({ payload }) => {
       if (!isHost) return;
       showScreenRequestModal(payload.from, payload.name);
@@ -426,21 +442,48 @@ window.Meet = (function () {
       if (payload.to !== myPeerId) return;
       handleScreenResponse(payload.approved);
     });
+    channel.on('broadcast', { event: 'screen-viewers' }, ({ payload }) => {
+      if (peers[payload.sharer]) peers[payload.sharer].screenSharing = true;
+    });
+    // Host immediately force-stops a share (takeover) — no confirmation.
+    channel.on('broadcast', { event: 'screen-force-stop' }, ({ payload }) => {
+      if (payload.to !== myPeerId) return;
+      if (localScreenSharing) { stopScreenShare(); toast('The host took over screen sharing.'); }
+    });
+    // Host politely asks the current sharer to stop — sharer decides.
+    channel.on('broadcast', { event: 'screen-stop-request' }, ({ payload }) => {
+      if (payload.to !== myPeerId) return;
+      if (localScreenSharing) showAskStopModal();
+    });
 
     // In-call chat.
     channel.on('broadcast', { event: 'chat' }, ({ payload }) => {
       appendChatMessage(payload, false);
     });
 
-    // Host bulk controls — force-applied client-side; people can still
-    // re-enable their own mic/camera afterward unless muted again.
-    channel.on('broadcast', { event: 'force-mute' }, () => {
+    // Host bulk controls — locking prevents participants from turning
+    // their mic/camera back on until the host explicitly unlocks it.
+    channel.on('broadcast', { event: 'force-mute' }, ({ payload }) => {
       if (isHost) return;
-      if (micOn) { setMicEnabled(false); toast('The host muted everyone.'); }
+      micLocked = !!payload.lock;
+      updateLockedButtonUI('#meet-mic-btn', micLocked);
+      if (micLocked) {
+        if (micOn) setMicEnabled(false);
+        toast('The host muted everyone and locked the microphone.');
+      } else {
+        toast('The host unlocked the microphone — you can unmute yourself.');
+      }
     });
-    channel.on('broadcast', { event: 'force-camera-off' }, () => {
+    channel.on('broadcast', { event: 'force-camera-off' }, ({ payload }) => {
       if (isHost) return;
-      if (mode === 'video' && camOn) { setCamEnabled(false); toast('The host turned off everyone\u2019s camera.'); }
+      camLocked = !!payload.lock;
+      updateLockedButtonUI('#meet-cam-btn', camLocked);
+      if (camLocked) {
+        if (mode === 'video' && camOn) setCamEnabled(false);
+        toast('The host turned off everyone\u2019s camera and locked it.');
+      } else {
+        toast('The host unlocked cameras — you can turn yours back on.');
+      }
     });
 
     // Host ended the meeting — everyone else is kicked back to the lobby.
@@ -526,14 +569,47 @@ window.Meet = (function () {
       showStatus('');
       setPrimaryBusy(false);
       passcode = pendingJoin.passcode;
+      // Trust the HOST's meeting mode, not our own guess from the prepare
+      // screen — this is what stops a voice-only meeting from ever
+      // offering a camera option to people who join it.
+      mode = payload.mode === 'video' ? 'video' : 'voice';
+      if (mode === 'voice' && localStream) {
+        localStream.getVideoTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
+        camOn = false;
+      }
       enterCallRoom();
       trackPresence();
+      if (mode === 'video' && !camOn) acquireCameraIfNeeded();
     } else {
       setPrimaryBusy(false);
       showStatus('');
       showError(payload.reason === 'passcode' ? 'Incorrect passcode.' : 'Unable to join this meeting.');
       getSb().removeChannel(channel);
       channel = null;
+    }
+  }
+
+  // Called after joining a video meeting when the prepare screen didn't
+  // already grab a camera (we default 'join' prepare to voice-only until
+  // the host confirms the real mode). Adds the track live and lets the
+  // always-on renegotiation handler (see createPeerConnection) push it to
+  // every existing peer connection automatically.
+  async function acquireCameraIfNeeded() {
+    if (!localStream || mode !== 'video') return;
+    if (localStream.getVideoTracks().length) { camOn = true; return; }
+    try {
+      const camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 400 } });
+      const track = camStream.getVideoTracks()[0];
+      localStream.addTrack(track);
+      camOn = true;
+      Object.values(peers).forEach(({ pc }) => pc.addTrack(track, localStream));
+      const camBtn = $('#meet-cam-btn');
+      if (camBtn) { camBtn.style.display = ''; camBtn.classList.remove('off'); camBtn.innerHTML = ICONS.video; }
+      broadcastMeta();
+      renderStage();
+    } catch (e) {
+      // No camera available/granted — stay voice-only for this person,
+      // camera button remains hidden.
     }
   }
 
@@ -551,8 +627,7 @@ window.Meet = (function () {
       if (key === myPeerId) return;
       const meta = state[key][0] || {};
       if (!peers[key]) {
-        const initiator = myPeerId > key;
-        createPeerConnection(key, meta, initiator);
+        createPeerConnection(key, meta);
       } else {
         Object.assign(peers[key], meta);
       }
@@ -563,65 +638,134 @@ window.Meet = (function () {
     updateParticipantCount();
   }
 
-  /* ── WebRTC mesh ───────────────────────────────────── */
-  function createPeerConnection(peerId, meta, initiator) {
+  /* ── WebRTC mesh (perfect negotiation) ──────────────────
+     Every connection has onnegotiationneeded live on BOTH sides —
+     needed so a track can be added/replaced mid-call (camera
+     acquired after joining a video meeting, screen share swapping
+     tracks) from either side and still renegotiate correctly.
+     Initial-offer / mid-call glare is resolved via the standard
+     "polite peer" pattern (MDN): the lexicographically smaller
+     peer id is polite and yields to an incoming offer; the larger
+     id is impolite and ignores a colliding incoming offer, letting
+     its own outgoing offer win.
+  ==================================================== */
+  function createPeerConnection(peerId, meta) {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const polite = myPeerId < peerId;
     peers[peerId] = {
-      pc, stream: null,
+      pc, stream: null, screenStream: null, camTrackId: null,
       name: meta.name || 'Guest',
       avatarUrl: meta.avatarUrl || null,
       isHost: !!meta.isHost,
       video: !!meta.video,
       audio: meta.audio !== false,
       screenSharing: !!meta.screenSharing,
-      tile: null
+      tile: null,
+      polite,
+      makingOffer: false,
+      ignoreOffer: false,
+      iceFailedAt: null,
+      screenTransceiver: null
     };
 
     if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    // A dedicated, always-present video slot reserved purely for screen
+    // sharing — kept separate from the camera track so starting/stopping
+    // a share never disturbs what the camera is sending, and so a
+    // screen-share can be routed per-viewer (see computeScreenViewers).
+    peers[peerId].screenTransceiver = pc.addTransceiver('video', { direction: 'sendonly' });
 
     pc.onicecandidate = ({ candidate }) => { if (candidate) sendSignal(peerId, 'ice', candidate); };
 
     pc.ontrack = (e) => {
-      peers[peerId].stream = e.streams[0];
+      const entry = peers[peerId];
+      if (!entry) return;
+      if (e.track.kind === 'video') {
+        if (!entry.camTrackId) {
+          // First video track seen for this peer = their camera.
+          entry.camTrackId = e.track.id;
+          entry.stream = e.streams[0] || new MediaStream([e.track]);
+        } else if (e.track.id !== entry.camTrackId) {
+          // Any later, different video track = their reserved screen slot.
+          entry.screenStream = e.streams[0] || new MediaStream([e.track]);
+        }
+      } else {
+        entry.stream = entry.stream || e.streams[0];
+      }
       renderStage();
     };
 
-    pc.onconnectionstatechange = () => {
-      if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) {
-        setTimeout(() => {
-          if (peers[peerId] && peers[peerId].pc.connectionState !== 'connected') removePeer(peerId);
-        }, 4000);
+    pc.onnegotiationneeded = async () => {
+      const entry = peers[peerId];
+      if (!entry) return;
+      try {
+        entry.makingOffer = true;
+        await pc.setLocalDescription();
+        sendSignal(peerId, 'offer', pc.localDescription);
+      } catch (e) {
+        console.error('Meet negotiation error', e);
+      } finally {
+        entry.makingOffer = false;
       }
     };
 
-    if (initiator) {
-      pc.onnegotiationneeded = async () => {
-        try {
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          sendSignal(peerId, 'offer', pc.localDescription);
-        } catch (e) { console.error('Meet offer error', e); }
-      };
-    }
+    pc.oniceconnectionstatechange = () => {
+      const entry = peers[peerId];
+      if (!entry) return;
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+        entry.iceFailedAt = null;
+        return;
+      }
+      if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+        if (!entry.iceFailedAt) entry.iceFailedAt = Date.now();
+        // Try to self-heal with an ICE restart before giving up — this is
+        // what fixes most "random disconnects" caused by brief network
+        // blips, without needing a TURN server.
+        if (pc.iceConnectionState === 'failed' && typeof pc.restartIce === 'function') {
+          try { pc.restartIce(); } catch (e) {}
+        }
+        setTimeout(() => {
+          const stillBad = ['failed', 'disconnected', 'closed'].includes(pc.iceConnectionState);
+          if (peers[peerId] && stillBad && entry.iceFailedAt && Date.now() - entry.iceFailedAt >= 8000) {
+            removePeer(peerId);
+          }
+        }, 8500);
+      }
+    };
+
     return pc;
   }
 
   async function handleSignal(fromId, type, payload) {
-    if (type === 'offer') {
-      if (!peers[fromId]) createPeerConnection(fromId, {}, false);
-      const pc = peers[fromId].pc;
-      await pc.setRemoteDescription(new RTCSessionDescription(payload));
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      sendSignal(fromId, 'answer', pc.localDescription);
-    } else if (type === 'answer') {
-      const entry = peers[fromId];
-      if (entry && entry.pc.signalingState !== 'stable') {
-        await entry.pc.setRemoteDescription(new RTCSessionDescription(payload));
-      }
+    if (!peers[fromId] && type === 'offer') createPeerConnection(fromId, {});
+    const entry = peers[fromId];
+    if (!entry) return;
+    const pc = entry.pc;
+
+    if (type === 'offer' || type === 'answer') {
+      const desc = payload;
+      const offerCollision = desc.type === 'offer' && (entry.makingOffer || pc.signalingState !== 'stable');
+      entry.ignoreOffer = !entry.polite && offerCollision;
+      if (entry.ignoreOffer) return;
+
+      try {
+        if (offerCollision) {
+          await Promise.all([
+            pc.setLocalDescription({ type: 'rollback' }),
+            pc.setRemoteDescription(desc)
+          ]);
+        } else {
+          await pc.setRemoteDescription(desc);
+        }
+        if (desc.type === 'offer') {
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          sendSignal(fromId, 'answer', pc.localDescription);
+        }
+      } catch (e) { console.error('Meet signal error', e); }
     } else if (type === 'ice') {
-      const entry = peers[fromId];
-      if (entry && payload) { try { await entry.pc.addIceCandidate(new RTCIceCandidate(payload)); } catch (e) {} }
+      try { await pc.addIceCandidate(new RTCIceCandidate(payload)); }
+      catch (e) { if (!entry.ignoreOffer) console.error('Meet ICE error', e); }
     }
   }
 
@@ -629,6 +773,7 @@ window.Meet = (function () {
     const entry = peers[peerId];
     if (!entry) return;
     try { entry.pc.close(); } catch (e) {}
+    stopAudioMeter(peerId);
     delete peers[peerId];
     renderStage();
     updateParticipantCount();
@@ -684,6 +829,8 @@ window.Meet = (function () {
       <div class="${cls}" id="meet-tile-${key}">
         <video autoplay playsinline ${isLocal && !screen ? 'muted' : ''}></video>
         <div class="meet-tile-avatar" style="display:${hasVideoTrack ? 'none' : 'flex'}"><div class="avatar-circle">${avatarHtml(name, avatarUrl)}</div></div>
+        <div class="meet-tile-meter" id="meet-meter-${key}"><span></span><span></span><span></span><span></span><span></span></div>
+        <button class="meet-tile-fullscreen-btn" id="meet-fs-${key}" title="Full screen" type="button">${ICONS.fullscreen}</button>
         <div class="meet-tile-label">${escapeHtml(name)}${host ? '<span class="host-badge">Host</span>' : ''}</div>
         ${!mic ? `<div class="meet-mic-off-badge">${ICONS.micOff}</div>` : ''}
       </div>`;
@@ -696,12 +843,14 @@ window.Meet = (function () {
     const hostId = currentHostId();
     const sharerId = currentSharerId();
     const otherKeys = Object.keys(peers);
+    const tileRegistry = []; // { key, audioOwnerId } — for meters + fullscreen wiring below
 
     if (sharerId) {
       const sharerName = sharerId === myPeerId ? user.username : peers[sharerId].name;
       main.innerHTML = tileHtml({ key: 'share-' + sharerId, name: sharerName, avatarUrl: null, host: sharerId === hostId, isLocal: sharerId === myPeerId, hasVideoTrack: true, mic: true, size: 'main', screen: true });
       const mainVideo = main.querySelector('video');
-      mainVideo.srcObject = sharerId === myPeerId ? screenStream : peers[sharerId].stream;
+      mainVideo.srcObject = sharerId === myPeerId ? screenStream : (peers[sharerId]?.screenStream || null);
+      tileRegistry.push({ key: 'share-' + sharerId, audioOwnerId: sharerId === myPeerId ? 'local' : sharerId });
 
       let sideHtml = '';
       const hostIsLocal = hostId === myPeerId;
@@ -709,14 +858,19 @@ window.Meet = (function () {
       const hostAvatar = hostIsLocal ? user.avatarUrl : (peers[hostId]?.avatarUrl || null);
       const hostHasVideo = hostIsLocal ? (mode === 'video' && camOn) : !!peers[hostId]?.video;
       const hostMic = hostIsLocal ? micOn : (peers[hostId]?.audio !== false);
-      if (hostId) sideHtml += tileHtml({ key: 'side-' + hostId, name: hostName, avatarUrl: hostAvatar, host: true, isLocal: hostIsLocal, hasVideoTrack: hostHasVideo, mic: hostMic, size: 'side' });
+      if (hostId) {
+        sideHtml += tileHtml({ key: 'side-' + hostId, name: hostName, avatarUrl: hostAvatar, host: true, isLocal: hostIsLocal, hasVideoTrack: hostHasVideo, mic: hostMic, size: 'side' });
+        tileRegistry.push({ key: 'side-' + hostId, audioOwnerId: hostIsLocal ? 'local' : hostId });
+      }
 
       otherKeys.filter(k => k !== hostId).forEach(k => {
         const p = peers[k];
         sideHtml += tileHtml({ key: 'side-' + k, name: p.name, avatarUrl: p.avatarUrl, host: false, isLocal: false, hasVideoTrack: !!p.video, mic: p.audio !== false, size: 'side' });
+        tileRegistry.push({ key: 'side-' + k, audioOwnerId: k });
       });
       if (!isHost && hostId !== myPeerId) {
         sideHtml += tileHtml({ key: 'side-' + myPeerId, name: user.username, avatarUrl: user.avatarUrl, host: false, isLocal: true, hasVideoTrack: mode === 'video' && camOn, mic: micOn, size: 'side' });
+        tileRegistry.push({ key: 'side-' + myPeerId, audioOwnerId: 'local' });
       }
       side.innerHTML = sideHtml || `<div class="meet-side-empty">No other participants yet</div>`;
     } else {
@@ -728,14 +882,17 @@ window.Meet = (function () {
       main.innerHTML = hostId ? tileHtml({ key: hostId, name: hostName, avatarUrl: hostAvatar, host: true, isLocal: hostIsLocal, hasVideoTrack: hostHasVideo, mic: hostMic, size: 'main' }) : '';
       const mainVideo = main.querySelector('video');
       if (mainVideo) mainVideo.srcObject = hostIsLocal ? localStream : peers[hostId]?.stream || null;
+      if (hostId) tileRegistry.push({ key: hostId, audioOwnerId: hostIsLocal ? 'local' : hostId });
 
       let sideHtml = '';
       otherKeys.filter(k => k !== hostId).forEach(k => {
         const p = peers[k];
         sideHtml += tileHtml({ key: k, name: p.name, avatarUrl: p.avatarUrl, host: false, isLocal: false, hasVideoTrack: !!p.video, mic: p.audio !== false, size: 'side' });
+        tileRegistry.push({ key: k, audioOwnerId: k });
       });
       if (!isHost) {
         sideHtml += tileHtml({ key: myPeerId, name: user.username, avatarUrl: user.avatarUrl, host: false, isLocal: true, hasVideoTrack: mode === 'video' && camOn, mic: micOn, size: 'side' });
+        tileRegistry.push({ key: myPeerId, audioOwnerId: 'local' });
       }
       side.innerHTML = sideHtml || `<div class="meet-side-empty">No other participants yet</div>`;
     }
@@ -743,10 +900,99 @@ window.Meet = (function () {
     otherKeys.forEach(k => {
       const p = peers[k];
       const vids = document.querySelectorAll(`[id$="-${k}"] video, #meet-tile-${k} video`);
-      vids.forEach(v => { if (p.stream && v.srcObject !== p.stream) v.srcObject = p.stream; });
+      vids.forEach(v => { if (p.stream && v.srcObject !== p.stream && !v.closest('.screen')) v.srcObject = p.stream; });
     });
     const localVids = document.querySelectorAll(`[id$="-${myPeerId}"] video, #meet-tile-${myPeerId} video`);
     localVids.forEach(v => { if (localStream && v.srcObject !== localStream && !v.closest('.screen')) v.srcObject = localStream; });
+
+    wireTileExtras(tileRegistry);
+  }
+
+  /* ── Fullscreen (client-side only, per tile) ────────── */
+  function wireTileExtras(tileRegistry) {
+    tileRegistry.forEach(({ key, audioOwnerId }) => {
+      const btn = document.getElementById(`meet-fs-${key}`);
+      const tileEl = document.getElementById(`meet-tile-${key}`);
+      if (btn && tileEl) {
+        btn.onclick = (e) => { e.stopPropagation(); goFullscreen(tileEl, btn); };
+      }
+      startAudioMeter(key, audioOwnerId);
+    });
+    // Tear down meters for tiles that no longer exist this render.
+    Object.keys(audioMeters).forEach(key => {
+      if (!tileRegistry.find(t => t.key === key)) stopAudioMeter(key);
+    });
+  }
+
+  function goFullscreen(tileEl, btn) {
+    if (document.fullscreenElement === tileEl) {
+      document.exitFullscreen().catch(() => {});
+      return;
+    }
+    tileEl.requestFullscreen?.().then(() => {
+      btn.innerHTML = ICONS.exitFullscreen;
+      const onExit = () => {
+        if (document.fullscreenElement !== tileEl) {
+          btn.innerHTML = ICONS.fullscreen;
+          document.removeEventListener('fullscreenchange', onExit);
+        }
+      };
+      document.addEventListener('fullscreenchange', onExit);
+    }).catch(() => {});
+  }
+
+  /* ── Voice-activity meter ("ripple" bars, top-left of every tile) ──
+     Purely a local visual — reads live audio levels via Web Audio's
+     AnalyserNode from whichever MediaStream that tile represents. */
+  function startAudioMeter(key, audioOwnerId) {
+    const stream = audioOwnerId === 'local' ? localStream : peers[audioOwnerId]?.stream;
+    const track = stream?.getAudioTracks?.()[0];
+    if (!track) { stopAudioMeter(key); return; }
+
+    let entry = audioMeters[key];
+    if (entry && entry.track === track) return; // already wired to this exact track
+    stopAudioMeter(key);
+
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = ctx.createMediaStreamSource(new MediaStream([track]));
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 64;
+      source.connect(analyser);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+
+      const draw = () => {
+        const meterEl = document.getElementById(`meet-meter-${key}`);
+        if (!meterEl) { entry.rafId = requestAnimationFrame(draw); return; }
+        analyser.getByteFrequencyData(data);
+        const bars = meterEl.children;
+        const bands = bars.length;
+        const step = Math.floor(data.length / bands) || 1;
+        for (let i = 0; i < bands; i++) {
+          let sum = 0;
+          for (let j = 0; j < step; j++) sum += data[i * step + j] || 0;
+          const avg = sum / step;
+          const h = Math.max(2, Math.min(16, (avg / 255) * 16));
+          bars[i].style.height = h + 'px';
+        }
+        entry.rafId = requestAnimationFrame(draw);
+      };
+
+      entry = { ctx, analyser, source, track, rafId: null };
+      audioMeters[key] = entry;
+      draw();
+    } catch (e) {
+      // Web Audio unavailable/blocked — meter simply won't animate.
+    }
+  }
+
+  function stopAudioMeter(key) {
+    const entry = audioMeters[key];
+    if (!entry) return;
+    if (entry.rafId) cancelAnimationFrame(entry.rafId);
+    try { entry.source.disconnect(); } catch (e) {}
+    try { entry.ctx.close(); } catch (e) {}
+    delete audioMeters[key];
   }
 
   function updateParticipantCount() {
@@ -765,8 +1011,17 @@ window.Meet = (function () {
   function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
 
   /* ── Controls ──────────────────────────────────────── */
+  function updateLockedButtonUI(selector, locked) {
+    const btn = $(selector);
+    if (!btn) return;
+    btn.classList.toggle('locked', locked);
+    btn.disabled = locked;
+    btn.title = locked ? 'Locked by the host' : (selector === '#meet-mic-btn' ? 'Mute microphone' : 'Turn off camera');
+  }
+
   function setMicEnabled(on) {
     if (!localStream) return;
+    if (on && micLocked) { toast('The host has muted the microphone for everyone.'); return; }
     micOn = on;
     localStream.getAudioTracks().forEach(t => t.enabled = micOn);
     const btn = $('#meet-mic-btn');
@@ -777,6 +1032,7 @@ window.Meet = (function () {
 
   function setCamEnabled(on) {
     if (mode !== 'video') return;
+    if (on && camLocked) { toast('The host has turned off cameras for everyone.'); return; }
     camOn = on;
     if (localStream) localStream.getVideoTracks().forEach(t => t.enabled = camOn);
     const btn = $('#meet-cam-btn');
@@ -786,16 +1042,30 @@ window.Meet = (function () {
   }
   function toggleCam() { setCamEnabled(!camOn); }
 
-  /* ── Host bulk controls ────────────────────────────── */
+  /* ── Host bulk controls (toggle: lock on / unlock) ──── */
   function hostMuteAll() {
     if (!isHost || !channel) return;
-    channel.send({ type: 'broadcast', event: 'force-mute', payload: {} });
-    toast('Muted everyone.');
+    hostMicLocked = !hostMicLocked;
+    channel.send({ type: 'broadcast', event: 'force-mute', payload: { lock: hostMicLocked } });
+    const btn = $('#meet-mute-all-btn');
+    if (btn) {
+      btn.classList.toggle('active-toggle', hostMicLocked);
+      const label = btn.querySelector('.meet-host-action-label');
+      if (label) label.textContent = hostMicLocked ? 'Unmute all' : 'Mute all';
+    }
+    toast(hostMicLocked ? 'Muted everyone and locked the microphone.' : 'Microphone unlocked for everyone.');
   }
   function hostCamerasOff() {
     if (!isHost || !channel) return;
-    channel.send({ type: 'broadcast', event: 'force-camera-off', payload: {} });
-    toast('Turned off everyone\u2019s camera.');
+    hostCamLocked = !hostCamLocked;
+    channel.send({ type: 'broadcast', event: 'force-camera-off', payload: { lock: hostCamLocked } });
+    const btn = $('#meet-cameras-off-btn');
+    if (btn) {
+      btn.classList.toggle('active-toggle', hostCamLocked);
+      const label = btn.querySelector('.meet-host-action-label');
+      if (label) label.textContent = hostCamLocked ? 'Allow cameras' : 'Cameras off';
+    }
+    toast(hostCamLocked ? 'Turned off everyone\u2019s camera and locked it.' : 'Cameras unlocked for everyone.');
   }
 
   /* ── Chat ──────────────────────────────────────────── */
@@ -848,15 +1118,46 @@ window.Meet = (function () {
     }
   }
 
-  /* ── Screen sharing (host: instant; participant: ask first) ── */
+  /* ── Screen sharing ──────────────────────────────────
+     Everyone — including the host — must have the host explicitly
+     allow a share. Only the sharer plus one other viewer (chosen as
+     the host, or if the sharer IS the host, the first other
+     participant) ever receive the real screen pixels; everyone else's
+     connection is fed a static black frame on the reserved screen
+     transceiver, so they see solid black rather than the share. ── */
   function toggleScreenShare() {
     if (localScreenSharing) { stopScreenShare(); return; }
-    if (currentSharerId()) { toast('Someone else is already sharing their screen.'); return; }
+    const currentSharer = currentSharerId();
+
     if (isHost) {
-      startScreenShare();
-    } else {
-      requestScreenShare();
+      if (currentSharer) {
+        showTakeoverModal(currentSharer, peers[currentSharer]?.name || 'This participant');
+      } else {
+        requestScreenShare(); // host still "asks" (itself) — see requestScreenShare
+      }
+      return;
     }
+    requestScreenShare();
+  }
+
+  function computeScreenViewers() {
+    const hostId = currentHostId();
+    let second = null;
+    if (hostId && hostId !== myPeerId) second = hostId;
+    else second = Object.keys(peers).find(k => k !== myPeerId) || null;
+    return second ? [myPeerId, second] : [myPeerId];
+  }
+
+  function getBlackTrack() {
+    if (blackTrack && blackTrack.readyState === 'live') return blackTrack;
+    const canvas = document.createElement('canvas');
+    canvas.width = 2; canvas.height = 2;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, 2, 2);
+    const stream = canvas.captureStream(1);
+    blackTrack = stream.getVideoTracks()[0];
+    return blackTrack;
   }
 
   async function startScreenShare() {
@@ -865,14 +1166,24 @@ window.Meet = (function () {
     } catch (e) { return; }
     localScreenSharing = true;
     const screenTrack = screenStream.getVideoTracks()[0];
-    Object.values(peers).forEach(({ pc }) => {
-      const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
-      if (sender) sender.replaceTrack(screenTrack);
-      else if (localStream) pc.addTrack(screenTrack, localStream);
+    const viewers = computeScreenViewers();
+    allowedScreenViewers = new Set(viewers);
+
+    Object.keys(peers).forEach(pid => {
+      const t = peers[pid].screenTransceiver;
+      if (!t) return;
+      t.sender.replaceTrack(allowedScreenViewers.has(pid) ? screenTrack : getBlackTrack());
     });
+
+    channel?.send({ type: 'broadcast', event: 'screen-viewers', payload: { sharer: myPeerId, viewers } });
     $('#meet-screen-btn').classList.add('active-toggle');
     broadcastMeta();
     renderStage();
+
+    const others = viewers.filter(v => v !== myPeerId);
+    const otherName = others.length ? (peers[others[0]]?.name || (others[0] === currentHostId() ? 'the host' : 'them')) : null;
+    toast(otherName ? `Sharing your screen — visible to you and ${otherName} only.` : 'Sharing your screen.');
+
     screenTrack.onended = () => stopScreenShare();
   }
 
@@ -880,19 +1191,23 @@ window.Meet = (function () {
     screenStream?.getTracks().forEach(t => t.stop());
     screenStream = null;
     localScreenSharing = false;
-    const camTrack = localStream?.getVideoTracks()[0];
-    Object.values(peers).forEach(({ pc }) => {
-      const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
-      if (sender && camTrack) sender.replaceTrack(camTrack);
-    });
+    allowedScreenViewers = null;
+    Object.values(peers).forEach(p => { try { p.screenTransceiver?.sender.replaceTrack(null); } catch (e) {} });
     $('#meet-screen-btn').classList.remove('active-toggle');
     broadcastMeta();
     renderStage();
   }
 
+  // Both hosts and participants go through this — a request always
+  // reaches the host, who explicitly allows it before anything shares.
   function requestScreenShare() {
     const hostId = currentHostId();
-    if (!hostId || hostId === myPeerId) { startScreenShare(); return; }
+    if (!hostId) return;
+    if (hostId === myPeerId) {
+      // Host asking themself: confirm-through, no round trip needed.
+      startScreenShare();
+      return;
+    }
     toast('Asking the host for permission to share your screen...');
     channel?.send({ type: 'broadcast', event: 'screen-request', payload: { from: myPeerId, name: user.username } });
     clearTimeout(screenRequestTimer);
@@ -905,11 +1220,21 @@ window.Meet = (function () {
     else toast('The host denied your screen share request.');
   }
 
-  /* Custom in-page popup shown to the host when someone asks to share. */
+  /* Popup shown to the HOST when someone asks to share (or when a new
+     request comes in while someone is already sharing — allowing it
+     force-stops the current sharer first). */
   function showScreenRequestModal(fromId, name) {
     const overlay = document.getElementById('meet-screen-modal');
     if (!overlay) return;
     document.getElementById('meet-screen-modal-name').textContent = name || 'A participant';
+    const currentSharer = currentSharerId();
+    const noteEl = document.getElementById('meet-screen-modal-note');
+    if (noteEl) {
+      noteEl.textContent = (currentSharer && currentSharer !== fromId)
+        ? `${peers[currentSharer]?.name || 'Someone'} is currently sharing — allowing this will stop their share.`
+        : '';
+      noteEl.style.display = noteEl.textContent ? '' : 'none';
+    }
     overlay.classList.add('show');
 
     let resolved = false;
@@ -920,6 +1245,9 @@ window.Meet = (function () {
       resolved = true;
       clearTimeout(timer);
       overlay.classList.remove('show');
+      if (approved && currentSharer && currentSharer !== fromId) {
+        channel?.send({ type: 'broadcast', event: 'screen-force-stop', payload: { to: currentSharer } });
+      }
       channel?.send({ type: 'broadcast', event: 'screen-response', payload: { to: fromId, approved } });
       allowBtn.onclick = null;
       denyBtn.onclick = null;
@@ -929,6 +1257,48 @@ window.Meet = (function () {
     const denyBtn = document.getElementById('meet-screen-deny-btn');
     allowBtn.onclick = () => finish(true);
     denyBtn.onclick = () => finish(false);
+  }
+
+  /* Popup shown to the HOST when they try to share while someone else
+     already is — "ask them to stop" or force-stop-and-take-over. */
+  function showTakeoverModal(currentSharerPeerId, name) {
+    const overlay = document.getElementById('meet-takeover-modal');
+    if (!overlay) return;
+    document.getElementById('meet-takeover-modal-name').textContent = name;
+    overlay.classList.add('show');
+
+    const askBtn = document.getElementById('meet-takeover-ask-btn');
+    const forceBtn = document.getElementById('meet-takeover-force-btn');
+    const cancelBtn = document.getElementById('meet-takeover-cancel-btn');
+
+    function close() {
+      overlay.classList.remove('show');
+      askBtn.onclick = null; forceBtn.onclick = null; cancelBtn.onclick = null;
+    }
+    askBtn.onclick = () => {
+      channel?.send({ type: 'broadcast', event: 'screen-stop-request', payload: { to: currentSharerPeerId } });
+      toast(`Asked ${name} to stop sharing.`);
+      close();
+    };
+    forceBtn.onclick = () => {
+      channel?.send({ type: 'broadcast', event: 'screen-force-stop', payload: { to: currentSharerPeerId } });
+      toast(`Took over screen sharing from ${name}.`);
+      close();
+      setTimeout(() => startScreenShare(), 300); // brief pause so their stop propagates first
+    };
+    cancelBtn.onclick = close;
+  }
+
+  /* Popup shown to a sharer when the host politely asks them to stop. */
+  function showAskStopModal() {
+    const overlay = document.getElementById('meet-ask-stop-modal');
+    if (!overlay) return;
+    overlay.classList.add('show');
+    const stopBtn = document.getElementById('meet-ask-stop-confirm-btn');
+    const keepBtn = document.getElementById('meet-ask-stop-keep-btn');
+    function close() { overlay.classList.remove('show'); stopBtn.onclick = null; keepBtn.onclick = null; }
+    stopBtn.onclick = () => { stopScreenShare(); close(); };
+    keepBtn.onclick = close;
   }
 
   function copyInviteLink() {
@@ -954,6 +1324,15 @@ window.Meet = (function () {
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
     localScreenSharing = false;
+    allowedScreenViewers = null;
+    if (blackTrack) { try { blackTrack.stop(); } catch (e) {} blackTrack = null; }
+    Object.keys(audioMeters).forEach(stopAudioMeter);
+    micLocked = false;
+    camLocked = false;
+    hostMicLocked = false;
+    hostCamLocked = false;
+    updateLockedButtonUI('#meet-mic-btn', false);
+    updateLockedButtonUI('#meet-cam-btn', false);
     chatOpen = false;
     unreadChat = 0;
     const chatList = $('#meet-chat-messages');
