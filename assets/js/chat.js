@@ -671,6 +671,10 @@ document.getElementById('dc-messages').addEventListener('scroll',async function(
    RENDER MESSAGE
 ══════════════════════════════════════════════════════ */
 function renderMessage(msg,isRealtime){
+  // Fire Carlos event for commands (realtime messages only, not self)
+  if(isRealtime && msg.user_id !== currentUserId && msg.text?.startsWith('!')) {
+    window.dispatchEvent(new CustomEvent('carlos-message', { detail: msg }));
+  }
   const el=buildMsgEl(msg); if(!el) return;
   document.getElementById('dc-messages').appendChild(el);
   if(isRealtime){const w=document.getElementById('dc-messages');if(w.scrollHeight-w.scrollTop-w.clientHeight<300)scrollBottom();}
@@ -1410,13 +1414,93 @@ async function sendMessage(){
   try{
     let fileUrl=null;
     if(pendingFile){fileUrl=await uploadFile(pendingFile);if(fileUrl===null)return;clearUpload();}
-    const payload={user_id:session.user.id,username:p.username||session.user.email,avatar_url:p.avatar_url||null,tag:p.tag||null,role:p.role||'user',text:filterProfanity(applyShortcodes(text||'')),file_url:fileUrl};
+    // Grammar correct before sending (await, ~300ms, fails silently)
+    let finalText = text || '';
+    if (finalText.trim().length > 3) finalText = await correctGrammar(finalText);
+    // @all — notify online members via presence
+    if (finalText.includes('@all') && activeRoom.serverId) {
+      const onlineIds = Array.from(document.querySelectorAll('.presence-dot.online'))
+        .map(el => el.dataset.userId).filter(Boolean);
+      if (onlineIds.length) {
+        onlineIds.forEach(uid => {
+          if (uid === currentUserId) return;
+          sb.from('notifications').insert({ user_id: uid, type: 'mention_all', server_id: activeRoom.serverId, channel_id: activeRoom.id||null, from_user: currentUserId }).catch(()=>{});
+        });
+      }
+    }
+    const payload={user_id:session.user.id,username:p.username||session.user.email,avatar_url:p.avatar_url||null,tag:p.tag||null,role:p.role||'user',text:filterProfanity(applyShortcodes(finalText||'')),file_url:fileUrl};
     if(replyingTo){payload.reply_to_id=replyingTo.id;payload.reply_to_username=replyingTo.username;payload.reply_to_text=(replyingTo.text||'').slice(0,100);replyingTo=null;document.getElementById('dc-reply-bar').classList.add('hidden');}
     if(activeRoom.type==='dm'){payload.dm_id=activeRoom.id;await sb.from('dm_messages').insert(payload);await sb.from('direct_messages').update({updated_at:new Date().toISOString()}).eq('id',activeRoom.id);}
     else{if(activeRoom.type==='channel')payload.channel_id=activeRoom.id;else if(activeRoom.type==='server')payload.server_id=activeRoom.id;await sb.from('messages').insert(payload);}
     msgInput.value=''; msgInput.style.height='auto'; lastSentTime=Date.now();
   }finally{isSending=false;document.getElementById('sendBtn').disabled=false;}
 }
+
+
+/* ══════════════════════════════════════════════════════
+   GRAMMAR CORRECTION
+   Uses Claude claude-sonnet-4-6 via Anthropic API.
+   Toggled per-user via localStorage.
+══════════════════════════════════════════════════════ */
+function grammarEnabled() {
+  try { return localStorage.getItem('360_grammar') !== 'off'; } catch(e) { return true; }
+}
+function toggleGrammar() {
+  const on = grammarEnabled();
+  try { localStorage.setItem('360_grammar', on ? 'off' : 'on'); } catch(e) {}
+  showToast(on ? '✏️ Grammar correction off' : '✏️ Grammar correction on');
+  updateGrammarBtn();
+}
+function updateGrammarBtn() {
+  const btn = document.getElementById('grammar-btn');
+  if (!btn) return;
+  btn.style.opacity = grammarEnabled() ? '1' : '0.4';
+  btn.title = grammarEnabled() ? 'Grammar correction: ON (click to disable)' : 'Grammar correction: OFF (click to enable)';
+}
+
+async function correctGrammar(text) {
+  if (!grammarEnabled()) return text;
+  if (!text || text.trim().length < 4) return text;
+  if (text.startsWith('/') || text.startsWith('!')) return text;
+  if (/^[@#]/.test(text.trim())) return text;
+  if (text.trim().split(/\s+/).length < 2) return text;
+  try {
+    // LanguageTool public API — free, no key needed
+    const body = new URLSearchParams({ text, language: 'en-US', enabledOnly: 'false' });
+    const res = await fetch('https://api.languagetool.org/v2/check', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body, signal: AbortSignal.timeout(4000)
+    });
+    const data = await res.json();
+    if (!data.matches?.length) return text;
+    // Apply fixes from end to start (so offsets stay valid)
+    let corrected = text;
+    const fixes = [...data.matches]
+      .filter(m => m.replacements?.length)
+      .sort((a,b) => b.offset - a.offset);
+    for (const m of fixes) {
+      const rep = m.replacements[0].value;
+      corrected = corrected.slice(0, m.offset) + rep + corrected.slice(m.offset + m.length);
+    }
+    if (corrected !== text) showGrammarDiff(text, corrected);
+    return corrected;
+  } catch(e) { return text; }
+}
+
+function showGrammarDiff(original, corrected) {
+  // Show a tiny toast with undo option
+  const toast = document.createElement('div');
+  toast.className = 'grammar-toast';
+  toast.innerHTML = `<span>✏️ Grammar corrected</span><button onclick="undoGrammar('${encodeURIComponent(original)}',this.parentElement)">Undo</button>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 5000);
+}
+window.undoGrammar = function(originalEncoded, toastEl) {
+  const original = decodeURIComponent(originalEncoded);
+  const inp = document.getElementById('msgInput');
+  if (inp) { inp.value = original; }
+  toastEl?.remove();
+};
 
 /* ══════════════════════════════════════════════════════
    SLASH COMMANDS
@@ -2136,9 +2220,15 @@ async function handleUrlRouting() {
       .ilike('name', channelName)
       .maybeSingle();
     if (ch) {
-      switchRoom({ type:'channel', id:ch.id, name:ch.name, icon:'#', serverName:server.name, serverId:server.id });
+      switchRoom({ type:'channel', id:ch.id, name:ch.name, icon:'#', serverName:server.name, serverId:server.id, serverSlug:server.slug||null });
       return true;
     }
+  }
+  // No specific channel — load first public channel in server
+  const { data: firstCh } = await sb.from('channels').select('*')
+    .eq('server_id', server.id).eq('is_public', true).order('position').limit(1).maybeSingle();
+  if (firstCh) {
+    switchRoom({ type:'channel', id:firstCh.id, name:firstCh.name, icon:'#', serverName:server.name, serverId:server.id, serverSlug:server.slug||null });
   }
   return true;
 }
@@ -2639,4 +2729,225 @@ async function attachLinkPreviews(msgEl, rawText) {
     if (!preview) continue;
     msgEl.appendChild(buildPreviewEl(preview));
   }
+}
+
+/* ══════════════════════════════════════════════════════
+   GIF PICKER — Tenor API
+══════════════════════════════════════════════════════ */
+const GIPHY_KEY = 'yYDIeMP7wEWRDqJuToCyfMTmOqSQkZRj';
+const TENOR_KEY = 'AIzaSyAyimkuYQYF_FXVALexPzHeGVXH_HN3tmc'; // fallback
+let gifPickerOpen = false;
+
+function toggleGifPicker() {
+  let picker = document.getElementById('gif-picker');
+  if (!picker) {
+    picker = document.createElement('div');
+    picker.id = 'gif-picker';
+    picker.className = 'gif-picker';
+    picker.innerHTML = `
+      <div class="gif-header">
+        <input class="gif-search" id="gif-search-input" placeholder="Search GIFs…" oninput="searchGifs(this.value)"/>
+        <button class="gif-close" onclick="toggleGifPicker()">✕</button>
+      </div>
+      <div class="gif-grid" id="gif-grid">
+        <div class="gif-loading">Loading trending GIFs…</div>
+      </div>
+      <div class="gif-powered">Powered by Tenor</div>
+    `;
+    document.querySelector('.dc-input-box')?.appendChild(picker);
+    loadTrendingGifs();
+  }
+  gifPickerOpen = !gifPickerOpen;
+  picker.classList.toggle('hidden', !gifPickerOpen);
+  if (gifPickerOpen) document.getElementById('gif-search-input')?.focus();
+}
+
+let gifSearchTimer = null;
+function searchGifs(query) {
+  clearTimeout(gifSearchTimer);
+  gifSearchTimer = setTimeout(() => {
+    searchGifsGiphy(query);
+  }, 400);
+}
+
+async function loadTrendingGifs() {
+  fetchGifsGiphy('trending', '');
+}
+
+function searchGifsGiphy(query) {
+  if (!query.trim()) { loadTrendingGifs(); return; }
+  fetchGifsGiphy('search', query);
+}
+
+async function fetchGifsGiphy(mode, query) {
+  const grid = document.getElementById('gif-grid');
+  if (!grid) return;
+  grid.innerHTML = '<div class="gif-loading">Loading…</div>';
+  try {
+    // GIPHY first
+    const endpoint = mode === 'search'
+      ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(query)}&limit=24&rating=pg-13`
+      : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_KEY}&limit=24&rating=pg-13`;
+    let r = await fetch(endpoint, { signal: AbortSignal.timeout(5000) });
+    let data = await r.json();
+    let gifs = (data.data||[]).map(g => ({
+      src: g.images?.fixed_height_small?.url || g.images?.downsized?.url,
+      full: g.images?.original?.url || g.images?.downsized?.url,
+      title: g.title || 'GIF'
+    })).filter(g => g.src && g.full);
+
+    if (!gifs.length) throw new Error('no results');
+    renderGifGrid(grid, gifs);
+  } catch(e) {
+    // Tenor fallback
+    try {
+      const tUrl = query
+        ? `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(query)}&key=${TENOR_KEY}&limit=24&media_filter=gif`
+        : `https://tenor.googleapis.com/v2/featured?key=${TENOR_KEY}&limit=24&media_filter=gif`;
+      const r2 = await fetch(tUrl, { signal: AbortSignal.timeout(5000) });
+      const d2 = await r2.json();
+      const gifs = (d2.results||[]).map(g => ({
+        src: g.media_formats?.tinygif?.url,
+        full: g.media_formats?.gif?.url || g.media_formats?.tinygif?.url,
+        title: g.title || 'GIF'
+      })).filter(g => g.src && g.full);
+      if (!gifs.length) { grid.innerHTML = '<div class="gif-loading">No GIFs found</div>'; return; }
+      renderGifGrid(grid, gifs);
+    } catch(e2) {
+      grid.innerHTML = '<div class="gif-loading">Failed to load GIFs</div>';
+    }
+  }
+}
+
+function renderGifGrid(grid, gifs) {
+  grid.innerHTML = '';
+  gifs.forEach(gif => {
+    const img = document.createElement('img');
+    img.className = 'gif-item';
+    img.src = gif.src;
+    img.loading = 'lazy';
+    img.title = gif.title;
+    img.onclick = () => sendGif(gif.full, gif.title);
+    grid.appendChild(img);
+  });
+}
+
+async function fetchGifs(url) { /* legacy compat */ }
+
+async function sendGif(gifUrl, title) {
+  toggleGifPicker();
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { showToast('Sign in to send GIFs'); return; }
+  const p = await getProfile(session.user.id);
+  const payload = {
+    user_id: session.user.id,
+    username: p.username || session.user.email,
+    avatar_url: p.avatar_url || null,
+    tag: p.tag || null,
+    role: p.role || 'user',
+    text: '',
+    file_url: gifUrl
+  };
+  if (activeRoom.type === 'dm') {
+    payload.dm_id = activeRoom.id;
+    await sb.from('dm_messages').insert(payload);
+    await sb.from('direct_messages').update({ updated_at: new Date().toISOString() }).eq('id', activeRoom.id);
+  } else {
+    if (activeRoom.type === 'channel') payload.channel_id = activeRoom.id;
+    else if (activeRoom.type === 'server') payload.server_id = activeRoom.id;
+    await sb.from('messages').insert(payload);
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   MESSAGE SEARCH
+══════════════════════════════════════════════════════ */
+let searchPanel = null;
+
+function openSearchPanel() {
+  if (searchPanel) { searchPanel.classList.toggle('hidden'); return; }
+  searchPanel = document.createElement('div');
+  searchPanel.id = 'search-panel';
+  searchPanel.className = 'search-panel';
+  searchPanel.innerHTML = `
+    <div class="search-header">
+      <input id="search-input" class="search-input" placeholder="Search messages…" oninput="runMessageSearch(this.value)"/>
+      <button class="search-close" onclick="searchPanel.classList.add('hidden')">✕</button>
+    </div>
+    <div class="search-scope">
+      <label><input type="radio" name="search-scope" value="current" checked onchange="runMessageSearch(document.getElementById('search-input').value)"/> This channel</label>
+      <label><input type="radio" name="search-scope" value="server" onchange="runMessageSearch(document.getElementById('search-input').value)"/> Whole server</label>
+      <label><input type="radio" name="search-scope" value="dms" onchange="runMessageSearch(document.getElementById('search-input').value)"/> DMs</label>
+    </div>
+    <div id="search-results" class="search-results"><div class="search-hint">Type to search…</div></div>
+  `;
+  document.querySelector('.dc-main')?.appendChild(searchPanel);
+}
+
+let searchTimer = null;
+async function runMessageSearch(query) {
+  clearTimeout(searchTimer);
+  const resultsEl = document.getElementById('search-results');
+  if (!query || query.trim().length < 2) { if(resultsEl) resultsEl.innerHTML='<div class="search-hint">Type to search…</div>'; return; }
+  if(resultsEl) resultsEl.innerHTML = '<div class="search-hint">Searching…</div>';
+  searchTimer = setTimeout(async () => {
+    const scope = document.querySelector('input[name="search-scope"]:checked')?.value || 'current';
+    const q = query.trim();
+    let msgs = [];
+    try {
+      if (scope === 'current' || scope === 'server') {
+        let qb = sb.from('messages').select('id,text,username,avatar_url,created_at,channel_id,server_id,channels(name)')
+          .ilike('text', `%${q}%`).order('created_at', { ascending: false }).limit(30);
+        if (scope === 'current' && activeRoom.id) qb = qb.eq('channel_id', activeRoom.id);
+        else if (scope === 'server' && activeRoom.serverId) qb = qb.eq('server_id', activeRoom.serverId);
+        const { data } = await qb;
+        msgs = data || [];
+      }
+      if (scope === 'dms') {
+        const { data } = await sb.from('dm_messages').select('id,text,username,avatar_url,created_at,dm_id')
+          .ilike('text', `%${q}%`).order('created_at', { ascending: false }).limit(30);
+        msgs = data || [];
+      }
+    } catch(e) {}
+    if (!resultsEl) return;
+    if (!msgs.length) { resultsEl.innerHTML = '<div class="search-hint">No results found</div>'; return; }
+    const highlight = (t) => (t||'').replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<mark>$1</mark>');
+    resultsEl.innerHTML = msgs.map(m => `
+      <div class="search-result" onclick="jumpToMessage('${m.id}','${m.channel_id||m.dm_id||''}')">
+        <div class="sr-meta">
+          <span class="sr-user">${esc(m.username||'?')}</span>
+          <span class="sr-ch">${m.channels?.name ? '#'+esc(m.channels.name) : 'DM'}</span>
+          <span class="sr-time">${new Date(m.created_at).toLocaleDateString()}</span>
+        </div>
+        <div class="sr-text">${highlight(esc(m.text||''))}</div>
+      </div>
+    `).join('');
+  }, 350);
+}
+
+async function jumpToMessage(msgId, roomId) {
+  // Close search, navigate to channel, highlight message
+  searchPanel?.classList.add('hidden');
+  const el = document.querySelector(`[data-msg-id="${msgId}"]`);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('msg-highlight');
+    setTimeout(() => el.classList.remove('msg-highlight'), 2500);
+    return;
+  }
+  // Need to navigate to the channel first
+  if (roomId && roomId !== (activeRoom?.id)) {
+    const { data: ch } = await sb.from('channels').select('*').eq('id', roomId).maybeSingle();
+    if (ch) {
+      const { data: sv } = await sb.from('servers').select('*').eq('id', ch.server_id).maybeSingle();
+      if (sv) {
+        await buildSidebarAndWait(sv);
+        switchRoom({ type:'channel', id:ch.id, name:ch.name, icon:'#', serverName:sv.name, serverId:sv.id, serverSlug:sv.slug||null });
+      }
+    }
+  }
+  setTimeout(() => {
+    const el2 = document.querySelector(`[data-msg-id="${msgId}"]`);
+    if (el2) { el2.scrollIntoView({ behavior:'smooth', block:'center' }); el2.classList.add('msg-highlight'); setTimeout(()=>el2.classList.remove('msg-highlight'),2500); }
+  }, 800);
 }
