@@ -166,6 +166,9 @@
     </div>
     <p class="dc-modal-err" id="sm-err"></p>
     <div class="dc-modal-btns">
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--dc-muted);margin-bottom:8px;">
+        <input type="checkbox" id="carlos-toggle" style="accent-color:var(--a);"/> 🤖 Enable Carlos bot
+      </label>
       <button class="dc-btn-sec" id="sm-cancel">Cancel</button>
       <button class="dc-btn-pri" id="sm-submit">Create</button>
     </div>
@@ -344,7 +347,10 @@
         <textarea id="msgInput" rows="1" placeholder="Message #general…" maxlength="4000"></textarea>
       </div>
       <button class="dc-input-btn" id="emojiBtn" title="Emoji">😊</button>
+      <button class="dc-input-btn" id="search-btn" title="Search messages" onclick="openSearchPanel()">🔍</button>
       <button id="voice-note-btn" title="Voice note">🎤</button>
+      <button class="dc-input-btn" id="grammar-btn" title="Grammar correction: ON" onclick="toggleGrammar()">✏️</button>
+      <button class="dc-input-btn" id="gif-btn" title="GIF" onclick="toggleGifPicker()">GIF</button>
       <div class="dc-emoji-picker hidden" id="dcEmojiPicker"></div>
       <button class="dc-send-btn" id="sendBtn" title="Send (Enter)">↑</button>
     </div>
@@ -386,6 +392,7 @@
 <script src="/assets/js/cookie.js"></script>
 <script src="/assets/js/cursor.js"></script>
 <script src="/assets/js/chat.js"></script>
+<script src="/assets/js/carlos.js"></script>
 <script src="/assets/js/voice.js"></script>
 <script src="/assets/js/notifications.js"></script>
 
