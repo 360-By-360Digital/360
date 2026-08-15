@@ -57,12 +57,7 @@ window.Meet = (function () {
   let mediaLock = Promise.resolve(); // serializes getUserMedia calls
   const peers = {};          // peerId -> { pc, stream, name, avatarUrl, isHost, video, audio, screenSharing, tile }
   let localScreenSharing = false;
-  let micLocked = false;     // true on non-host clients when the host has locked mics off
-  let camLocked = false;     // true on non-host clients when the host has locked cameras off
-  let hostMicLocked = false; // host's own toggle state for the "Mute all" bulk control
-  let hostCamLocked = false; // host's own toggle state for the "Cameras off" bulk control
   let allowedScreenViewers = null; // Set of peerIds permitted to actually see the current share
-  let pendingScreenSharerName = null; // name of whoever is awaiting host approval to share
   const audioMeters = {}; // key -> { ctx, analyser, source, bars, rafId }
   let blackTrack = null; // reusable 1-frame black video track sent to non-permitted screen-share viewers
 
@@ -235,10 +230,13 @@ window.Meet = (function () {
 
   async function openPrepare(action, prefillCode) {
     prepareAction = action;
-    // For 'join' we don't know the meeting's real mode yet (only the host
-    // knows) — default to voice-only so no camera option is ever shown
-    // until the host's join-response confirms this is a video meeting.
-    mode = action === 'host-video' ? 'video' : 'voice';
+    // We don't know a joined meeting's real mode until the host responds
+    // to the admission request, but default to showing/using the camera
+    // (most meetings are video) so camera + mic both start on when the
+    // person presses "Join meeting". handleJoinResponse corrects this
+    // down to voice-only afterward if the meeting turns out to be a
+    // voice chat, stripping the video track and hiding the camera button.
+    mode = action === 'host-voice' ? 'voice' : 'video';
     previewCamOn = mode === 'video';
     previewMicOn = true;
     showScreen('meet-prepare-screen');
@@ -461,35 +459,28 @@ window.Meet = (function () {
       appendChatMessage(payload, false);
     });
 
-    // Host bulk controls — locking prevents participants from turning
-    // their mic/camera back on until the host explicitly unlocks it.
-    channel.on('broadcast', { event: 'force-mute' }, ({ payload }) => {
+    // Host bulk controls — a one-shot force mute/camera-off. People can
+    // freely re-enable their own mic/camera afterward whenever they like.
+    channel.on('broadcast', { event: 'force-mute' }, () => {
       if (isHost) return;
-      micLocked = !!payload.lock;
-      updateLockedButtonUI('#meet-mic-btn', micLocked);
-      if (micLocked) {
-        if (micOn) setMicEnabled(false);
-        toast('The host muted everyone and locked the microphone.');
-      } else {
-        toast('The host unlocked the microphone — you can unmute yourself.');
-      }
+      if (micOn) { setMicEnabled(false); toast('The host muted everyone.'); }
     });
-    channel.on('broadcast', { event: 'force-camera-off' }, ({ payload }) => {
+    channel.on('broadcast', { event: 'force-camera-off' }, () => {
       if (isHost) return;
-      camLocked = !!payload.lock;
-      updateLockedButtonUI('#meet-cam-btn', camLocked);
-      if (camLocked) {
-        if (mode === 'video' && camOn) setCamEnabled(false);
-        toast('The host turned off everyone\u2019s camera and locked it.');
-      } else {
-        toast('The host unlocked cameras — you can turn yours back on.');
-      }
+      if (mode === 'video' && camOn) { setCamEnabled(false); toast('The host turned off everyone\u2019s camera.'); }
     });
 
     // Host ended the meeting — everyone else is kicked back to the lobby.
     channel.on('broadcast', { event: 'meeting-ended' }, () => {
       if (isHost) return;
       toast('The host ended the meeting.');
+      leaveCall(true);
+    });
+
+    // Host removed a single participant.
+    channel.on('broadcast', { event: 'kick' }, ({ payload }) => {
+      if (payload.to !== myPeerId) return;
+      toast('You were removed from the meeting by the host.');
       leaveCall(true);
     });
 
@@ -625,12 +616,18 @@ window.Meet = (function () {
     const state = channel.presenceState();
     Object.keys(state).forEach(key => {
       if (key === myPeerId) return;
-      const meta = state[key][0] || {};
       if (!peers[key]) {
+        const meta = state[key][0] || {};
         createPeerConnection(key, meta);
-      } else {
-        Object.assign(peers[key], meta);
       }
+      // Existing peers' live video/audio/screenSharing flags are kept
+      // current via the 'meta' broadcast, not this (stale) presence
+      // snapshot — re-applying presence data here on every sync/join
+      // would stomp on more recent updates. This was the root cause of
+      // camera visibility, mute-state, and screen-share-stage bugs: any
+      // time someone else joined or left, everyone's tracked video/audio/
+      // screenSharing flags silently reverted to their values from the
+      // moment they first connected.
     });
     // Drop peers that disappeared from presence but never fired 'leave'.
     Object.keys(peers).forEach(key => { if (!state[key]) removePeer(key); });
@@ -823,14 +820,17 @@ window.Meet = (function () {
   }
 
   function tileHtml(opts) {
-    const { key, name, avatarUrl, host, isLocal, hasVideoTrack, mic, size, screen } = opts;
+    const { key, name, avatarUrl, host, isLocal, hasVideoTrack, mic, size, screen, kickable } = opts;
     const cls = ['meet-tile', size === 'main' ? 'meet-tile-main' : 'meet-tile-side', isLocal ? 'local' : '', screen ? 'screen' : ''].filter(Boolean).join(' ');
     return `
       <div class="${cls}" id="meet-tile-${key}">
         <video autoplay playsinline ${isLocal && !screen ? 'muted' : ''}></video>
         <div class="meet-tile-avatar" style="display:${hasVideoTrack ? 'none' : 'flex'}"><div class="avatar-circle">${avatarHtml(name, avatarUrl)}</div></div>
         <div class="meet-tile-meter" id="meet-meter-${key}"><span></span><span></span><span></span><span></span><span></span></div>
-        <button class="meet-tile-fullscreen-btn" id="meet-fs-${key}" title="Full screen" type="button">${ICONS.fullscreen}</button>
+        <div class="meet-tile-actions">
+          ${kickable ? `<button class="meet-tile-kick-btn" id="meet-kick-${key}" title="Remove from meeting" type="button">${ICONS.close}</button>` : ''}
+          <button class="meet-tile-fullscreen-btn" id="meet-fs-${key}" title="Full screen" type="button">${ICONS.fullscreen}</button>
+        </div>
         <div class="meet-tile-label">${escapeHtml(name)}${host ? '<span class="host-badge">Host</span>' : ''}</div>
         ${!mic ? `<div class="meet-mic-off-badge">${ICONS.micOff}</div>` : ''}
       </div>`;
@@ -847,10 +847,10 @@ window.Meet = (function () {
 
     if (sharerId) {
       const sharerName = sharerId === myPeerId ? user.username : peers[sharerId].name;
-      main.innerHTML = tileHtml({ key: 'share-' + sharerId, name: sharerName, avatarUrl: null, host: sharerId === hostId, isLocal: sharerId === myPeerId, hasVideoTrack: true, mic: true, size: 'main', screen: true });
+      main.innerHTML = tileHtml({ key: 'share-' + sharerId, name: sharerName, avatarUrl: null, host: sharerId === hostId, isLocal: sharerId === myPeerId, hasVideoTrack: true, mic: true, size: 'main', screen: true, kickable: isHost && sharerId !== myPeerId });
       const mainVideo = main.querySelector('video');
       mainVideo.srcObject = sharerId === myPeerId ? screenStream : (peers[sharerId]?.screenStream || null);
-      tileRegistry.push({ key: 'share-' + sharerId, audioOwnerId: sharerId === myPeerId ? 'local' : sharerId });
+      tileRegistry.push({ key: 'share-' + sharerId, audioOwnerId: sharerId === myPeerId ? 'local' : sharerId, kickPeerId: isHost && sharerId !== myPeerId ? sharerId : null });
 
       let sideHtml = '';
       const hostIsLocal = hostId === myPeerId;
@@ -859,18 +859,18 @@ window.Meet = (function () {
       const hostHasVideo = hostIsLocal ? (mode === 'video' && camOn) : !!peers[hostId]?.video;
       const hostMic = hostIsLocal ? micOn : (peers[hostId]?.audio !== false);
       if (hostId) {
-        sideHtml += tileHtml({ key: 'side-' + hostId, name: hostName, avatarUrl: hostAvatar, host: true, isLocal: hostIsLocal, hasVideoTrack: hostHasVideo, mic: hostMic, size: 'side' });
-        tileRegistry.push({ key: 'side-' + hostId, audioOwnerId: hostIsLocal ? 'local' : hostId });
+        sideHtml += tileHtml({ key: 'side-' + hostId, name: hostName, avatarUrl: hostAvatar, host: true, isLocal: hostIsLocal, hasVideoTrack: hostHasVideo, mic: hostMic, size: 'side', kickable: isHost && !hostIsLocal });
+        tileRegistry.push({ key: 'side-' + hostId, audioOwnerId: hostIsLocal ? 'local' : hostId, kickPeerId: isHost && !hostIsLocal ? hostId : null });
       }
 
       otherKeys.filter(k => k !== hostId).forEach(k => {
         const p = peers[k];
-        sideHtml += tileHtml({ key: 'side-' + k, name: p.name, avatarUrl: p.avatarUrl, host: false, isLocal: false, hasVideoTrack: !!p.video, mic: p.audio !== false, size: 'side' });
-        tileRegistry.push({ key: 'side-' + k, audioOwnerId: k });
+        sideHtml += tileHtml({ key: 'side-' + k, name: p.name, avatarUrl: p.avatarUrl, host: false, isLocal: false, hasVideoTrack: !!p.video, mic: p.audio !== false, size: 'side', kickable: isHost });
+        tileRegistry.push({ key: 'side-' + k, audioOwnerId: k, kickPeerId: isHost ? k : null });
       });
       if (!isHost && hostId !== myPeerId) {
         sideHtml += tileHtml({ key: 'side-' + myPeerId, name: user.username, avatarUrl: user.avatarUrl, host: false, isLocal: true, hasVideoTrack: mode === 'video' && camOn, mic: micOn, size: 'side' });
-        tileRegistry.push({ key: 'side-' + myPeerId, audioOwnerId: 'local' });
+        tileRegistry.push({ key: 'side-' + myPeerId, audioOwnerId: 'local', kickPeerId: null });
       }
       side.innerHTML = sideHtml || `<div class="meet-side-empty">No other participants yet</div>`;
     } else {
@@ -879,20 +879,20 @@ window.Meet = (function () {
       const hostAvatar = hostIsLocal ? user.avatarUrl : (peers[hostId]?.avatarUrl || null);
       const hostHasVideo = hostIsLocal ? (mode === 'video' && camOn) : !!peers[hostId]?.video;
       const hostMic = hostIsLocal ? micOn : (peers[hostId]?.audio !== false);
-      main.innerHTML = hostId ? tileHtml({ key: hostId, name: hostName, avatarUrl: hostAvatar, host: true, isLocal: hostIsLocal, hasVideoTrack: hostHasVideo, mic: hostMic, size: 'main' }) : '';
+      main.innerHTML = hostId ? tileHtml({ key: hostId, name: hostName, avatarUrl: hostAvatar, host: true, isLocal: hostIsLocal, hasVideoTrack: hostHasVideo, mic: hostMic, size: 'main', kickable: isHost && !hostIsLocal }) : '';
       const mainVideo = main.querySelector('video');
       if (mainVideo) mainVideo.srcObject = hostIsLocal ? localStream : peers[hostId]?.stream || null;
-      if (hostId) tileRegistry.push({ key: hostId, audioOwnerId: hostIsLocal ? 'local' : hostId });
+      if (hostId) tileRegistry.push({ key: hostId, audioOwnerId: hostIsLocal ? 'local' : hostId, kickPeerId: isHost && !hostIsLocal ? hostId : null });
 
       let sideHtml = '';
       otherKeys.filter(k => k !== hostId).forEach(k => {
         const p = peers[k];
-        sideHtml += tileHtml({ key: k, name: p.name, avatarUrl: p.avatarUrl, host: false, isLocal: false, hasVideoTrack: !!p.video, mic: p.audio !== false, size: 'side' });
-        tileRegistry.push({ key: k, audioOwnerId: k });
+        sideHtml += tileHtml({ key: k, name: p.name, avatarUrl: p.avatarUrl, host: false, isLocal: false, hasVideoTrack: !!p.video, mic: p.audio !== false, size: 'side', kickable: isHost });
+        tileRegistry.push({ key: k, audioOwnerId: k, kickPeerId: isHost ? k : null });
       });
       if (!isHost) {
         sideHtml += tileHtml({ key: myPeerId, name: user.username, avatarUrl: user.avatarUrl, host: false, isLocal: true, hasVideoTrack: mode === 'video' && camOn, mic: micOn, size: 'side' });
-        tileRegistry.push({ key: myPeerId, audioOwnerId: 'local' });
+        tileRegistry.push({ key: myPeerId, audioOwnerId: 'local', kickPeerId: null });
       }
       side.innerHTML = sideHtml || `<div class="meet-side-empty">No other participants yet</div>`;
     }
@@ -910,11 +910,15 @@ window.Meet = (function () {
 
   /* ── Fullscreen (client-side only, per tile) ────────── */
   function wireTileExtras(tileRegistry) {
-    tileRegistry.forEach(({ key, audioOwnerId }) => {
+    tileRegistry.forEach(({ key, audioOwnerId, kickPeerId }) => {
       const btn = document.getElementById(`meet-fs-${key}`);
       const tileEl = document.getElementById(`meet-tile-${key}`);
       if (btn && tileEl) {
         btn.onclick = (e) => { e.stopPropagation(); goFullscreen(tileEl, btn); };
+      }
+      const kickBtn = document.getElementById(`meet-kick-${key}`);
+      if (kickBtn && kickPeerId) {
+        kickBtn.onclick = (e) => { e.stopPropagation(); kickParticipant(kickPeerId); };
       }
       startAudioMeter(key, audioOwnerId);
     });
@@ -931,9 +935,25 @@ window.Meet = (function () {
     }
     tileEl.requestFullscreen?.().then(() => {
       btn.innerHTML = ICONS.exitFullscreen;
+
+      // Cursor shows normally in fullscreen, then auto-hides after 5s of
+      // no mouse movement (like a video player), and reappears instantly
+      // on the next movement.
+      let hideTimer = null;
+      const showCursor = () => {
+        tileEl.classList.remove('fs-cursor-hidden');
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => tileEl.classList.add('fs-cursor-hidden'), 5000);
+      };
+      tileEl.addEventListener('mousemove', showCursor);
+      showCursor();
+
       const onExit = () => {
         if (document.fullscreenElement !== tileEl) {
           btn.innerHTML = ICONS.fullscreen;
+          clearTimeout(hideTimer);
+          tileEl.classList.remove('fs-cursor-hidden');
+          tileEl.removeEventListener('mousemove', showCursor);
           document.removeEventListener('fullscreenchange', onExit);
         }
       };
@@ -1011,17 +1031,8 @@ window.Meet = (function () {
   function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
 
   /* ── Controls ──────────────────────────────────────── */
-  function updateLockedButtonUI(selector, locked) {
-    const btn = $(selector);
-    if (!btn) return;
-    btn.classList.toggle('locked', locked);
-    btn.disabled = locked;
-    btn.title = locked ? 'Locked by the host' : (selector === '#meet-mic-btn' ? 'Mute microphone' : 'Turn off camera');
-  }
-
   function setMicEnabled(on) {
     if (!localStream) return;
-    if (on && micLocked) { toast('The host has muted the microphone for everyone.'); return; }
     micOn = on;
     localStream.getAudioTracks().forEach(t => t.enabled = micOn);
     const btn = $('#meet-mic-btn');
@@ -1032,7 +1043,6 @@ window.Meet = (function () {
 
   function setCamEnabled(on) {
     if (mode !== 'video') return;
-    if (on && camLocked) { toast('The host has turned off cameras for everyone.'); return; }
     camOn = on;
     if (localStream) localStream.getVideoTracks().forEach(t => t.enabled = camOn);
     const btn = $('#meet-cam-btn');
@@ -1042,30 +1052,25 @@ window.Meet = (function () {
   }
   function toggleCam() { setCamEnabled(!camOn); }
 
-  /* ── Host bulk controls (toggle: lock on / unlock) ──── */
+  /* ── Host bulk controls (one-shot force, not persistent) ──── */
   function hostMuteAll() {
     if (!isHost || !channel) return;
-    hostMicLocked = !hostMicLocked;
-    channel.send({ type: 'broadcast', event: 'force-mute', payload: { lock: hostMicLocked } });
-    const btn = $('#meet-mute-all-btn');
-    if (btn) {
-      btn.classList.toggle('active-toggle', hostMicLocked);
-      const label = btn.querySelector('.meet-host-action-label');
-      if (label) label.textContent = hostMicLocked ? 'Unmute all' : 'Mute all';
-    }
-    toast(hostMicLocked ? 'Muted everyone and locked the microphone.' : 'Microphone unlocked for everyone.');
+    channel.send({ type: 'broadcast', event: 'force-mute', payload: {} });
+    toast('Muted everyone.');
   }
   function hostCamerasOff() {
     if (!isHost || !channel) return;
-    hostCamLocked = !hostCamLocked;
-    channel.send({ type: 'broadcast', event: 'force-camera-off', payload: { lock: hostCamLocked } });
-    const btn = $('#meet-cameras-off-btn');
-    if (btn) {
-      btn.classList.toggle('active-toggle', hostCamLocked);
-      const label = btn.querySelector('.meet-host-action-label');
-      if (label) label.textContent = hostCamLocked ? 'Allow cameras' : 'Cameras off';
-    }
-    toast(hostCamLocked ? 'Turned off everyone\u2019s camera and locked it.' : 'Cameras unlocked for everyone.');
+    channel.send({ type: 'broadcast', event: 'force-camera-off', payload: {} });
+    toast('Turned off everyone\u2019s camera.');
+  }
+
+  /* ── Host: remove a participant ──────────────────────── */
+  function kickParticipant(peerId) {
+    if (!isHost || !channel || !peers[peerId]) return;
+    const name = peers[peerId].name || 'Participant';
+    channel.send({ type: 'broadcast', event: 'kick', payload: { to: peerId } });
+    removePeer(peerId);
+    toast(`Removed ${name} from the meeting.`);
   }
 
   /* ── Chat ──────────────────────────────────────────── */
@@ -1306,6 +1311,21 @@ window.Meet = (function () {
     navigator.clipboard?.writeText(url).then(() => toast('Invite link copied')).catch(() => toast(url));
   }
 
+  /* ── Leave confirmation popup ─────────────────────────
+     The End Call button no longer leaves immediately — it opens a
+     custom confirmation popup first. Programmatic exits (kicked,
+     meeting ended, tab closing) skip this and call leaveCall directly. */
+  function confirmLeave() {
+    const overlay = document.getElementById('meet-leave-confirm-modal');
+    if (!overlay) { leaveCall(false); return; }
+    overlay.classList.add('show');
+    const cancelBtn = document.getElementById('meet-leave-cancel-btn');
+    const confirmBtn = document.getElementById('meet-leave-confirm-btn');
+    function close() { overlay.classList.remove('show'); cancelBtn.onclick = null; confirmBtn.onclick = null; }
+    cancelBtn.onclick = close;
+    confirmBtn.onclick = () => { close(); leaveCall(false); };
+  }
+
   // kicked=true means this call is being torn down because the HOST ended
   // the meeting (received via the 'meeting-ended' broadcast) — in that case
   // we must not re-broadcast 'meeting-ended' ourselves or show the generic
@@ -1327,12 +1347,6 @@ window.Meet = (function () {
     allowedScreenViewers = null;
     if (blackTrack) { try { blackTrack.stop(); } catch (e) {} blackTrack = null; }
     Object.keys(audioMeters).forEach(stopAudioMeter);
-    micLocked = false;
-    camLocked = false;
-    hostMicLocked = false;
-    hostCamLocked = false;
-    updateLockedButtonUI('#meet-mic-btn', false);
-    updateLockedButtonUI('#meet-cam-btn', false);
     chatOpen = false;
     unreadChat = 0;
     const chatList = $('#meet-chat-messages');
@@ -1360,6 +1374,7 @@ window.Meet = (function () {
     toggleChatPanel,
     sendChatMessage,
     copyInviteLink,
+    confirmLeave,
     leaveCall: () => leaveCall(false)
   };
 })();
