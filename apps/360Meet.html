@@ -11,7 +11,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>360 — Meet</title>
-  <link rel="icon" type="image/png" href="favicon-32x32.png" />
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#3b82f6" />
 
@@ -130,20 +130,18 @@
       </div>
     </div>
 
-    <!-- Host-only bulk controls -->
-    <div class="meet-host-controls" id="meet-host-controls" style="display:none;">
-      <button class="meet-host-action-btn" id="meet-mute-all-btn">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2"/><path d="M19 10v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-        <span class="meet-host-action-label">Mute all</span>
-      </button>
-      <button class="meet-host-action-btn" id="meet-cameras-off-btn">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="M9.5 5H14a2 2 0 0 1 2 2v4.5"/><polygon points="23 7 16 12 23 17 23 7"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-        <span class="meet-host-action-label">Cameras off</span>
-      </button>
-    </div>
-
     <div class="meet-controls-bar">
       <div class="meet-controls-group meet-controls-left">
+        <div class="meet-host-controls" id="meet-host-controls" style="display:none;">
+          <button class="meet-host-action-btn" id="meet-mute-all-btn">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2"/><path d="M19 10v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            <span class="meet-host-action-label">Mute all</span>
+          </button>
+          <button class="meet-host-action-btn" id="meet-cameras-off-btn">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="M9.5 5H14a2 2 0 0 1 2 2v4.5"/><polygon points="23 7 16 12 23 17 23 7"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            <span class="meet-host-action-label">Cameras off</span>
+          </button>
+        </div>
         <button class="meet-ctrl-btn" id="meet-mic-btn" title="Mute microphone"></button>
         <button class="meet-ctrl-btn" id="meet-cam-btn" title="Turn off camera"></button>
       </div>
@@ -160,6 +158,18 @@
         <button class="meet-ctrl-btn leave" id="meet-leave-btn" title="Leave meeting">
           <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" stroke="none"><path d="M12 9c-2.3 0-4.5.36-6.6 1.03a1.5 1.5 0 0 0-1 1.6l.34 2.5a1.5 1.5 0 0 0 1.2 1.27c1.1.2 2.2.36 3.06.36.66 0 1.2-.44 1.37-1.06l.3-1.1a1 1 0 0 1 1.1-.73c.66.1 1.34.13 2.23.13.9 0 1.57-.03 2.23-.13a1 1 0 0 1 1.1.73l.3 1.1c.17.62.71 1.06 1.37 1.06.87 0 1.96-.16 3.06-.36a1.5 1.5 0 0 0 1.2-1.27l.34-2.5a1.5 1.5 0 0 0-1-1.6A20.6 20.6 0 0 0 12 9z"/></svg>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leave confirmation popup -->
+  <div class="meet-modal-overlay" id="meet-leave-confirm-modal">
+    <div class="meet-modal-card">
+      <div class="meet-modal-title">Leave the meeting?</div>
+      <p class="meet-modal-text">You can rejoin later with the same meeting code.</p>
+      <div class="meet-modal-actions">
+        <button class="meet-btn secondary" id="meet-leave-cancel-btn">Cancel</button>
+        <button class="meet-btn danger" id="meet-leave-confirm-btn">Leave meeting</button>
       </div>
     </div>
   </div>
@@ -208,7 +218,7 @@
   <script src="/assets/js/gallium.js"></script>
   <script src="/assets/js/cookie.js"></script>
   <script src="/assets/js/cursor.js"></script>
-  <script src="/assets/js/meet.js?v=5"></script>
+  <script src="/assets/js/meet.js?v=6"></script>
 
   <script>
     (function () {
@@ -216,7 +226,7 @@
       document.getElementById('meet-mic-btn').onclick = () => Meet.toggleMic();
       document.getElementById('meet-cam-btn').onclick = () => Meet.toggleCam();
       document.getElementById('meet-screen-btn').onclick = () => Meet.toggleScreenShare();
-      document.getElementById('meet-leave-btn').onclick = () => Meet.leaveCall();
+      document.getElementById('meet-leave-btn').onclick = () => Meet.confirmLeave();
       document.getElementById('meet-chat-btn').onclick = () => Meet.toggleChatPanel();
       document.getElementById('meet-chat-close-btn').onclick = () => Meet.toggleChatPanel();
       document.getElementById('meet-mute-all-btn').onclick = () => Meet.hostMuteAll();
