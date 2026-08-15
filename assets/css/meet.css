@@ -342,17 +342,10 @@ body.dark .meet-participant-count { color: var(--mutd); }
 }
 .meet-tile.speaking { border-color: var(--a); box-shadow: 0 0 0 2px var(--a); }
 
-/* Main (large) tile — host, or the shared screen */
+/* Main (large) tile — host, or the shared screen. Always kept at a
+   standard 16:9 ratio and sized as large as the available space
+   allows, rather than stretched to fill an odd-shaped container. */
 .meet-tile-main {
-  width: 100%;
-  height: 100%;
-  max-height: 100%;
-  aspect-ratio: auto;
-}
-/* Screen shares always render at a standard 16:9 ratio, letterboxed and
-   centered within the available main area — never stretched to fill an
-   odd-shaped container. */
-.meet-tile-main.screen {
   width: auto;
   height: auto;
   max-width: 100%;
@@ -360,12 +353,13 @@ body.dark .meet-participant-count { color: var(--mutd); }
   aspect-ratio: 16/9;
   margin: auto;
 }
+.meet-tile-main video { object-fit: cover; }
 .meet-tile-main.screen video { object-fit: contain; background: #000; }
 
-/* Side (small) tiles */
+/* Side (small) tiles — same standard ratio as the main tile. */
 .meet-tile-side {
   width: 100%;
-  aspect-ratio: 16/10;
+  aspect-ratio: 16/9;
 }
 
 .meet-tile-label {
@@ -397,8 +391,8 @@ body.dark .meet-participant-count { color: var(--mutd); }
 }
 .meet-mic-off-badge svg { width: 12px; height: 12px; }
 
-/* Voice-activity meter (top-left) and fullscreen button (top-right),
-   present on every tile — camera or screen share. */
+/* Voice-activity meter (top-left), present on every tile — camera or
+   screen share. */
 .meet-tile-meter {
   position: absolute; top: 8px; left: 8px;
   display: flex; align-items: flex-end; gap: 2px;
@@ -416,23 +410,39 @@ body.dark .meet-participant-count { color: var(--mutd); }
   background: #4ade80;
   transition: height .08s linear;
 }
-.meet-tile-fullscreen-btn {
+
+/* Top-right action buttons — full screen, and (host only) remove
+   participant. Grouped together so they don't collide. */
+.meet-tile-actions {
   position: absolute; top: 8px; right: 8px;
+  display: flex; gap: 6px;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity .12s;
+}
+.meet-tile:hover .meet-tile-actions,
+.meet-tile-actions:focus-within { opacity: 1; }
+.meet-tile-fullscreen-btn,
+.meet-tile-kick-btn {
   width: 26px; height: 26px; border-radius: 8px;
   border: none; cursor: pointer;
   background: rgba(0,0,0,.4);
   color: #fff;
   display: flex; align-items: center; justify-content: center;
-  z-index: 2;
-  opacity: 0;
-  transition: opacity .12s, background .12s;
 }
-.meet-tile:hover .meet-tile-fullscreen-btn,
-.meet-tile-fullscreen-btn:focus { opacity: 1; }
+.meet-tile-fullscreen-btn svg,
+.meet-tile-kick-btn svg { width: 13px; height: 13px; }
 .meet-tile-fullscreen-btn:hover { background: rgba(0,0,0,.65); }
-.meet-tile-fullscreen-btn svg { width: 13px; height: 13px; }
+.meet-tile-kick-btn:hover { background: #ef4444; }
+
 .meet-tile:fullscreen { display: flex; align-items: center; justify-content: center; background: #000; }
 .meet-tile:fullscreen video { width: 100%; height: 100%; object-fit: contain; }
+/* Cursor auto-hides after 5s of inactivity while fullscreen (see
+   goFullscreen() in meet.js), then reappears on any mouse movement. */
+.meet-tile:fullscreen.fs-cursor-hidden { cursor: none; }
+.meet-tile:fullscreen.fs-cursor-hidden .meet-tile-actions,
+.meet-tile:fullscreen.fs-cursor-hidden .meet-tile-label,
+.meet-tile:fullscreen.fs-cursor-hidden .meet-tile-meter { opacity: 0; }
 
 .meet-side-empty {
   color: var(--mut);
@@ -452,10 +462,11 @@ body.dark .meet-side-empty { color: var(--mutd); }
   padding: 14px 20px 22px;
   border-top: 1px solid var(--br);
 }
-.meet-controls-group { display: flex; align-items: center; gap: 12px; }
+.meet-controls-group { display: flex; align-items: center; gap: 10px; }
 .meet-controls-left { justify-content: flex-start; }
 .meet-controls-center { flex: 1; justify-content: center; }
 .meet-controls-right { justify-content: flex-end; }
+
 
 .meet-ctrl-btn {
   width: 48px; height: 48px; border-radius: 50%;
@@ -528,13 +539,12 @@ body.dark .meet-modal-text { color: var(--mutd); }
 .meet-modal-actions.three .meet-btn { width: 100%; }
 
 
-/* ── Host bulk-action bar ──────────────────────────── */
+/* ── Host bulk-action buttons (sit at the far left of the main
+   controls row, before the mic/camera buttons) ─────── */
 .meet-host-controls {
-  flex-shrink: 0;
   display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 0 20px 4px;
+  align-items: center;
+  gap: 8px;
 }
 .meet-host-action-btn {
   display: inline-flex;
