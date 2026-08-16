@@ -1,5 +1,8 @@
 /* ════════════════════════════════════════════════════════
-   360Meet - v3
+   360Meet v3 — sign-in required, optional passcode, prepare
+   room, Zoom-style call chamber, profile-picture avatars,
+   and host-approved screen sharing for non-host participants.
+   Requires: supabaseClient + getGravatarUrl (globals from main.js)
 ════════════════════════════════════════════════════════ */
 
 window.Meet = (function () {
@@ -579,9 +582,10 @@ window.Meet = (function () {
 
   // Called after joining a video meeting when the prepare screen didn't
   // already grab a camera (we default 'join' prepare to voice-only until
-  // the host confirms the real mode). Adds the track live and lets the
-  // always-on renegotiation handler (see createPeerConnection) push it to
-  // every existing peer connection automatically.
+  // the host confirms the real mode). Attaches the track to each peer's
+  // already-reserved camera slot via replaceTrack — no renegotiation
+  // needed, and it keeps the camera/screen slot ordering intact (see
+  // createPeerConnection).
   async function acquireCameraIfNeeded() {
     if (!localStream || mode !== 'video') return;
     if (localStream.getVideoTracks().length) { camOn = true; return; }
@@ -590,7 +594,7 @@ window.Meet = (function () {
       const track = camStream.getVideoTracks()[0];
       localStream.addTrack(track);
       camOn = true;
-      Object.values(peers).forEach(({ pc }) => pc.addTrack(track, localStream));
+      Object.values(peers).forEach(p => { p.camTransceiver?.sender.replaceTrack(track); });
       const camBtn = $('#meet-cam-btn');
       if (camBtn) { camBtn.style.display = ''; camBtn.classList.remove('off'); camBtn.innerHTML = ICONS.video; }
       broadcastMeta();
@@ -647,7 +651,7 @@ window.Meet = (function () {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     const polite = myPeerId < peerId;
     peers[peerId] = {
-      pc, stream: null, screenStream: null, camTrackId: null,
+      pc, stream: null, screenStream: null, camTrack: null, audioTrack: null, videoOrdinal: 0,
       name: meta.name || 'Guest',
       avatarUrl: meta.avatarUrl || null,
       isHost: !!meta.isHost,
@@ -659,32 +663,55 @@ window.Meet = (function () {
       makingOffer: false,
       ignoreOffer: false,
       iceFailedAt: null,
+      camTransceiver: null,
       screenTransceiver: null
     };
 
-    if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-    // A dedicated, always-present video slot reserved purely for screen
-    // sharing — kept separate from the camera track so starting/stopping
-    // a share never disturbs what the camera is sending, and so a
-    // screen-share can be routed per-viewer (see computeScreenViewers).
+    const audioTrack = localStream?.getAudioTracks()[0];
+    if (audioTrack) pc.addTrack(audioTrack, localStream);
+
+    // Camera and screen each get their own dedicated, always-present
+    // sendonly video slot, reserved up front (with no track attached
+    // until needed) and in a FIXED order for every connection — this is
+    // what lets the receiving side reliably tell "this is their camera"
+    // apart from "this is their screen share" (see ontrack below),
+    // regardless of whether the meeting is voice-only, or the camera
+    // gets turned on/off or acquired later mid-call.
+    const camTransceiver = pc.addTransceiver('video', { direction: 'sendonly' });
+    peers[peerId].camTransceiver = camTransceiver;
+    const camTrack = localStream?.getVideoTracks()[0];
+    if (camTrack) camTransceiver.sender.replaceTrack(camTrack);
+
     peers[peerId].screenTransceiver = pc.addTransceiver('video', { direction: 'sendonly' });
 
     pc.onicecandidate = ({ candidate }) => { if (candidate) sendSignal(peerId, 'ice', candidate); };
 
+    function rebuildCombinedStream(entry) {
+      const tracks = [];
+      if (entry.camTrack) tracks.push(entry.camTrack);
+      if (entry.audioTrack) tracks.push(entry.audioTrack);
+      entry.stream = tracks.length ? new MediaStream(tracks) : null;
+    }
+
     pc.ontrack = (e) => {
       const entry = peers[peerId];
       if (!entry) return;
-      if (e.track.kind === 'video') {
-        if (!entry.camTrackId) {
-          // First video track seen for this peer = their camera.
-          entry.camTrackId = e.track.id;
-          entry.stream = e.streams[0] || new MediaStream([e.track]);
-        } else if (e.track.id !== entry.camTrackId) {
-          // Any later, different video track = their reserved screen slot.
+      if (e.track.kind === 'audio') {
+        entry.audioTrack = e.track;
+        rebuildCombinedStream(entry);
+      } else if (e.track.kind === 'video') {
+        entry.videoOrdinal += 1;
+        if (entry.videoOrdinal === 1) {
+          // The first video m-line negotiated for this connection is
+          // always the reserved camera slot (see above) — always
+          // present even if empty/muted, so this is reliable in every
+          // mode, not just when a camera happens to already be on.
+          entry.camTrack = e.track;
+          rebuildCombinedStream(entry);
+        } else {
+          // Anything after that is the reserved screen slot.
           entry.screenStream = e.streams[0] || new MediaStream([e.track]);
         }
-      } else {
-        entry.stream = entry.stream || e.streams[0];
       }
       renderStage();
     };
