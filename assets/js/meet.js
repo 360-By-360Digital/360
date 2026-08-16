@@ -60,6 +60,10 @@ window.Meet = (function () {
   let allowedScreenViewers = null; // Set of peerIds permitted to actually see the current share
   const audioMeters = {}; // key -> { ctx, analyser, source, bars, rafId }
   let blackTrack = null; // reusable 1-frame black video track sent to non-permitted screen-share viewers
+  let micLocked = false;     // true on non-host clients when the host has locked mics off
+  let camLocked = false;     // true on non-host clients when the host has locked cameras off
+  let hostMicLocked = false; // host's own toggle state for the "Mute all" bulk control
+  let hostCamLocked = false; // host's own toggle state for the "Cameras off" bulk control
 
   /* ── Helpers ───────────────────────────────────────── */
   function getSb() {
@@ -459,15 +463,29 @@ window.Meet = (function () {
       appendChatMessage(payload, false);
     });
 
-    // Host bulk controls — a one-shot force mute/camera-off. People can
-    // freely re-enable their own mic/camera afterward whenever they like.
-    channel.on('broadcast', { event: 'force-mute' }, () => {
+    // Host bulk controls — locking prevents participants from turning
+    // their mic/camera back on until the host explicitly unlocks it.
+    channel.on('broadcast', { event: 'force-mute' }, ({ payload }) => {
       if (isHost) return;
-      if (micOn) { setMicEnabled(false); toast('The host muted everyone.'); }
+      micLocked = !!payload.lock;
+      updateLockedButtonUI('#meet-mic-btn', micLocked);
+      if (micLocked) {
+        if (micOn) setMicEnabled(false);
+        toast('The host muted everyone and locked the microphone.');
+      } else {
+        toast('The host unlocked the microphone — you can unmute yourself.');
+      }
     });
-    channel.on('broadcast', { event: 'force-camera-off' }, () => {
+    channel.on('broadcast', { event: 'force-camera-off' }, ({ payload }) => {
       if (isHost) return;
-      if (mode === 'video' && camOn) { setCamEnabled(false); toast('The host turned off everyone\u2019s camera.'); }
+      camLocked = !!payload.lock;
+      updateLockedButtonUI('#meet-cam-btn', camLocked);
+      if (camLocked) {
+        if (mode === 'video' && camOn) setCamEnabled(false);
+        toast('The host turned off everyone\u2019s camera and locked it.');
+      } else {
+        toast('The host unlocked cameras — you can turn yours back on.');
+      }
     });
 
     // Host ended the meeting — everyone else is kicked back to the lobby.
@@ -770,17 +788,19 @@ window.Meet = (function () {
       if (entry.ignoreOffer) return;
 
       try {
-        if (offerCollision) {
-          await Promise.all([
-            pc.setLocalDescription({ type: 'rollback' }),
-            pc.setRemoteDescription(desc)
-          ]);
-        } else {
-          await pc.setRemoteDescription(desc);
-        }
+        // A single setRemoteDescription() call is all that's needed here —
+        // per spec, receiving a remote offer while in "have-local-offer"
+        // performs an IMPLICIT rollback automatically. The previous code
+        // instead fired an explicit rollback concurrently alongside this
+        // call (racing against this same peer's onnegotiationneeded
+        // handler, which was independently awaiting its own
+        // setLocalDescription() at the same moment). That race is what
+        // caused connections to succeed for some pairs and silently corrupt
+        // for others — this matches the standard, browser-tested "perfect
+        // negotiation" pattern instead of a custom (and broken) variant.
+        await pc.setRemoteDescription(desc);
         if (desc.type === 'offer') {
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
+          await pc.setLocalDescription();
           sendSignal(fromId, 'answer', pc.localDescription);
         }
       } catch (e) { console.error('Meet signal error', e); }
@@ -1055,8 +1075,17 @@ window.Meet = (function () {
   function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
 
   /* ── Controls ──────────────────────────────────────── */
+  function updateLockedButtonUI(selector, locked) {
+    const btn = $(selector);
+    if (!btn) return;
+    btn.classList.toggle('locked', locked);
+    btn.disabled = locked;
+    btn.title = locked ? 'Locked by the host' : (selector === '#meet-mic-btn' ? 'Mute microphone' : 'Turn off camera');
+  }
+
   function setMicEnabled(on) {
     if (!localStream) return;
+    if (on && micLocked) { toast('The host has muted the microphone for everyone.'); return; }
     micOn = on;
     localStream.getAudioTracks().forEach(t => t.enabled = micOn);
     const btn = $('#meet-mic-btn');
@@ -1067,6 +1096,7 @@ window.Meet = (function () {
 
   function setCamEnabled(on) {
     if (mode !== 'video') return;
+    if (on && camLocked) { toast('The host has turned off cameras for everyone.'); return; }
     camOn = on;
     if (localStream) localStream.getVideoTracks().forEach(t => t.enabled = camOn);
     const btn = $('#meet-cam-btn');
@@ -1076,16 +1106,31 @@ window.Meet = (function () {
   }
   function toggleCam() { setCamEnabled(!camOn); }
 
-  /* ── Host bulk controls (one-shot force, not persistent) ──── */
+  /* ── Host bulk controls (persistent lock: participants can't turn
+     their mic/camera back on until the host explicitly unlocks it) ── */
   function hostMuteAll() {
     if (!isHost || !channel) return;
-    channel.send({ type: 'broadcast', event: 'force-mute', payload: {} });
-    toast('Muted everyone.');
+    hostMicLocked = !hostMicLocked;
+    channel.send({ type: 'broadcast', event: 'force-mute', payload: { lock: hostMicLocked } });
+    const btn = $('#meet-mute-all-btn');
+    if (btn) {
+      btn.classList.toggle('active-toggle', hostMicLocked);
+      const label = btn.querySelector('.meet-host-action-label');
+      if (label) label.textContent = hostMicLocked ? 'Unmute all' : 'Mute all';
+    }
+    toast(hostMicLocked ? 'Muted everyone and locked the microphone.' : 'Microphone unlocked for everyone.');
   }
   function hostCamerasOff() {
     if (!isHost || !channel) return;
-    channel.send({ type: 'broadcast', event: 'force-camera-off', payload: {} });
-    toast('Turned off everyone\u2019s camera.');
+    hostCamLocked = !hostCamLocked;
+    channel.send({ type: 'broadcast', event: 'force-camera-off', payload: { lock: hostCamLocked } });
+    const btn = $('#meet-cameras-off-btn');
+    if (btn) {
+      btn.classList.toggle('active-toggle', hostCamLocked);
+      const label = btn.querySelector('.meet-host-action-label');
+      if (label) label.textContent = hostCamLocked ? 'Allow cameras' : 'Cameras off';
+    }
+    toast(hostCamLocked ? 'Turned off everyone\u2019s camera and locked it.' : 'Cameras unlocked for everyone.');
   }
 
   /* ── Host: remove a participant ──────────────────────── */
@@ -1371,6 +1416,12 @@ window.Meet = (function () {
     allowedScreenViewers = null;
     if (blackTrack) { try { blackTrack.stop(); } catch (e) {} blackTrack = null; }
     Object.keys(audioMeters).forEach(stopAudioMeter);
+    micLocked = false;
+    camLocked = false;
+    hostMicLocked = false;
+    hostCamLocked = false;
+    updateLockedButtonUI('#meet-mic-btn', false);
+    updateLockedButtonUI('#meet-cam-btn', false);
     chatOpen = false;
     unreadChat = 0;
     const chatList = $('#meet-chat-messages');
