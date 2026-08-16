@@ -1,8 +1,5 @@
 /* ════════════════════════════════════════════════════════
-   360Meet v3 — sign-in required, optional passcode, prepare
-   room, Zoom-style call chamber, profile-picture avatars,
-   and host-approved screen sharing for non-host participants.
-   Requires: supabaseClient + getGravatarUrl (globals from main.js)
+   360Meet - v3
 ════════════════════════════════════════════════════════ */
 
 window.Meet = (function () {
