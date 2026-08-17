@@ -116,6 +116,7 @@
     @media (max-width: 820px) { .news-header, .control-deck, .top-layout, .insight-bar { grid-template-columns:1fr; } .news-actions { justify-content:flex-start; } .news-shell { padding:16px; border-radius:22px; } .news-hero { min-height:310px; } }
     @media (max-width: 600px) { .news-page { padding-inline:14px; } .news-grid { grid-template-columns:1fr; } .news-grid.compact .news-card { grid-template-columns:112px 1fr; } .news-card-desc { display:none; } }
   </style>
+  <script src="assets/js/octicons.js"></script>
 </head>
 <body>
 
@@ -129,7 +130,7 @@
     <button id="signUpBtn"  class="auth-btn">Sign Up</button>
     <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
   </div>
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+  <button class="sidebar-toggle" id="sidebarToggle"><span data-octicon="three-bars"></span> Menu</button>
 
   <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
 
@@ -198,7 +199,7 @@
           <p id="news-timestamp">Fast, visual, multi-source headlines with smart fallback loading, local caching, search, and a quick briefing that beats opening one single news site.</p>
         </div>
         <div class="news-actions">
-          <button class="utility-btn" id="saveDigestBtn" type="button">☆ Save digest</button>
+          <button class="utility-btn" id="saveDigestBtn" type="button">Save digest</button>
           <button class="refresh-btn" id="refreshBtn" type="button" onclick="loadNews({ force: true })">
             <span class="icon">↻</span> Refresh
           </button>
@@ -207,7 +208,7 @@
 
       <div class="control-deck">
         <div class="news-search">
-          <span class="search-icon">🔍</span>
+          <span class="search-icon"><span data-octicon="search"></span></span>
           <input type="text" id="news-search-input" placeholder="Search loaded headlines, sources, summaries..." oninput="filterNews()" />
         </div>
         <div class="density-toggle" aria-label="News view density">
@@ -218,14 +219,14 @@
 
       <!-- Category pills -->
       <div class="news-cats" aria-label="News categories">
-        <button class="news-cat active" data-primary="https://feeds.bbci.co.uk/news/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" data-label="Top Stories" data-emoji="📰" onclick="switchCat(this)">📰 Top Stories</button>
-        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/technology/rss.xml" data-backup="https://techcrunch.com/feed/" data-label="Tech" data-emoji="💻" onclick="switchCat(this)">💻 Tech</button>
-        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/science_and_environment/rss.xml" data-backup="https://www.nasa.gov/rss/dyn/breaking_news.rss" data-label="Science" data-emoji="🔬" onclick="switchCat(this)">🔬 Science</button>
-        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/business/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/Business.xml" data-label="Business" data-emoji="📈" onclick="switchCat(this)">📈 Business</button>
-        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/Arts.xml" data-label="Entertainment" data-emoji="🎬" onclick="switchCat(this)">🎬 Entertainment</button>
-        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/sport/rss.xml" data-backup="https://www.espn.com/espn/rss/news" data-label="Sports" data-emoji="⚽" onclick="switchCat(this)">⚽ Sports</button>
-        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/world/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/World.xml" data-label="World" data-emoji="🌍" onclick="switchCat(this)">🌍 World</button>
-        <button class="news-cat" data-primary="https://www.theverge.com/rss/index.xml" data-backup="https://www.wired.com/feed/rss" data-label="Future" data-emoji="🚀" onclick="switchCat(this)">🚀 Future</button>
+        <button class="news-cat active" data-primary="https://feeds.bbci.co.uk/news/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" data-label="Top Stories" data-icon="newspaper" onclick="switchCat(this)"><span data-octicon="newspaper"></span> Top Stories</button>
+        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/technology/rss.xml" data-backup="https://techcrunch.com/feed/" data-label="Tech" data-icon="device-desktop" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Tech</button>
+        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/science_and_environment/rss.xml" data-backup="https://www.nasa.gov/rss/dyn/breaking_news.rss" data-label="Science" data-icon="search" onclick="switchCat(this)"><span data-octicon="search"></span> Science</button>
+        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/business/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/Business.xml" data-label="Business" data-icon="graph" onclick="switchCat(this)"><span data-octicon="graph"></span> Business</button>
+        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/Arts.xml" data-label="Entertainment" data-icon="device-desktop" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Entertainment</button>
+        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/sport/rss.xml" data-backup="https://www.espn.com/espn/rss/news" data-label="Sports" data-icon="device-desktop" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Sports</button>
+        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/world/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/World.xml" data-label="World" data-icon="globe" onclick="switchCat(this)"><span data-octicon="globe"></span> World</button>
+        <button class="news-cat" data-primary="https://www.theverge.com/rss/index.xml" data-backup="https://www.wired.com/feed/rss" data-label="Future" data-icon="device-desktop" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Future</button>
       </div>
 
       <div class="insight-bar" id="insightBar">
@@ -238,7 +239,7 @@
       <div class="top-layout">
         <a class="news-hero" id="news-hero" target="_blank" rel="noopener noreferrer"></a>
         <aside class="briefing-panel">
-          <h3>⚡ 360 Briefing</h3>
+          <h3><span data-octicon="zap"></span> 360 Briefing</h3>
           <div class="briefing-list" id="briefingList">
             <div class="news-status"><div class="spinner"></div>Building briefing…</div>
           </div>
@@ -383,13 +384,13 @@
     } catch { return []; }
   }
 
-  function renderHero(article, emoji) {
+  function renderHero(article, icon) {
     const el = document.getElementById("news-hero");
     if (!article) { el.classList.remove("visible"); return; }
     const img = extractImage(article);
     el.href = article.link;
     el.classList.add("visible");
-    el.innerHTML = `${img ? `<img class="news-hero-img" src="${escapeHTML(img)}" alt="" onerror="this.style.display='none'">` : `<div class="news-card-placeholder" style="height:100%;font-size:72px">${emoji}</div>`}
+    el.innerHTML = `${img ? `<img class="news-hero-img" src="${escapeHTML(img)}" alt="" onerror="this.style.display='none'">` : `<div class="news-card-placeholder" style="height:100%;font-size:72px">${window.Octicons.icon(icon, { size: 48 })}</div>`}
       <div class="news-hero-overlay">
         <div class="news-hero-source">${escapeHTML(extractSource(article, currentSource))} • ${timeAgo(article.pubDate)} • ${readTime(article)} read</div>
         <div class="news-hero-title">${escapeHTML(article.title)}</div>
@@ -413,13 +414,13 @@
     document.getElementById("savedState").textContent = localStorage.getItem("newsSavedDigest") ? "Saved locally" : "Not saved";
   }
 
-  function renderCards(list, emoji) {
+  function renderCards(list, icon) {
     const grid = document.getElementById("news-grid");
     grid.classList.toggle("compact", currentDensity === "compact");
     if (!list.length) { grid.innerHTML = `<div class="news-status">No articles found. Try a different category or search.</div>`; return; }
     grid.innerHTML = list.map((a, i) => {
       const img = extractImage(a);
-      const imgEl = img ? `<img class="news-card-img" src="${escapeHTML(img)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=\'news-card-placeholder\'>${emoji}</div>'">` : `<div class="news-card-placeholder">${emoji}</div>`;
+      const imgEl = img ? `<img class="news-card-img" src="${escapeHTML(img)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=\'news-card-placeholder\'>${window.Octicons.icon(icon)}</div>'">` : `<div class="news-card-placeholder">${window.Octicons.icon(icon)}</div>`;
       return `<a class="news-card" href="${escapeHTML(a.link)}" target="_blank" rel="noopener noreferrer" style="animation-delay:${Math.min(i, 12) * 0.035}s">
         ${imgEl}<div class="news-card-body"><div class="news-card-source">${escapeHTML(extractSource(a, currentSource))}</div><div class="news-card-title">${escapeHTML(a.title)}</div>${a.description ? `<div class="news-card-desc">${escapeHTML(a.description)}</div>` : ""}<div class="news-card-footer"><span>${timeAgo(a.pubDate)}</span><span class="read-time">${readTime(a)}</span></div></div>
       </a>`;
@@ -442,37 +443,37 @@
     document.getElementById("news-search-input").value = "";
     btn.classList.add("spinning"); badge.className = ""; label.textContent = "Loading";
     const active = document.querySelector(".news-cat.active");
-    const primary = active?.dataset.primary || "https://feeds.bbci.co.uk/news/rss.xml", backup = active?.dataset.backup || "", emoji = active?.dataset.emoji || "📰", category = active?.dataset.label || "Top Stories";
+    const primary = active?.dataset.primary || "https://feeds.bbci.co.uk/news/rss.xml", backup = active?.dataset.backup || "", icon = active?.dataset.icon || "newspaper", category = active?.dataset.label || "Top Stories";
     let items = await fetchFeed(primary, category, options.force); currentSource = category;
     if (!items.length && backup) { items = await fetchFeed(backup, `${category} backup`, options.force); currentSource = `${category} backup`; }
     btn.classList.remove("spinning");
-    if (!items.length) { grid.innerHTML = `<div class="news-status">❌ Failed to load news. Cached stories were unavailable, too.</div>`; badge.className = "offline"; label.textContent = "Offline"; updateInsights([]); return; }
+    if (!items.length) { grid.innerHTML = `<div class="news-status"><span data-octicon="x-circle"></span> Failed to load news. Cached stories were unavailable, too.</div>`; badge.className = "offline"; label.textContent = "Offline"; updateInsights([]); return; }
     allArticles = items.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0)).slice(0, 34);
     badge.className = ""; label.textContent = currentSource;
     ts.textContent = `Updated ${new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })} • ${category} • ${allArticles.length} stories`;
-    renderHero(allArticles[0], emoji); renderBriefing(allArticles); renderCards(allArticles.slice(1), emoji); updateInsights(allArticles);
+    renderHero(allArticles[0], icon); renderBriefing(allArticles); renderCards(allArticles.slice(1), icon); updateInsights(allArticles);
   }
 
   function filterNews() {
     const q = document.getElementById("news-search-input").value.toLowerCase().trim();
-    const emoji = document.querySelector(".news-cat.active")?.dataset.emoji || "📰";
-    if (!q) { renderHero(allArticles[0], emoji); renderBriefing(allArticles); renderCards(allArticles.slice(1), emoji); updateInsights(allArticles); return; }
+    const icon = document.querySelector(".news-cat.active")?.dataset.icon || "newspaper";
+    if (!q) { renderHero(allArticles[0], icon); renderBriefing(allArticles); renderCards(allArticles.slice(1), icon); updateInsights(allArticles); return; }
     document.getElementById("news-hero").classList.remove("visible");
     const filtered = allArticles.filter(a => [a.title, a.description, extractSource(a, currentSource)].join(" ").toLowerCase().includes(q));
-    renderBriefing(filtered); renderCards(filtered, emoji); updateInsights(filtered);
+    renderBriefing(filtered); renderCards(filtered, icon); updateInsights(filtered);
   }
 
   function switchCat(btn) { document.querySelectorAll(".news-cat").forEach(b => b.classList.remove("active")); btn.classList.add("active"); loadNews(); }
 
   document.querySelectorAll(".density-toggle button").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.density === currentDensity);
-    btn.addEventListener("click", () => { currentDensity = btn.dataset.density; localStorage.setItem("newsDensity", currentDensity); document.querySelectorAll(".density-toggle button").forEach(b => b.classList.toggle("active", b === btn)); renderCards(allArticles.slice(1), document.querySelector(".news-cat.active")?.dataset.emoji || "📰"); });
+    btn.addEventListener("click", () => { currentDensity = btn.dataset.density; localStorage.setItem("newsDensity", currentDensity); document.querySelectorAll(".density-toggle button").forEach(b => b.classList.toggle("active", b === btn)); renderCards(allArticles.slice(1), document.querySelector(".news-cat.active")?.dataset.icon || "newspaper"); });
   });
 
   document.getElementById("saveDigestBtn").addEventListener("click", () => {
     const digest = allArticles.slice(0, 8).map(a => ({ title: a.title, link: a.link, source: extractSource(a, currentSource), when: timeAgo(a.pubDate) }));
     localStorage.setItem("newsSavedDigest", JSON.stringify({ savedAt: new Date().toISOString(), digest }));
-    updateInsights(allArticles); showToast("Digest saved on this device ✨");
+    updateInsights(allArticles); showToast("Digest saved on this device");
   });
 
   setInterval(loadNews, 5 * 60 * 1000);

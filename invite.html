@@ -28,10 +28,11 @@
     .inv-ch{display:flex;align-items:center;gap:6px;color:var(--dc-muted);padding:3px 0;}
     .inv-rules{text-align:left;background:var(--dc-input-bg);border-radius:10px;padding:12px 14px;margin:16px 0;font-size:13px;color:var(--dc-text);white-space:pre-wrap;max-height:160px;overflow-y:auto;}
   </style>
+  <script src="assets/js/octicons.js"></script>
 </head>
 <body>
 <div class="inv-card" id="inv-card">
-  <div class="inv-spinner">⏳</div>
+  <div class="inv-spinner"><span data-octicon="hourglass"></span></div>
 </div>
 <script>
 const SB_URL = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
@@ -44,17 +45,17 @@ async function init() {
   const code = pathMatch?.[1] || new URLSearchParams(location.search).get('invite') || new URLSearchParams(location.search).get('code');
   const card = document.getElementById('inv-card');
 
-  if (!code) { card.innerHTML = '<div class="inv-icon">❌</div><div class="inv-server-name">Invalid Link</div><div class="inv-desc">This invite link is invalid.</div>'; return; }
+  if (!code) { card.innerHTML = '<div class="inv-icon"><span data-octicon="x-circle"></span></div><div class="inv-server-name">Invalid Link</div><div class="inv-desc">This invite link is invalid.</div>'; return; }
 
   // Load invite
   const { data: inv, error } = await sb.from('server_invites').select('*').eq('code', code).maybeSingle();
-  if (error || !inv) { card.innerHTML = '<div class="inv-icon">💀</div><div class="inv-server-name">Unknown Invite</div><div class="inv-desc">This invite link doesn\'t exist or has expired.</div>'; return; }
-  if (inv.used && !inv.multi_use) { card.innerHTML = '<div class="inv-icon">⏰</div><div class="inv-server-name">Invite Used</div><div class="inv-desc">This invite link has already been used.</div>'; return; }
-  if (inv.expires_at && new Date(inv.expires_at) < new Date()) { card.innerHTML = '<div class="inv-icon">⏰</div><div class="inv-server-name">Invite Expired</div><div class="inv-desc">This invite link has expired.</div>'; return; }
+  if (error || !inv) { card.innerHTML = '<div class="inv-icon"><span data-octicon="x-circle"></span></div><div class="inv-server-name">Unknown Invite</div><div class="inv-desc">This invite link doesn\'t exist or has expired.</div>'; return; }
+  if (inv.used && !inv.multi_use) { card.innerHTML = '<div class="inv-icon"><span data-octicon="hourglass"></span></div><div class="inv-server-name">Invite Used</div><div class="inv-desc">This invite link has already been used.</div>'; return; }
+  if (inv.expires_at && new Date(inv.expires_at) < new Date()) { card.innerHTML = '<div class="inv-icon"><span data-octicon="hourglass"></span></div><div class="inv-server-name">Invite Expired</div><div class="inv-desc">This invite link has expired.</div>'; return; }
 
   // Load server
   const { data: server } = await sb.from('servers').select('*').eq('id', inv.server_id).maybeSingle();
-  if (!server) { card.innerHTML = '<div class="inv-icon">❌</div><div class="inv-server-name">Server Not Found</div>'; return; }
+  if (!server) { card.innerHTML = '<div class="inv-icon"><span data-octicon="x-circle"></span></div><div class="inv-server-name">Server Not Found</div>'; return; }
 
   // Load channels preview
   const { data: channels } = await sb.from('channels').select('name,category').eq('server_id', server.id).eq('is_public', true).order('position').limit(5);
@@ -77,14 +78,14 @@ async function init() {
   const rulesHtml = server.onboarding_rules ? `<div class="inv-rules">${server.onboarding_rules}</div>` : '';
 
   card.innerHTML = `
-    <div class="inv-icon">${server.icon || '🌐'}</div>
+    <div class="inv-icon">${server.icon || '<span data-octicon="globe"></span>'}</div>
     <div class="inv-server-name">${esc(server.name)}</div>
     ${server.description ? `<div class="inv-desc">${esc(server.description)}</div>` : ''}
     <div class="inv-meta">
       <span><b>${memberCount||0}</b> members</span>
-      ${server.verified ? '<span>✅ Verified</span>' : ''}
+      ${server.verified ? '<span><span data-octicon="check-circle"></span> Verified</span>' : ''}
     </div>
-    ${rulesHtml ? `<details><summary style="cursor:pointer;font-size:13px;color:var(--dc-muted);margin-bottom:8px;">📜 Server Rules</summary>${rulesHtml}</details>` : ''}
+    ${rulesHtml ? `<details><summary style="cursor:pointer;font-size:13px;color:var(--dc-muted);margin-bottom:8px;"><span data-octicon="law"></span> Server Rules</summary>${rulesHtml}</details>` : ''}
     ${channelPreview ? `<div class="inv-channels">${channelPreview}${(channels?.length||0)>=5?'<div class="inv-ch" style="opacity:.5">and more…</div>':''}</div>` : ''}
     ${alreadyMember
       ? `<button class="inv-btn" onclick="goToServer('${server.id}','${server.slug||''}')">Already a member — Go to server →</button>`
@@ -107,7 +108,7 @@ async function joinServer(invId, serverId, slug, code) {
   await sb.from('server_invites').update({ used: true, used_by: session.user.id }).eq('id', invId);
   // Add to server
   const { error } = await sb.from('server_members').upsert({ server_id: serverId, user_id: session.user.id }, { onConflict: 'server_id,user_id' });
-  if(error) { document.getElementById('inv-msg').innerHTML=`<div class="inv-error">❌ ${error.message}</div>`; if(btn){btn.disabled=false;btn.textContent='Accept Invite & Join';} return; }
+  if(error) { document.getElementById('inv-msg').innerHTML=`<div class="inv-error"><span data-octicon="x-circle"></span> ${error.message}</div>`; if(btn){btn.disabled=false;btn.textContent='Accept Invite & Join';} return; }
   // Check onboarding
   const { data: server } = await sb.from('servers').select('onboarding_enabled,slug').eq('id', serverId).maybeSingle();
   if(server?.onboarding_enabled) {

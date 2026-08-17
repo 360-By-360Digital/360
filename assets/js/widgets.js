@@ -16,25 +16,29 @@
   function saveWidgets(w) { localStorage.setItem(STORAGE_KEY, JSON.stringify(w)); }
   function uid() { return `w_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`; }
 
+  function octicon(name) {
+    return window.Octicons?.icon ? window.Octicons.icon(name) : '';
+  }
+
   /* ── Widget type registry ──────────────────────────────────── */
   const WIDGET_TYPES = {
-    clock:     { label: 'Clock',     icon: '🕐', color: '#8b5cf6', defaultW: 240, defaultH: 165 },
-    weather:   { label: 'Weather',   icon: '🌤️', color: '#06b6d4', defaultW: 260, defaultH: 190 },
-    note:      { label: 'Note',      icon: '📝', color: '#f59e0b', defaultW: 240, defaultH: 200 },
-    stocks:    { label: 'Stocks',    icon: '📈', color: '#10b981', defaultW: 270, defaultH: 228 },
-    countdown: { label: 'Countdown', icon: '⏳', color: '#f43f5e', defaultW: 280, defaultH: 165 },
-    quote:     { label: 'Quote',     icon: '💬', color: '#3b82f6', defaultW: 270, defaultH: 175 },
-    news:      { label: 'News',      icon: '📰', color: '#f97316', defaultW: 280, defaultH: 280 },
+    clock:     { label: 'Clock',     icon: 'clock', color: '#8b5cf6', defaultW: 240, defaultH: 165 },
+    weather:   { label: 'Weather',   icon: 'cloud', color: '#06b6d4', defaultW: 260, defaultH: 190 },
+    note:      { label: 'Note',      icon: 'pencil', color: '#f59e0b', defaultW: 240, defaultH: 200 },
+    stocks:    { label: 'Stocks',    icon: 'graph', color: '#10b981', defaultW: 270, defaultH: 228 },
+    countdown: { label: 'Countdown', icon: 'hourglass', color: '#f43f5e', defaultW: 280, defaultH: 165 },
+    quote:     { label: 'Quote',     icon: 'comment-discussion', color: '#3b82f6', defaultW: 270, defaultH: 175 },
+    news:      { label: 'News',      icon: 'newspaper', color: '#f97316', defaultW: 280, defaultH: 280 },
     // Legacy alias
-    time:      { label: 'Clock',     icon: '🕐', color: '#8b5cf6', defaultW: 240, defaultH: 165 },
+    time:      { label: 'Clock',     icon: 'clock', color: '#8b5cf6', defaultW: 240, defaultH: 165 },
   };
 
   /* ── Weather helpers ───────────────────────────────────────── */
   const WMO_ICONS = {
-    0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',
-    51:'🌦️',53:'🌧️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',
-    71:'❄️',73:'❄️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',
-    95:'⛈️',96:'⛈️',99:'⛈️'
+    0:'sun',1:'sun',2:'cloud',3:'cloud',45:'cloud',48:'cloud',
+    51:'cloud',53:'cloud',55:'cloud',61:'cloud',63:'cloud',65:'cloud',
+    71:'cloud',73:'cloud',75:'cloud',80:'cloud',81:'cloud',82:'alert',
+    95:'alert',96:'alert',99:'alert'
   };
   const WMO_DESC = {
     0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
@@ -55,7 +59,7 @@
     return {
       temp: Math.round(cur.temperature_2m),
       unit,
-      icon: WMO_ICONS[code] || '🌡️',
+      icon: WMO_ICONS[code] || 'meter',
       desc: WMO_DESC[code]  || 'Unknown',
       city: g.address?.city || g.address?.town || g.address?.village || 'Your location',
       wind: Math.round(cur.windspeed_10m),
@@ -137,9 +141,9 @@
       const header = document.createElement('div');
       header.className = 'home-widget-header';
       header.innerHTML = `
-        <span class="home-widget-icon">${def.icon}</span>
+        <span class="home-widget-icon">${octicon(def.icon)}</span>
         <span class="home-widget-title">${w.title || def.label}</span>
-        <button class="home-widget-close" title="Remove widget">✕</button>
+        <button class="home-widget-close" title="Remove widget">${octicon('x-circle')}</button>
       `;
 
       /* Body */
@@ -210,7 +214,7 @@
       const d   = tz ? new Date(now.toLocaleString('en-US', { timeZone: tz })) : now;
       dateEl.textContent  = `${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
       const h   = d.getHours();
-      greetEl.textContent = h < 12 ? 'Good morning ☀️' : h < 17 ? 'Good afternoon 🌤️' : h < 21 ? 'Good evening 🌆' : 'Good night 🌙';
+      greetEl.textContent = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 21 ? 'Good evening' : 'Good night';
     }
     tick();
     const iv = setInterval(tick, 1000);
@@ -221,7 +225,7 @@
 
   /* ── Weather ───────────────────────────────────────────────── */
   function initWeather(body, w) {
-    body.innerHTML = `<div class="wg-weather-loading">📍 Fetching weather…</div>`;
+    body.innerHTML = `<div class="wg-weather-loading">${octicon('location')} Fetching weather…</div>`;
     const unit = w.unit || localStorage.getItem('tempUnit') || 'C';
     if (!navigator.geolocation) {
       body.innerHTML = `<div class="wg-weather-err">Geolocation unavailable</div>`;
@@ -232,14 +236,14 @@
         const d = await fetchWeather(pos.coords.latitude, pos.coords.longitude, unit);
         body.innerHTML = `
           <div class="wg-weather-main">
-            <span class="wg-weather-icon">${d.icon}</span>
+            <span class="wg-weather-icon">${octicon(d.icon)}</span>
             <div>
               <div class="wg-weather-temp">${d.temp}°${d.unit}</div>
               <div class="wg-weather-desc">${d.desc}</div>
             </div>
           </div>
-          <div class="wg-weather-loc">📍 ${d.city}</div>
-          <div class="wg-weather-extra">💧 ${d.humidity}%&nbsp;&nbsp;💨 ${d.wind} mph</div>
+          <div class="wg-weather-loc">${octicon('location')} ${d.city}</div>
+          <div class="wg-weather-extra">Humidity ${d.humidity}%&nbsp;&nbsp;Wind ${d.wind} mph</div>
         `;
       } catch { body.innerHTML = `<div class="wg-weather-err">Weather unavailable</div>`; }
     }, () => { body.innerHTML = `<div class="wg-weather-err">Location denied</div>`; });
@@ -309,7 +313,7 @@
     function tick() {
       const diff = new Date(w.targetDate) - new Date();
       if (diff <= 0) {
-        body.querySelector('.wg-cd-display').innerHTML = `<div class="wg-cd-done">🎉 It's here!</div>`;
+        body.querySelector('.wg-cd-display').innerHTML = `<div class="wg-cd-done">${octicon('check-circle')} It's here!</div>`;
         return;
       }
       const d = Math.floor(diff / 86400000);
@@ -345,7 +349,7 @@
 
   /* ── News ──────────────────────────────────────────────────── */
   async function initNews(body) {
-    body.innerHTML = `<div class="wg-news-loading">📰 Loading headlines…</div>`;
+    body.innerHTML = `<div class="wg-news-loading">${octicon('newspaper')} Loading headlines…</div>`;
     try {
       const items = await fetchNews();
       body.innerHTML = items.map(item => `
@@ -490,7 +494,7 @@
         updateFields('clock');
 
         refresh();
-        showToast('✓ Widget added — drag it around on the homepage!');
+        showToast('Widget added — drag it around on the homepage!');
       });
     }
 
@@ -508,7 +512,7 @@
             <div class="wf-row-name">${w.title || def.label}</div>
             <div class="wf-row-meta">${def.label} · ${w.width}×${w.height}px</div>
           </div>
-          <button class="wf-del-btn" data-id="${w.id}" title="Delete widget">🗑️</button>
+          <button class="wf-del-btn" data-id="${w.id}" title="Delete widget">${octicon('trash')}</button>
         </div>`;
       }).join('');
 

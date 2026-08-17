@@ -435,6 +435,7 @@
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
+  <script src="assets/js/octicons.js"></script>
 </head>
 <body>
 
@@ -443,7 +444,7 @@
   <div class="cursor-crosshair"></div>
   <div class="cursor-blob"></div>
 
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+  <button class="sidebar-toggle" id="sidebarToggle"><span data-octicon="three-bars"></span> Menu</button>
 
   <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
 
@@ -501,7 +502,7 @@
   </div>
 
   <div class="stocks-page">
-    <h2>📈 Stocks & Crypto</h2>
+    <h2><span data-octicon="graph"></span> Stocks & Crypto</h2>
 
     <form class="stock-form" id="stockForm">
       <input id="ticker" placeholder="Ticker or crypto (AAPL, BTC, ETH...)" autocomplete="off" autocapitalize="characters" spellcheck="false" />
@@ -662,7 +663,7 @@
       await loadChart(ticker, currentPeriod);
       renderWatchlist();
     } catch (e) {
-      err.textContent = "⚠️ " + e.message;
+      err.innerHTML = `${window.Octicons.icon("alert")} ${e.message}`;
       err.style.display = "block";
     }
   }
@@ -978,7 +979,7 @@
         <div class="wl-ticker">${w.ticker}</div>
         <div class="wl-name">${w.name}</div>
         <div class="wl-price">$${fmtPrice(w.price)}</div>
-        <button class="wl-remove" onclick="event.stopPropagation();removeFromWatchlist('${w.ticker}')">✕</button>
+        <button class="wl-remove" onclick="event.stopPropagation();removeFromWatchlist('${w.ticker}')"><span data-octicon="x-circle"></span></button>
       </div>`).join("");
   }
 
