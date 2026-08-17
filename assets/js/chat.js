@@ -65,8 +65,8 @@ try{PROF=(()=>{
     i:'[i1!|]',k:'[kc]',l:'[l1|]',n:'[n]',o:'[o0]',p:'[p]',r:'[r]',s:'[s5$]',t:'[t7+]',
     u:'[uv]',v:'[vu]',x:'[x]'}[c]||c)).join('[\\s_.\\-*]*');
   const p=w=>new RegExp('(?<![a-z])'+l(w)+'(?![a-z])','gi');
-  return[p('fuck'),p('shit'),p('bitch'),p('cunt'),p('bastard'),/d[i1!][ck]+/gi,
-    /n[i1!][g9][g9][e3]r/gi,/n[i1!][g9][g9][a4]/gi,/f[a4][g9][g9][o0][t7]/gi,
+  return[p('fuck'),p('shit'),p('bitch'),p('cunt'),p('bastard'),/\bd[i1!][ck]+\b/gi,
+    /\bn[i1!][g9]{2}[e3]r\b/gi,/\bn[i1!][g9]{2}[a4]\b/gi,/\bf[a4][g9]{2}[o0][t7]\b/gi,
     /\bputa\b/gi,/\bkurwa\b/gi,/\bmerda\b/gi,/\bcazzo\b/gi];
 })();}catch(e){}
 function filterProfanity(t){if(!t)return t;let o=t;for(const p of PROF){try{o=o.replace(p,m=>'*'.repeat(m.length));}catch(e){}}return o;}
@@ -1482,24 +1482,17 @@ async function correctGrammar(text) {
   if (/^[@#]/.test(text.trim())) return text;
   if (text.trim().split(/\s+/).length < 2) return text;
   try {
-    // LanguageTool public API — free, no key needed
-    const body = new URLSearchParams({ text, language: 'en-US', enabledOnly: 'false' });
-    const res = await fetch('https://api.languagetool.org/v2/check', {
-      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body, signal: AbortSignal.timeout(4000)
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(SB_URL + '/functions/v1/grammar-correct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session?.access_token },
+      body: JSON.stringify({ text }),
+      signal: AbortSignal.timeout(7000),
     });
     const data = await res.json();
-    if (!data.matches?.length) return text;
-    // Apply fixes from end to start (so offsets stay valid)
-    let corrected = text;
-    const fixes = [...data.matches]
-      .filter(m => m.replacements?.length)
-      .sort((a,b) => b.offset - a.offset);
-    for (const m of fixes) {
-      const rep = m.replacements[0].value;
-      corrected = corrected.slice(0, m.offset) + rep + corrected.slice(m.offset + m.length);
-    }
-    if (corrected !== text) showGrammarDiff(text, corrected);
+    const corrected = (data?.corrected || '').trim();
+    if (!corrected || corrected === text) return text;
+    showGrammarDiff(text, corrected);
     return corrected;
   } catch(e) { return text; }
 }
