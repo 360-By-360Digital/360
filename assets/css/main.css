@@ -1667,3 +1667,18 @@ body.dark .app-pin-btn {
   border-color: transparent;
   color: #050816;
 }
+
+/* Image Only Buttons */
+.image-only-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.image-only-button img {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
