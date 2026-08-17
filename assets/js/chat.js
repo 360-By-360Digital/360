@@ -931,22 +931,39 @@ document.getElementById('ctx-edit').onclick=()=>{
 ══════════════════════════════════════════════════════ */
 
 async function editMsg(msgId, currentText, isDm){
-  const newText = prompt('Edit message:', currentText);
-  if(!newText || newText.trim()===currentText.trim()) return;
-  const table = isDm ? 'dm_messages' : 'messages';
-  const{error}=await sb.from(table).update({text:newText.trim(), edited_at:new Date().toISOString()}).eq('id',msgId).eq('user_id',currentUserId);
-  if(error){showToast('❌ '+error.message);return;}
-  // Update DOM immediately
-  const el=document.querySelector(`[data-msg-id="${msgId}"]`);
-  if(el){
-    const t=el.querySelector('.dc-msg-text');
-    if(t) t.innerHTML=renderText(newText.trim());
-    if(!el.querySelector('.dc-msg-edited')){
-      const ed=document.createElement('span');
-      ed.className='dc-msg-edited';ed.textContent='(edited)';
-      (t||el).appendChild(ed);
-    }
-  }
+  // Inline edit — replace message text with a textarea
+  const el = document.querySelector(`[data-msg-id="${msgId}"]`);
+  const textEl = el?.querySelector('.dc-msg-text');
+  if (!el || !textEl) return;
+  // Already editing?
+  if (el.querySelector('.dc-edit-box')) return;
+  const orig = textEl.innerHTML;
+  const box = document.createElement('div');
+  box.className = 'dc-edit-box';
+  box.innerHTML = `<textarea class="dc-edit-textarea">${currentText.replace(/</g,'&lt;')}</textarea><div class="dc-edit-actions"><button class="dc-edit-save">Save</button><button class="dc-edit-cancel">Cancel</button><span class="dc-edit-hint">Enter to save · Esc to cancel</span></div>`;
+  textEl.replaceWith(box);
+  const ta = box.querySelector('.dc-edit-textarea');
+  ta.focus(); ta.selectionStart = ta.selectionEnd = ta.value.length;
+  const save = async () => {
+    const newText = ta.value.trim();
+    if (!newText || newText === currentText.trim()) { cancel(); return; }
+    const table = isDm ? 'dm_messages' : 'messages';
+    const {error} = await sb.from(table).update({text: newText, edited_at: new Date().toISOString()}).eq('id', msgId).eq('user_id', currentUserId);
+    if (error) { showToast('❌ '+error.message); cancel(); return; }
+    const newEl = document.createElement('div');
+    newEl.className = 'dc-msg-text';
+    newEl.innerHTML = renderText(newText);
+    const ed = document.createElement('span'); ed.className='dc-msg-edited'; ed.textContent='(edited)';
+    newEl.appendChild(ed);
+    box.replaceWith(newEl);
+  };
+  const cancel = () => { const restore=document.createElement('div'); restore.className='dc-msg-text'; restore.innerHTML=orig; box.replaceWith(restore); };
+  box.querySelector('.dc-edit-save').onclick = save;
+  box.querySelector('.dc-edit-cancel').onclick = cancel;
+  ta.addEventListener('keydown', e => {
+    if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); save(); }
+    if (e.key==='Escape') cancel();
+  });
 }
 async function deleteMsg(msgId){
   if(!confirm('Delete this message?')) return;
@@ -1417,16 +1434,15 @@ async function sendMessage(){
     // Grammar correct before sending (await, ~300ms, fails silently)
     let finalText = text || '';
     if (finalText.trim().length > 3) finalText = await correctGrammar(finalText);
-    // @all — notify online members via presence
+    // @all — fetch all server members and insert notifications
     if (finalText.includes('@all') && activeRoom.serverId) {
-      const onlineIds = Array.from(document.querySelectorAll('.presence-dot.online'))
-        .map(el => el.dataset.userId).filter(Boolean);
-      if (onlineIds.length) {
-        onlineIds.forEach(uid => {
-          if (uid === currentUserId) return;
-          sb.from('notifications').insert({ user_id: uid, type: 'mention_all', server_id: activeRoom.serverId, channel_id: activeRoom.id||null, from_user: currentUserId }).catch(()=>{});
-        });
-      }
+      sb.from('server_members').select('user_id').eq('server_id', activeRoom.serverId).then(({data:members}) => {
+        if (!members?.length) return;
+        const notifs = members
+          .map(m => m.user_id).filter(uid => uid !== currentUserId)
+          .map(uid => ({ user_id: uid, type: 'mention_all', server_id: activeRoom.serverId, channel_id: activeRoom.id||null, from_user: currentUserId, read: false, created_at: new Date().toISOString() }));
+        if (notifs.length) sb.from('notifications').insert(notifs).catch(()=>{});
+      });
     }
     const payload={user_id:session.user.id,username:p.username||session.user.email,avatar_url:p.avatar_url||null,tag:p.tag||null,role:p.role||'user',text:filterProfanity(applyShortcodes(finalText||'')),file_url:fileUrl};
     if(replyingTo){payload.reply_to_id=replyingTo.id;payload.reply_to_username=replyingTo.username;payload.reply_to_text=(replyingTo.text||'').slice(0,100);replyingTo=null;document.getElementById('dc-reply-bar').classList.add('hidden');}
@@ -1489,12 +1505,13 @@ async function correctGrammar(text) {
 }
 
 function showGrammarDiff(original, corrected) {
-  // Show a tiny toast with undo option
+  document.querySelector('.grammar-toast')?.remove();
   const toast = document.createElement('div');
   toast.className = 'grammar-toast';
-  toast.innerHTML = `<span>✏️ Grammar corrected</span><button onclick="undoGrammar('${encodeURIComponent(original)}',this.parentElement)">Undo</button>`;
+  const enc = encodeURIComponent(original);
+  toast.innerHTML = `<span>✏️ corrected</span><button onclick="undoGrammar('${enc}',this.closest('.grammar-toast'))">undo</button>`;
   document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 5000);
+  setTimeout(() => toast.remove(), 3500);
 }
 window.undoGrammar = function(originalEncoded, toastEl) {
   const original = decodeURIComponent(originalEncoded);
@@ -2016,6 +2033,79 @@ document.getElementById('lightbox-close').onclick=()=>document.getElementById('l
 /* ══════════════════════════════════════════════════════
    PRESENCE
 ══════════════════════════════════════════════════════ */
+async function initGlobalDMWatcher() {
+  if (!currentUserId) return;
+  if (window._dmGlobalChan) return;
+  // Get all DM IDs this user is part of
+  const { data: dms } = await sb.from('direct_messages')
+    .select('id').or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`);
+  if (!dms?.length) return;
+  // Also group DMs
+  const { data: gdms } = await sb.from('group_dms')
+    .select('id').contains('member_ids', [currentUserId]);
+  const allDmIds = [...(dms||[]).map(d=>d.id), ...(gdms||[]).map(d=>d.id)];
+  if (!allDmIds.length) return;
+
+  window._dmGlobalChan = sb.channel('global-dm-watcher:'+currentUserId)
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'dm_messages' }, async ({new: msg}) => {
+      if (!allDmIds.includes(msg.dm_id)) return;
+      if (msg.user_id === currentUserId) return;
+      // Update unread badge
+      const key = 'dm:'+msg.dm_id;
+      if (activeRoom?.id === msg.dm_id) return; // already viewing
+      unreadCounts[key] = (unreadCounts[key]||0)+1;
+      const dmEl = document.querySelector(`[data-dm-id="${msg.dm_id}"]`);
+      if (dmEl) {
+        let b = dmEl.querySelector('.ch-unread-badge');
+        if (!b) { b=document.createElement('span'); b.className='ch-unread-badge'; dmEl.appendChild(b); }
+        b.textContent = unreadCounts[key]>99?'99+':String(unreadCounts[key]);
+      }
+      // DM bubble icon badge (rail)
+      const dmRailBtn = document.getElementById('railDMs') || document.getElementById('dm-rail-btn');
+      if (dmRailBtn) {
+        let pip = dmRailBtn.querySelector('.rail-unread');
+        const total = Object.entries(unreadCounts).filter(([k])=>k.startsWith('dm:')).reduce((a,[,v])=>a+v,0);
+        if (total > 0) {
+          if (!pip) { pip=document.createElement('span'); pip.className='rail-unread'; dmRailBtn.style.position='relative'; dmRailBtn.appendChild(pip); }
+          pip.textContent = total>9?'9+':String(total);
+        } else pip?.remove();
+      }
+      // Pop-up notification like incoming call
+      showDMNotification(msg);
+    })
+    .subscribe();
+}
+
+function showDMNotification(msg) {
+  document.querySelector('.dm-notif-popup')?.remove();
+  const pop = document.createElement('div');
+  pop.className = 'dm-notif-popup';
+  const initials = (msg.username||'?').slice(0,2).toUpperCase();
+  pop.innerHTML = `
+    <div class="dm-notif-avatar">${msg.avatar_url?`<img src="${msg.avatar_url}" alt=""/>`:`<span>${initials}</span>`}</div>
+    <div class="dm-notif-body">
+      <div class="dm-notif-name">${esc(msg.username||'Someone')}</div>
+      <div class="dm-notif-text">${msg.file_url?'📎 Attachment':esc((msg.text||'').slice(0,60))}</div>
+    </div>
+    <button class="dm-notif-close" onclick="this.closest('.dm-notif-popup').remove()">✕</button>`;
+  pop.onclick = e => {
+    if (e.target.classList.contains('dm-notif-close')) return;
+    pop.remove();
+    // Navigate to this DM
+    sb.from('direct_messages').select('*').eq('id', msg.dm_id).maybeSingle().then(({data:dm})=>{
+      if (!dm) return;
+      const otherId = dm.user1_id === currentUserId ? dm.user2_id : dm.user1_id;
+      sb.from('profiles').select('username').eq('id', otherId).maybeSingle().then(({data:p})=>{
+        showingDMs=true; setActiveServer(null); buildSidebar(null);
+        switchRoom({type:'dm',id:dm.id,name:p?.username||'DM',icon:'@',serverId:null,serverName:'Direct Messages',otherId});
+      });
+    });
+  };
+  document.body.appendChild(pop);
+  setTimeout(() => pop.classList.add('show'), 10);
+  setTimeout(() => { pop.classList.remove('show'); setTimeout(()=>pop.remove(),300); }, 5000);
+}
+
 function startPresence(){
   if(!currentUserId) return;
   const chan=sb.channel('presence-global',{config:{presence:{key:currentUserId}}});
@@ -2094,6 +2184,7 @@ function updateUserChip(){
     currentUserId=session?.user?.id||null; window.currentUserId=currentUserId;
     if(currentUserId) currentProfile=await getProfile(currentUserId); window.currentProfile=currentProfile;
     if(currentUserId) window.dispatchEvent(new Event('voice-auth-ready'));
+    if(currentUserId) initGlobalDMWatcher();
     updateUserChip();
     initSocialEnhancements();
     if(currentUserId) await seedUnreadCounts();
@@ -2215,6 +2306,7 @@ async function handleUrlRouting() {
   // Build sidebar first so channels load
   await buildSidebarAndWait(server);
 
+  // Always look up channel from DB — never depend on DOM being ready
   if (channelName) {
     const { data: ch } = await sb.from('channels').select('*')
       .eq('server_id', server.id)
@@ -2225,21 +2317,18 @@ async function handleUrlRouting() {
       return true;
     }
   }
-  // No specific channel — load first public channel in server
+  // Fall back to first public channel
   const { data: firstCh } = await sb.from('channels').select('*')
     .eq('server_id', server.id).eq('is_public', true).order('position').limit(1).maybeSingle();
   if (firstCh) {
     switchRoom({ type:'channel', id:firstCh.id, name:firstCh.name, icon:'#', serverName:server.name, serverId:server.id, serverSlug:server.slug||null });
+    return true;
   }
   return true;
 }
 
 async function buildSidebarAndWait(server) {
-  return new Promise(resolve => {
-    buildSidebar(server);
-    // Give sidebar a tick to render
-    setTimeout(resolve, 50);
-  });
+  await buildSidebar(server); // buildSidebar is async — await it properly
 }
 
 // Update URL on every room switch — synchronous, no async DB call
@@ -2248,7 +2337,6 @@ function updateUrlForRoom(room) {
   let url = '/chat';
   let title = '360 Chat';
   if (room.serverId) {
-    // Use slug if we have it, fall back to server id
     const slug = room.serverSlug || room.serverId;
     url = `/chat?s=${encodeURIComponent(slug)}`;
     if (room.type === 'channel' && room.name) {
@@ -2257,12 +2345,15 @@ function updateUrlForRoom(room) {
     } else {
       title = room.serverName || '360 Chat';
     }
-    // Eagerly fetch slug if we only have id, update URL silently
+    // If we only have serverId (no slug), fetch slug and update URL
     if (!room.serverSlug && room.serverId) {
       sb.from('servers').select('slug').eq('id', room.serverId).maybeSingle().then(({ data: s }) => {
-        if (s?.slug && location.search.includes(room.serverId)) {
-          const newUrl = location.href.replace(room.serverId, s.slug);
+        if (s?.slug) {
+          let newUrl = `/chat?s=${encodeURIComponent(s.slug)}`;
+          if (room.type === 'channel' && room.name) newUrl += `&c=${encodeURIComponent(room.name)}`;
           history.replaceState(null, '', newUrl);
+          // Cache slug on room object for future calls
+          room.serverSlug = s.slug;
         }
       });
     }
@@ -2740,28 +2831,53 @@ const GIPHY_KEY = 'yYDIeMP7wEWRDqJuToCyfMTmOqSQkZRj';
 const TENOR_KEY = 'AIzaSyAyimkuYQYF_FXVALexPzHeGVXH_HN3tmc'; // fallback
 let gifPickerOpen = false;
 
-window.toggleGifPicker = function toggleGifPicker() {
+function ensureGifPicker() {
   let picker = document.getElementById('gif-picker');
-  if (!picker) {
-    picker = document.createElement('div');
-    picker.id = 'gif-picker';
-    picker.className = 'gif-picker';
-    picker.innerHTML = `
-      <div class="gif-header">
-        <input class="gif-search" id="gif-search-input" placeholder="Search GIFs…" oninput="searchGifs(this.value)"/>
-        <button class="gif-close" onclick="toggleGifPicker()">✕</button>
-      </div>
-      <div class="gif-grid" id="gif-grid">
-        <div class="gif-loading">Loading trending GIFs…</div>
-      </div>
-      <div class="gif-powered">Powered by Tenor</div>
-    `;
-    document.querySelector('.dc-input-box')?.appendChild(picker);
-    loadTrendingGifs();
-  }
+  if (picker) return picker;
+  picker = document.createElement('div');
+  picker.id = 'gif-picker';
+  picker.className = 'gif-picker hidden';
+  picker.innerHTML = `
+    <div class="gif-header">
+      <input class="gif-search" id="gif-search-input" placeholder="Search GIFs…"/>
+      <button class="gif-close" id="gif-close-btn" title="Close">✕</button>
+    </div>
+    <div class="gif-grid" id="gif-grid"><div class="gif-loading">Loading…</div></div>
+    <div class="gif-powered">GIFs by GIPHY</div>`;
+  document.body.appendChild(picker);
+  document.getElementById('gif-search-input').addEventListener('input', e => {
+    clearTimeout(window._gifSearchTimer);
+    window._gifSearchTimer = setTimeout(() => searchGifsGiphy(e.target.value), 350);
+  });
+  document.getElementById('gif-close-btn').addEventListener('click', () => closeGifPicker());
+  // Close on outside click
+  document.addEventListener('mousedown', e => {
+    if (gifPickerOpen && !picker.contains(e.target) && e.target.id !== 'gif-btn') closeGifPicker();
+  });
+  loadTrendingGifs();
+  return picker;
+}
+function closeGifPicker() {
+  gifPickerOpen = false;
+  document.getElementById('gif-picker')?.classList.add('hidden');
+}
+window.toggleGifPicker = function toggleGifPicker() {
+  const picker = ensureGifPicker();
   gifPickerOpen = !gifPickerOpen;
-  picker.classList.toggle('hidden', !gifPickerOpen);
-  if (gifPickerOpen) document.getElementById('gif-search-input')?.focus();
+  if (gifPickerOpen) {
+    // Position above the GIF button
+    const btn = document.getElementById('gif-btn');
+    if (btn) {
+      const r = btn.getBoundingClientRect();
+      picker.style.position = 'fixed';
+      picker.style.bottom = (window.innerHeight - r.top + 8) + 'px';
+      picker.style.left = Math.max(8, r.left - 140) + 'px';
+    }
+    picker.classList.remove('hidden');
+    document.getElementById('gif-search-input')?.focus();
+  } else {
+    picker.classList.add('hidden');
+  }
 }
 
 let gifSearchTimer = null;
@@ -2883,7 +2999,8 @@ window.openSearchPanel = function openSearchPanel() {
     </div>
     <div id="search-results" class="search-results"><div class="search-hint">Type to search…</div></div>
   `;
-  document.querySelector('.dc-main')?.appendChild(searchPanel);
+  document.body.appendChild(searchPanel);
+  searchPanel.style.cssText = 'position:fixed;top:0;right:0;width:320px;height:100%;z-index:700;';
 }
 
 window.runMessageSearch = runMessageSearch;
