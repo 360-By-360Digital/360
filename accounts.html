@@ -261,6 +261,7 @@
       .ac-card { padding: 28px 20px 24px; }
     }
   </style>
+  <script src="assets/js/octicons.js"></script>
 </head>
 <body>
 
@@ -276,7 +277,7 @@
   </div>
 
   <button id="installBtn" class="install-banner" style="display:none;">Install 360</button>
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+  <button class="sidebar-toggle" id="sidebarToggle"><span data-octicon="three-bars"></span> Menu</button>
 
   <aside class="sidebar" id="sidebar"><span id="sidebar-slot" data-extra="[{&quot;label&quot;: &quot;Accounts&quot;, &quot;href&quot;: &quot;/accounts&quot;}]"></span></aside>
 
@@ -343,8 +344,8 @@
     </div>
 
     <h3 style="margin-top:25px;">Legal</h3>
-    <a href="privacypolicy.html" class="legal-link">🔒 Privacy Policy</a>
-    <a href="tos.html" class="legal-link">📜 Terms of Service</a>
+    <a href="privacypolicy.html" class="legal-link"><span data-octicon="lock"></span> Privacy Policy</a>
+    <a href="tos.html" class="legal-link"><span data-octicon="law"></span> Terms of Service</a>
 
     <h3 style="margin-top:25px;">About</h3>
     <details class="about-dropdown">
@@ -536,7 +537,7 @@
             Continue with Google
           </button>
           <button class="ac-oauth-btn" id="siSpotify">
-            🎧 Continue with Spotify
+            <span data-octicon="device-desktop"></span> Continue with Spotify
           </button>
         </div>
         <p class="ac-switch">Don't have an account? <a href="/accounts.html?signup">Sign Up</a></p>
@@ -633,7 +634,7 @@
             Continue with Google
           </button>
           <button class="ac-oauth-btn" id="suSpotify">
-            🎧 Continue with Spotify
+            <span data-octicon="device-desktop"></span> Continue with Spotify
           </button>
         </div>
         <p class="ac-switch">Already have an account? <a href="/accounts.html?signin">Sign In</a></p>
@@ -657,7 +658,7 @@
         usernameTimer = setTimeout(async () => {
           const { data } = await sb.from("profiles").select("id").eq("username",v).maybeSingle();
           if (data) { setHint(userHint,"Username already taken.","err"); suUser.classList.add("invalid"); }
-          else { setHint(userHint,"✓ Username available","ok"); suUser.classList.remove("invalid"); usernameOk=true; }
+          else { setHint(userHint,'<span data-octicon="check-circle"></span> Username available',"ok"); suUser.classList.remove("invalid"); usernameOk=true; }
         }, 500);
       });
       suPass.addEventListener("input", () => {
@@ -670,7 +671,7 @@
       suConfirm.addEventListener("input", validateConfirm);
       function validateConfirm() {
         if (!suConfirm.value) { setHint(confirmHint,"",""); suConfirm.classList.remove("invalid"); return; }
-        if (suConfirm.value===suPass.value) { setHint(confirmHint,"✓ Passwords match","ok"); suConfirm.classList.remove("invalid"); }
+        if (suConfirm.value===suPass.value) { setHint(confirmHint,'<span data-octicon="check-circle"></span> Passwords match',"ok"); suConfirm.classList.remove("invalid"); }
         else { setHint(confirmHint,"Passwords do not match.","err"); suConfirm.classList.add("invalid"); }
       }
       document.getElementById("suEmail").addEventListener("keydown", e => { if(e.key==="Enter") suUser.focus(); });
@@ -704,7 +705,7 @@
       const userId=signUpData?.user?.id;
       if (userId) await sb.from("profiles").upsert({ id:userId, username, email }, { onConflict:"id" });
       setMsg(msg,"Account created! Check your email to confirm, then sign in.","ok");
-      btn.textContent="Check your email ✓";
+      btn.textContent="Check your email";
     }
 
     /* ════════════════

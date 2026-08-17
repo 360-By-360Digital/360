@@ -5,6 +5,7 @@
    ============================================================ */
 
 (function () {
+  function octicon(name) { return window.Octicons?.icon ? window.Octicons.icon(name) : ''; }
   const VYNTR_KEY = "vyntr_dVZQQztzpWQZiKpsuwpCdStcNiyTnSfooWrKPUyFFDqGvSkETpjtpyuuzBJzwQSf";
   const VYNTR_URL = "https://vyntr.com/api/v1/search";
   let cseWorking = true;
@@ -84,7 +85,7 @@
       shell ? shell.after(container) : document.body.appendChild(container);
     }
 
-    container.innerHTML = `<div class="vyntr-loading">🔍 Searching with Vyntr...</div>`;
+    container.innerHTML = `<div class="vyntr-loading">${octicon('search')} Searching with Vyntr...</div>`;
 
     try {
       const res  = await fetch(`${VYNTR_URL}?q=${encodeURIComponent(query)}`, {
@@ -94,7 +95,7 @@
       const data = await res.json();
       renderVyntr(container, query, data);
     } catch (err) {
-      container.innerHTML = `<div class="vyntr-loading">❌ Search unavailable right now. Try again later.</div>`;
+      container.innerHTML = `<div class="vyntr-loading">${octicon('x-circle')} Search unavailable right now. Try again later.</div>`;
     }
   }
 
@@ -107,7 +108,7 @@
 
     let html = `
       <div class="vyntr-header">
-        <span class="vyntr-badge">⚡ Vyntr Search</span>
+        <span class="vyntr-badge">${octicon('zap')} Vyntr Search</span>
         Results for <strong>${query}</strong>
       </div>`;
 

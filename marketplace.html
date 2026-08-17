@@ -47,10 +47,11 @@
     .mp-modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--dc-muted);}
     select.mp-server-sel{padding:8px 12px;border-radius:8px;border:1.5px solid var(--dc-sep);background:var(--dc-input-bg);color:var(--dc-text);font-size:13px;margin-bottom:12px;width:100%;}
   </style>
+  <script src="assets/js/octicons.js"></script>
 </head>
 <body>
 <div class="mp-header">
-  <span style="font-size:28px">🤖</span>
+  <span style="font-size:28px"><span data-octicon="hubot"></span></span>
   <h1>Bot Marketplace</h1>
   <input class="mp-search" id="mp-search" placeholder="Search bots…" oninput="filterBots()"/>
   <a href="/chat">← Back to Chat</a>
@@ -104,20 +105,20 @@ function render(){
 }
 
 function botCard(b){
-  const av=b.avatar_url?`<img src="${b.avatar_url}" alt=""/>`:b.handle?.slice(0,2).toUpperCase()||'🤖';
+  const av=b.avatar_url?`<img src="${b.avatar_url}" alt=""/>`:b.handle?.slice(0,2).toUpperCase()||'<span data-octicon="hubot"></span>';
   const avWrap=b.avatar_url?`<div class="mp-bot-avatar"><img src="${esc(b.avatar_url)}"/></div>`:`<div class="mp-bot-avatar">${av}</div>`;
   return `<div class="mp-bot-card" onclick="openBot('${b.id}')">
     <div class="mp-bot-top">
       ${avWrap}
       <div>
-        <div class="mp-bot-name">${esc(b.name)}${b.verified?' <span class="mp-bot-verified">✓</span>':''}</div>
+        <div class="mp-bot-name">${esc(b.name)}${b.verified?' <span class="mp-bot-verified"><span data-octicon="check-circle"></span></span>':''}</div>
         <div class="mp-bot-handle">@${esc(b.handle||b.id)}</div>
       </div>
     </div>
     <div class="mp-bot-desc">${esc(b.description||'')}</div>
     <div class="mp-bot-footer">
       <span class="mp-bot-cat">${esc(b.category||'General')}</span>
-      <span class="mp-bot-installs">⬇️ ${b.install_count||0}</span>
+      <span class="mp-bot-installs">${window.Octicons.icon("graph")} ${b.install_count||0}</span>
     </div>
   </div>`;
 }
@@ -132,16 +133,16 @@ async function openBot(botId){
   const serverOptions=myServers.map(s=>`<option value="${s.id}">${esc(s.icon||'')} ${esc(s.name)}</option>`).join('');
   const isInstalled=sid=>myInstalls.has(botId+'_'+sid);
   inner.innerHTML=`
-    <button class="mp-modal-close" onclick="document.getElementById('mp-modal').classList.add('hidden')">✕</button>
+    <button class="mp-modal-close" onclick="document.getElementById('mp-modal').classList.add('hidden')"><span data-octicon="x-circle"></span></button>
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
       ${bot.avatar_url?`<img src="${esc(bot.avatar_url)}" style="width:56px;height:56px;border-radius:14px;"/>` : `<div style="width:56px;height:56px;border-radius:14px;background:var(--dc-input-bg);display:flex;align-items:center;justify-content:center;font-size:24px;">${(bot.handle||'?').slice(0,2).toUpperCase()}</div>`}
       <div>
-        <h2>${esc(bot.name)}${bot.verified?' ✅':''}</h2>
+        <h2>${esc(bot.name)}${bot.verified?' <span data-octicon="check-circle"></span>':''}</h2>
         <div style="font-size:13px;color:var(--dc-muted);">@${esc(bot.handle||'')} · ${esc(bot.category||'General')} · ${bot.install_count||0} installs</div>
       </div>
     </div>
     <p>${esc(bot.description||'No description.')}</p>
-    ${bot.website_url?`<p><a href="${esc(bot.website_url)}" target="_blank" style="color:var(--a);">🔗 Website</a></p>`:''}
+    ${bot.website_url?`<p><a href="${esc(bot.website_url)}" target="_blank" style="color:var(--a);"><span data-octicon="link"></span> Website</a></p>`:''}
     ${session&&myServers.length?`
       <div style="margin-top:8px;">
         <label style="font-size:12px;font-weight:700;color:var(--dc-muted);text-transform:uppercase;letter-spacing:.05em;">Add to server</label>

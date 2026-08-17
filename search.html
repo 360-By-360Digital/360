@@ -1132,13 +1132,14 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
       .results-tab { padding: 6px 12px; font-size: 12px; }
     }
   </style>
+  <script src="assets/js/octicons.js"></script>
 </head>
 <body>
   <div class="cursor-dot"></div>
   <div class="cursor-trail"></div>
   <div class="cursor-crosshair"></div>
   <div class="cursor-blob"></div>
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+  <button class="sidebar-toggle" id="sidebarToggle"><span data-octicon="three-bars"></span> Menu</button>
   <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
   <div class="overlay" id="overlay"></div>
   <div class="settings-panel" id="settingsPanel">
@@ -1184,8 +1185,8 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
       <button id="bgResetBtn" class="settings-btn">Reset</button>
     </div>
     <h3 style="margin-top:25px;">Legal</h3>
-    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
-    <a href="/tos" class="legal-link">📜 Terms of Service</a>
+    <a href="/privacypolicy" class="legal-link"><span data-octicon="lock"></span> Privacy Policy</a>
+    <a href="/tos" class="legal-link"><span data-octicon="law"></span> Terms of Service</a>
     <h3 style="margin-top:25px;">About</h3>
     <details class="about-dropdown">
       <summary>ℹ️ What is 360?</summary>
@@ -1329,7 +1330,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
       <!-- Results area -->
       <div id="custom-results-area">
       <div class="state-box" id="empty-state">
-        <div class="big-icon">🔍</div>
+        <div class="big-icon"><span data-octicon="search"></span></div>
 
         <h3>Search anything</h3>
         <p>Type in the bar above and press Search or Enter</p>
@@ -1343,7 +1344,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
 
   <!-- Image lightbox -->
   <div id="img-lightbox">
-    <button class="lb-close" id="lb-close-btn" aria-label="Close">✕</button>
+    <button class="lb-close" id="lb-close-btn" aria-label="Close"><span data-octicon="x-circle"></span></button>
     <div class="lb-box">
       <div class="lb-img-wrap"><img id="lb-img" src="" alt=""/></div>
       <div class="lb-info">
@@ -2193,7 +2194,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
       } else {
         resultsArea.innerHTML = `
           <div class="state-box">
-            <div class="big-icon">⚠️</div>
+            <div class="big-icon"><span data-octicon="alert"></span></div>
             <h3>Web search unavailable</h3>
             <p>Our search widget couldn't load — this is often caused by an ad blocker or content-blocking extension. Try disabling it for this site, or use the News / Shopping / AI tabs.</p>
           </div>`;
@@ -3280,7 +3281,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
         aiPanel.innerHTML = `
           <div class="ai-response-card">
             <div class="ai-response-label">${AI_ICON} AI Answer</div>
-            <div class="ai-response-text" style="color:var(--mut)">📡 You appear to be offline. Please check your internet connection and try again.</div>
+            <div class="ai-response-text" style="color:var(--mut)"><span data-octicon="alert"></span> You appear to be offline. Please check your internet connection and try again.</div>
           </div>`;
         return;
       }
@@ -3348,7 +3349,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
         const isOffline = !navigator.onLine || err.message.includes('Failed to fetch') || err.message.includes('NetworkError');
         card.innerHTML = `
           <div class="ai-response-label">${AI_ICON} AI Answer</div>
-          <div class="ai-response-text" style="color:var(--mut)">${isOffline ? '📡 No internet connection.' : '⚠ ' + escHtml(err.message || 'Something went wrong.')}</div>`;
+          <div class="ai-response-text" style="color:var(--mut)">${isOffline ? '<span data-octicon="alert"></span> No internet connection.' : '<span data-octicon="alert"></span> ' + escHtml(err.message || 'Something went wrong.')}</div>`;
       }
     }
 
@@ -3360,7 +3361,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
       if (!navigator.onLine && state.tab !== 'ai') {
         resultsArea.innerHTML = `
           <div class="state-box">
-            <div class="big-icon">📡</div>
+            <div class="big-icon"><span data-octicon="alert"></span></div>
             <h3>No internet connection</h3>
             <p>Please check your connection and try again.</p>
           </div>`;
@@ -3406,7 +3407,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
         console.error('doSearch failed:', e);
         resultsArea.innerHTML = `
           <div class="state-box">
-            <div class="big-icon">⚠️</div>
+            <div class="big-icon"><span data-octicon="alert"></span></div>
             <h3>Something went wrong</h3>
             <p>That search hit an error on our end. Try again, or try a different tab.</p>
           </div>`;
@@ -3490,7 +3491,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
     window.addEventListener('offline', () => {
       resultsArea.innerHTML = `
         <div class="state-box">
-          <div class="big-icon">📡</div>
+          <div class="big-icon"><span data-octicon="alert"></span></div>
           <h3>You went offline</h3>
           <p>Results may not load until your connection is restored.</p>
         </div>`;
@@ -3510,7 +3511,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
     function showEmptyState() {
       resultsArea.innerHTML = `
         <div class="state-box">
-          <div class="big-icon">🔍</div>
+          <div class="big-icon"><span data-octicon="search"></span></div>
           <h3>Search anything</h3>
           <p>Type in the bar above and press Search or Enter</p>
         </div>`;
@@ -3576,7 +3577,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
         else if (tab === 'shopping') cacheRender('shopping', state.query, 1, renderShoppingResults, [data.shopping || []]);
       } catch(e) {
         if (state.tab !== tab) return;
-        resultsArea.innerHTML = `<div class="state-box"><div class="big-icon">⚠️</div><h3>Failed to load ${tab}</h3><p>${escHtml(String(e.message || e))}</p></div>`;
+        resultsArea.innerHTML = `<div class="state-box"><div class="big-icon"><span data-octicon="alert"></span></div><h3>Failed to load ${tab}</h3><p>${escHtml(String(e.message || e))}</p></div>`;
       }
     }
 
@@ -3702,7 +3703,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
     function renderNoResults() {
       resultsArea.innerHTML = `
         <div class="state-box">
-          <div class="big-icon">🔎</div>
+          <div class="big-icon"><span data-octicon="search"></span></div>
           <h3>No results found</h3>
           <p>Try different keywords or check your spelling</p>
         </div>`;
@@ -3749,7 +3750,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
         if (state.tab !== 'maps') return;
         resultsArea.innerHTML = `
           <div class="state-box">
-            <div class="big-icon">⚠️</div>
+            <div class="big-icon"><span data-octicon="alert"></span></div>
             <h3>Map lookup failed</h3>
             <p>Couldn't reach the map service. Try again in a moment.</p>
           </div>`;

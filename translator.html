@@ -188,6 +188,7 @@
       transform: rotate(180deg);
     }
   </style>
+  <script src="assets/js/octicons.js"></script>
 </head>
 <body>
 
@@ -201,7 +202,7 @@
     <button id="signUpBtn"  class="auth-btn">Sign Up</button>
     <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
   </div>
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+  <button class="sidebar-toggle" id="sidebarToggle"><span data-octicon="three-bars"></span> Menu</button>
 
   <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
 
@@ -261,7 +262,7 @@
   </div>
 
   <div class="translator-page">
-    <h2>🌍 Translator</h2>
+    <h2><span data-octicon="globe"></span> Translator</h2>
     <div class="translator-box">
       <textarea id="translateInput" rows="4" placeholder="Enter text to translate..." autocomplete="off"></textarea>
 
@@ -269,7 +270,7 @@
         <label>From</label>
         <div class="custom-select-wrapper" id="sourceWrapper">
           <div class="custom-select-trigger" id="sourceTrigger">
-            <span id="sourceLabel">🔍 Auto-Detect</span>
+            <span id="sourceLabel"><span data-octicon="search"></span> Auto-Detect</span>
             <span class="arrow">▼</span>
           </div>
           <div class="custom-select-dropdown" id="sourceDropdown">
@@ -283,7 +284,7 @@
         <label>To</label>
         <div class="custom-select-wrapper" id="targetWrapper">
           <div class="custom-select-trigger" id="targetTrigger">
-            <span id="targetLabel">🇪🇸 Spanish</span>
+            <span id="targetLabel"><span data-octicon="globe"></span> Spanish</span>
             <span class="arrow">▼</span>
           </div>
           <div class="custom-select-dropdown" id="targetDropdown">
@@ -315,89 +316,89 @@
 
     // ── Language data ──
     const LANGUAGES = [
-      { value: "Auto-Detect", label: "Auto-Detect", native: "Detect language", flag: "🔍" },
+      { value: "Auto-Detect", label: "Auto-Detect", native: "Detect language", flag: "search" },
       { group: "Most Used" },
-      { value: "English",            label: "English",           native: "English",          flag: "🇬🇧" },
-      { value: "Spanish",            label: "Spanish",           native: "Español",          flag: "🇪🇸" },
-      { value: "Mandarin Chinese",   label: "Mandarin",          native: "普通话",            flag: "🇨🇳" },
-      { value: "French",             label: "French",            native: "Français",         flag: "🇫🇷" },
-      { value: "Arabic",             label: "Arabic",            native: "العربية",           flag: "🇸🇦" },
-      { value: "Hindi",              label: "Hindi",             native: "हिन्दी",             flag: "🇮🇳" },
-      { value: "Portuguese",         label: "Portuguese",        native: "Português",        flag: "🇧🇷" },
-      { value: "Russian",            label: "Russian",           native: "Русский",          flag: "🇷🇺" },
-      { value: "German",             label: "German",            native: "Deutsch",          flag: "🇩🇪" },
-      { value: "Japanese",           label: "Japanese",          native: "日本語",            flag: "🇯🇵" },
+      { value: "English",            label: "English",           native: "English",          flag: "globe" },
+      { value: "Spanish",            label: "Spanish",           native: "Español",          flag: "globe" },
+      { value: "Mandarin Chinese",   label: "Mandarin",          native: "普通话",            flag: "globe" },
+      { value: "French",             label: "French",            native: "Français",         flag: "globe" },
+      { value: "Arabic",             label: "Arabic",            native: "العربية",           flag: "globe" },
+      { value: "Hindi",              label: "Hindi",             native: "हिन्दी",             flag: "globe" },
+      { value: "Portuguese",         label: "Portuguese",        native: "Português",        flag: "globe" },
+      { value: "Russian",            label: "Russian",           native: "Русский",          flag: "globe" },
+      { value: "German",             label: "German",            native: "Deutsch",          flag: "globe" },
+      { value: "Japanese",           label: "Japanese",          native: "日本語",            flag: "globe" },
       { group: "European" },
-      { value: "Italian",            label: "Italian",           native: "Italiano",         flag: "🇮🇹" },
-      { value: "Dutch",              label: "Dutch",             native: "Nederlands",       flag: "🇳🇱" },
-      { value: "Polish",             label: "Polish",            native: "Polski",           flag: "🇵🇱" },
-      { value: "Swedish",            label: "Swedish",           native: "Svenska",          flag: "🇸🇪" },
-      { value: "Norwegian",          label: "Norwegian",         native: "Norsk",            flag: "🇳🇴" },
-      { value: "Danish",             label: "Danish",            native: "Dansk",            flag: "🇩🇰" },
-      { value: "Finnish",            label: "Finnish",           native: "Suomi",            flag: "🇫🇮" },
-      { value: "Greek",              label: "Greek",             native: "Ελληνικά",         flag: "🇬🇷" },
-      { value: "Czech",              label: "Czech",             native: "Čeština",          flag: "🇨🇿" },
-      { value: "Romanian",           label: "Romanian",          native: "Română",           flag: "🇷🇴" },
-      { value: "Hungarian",          label: "Hungarian",         native: "Magyar",           flag: "🇭🇺" },
-      { value: "Slovak",             label: "Slovak",            native: "Slovenčina",       flag: "🇸🇰" },
-      { value: "Bulgarian",          label: "Bulgarian",         native: "Български",        flag: "🇧🇬" },
-      { value: "Croatian",           label: "Croatian",          native: "Hrvatski",         flag: "🇭🇷" },
-      { value: "Serbian",            label: "Serbian",           native: "Српски",           flag: "🇷🇸" },
-      { value: "Ukrainian",          label: "Ukrainian",         native: "Українська",       flag: "🇺🇦" },
-      { value: "Catalan",            label: "Catalan",           native: "Català",           flag: "🏴" },
-      { value: "Lithuanian",         label: "Lithuanian",        native: "Lietuvių",         flag: "🇱🇹" },
-      { value: "Latvian",            label: "Latvian",           native: "Latviešu",         flag: "🇱🇻" },
-      { value: "Estonian",           label: "Estonian",          native: "Eesti",            flag: "🇪🇪" },
-      { value: "Slovenian",          label: "Slovenian",         native: "Slovenščina",      flag: "🇸🇮" },
-      { value: "Albanian",           label: "Albanian",          native: "Shqip",            flag: "🇦🇱" },
-      { value: "Macedonian",         label: "Macedonian",        native: "Македонски",       flag: "🇲🇰" },
-      { value: "Maltese",            label: "Maltese",           native: "Malti",            flag: "🇲🇹" },
-      { value: "Welsh",              label: "Welsh",             native: "Cymraeg",          flag: "🏴" },
-      { value: "Irish",              label: "Irish",             native: "Gaeilge",          flag: "🇮🇪" },
+      { value: "Italian",            label: "Italian",           native: "Italiano",         flag: "globe" },
+      { value: "Dutch",              label: "Dutch",             native: "Nederlands",       flag: "globe" },
+      { value: "Polish",             label: "Polish",            native: "Polski",           flag: "globe" },
+      { value: "Swedish",            label: "Swedish",           native: "Svenska",          flag: "globe" },
+      { value: "Norwegian",          label: "Norwegian",         native: "Norsk",            flag: "globe" },
+      { value: "Danish",             label: "Danish",            native: "Dansk",            flag: "globe" },
+      { value: "Finnish",            label: "Finnish",           native: "Suomi",            flag: "globe" },
+      { value: "Greek",              label: "Greek",             native: "Ελληνικά",         flag: "globe" },
+      { value: "Czech",              label: "Czech",             native: "Čeština",          flag: "globe" },
+      { value: "Romanian",           label: "Romanian",          native: "Română",           flag: "globe" },
+      { value: "Hungarian",          label: "Hungarian",         native: "Magyar",           flag: "globe" },
+      { value: "Slovak",             label: "Slovak",            native: "Slovenčina",       flag: "globe" },
+      { value: "Bulgarian",          label: "Bulgarian",         native: "Български",        flag: "globe" },
+      { value: "Croatian",           label: "Croatian",          native: "Hrvatski",         flag: "globe" },
+      { value: "Serbian",            label: "Serbian",           native: "Српски",           flag: "globe" },
+      { value: "Ukrainian",          label: "Ukrainian",         native: "Українська",       flag: "globe" },
+      { value: "Catalan",            label: "Catalan",           native: "Català",           flag: "globe" },
+      { value: "Lithuanian",         label: "Lithuanian",        native: "Lietuvių",         flag: "globe" },
+      { value: "Latvian",            label: "Latvian",           native: "Latviešu",         flag: "globe" },
+      { value: "Estonian",           label: "Estonian",          native: "Eesti",            flag: "globe" },
+      { value: "Slovenian",          label: "Slovenian",         native: "Slovenščina",      flag: "globe" },
+      { value: "Albanian",           label: "Albanian",          native: "Shqip",            flag: "globe" },
+      { value: "Macedonian",         label: "Macedonian",        native: "Македонски",       flag: "globe" },
+      { value: "Maltese",            label: "Maltese",           native: "Malti",            flag: "globe" },
+      { value: "Welsh",              label: "Welsh",             native: "Cymraeg",          flag: "globe" },
+      { value: "Irish",              label: "Irish",             native: "Gaeilge",          flag: "globe" },
       { group: "Asian" },
-      { value: "Korean",             label: "Korean",            native: "한국어",            flag: "🇰🇷" },
-      { value: "Vietnamese",         label: "Vietnamese",        native: "Tiếng Việt",       flag: "🇻🇳" },
-      { value: "Thai",               label: "Thai",              native: "ภาษาไทย",           flag: "🇹🇭" },
-      { value: "Indonesian",         label: "Indonesian",        native: "Bahasa Indonesia", flag: "🇮🇩" },
-      { value: "Malay",              label: "Malay",             native: "Bahasa Melayu",    flag: "🇲🇾" },
-      { value: "Filipino",           label: "Filipino",          native: "Filipino",         flag: "🇵🇭" },
-      { value: "Bengali",            label: "Bengali",           native: "বাংলা",             flag: "🇧🇩" },
-      { value: "Urdu",               label: "Urdu",              native: "اردو",              flag: "🇵🇰" },
-      { value: "Punjabi",            label: "Punjabi",           native: "ਪੰਜਾਬੀ",            flag: "🇮🇳" },
-      { value: "Tamil",              label: "Tamil",             native: "தமிழ்",             flag: "🇮🇳" },
-      { value: "Telugu",             label: "Telugu",            native: "తెలుగు",            flag: "🇮🇳" },
-      { value: "Marathi",            label: "Marathi",           native: "मराठी",             flag: "🇮🇳" },
-      { value: "Gujarati",           label: "Gujarati",          native: "ગુજરાતી",           flag: "🇮🇳" },
-      { value: "Kannada",            label: "Kannada",           native: "ಕನ್ನಡ",             flag: "🇮🇳" },
-      { value: "Malayalam",          label: "Malayalam",         native: "മലയാളം",            flag: "🇮🇳" },
-      { value: "Sinhala",            label: "Sinhala",           native: "සිංහල",             flag: "🇱🇰" },
-      { value: "Nepali",             label: "Nepali",            native: "नेपाली",            flag: "🇳🇵" },
-      { value: "Burmese",            label: "Burmese",           native: "မြန်မာဘာသာ",        flag: "🇲🇲" },
-      { value: "Khmer",              label: "Khmer",             native: "ភាសាខ្មែរ",          flag: "🇰🇭" },
-      { value: "Lao",                label: "Lao",               native: "ພາສາລາວ",           flag: "🇱🇦" },
-      { value: "Mongolian",          label: "Mongolian",         native: "Монгол",           flag: "🇲🇳" },
-      { value: "Tibetan",            label: "Tibetan",           native: "བོད་སྐད།",           flag: "🏔️" },
+      { value: "Korean",             label: "Korean",            native: "한국어",            flag: "globe" },
+      { value: "Vietnamese",         label: "Vietnamese",        native: "Tiếng Việt",       flag: "globe" },
+      { value: "Thai",               label: "Thai",              native: "ภาษาไทย",           flag: "globe" },
+      { value: "Indonesian",         label: "Indonesian",        native: "Bahasa Indonesia", flag: "globe" },
+      { value: "Malay",              label: "Malay",             native: "Bahasa Melayu",    flag: "globe" },
+      { value: "Filipino",           label: "Filipino",          native: "Filipino",         flag: "globe" },
+      { value: "Bengali",            label: "Bengali",           native: "বাংলা",             flag: "globe" },
+      { value: "Urdu",               label: "Urdu",              native: "اردو",              flag: "globe" },
+      { value: "Punjabi",            label: "Punjabi",           native: "ਪੰਜਾਬੀ",            flag: "globe" },
+      { value: "Tamil",              label: "Tamil",             native: "தமிழ்",             flag: "globe" },
+      { value: "Telugu",             label: "Telugu",            native: "తెలుగు",            flag: "globe" },
+      { value: "Marathi",            label: "Marathi",           native: "मराठी",             flag: "globe" },
+      { value: "Gujarati",           label: "Gujarati",          native: "ગુજરાતી",           flag: "globe" },
+      { value: "Kannada",            label: "Kannada",           native: "ಕನ್ನಡ",             flag: "globe" },
+      { value: "Malayalam",          label: "Malayalam",         native: "മലയാളം",            flag: "globe" },
+      { value: "Sinhala",            label: "Sinhala",           native: "සිංහල",             flag: "globe" },
+      { value: "Nepali",             label: "Nepali",            native: "नेपाली",            flag: "globe" },
+      { value: "Burmese",            label: "Burmese",           native: "မြန်မာဘာသာ",        flag: "globe" },
+      { value: "Khmer",              label: "Khmer",             native: "ភាសាខ្មែរ",          flag: "globe" },
+      { value: "Lao",                label: "Lao",               native: "ພາສາລາວ",           flag: "globe" },
+      { value: "Mongolian",          label: "Mongolian",         native: "Монгол",           flag: "globe" },
+      { value: "Tibetan",            label: "Tibetan",           native: "བོད་སྐད།",           flag: "globe" },
       { group: "Middle Eastern & African" },
-      { value: "Turkish",            label: "Turkish",           native: "Türkçe",           flag: "🇹🇷" },
-      { value: "Persian",            label: "Persian",           native: "فارسی",             flag: "🇮🇷" },
-      { value: "Hebrew",             label: "Hebrew",            native: "עברית",             flag: "🇮🇱" },
-      { value: "Kurdish",            label: "Kurdish",           native: "Kurdî",            flag: "🏳️" },
-      { value: "Swahili",            label: "Swahili",           native: "Kiswahili",        flag: "🇰🇪" },
-      { value: "Amharic",            label: "Amharic",           native: "አማርኛ",             flag: "🇪🇹" },
-      { value: "Hausa",              label: "Hausa",             native: "Hausa",            flag: "🇳🇬" },
-      { value: "Yoruba",             label: "Yoruba",            native: "Yorùbá",           flag: "🇳🇬" },
-      { value: "Igbo",               label: "Igbo",              native: "Igbo",             flag: "🇳🇬" },
-      { value: "Zulu",               label: "Zulu",              native: "isiZulu",          flag: "🇿🇦" },
-      { value: "Afrikaans",          label: "Afrikaans",         native: "Afrikaans",        flag: "🇿🇦" },
-      { value: "Somali",             label: "Somali",            native: "Soomaali",         flag: "🇸🇴" },
-      { value: "Azerbaijani",        label: "Azerbaijani",       native: "Azərbaycan",       flag: "🇦🇿" },
-      { value: "Kazakh",             label: "Kazakh",            native: "Қазақ",            flag: "🇰🇿" },
-      { value: "Uzbek",              label: "Uzbek",             native: "Oʻzbek",           flag: "🇺🇿" },
-      { value: "Georgian",           label: "Georgian",          native: "ქართული",          flag: "🇬🇪" },
-      { value: "Armenian",           label: "Armenian",          native: "Հայերեն",          flag: "🇦🇲" },
+      { value: "Turkish",            label: "Turkish",           native: "Türkçe",           flag: "globe" },
+      { value: "Persian",            label: "Persian",           native: "فارسی",             flag: "globe" },
+      { value: "Hebrew",             label: "Hebrew",            native: "עברית",             flag: "globe" },
+      { value: "Kurdish",            label: "Kurdish",           native: "Kurdî",            flag: "globe" },
+      { value: "Swahili",            label: "Swahili",           native: "Kiswahili",        flag: "globe" },
+      { value: "Amharic",            label: "Amharic",           native: "አማርኛ",             flag: "globe" },
+      { value: "Hausa",              label: "Hausa",             native: "Hausa",            flag: "globe" },
+      { value: "Yoruba",             label: "Yoruba",            native: "Yorùbá",           flag: "globe" },
+      { value: "Igbo",               label: "Igbo",              native: "Igbo",             flag: "globe" },
+      { value: "Zulu",               label: "Zulu",              native: "isiZulu",          flag: "globe" },
+      { value: "Afrikaans",          label: "Afrikaans",         native: "Afrikaans",        flag: "globe" },
+      { value: "Somali",             label: "Somali",            native: "Soomaali",         flag: "globe" },
+      { value: "Azerbaijani",        label: "Azerbaijani",       native: "Azərbaycan",       flag: "globe" },
+      { value: "Kazakh",             label: "Kazakh",            native: "Қазақ",            flag: "globe" },
+      { value: "Uzbek",              label: "Uzbek",             native: "Oʻzbek",           flag: "globe" },
+      { value: "Georgian",           label: "Georgian",          native: "ქართული",          flag: "globe" },
+      { value: "Armenian",           label: "Armenian",          native: "Հայերեն",          flag: "globe" },
       { group: "Other" },
-      { value: "Latin",              label: "Latin",             native: "Latina",           flag: "🏛️" },
-      { value: "Esperanto",          label: "Esperanto",         native: "Esperanto",        flag: "🌍" },
+      { value: "Latin",              label: "Latin",             native: "Latina",           flag: "globe" },
+      { value: "Esperanto",          label: "Esperanto",         native: "Esperanto",        flag: "globe" },
     ];
 
     // ── State ──
@@ -434,7 +435,7 @@
 
           const opt = document.createElement("div");
           opt.className = "dropdown-option" + (item.value === currentValueGetter() ? " selected" : "");
-          opt.innerHTML = `<span class="flag">${item.flag}</span><span class="lang-name">${item.label}</span><span class="lang-native">${item.native}</span>`;
+          opt.innerHTML = `<span class="flag">${window.Octicons.icon(item.flag)}</span><span class="lang-name">${item.label}</span><span class="lang-native">${item.native}</span>`;
           opt.addEventListener("click", () => {
             onSelect(item);
             wrapperEl.classList.remove("open");
@@ -453,12 +454,12 @@
 
     function setSource(item) {
       sourceValue = item.value;
-      document.getElementById("sourceLabel").textContent = item.flag + " " + item.label;
+      document.getElementById("sourceLabel").innerHTML = `${window.Octicons.icon(item.flag)} ${item.label}`;
     }
 
     function setTarget(item) {
       targetValue = item.value;
-      document.getElementById("targetLabel").textContent = item.flag + " " + item.label;
+      document.getElementById("targetLabel").innerHTML = `${window.Octicons.icon(item.flag)} ${item.label}`;
     }
 
     buildList(

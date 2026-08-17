@@ -261,6 +261,7 @@
       .section-head p { margin-top: 8px; }
     }
   </style>
+  <script src="../assets/js/octicons.js"></script>
 </head>
 <body>
   <div class="shell">
@@ -352,7 +353,7 @@
         </div>
         <article class="card wide-card" style="grid-column: 1 / -1;">
           <div>
-            <span class="icon">🖥️</span>
+            <span class="icon"></span>
             <h3>Orbit workspace</h3>
             <p>Launch the full OS pages or use these inline tiles as a lightweight dashboard.</p>
             <div class="mini-os">
@@ -376,50 +377,50 @@
 
   <script>
     const links = [
-      { title: "Home", icon: "🏠", category: "Core", href: "../index.html", description: "The original 360 landing page with search, settings, and navigation." },
-      { title: "Search", icon: "🔎", category: "Core", href: "../search.html", description: "Main 360 search experience." },
-      { title: "AI", icon: "🤖", category: "Tools", href: "../ai.html", description: "AI assistant entry point for quick help and creative work." },
-      { title: "Chat", icon: "💬", category: "Tools", href: "../chat.html", description: "Community-style chat page." },
-      { title: "Weather", icon: "⛅", category: "Tools", href: "../weather.html", description: "Weather utility page." },
-      { title: "Translator", icon: "🌐", category: "Tools", href: "../translator.html", description: "Translate text and move between languages." },
-      { title: "Stocks", icon: "📈", category: "Tools", href: "../stocks.html", description: "Market and stock lookup page." },
-      { title: "News", icon: "📰", category: "Tools", href: "../news.html", description: "News hub with 360 styling." },
-      { title: "URL Shortener", icon: "🔗", category: "Tools", href: "../url-shortener.html", description: "Shorten and manage links." },
-      { title: "Accounts", icon: "👤", category: "Core", href: "../accounts.html", description: "Sign-in and account management." },
-      { title: "Settings", icon: "⚙️", category: "Core", href: "../settings.html", description: "Customize the 360 experience." },
-      { title: "Apps hub", icon: "🧩", category: "Apps", href: "../apps.html", description: "Original app directory." },
-      { title: "360 Music", icon: "🎵", category: "Apps", href: "../apps/360Music.html", description: "Music player and sound experience." },
-      { title: "360 Do", icon: "✅", category: "Apps", href: "../apps/360Do.html", description: "To-do list and task tracker." },
-      { title: "360 Vids", icon: "🎬", category: "Apps", href: "../apps/360vids.html", description: "Video-focused 360 app." },
-      { title: "360 Notes", icon: "📝", category: "Apps", href: "../apps/360Notes.html", description: "Notes and quick writing." },
-      { title: "360 Zone", icon: "🌀", category: "Apps", href: "../apps/360zone.html", description: "Experimental zone page." },
-      { title: "360 Draw", icon: "🎨", category: "Apps", href: "../apps/360Draw.html", description: "Drawing and sketching app." },
-      { title: "360 Docs", icon: "📄", category: "Apps", href: "../apps/360Docs.html", description: "Document workspace." },
-      { title: "360 Mail", icon: "✉️", category: "Apps", href: "../apps/360mail.html", description: "Mail-inspired app experience." },
-      { title: "Games hub", icon: "🎮", category: "Games", href: "../games.html", description: "Original 360 game directory." },
-      { title: "360 Fish", icon: "🐟", category: "Games", href: "../games/360Fish.html", description: "Fish-themed game experience." },
-      { title: "Blitz Tower Defense", icon: "🏰", category: "Games", href: "../games/BlitzTowerDefense.html", description: "Tower defense action." },
-      { title: "Space Glider", icon: "🚀", category: "Games", href: "../games/spaceGlider.html", description: "Glide through space." },
-      { title: "Monster Fighter", icon: "👾", category: "Games", href: "../games/untitledMonsterFighter.html", description: "Fight monsters in an arcade format." },
-      { title: "Nightfall RNG", icon: "🌙", category: "Games", href: "../games/NightfallRNG.html", description: "RNG-style nightfall game." },
-      { title: "Penguin Knockout", icon: "🐧", category: "Games", href: "../games/PenguinKnockout.html", description: "Penguin action challenge." },
-      { title: "NYC Dream", icon: "🌆", category: "Games", href: "../games/nyc_dream.html", description: "City-themed dream game." },
-      { title: "Star Blasted", icon: "⭐", category: "Games", href: "../games/StarBlasted.html", description: "Starry arcade adventure." },
-      { title: "Minesweeper", icon: "💣", category: "Games", href: "../games/minesweeper.html", description: "Classic minesweeper." },
-      { title: "Starfall Ωjar", icon: "☄️", category: "Games", href: "../games/STARFALL_Ωjar.html", description: "Starfall variant." },
-      { title: "Starfall RNG", icon: "✨", category: "Games", href: "../games/starfallrng.html", description: "RNG starfall entry." },
-      { title: "Unwanted Problems", icon: "🧠", category: "Games", href: "../games/UnwantedProblems.html", description: "Puzzle and problem game." },
-      { title: "Angel RNG", icon: "👼", category: "Games", href: "../games/angelrng.html", description: "Angel-themed RNG game." },
-      { title: "Epoch Era", icon: "⏳", category: "Games", href: "../games/epochera.html", description: "Era-hopping game." },
-      { title: "JJK RNG", icon: "🥋", category: "Games", href: "../games/jjkrng.html", description: "JJK-inspired RNG page." },
-      { title: "Starfall RNG Ultimate", icon: "🌠", category: "Games", href: "../games/starfallrngultimate.html", description: "Ultimate starfall RNG edition." },
-      { title: "CQB SIM", icon: "🎯", category: "Games", href: "../games/CQBSIM.html", description: "Close-quarters simulation." },
-      { title: "Chess", icon: "♟️", category: "Games", href: "../chess.html", description: "Standalone chess page." },
-      { title: "Sloperider", icon: "🏂", category: "Games", href: "../sloperider.html", description: "Slope-riding game." },
-      { title: "Reports", icon: "📣", category: "Core", href: "../report.html", description: "Report issues or feedback." },
-      { title: "Privacy Policy", icon: "🔐", category: "Core", href: "../privacypolicy.html", description: "Privacy details for the project." },
-      { title: "Terms", icon: "📜", category: "Core", href: "../tos.html", description: "Terms of service." },
-      { title: "Contact", icon: "📬", category: "Core", href: "../contact.html", description: "Contact page." }
+      { title: "Home", icon: "home", category: "Core", href: "../index.html", description: "The original 360 landing page with search, settings, and navigation." },
+      { title: "Search", icon: "search", category: "Core", href: "../search.html", description: "Main 360 search experience." },
+      { title: "AI", icon: "hubot", category: "Tools", href: "../ai.html", description: "AI assistant entry point for quick help and creative work." },
+      { title: "Chat", icon: "comment-discussion", category: "Tools", href: "../chat.html", description: "Community-style chat page." },
+      { title: "Weather", icon: "cloud", category: "Tools", href: "../weather.html", description: "Weather utility page." },
+      { title: "Translator", icon: "globe", category: "Tools", href: "../translator.html", description: "Translate text and move between languages." },
+      { title: "Stocks", icon: "graph", category: "Tools", href: "../stocks.html", description: "Market and stock lookup page." },
+      { title: "News", icon: "newspaper", category: "Tools", href: "../news.html", description: "News hub with 360 styling." },
+      { title: "URL Shortener", icon: "link", category: "Tools", href: "../url-shortener.html", description: "Shorten and manage links." },
+      { title: "Accounts", icon: "person", category: "Core", href: "../accounts.html", description: "Sign-in and account management." },
+      { title: "Settings", icon: "gear", category: "Core", href: "../settings.html", description: "Customize the 360 experience." },
+      { title: "Apps hub", icon: "apps", category: "Apps", href: "../apps.html", description: "Original app directory." },
+      { title: "360 Music", icon: "file", category: "Apps", href: "../apps/360Music.html", description: "Music player and sound experience." },
+      { title: "360 Do", icon: "check-circle", category: "Apps", href: "../apps/360Do.html", description: "To-do list and task tracker." },
+      { title: "360 Vids", icon: "device-desktop", category: "Apps", href: "../apps/360vids.html", description: "Video-focused 360 app." },
+      { title: "360 Notes", icon: "pencil", category: "Apps", href: "../apps/360Notes.html", description: "Notes and quick writing." },
+      { title: "360 Zone", icon: "globe", category: "Apps", href: "../apps/360zone.html", description: "Experimental zone page." },
+      { title: "360 Draw", icon: "pencil", category: "Apps", href: "../apps/360Draw.html", description: "Drawing and sketching app." },
+      { title: "360 Docs", icon: "file", category: "Apps", href: "../apps/360Docs.html", description: "Document workspace." },
+      { title: "360 Mail", icon: "mail", category: "Apps", href: "../apps/360mail.html", description: "Mail-inspired app experience." },
+      { title: "Games hub", icon: "device-desktop", category: "Games", href: "../games.html", description: "Original 360 game directory." },
+      { title: "360 Fish", icon: "device-desktop", category: "Games", href: "../games/360Fish.html", description: "Fish-themed game experience." },
+      { title: "Blitz Tower Defense", icon: "device-desktop", category: "Games", href: "../games/BlitzTowerDefense.html", description: "Tower defense action." },
+      { title: "Space Glider", icon: "device-desktop", category: "Games", href: "../games/spaceGlider.html", description: "Glide through space." },
+      { title: "Monster Fighter", icon: "device-desktop", category: "Games", href: "../games/untitledMonsterFighter.html", description: "Fight monsters in an arcade format." },
+      { title: "Nightfall RNG", icon: "device-desktop", category: "Games", href: "../games/NightfallRNG.html", description: "RNG-style nightfall game." },
+      { title: "Penguin Knockout", icon: "device-desktop", category: "Games", href: "../games/PenguinKnockout.html", description: "Penguin action challenge." },
+      { title: "NYC Dream", icon: "device-desktop", category: "Games", href: "../games/nyc_dream.html", description: "City-themed dream game." },
+      { title: "Star Blasted", icon: "device-desktop", category: "Games", href: "../games/StarBlasted.html", description: "Starry arcade adventure." },
+      { title: "Minesweeper", icon: "alert", category: "Games", href: "../games/minesweeper.html", description: "Classic minesweeper." },
+      { title: "Starfall Ωjar", icon: "device-desktop", category: "Games", href: "../games/STARFALL_Ωjar.html", description: "Starfall variant." },
+      { title: "Starfall RNG", icon: "device-desktop", category: "Games", href: "../games/starfallrng.html", description: "RNG starfall entry." },
+      { title: "Unwanted Problems", icon: "device-desktop", category: "Games", href: "../games/UnwantedProblems.html", description: "Puzzle and problem game." },
+      { title: "Angel RNG", icon: "device-desktop", category: "Games", href: "../games/angelrng.html", description: "Angel-themed RNG game." },
+      { title: "Epoch Era", icon: "hourglass", category: "Games", href: "../games/epochera.html", description: "Era-hopping game." },
+      { title: "JJK RNG", icon: "device-desktop", category: "Games", href: "../games/jjkrng.html", description: "JJK-inspired RNG page." },
+      { title: "Starfall RNG Ultimate", icon: "device-desktop", category: "Games", href: "../games/starfallrngultimate.html", description: "Ultimate starfall RNG edition." },
+      { title: "CQB SIM", icon: "device-desktop", category: "Games", href: "../games/CQBSIM.html", description: "Close-quarters simulation." },
+      { title: "Chess", icon: "device-desktop", category: "Games", href: "../chess.html", description: "Standalone chess page." },
+      { title: "Sloperider", icon: "device-desktop", category: "Games", href: "../sloperider.html", description: "Slope-riding game." },
+      { title: "Reports", icon: "comment-discussion", category: "Core", href: "../report.html", description: "Report issues or feedback." },
+      { title: "Privacy Policy", icon: "lock", category: "Core", href: "../privacypolicy.html", description: "Privacy details for the project." },
+      { title: "Terms", icon: "law", category: "Core", href: "../tos.html", description: "Terms of service." },
+      { title: "Contact", icon: "mail", category: "Core", href: "../contact.html", description: "Contact page." }
     ];
 
     const categories = ["All", "Core", "Tools", "Apps", "Games"];
@@ -434,7 +435,7 @@
 
     function cardTemplate(item, wide = false) {
       return `<a class="card ${wide ? "wide-card" : ""}" href="${item.href}" data-category="${item.category}" data-title="${item.title.toLowerCase()}" data-description="${item.description.toLowerCase()}">
-        <span class="icon" aria-hidden="true">${item.icon}</span>
+        <span class="icon" aria-hidden="true">${window.Octicons.icon(item.icon)}</span>
         <span>
           <h3>${item.title}</h3>
           <p>${item.description}</p>
