@@ -68,8 +68,8 @@ body.wide-mode.dark::before {
 /* ── SIDEBAR ── */
 body.wide-mode .sidebar {
   background: var(--wide-glass-high) !important;
-  backdrop-filter: var(--wide-blur) !important;
-  -webkit-backdrop-filter: var(--wide-blur) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   border-right: 1px solid var(--wide-border) !important;
   box-shadow: var(--wide-shadow) !important;
 }
