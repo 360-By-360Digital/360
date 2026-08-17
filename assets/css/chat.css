@@ -1735,3 +1735,69 @@ body.dark {
 
 /* ── Link preview URL line ── */
 .dc-lp-url { font-size: 11px; color: var(--dc-muted); margin-top: 2px; }
+
+/* ── Grammar toast ── */
+.grammar-toast { position:fixed; bottom:66px; right:16px; background:var(--dc-sidebar-bg); border:1px solid var(--dc-sep); border-radius:8px; padding:4px 8px; display:flex; align-items:center; gap:6px; z-index:9000; font-size:11px; color:var(--dc-muted); box-shadow:0 2px 8px rgba(0,0,0,.2); opacity:.85; pointer-events:auto; }
+.grammar-toast button { background:none; border:none; cursor:pointer; font-size:11px; color:var(--a); padding:0 2px; text-decoration:underline; }
+
+/* ── GIF Picker ── */
+.gif-picker { position:fixed; width:340px; background:var(--dc-sidebar-bg); border:1.5px solid var(--dc-sep); border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,.35); z-index:800; overflow:hidden; }
+.gif-picker.hidden { display:none; }
+.gif-header { display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--dc-sep); }
+.gif-search { flex:1; padding:7px 10px; border-radius:8px; border:1.5px solid var(--dc-sep); background:var(--dc-input-bg); color:var(--dc-text); font-size:13px; }
+.gif-search:focus { outline:none; border-color:var(--a); }
+.gif-close { background:none; border:none; cursor:pointer; font-size:16px; color:var(--dc-muted); padding:4px; border-radius:6px; }
+.gif-close:hover { background:var(--dc-ch-hover); }
+.gif-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; padding:8px; max-height:280px; overflow-y:auto; }
+.gif-item { width:100%; height:80px; object-fit:cover; border-radius:6px; cursor:pointer; transition:transform .1s; }
+.gif-item:hover { transform:scale(1.04); }
+.gif-loading { grid-column:1/-1; text-align:center; padding:24px; color:var(--dc-muted); font-size:13px; }
+.gif-powered { font-size:10px; color:var(--dc-muted); text-align:right; padding:4px 10px; border-top:1px solid var(--dc-sep); }
+
+/* ── @all mention ── */
+.dc-mention-all { color:#ef4444; background:rgba(239,68,68,.12); border-radius:3px; padding:0 3px; font-weight:700; }
+
+/* ── Search Panel ── */
+.search-panel { position:absolute; top:0; right:0; width:320px; height:100%; background:var(--dc-sidebar-bg); border-left:1px solid var(--dc-sep); z-index:400; display:flex; flex-direction:column; box-shadow:-4px 0 20px rgba(0,0,0,.2); }
+.search-panel.hidden { display:none; }
+.search-header { display:flex; align-items:center; gap:8px; padding:14px 12px; border-bottom:1px solid var(--dc-sep); }
+.search-input { flex:1; padding:8px 12px; border-radius:8px; border:1.5px solid var(--dc-sep); background:var(--dc-input-bg); color:var(--dc-text); font-size:13px; }
+.search-input:focus { outline:none; border-color:var(--a); }
+.search-close { background:none; border:none; cursor:pointer; font-size:16px; color:var(--dc-muted); padding:4px; border-radius:6px; }
+.search-scope { display:flex; gap:12px; padding:8px 14px; border-bottom:1px solid var(--dc-sep); font-size:12px; color:var(--dc-muted); }
+.search-scope label { display:flex; align-items:center; gap:4px; cursor:pointer; }
+.search-results { flex:1; overflow-y:auto; padding:8px; display:flex; flex-direction:column; gap:6px; }
+.search-hint { text-align:center; color:var(--dc-muted); font-size:13px; padding:24px; }
+.search-result { padding:10px 12px; background:var(--dc-input-bg); border-radius:8px; cursor:pointer; border:1.5px solid transparent; transition:border-color .12s; }
+.search-result:hover { border-color:var(--a); }
+.sr-meta { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+.sr-user { font-weight:700; font-size:12px; color:var(--dc-text); }
+.sr-ch { font-size:11px; color:var(--a); }
+.sr-time { font-size:11px; color:var(--dc-muted); margin-left:auto; }
+.sr-text { font-size:13px; color:var(--dc-muted); line-height:1.4; }
+.sr-text mark { background:rgba(99,102,241,.25); color:var(--dc-text); border-radius:2px; padding:0 2px; }
+.msg-highlight { background:rgba(99,102,241,.15) !important; transition:background .3s; }
+
+/* ── Carlos bot message style ── */
+.dc-msg[data-role="bot"] .dc-msg-username::after { content:'BOT'; font-size:9px; font-weight:700; background:var(--a); color:#fff; border-radius:3px; padding:1px 4px; margin-left:5px; vertical-align:middle; }
+
+/* ── Inline message editing ── */
+.dc-edit-box { display:flex; flex-direction:column; gap:6px; margin-top:2px; }
+.dc-edit-textarea { width:100%; min-height:60px; padding:8px 10px; border-radius:8px; border:1.5px solid var(--a); background:var(--dc-input-bg); color:var(--dc-text); font-size:14px; font-family:inherit; resize:vertical; line-height:1.5; }
+.dc-edit-textarea:focus { outline:none; }
+.dc-edit-actions { display:flex; align-items:center; gap:8px; }
+.dc-edit-save { padding:5px 12px; border-radius:6px; border:none; background:var(--a); color:#fff; font-size:13px; font-weight:600; cursor:pointer; }
+.dc-edit-save:hover { opacity:.88; }
+.dc-edit-cancel { padding:5px 12px; border-radius:6px; border:1px solid var(--dc-sep); background:var(--dc-input-bg); color:var(--dc-text); font-size:13px; cursor:pointer; }
+.dc-edit-hint { font-size:11px; color:var(--dc-muted); }
+
+/* ── DM notification popup ── */
+.dm-notif-popup { position:fixed; top:20px; right:20px; z-index:9800; background:var(--dc-sidebar-bg); border:1.5px solid var(--a); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:12px; max-width:300px; box-shadow:0 8px 32px rgba(0,0,0,.35); cursor:pointer; transform:translateY(-20px); opacity:0; transition:transform .25s ease, opacity .25s ease; }
+.dm-notif-popup.show { transform:translateY(0); opacity:1; }
+.dm-notif-avatar { width:40px; height:40px; border-radius:50%; background:var(--a); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; flex-shrink:0; overflow:hidden; }
+.dm-notif-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.dm-notif-body { flex:1; min-width:0; }
+.dm-notif-name { font-weight:700; font-size:13px; color:var(--dc-text); }
+.dm-notif-text { font-size:12px; color:var(--dc-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dm-notif-close { background:none; border:none; cursor:pointer; color:var(--dc-muted); font-size:15px; padding:2px 4px; border-radius:4px; flex-shrink:0; }
+.dm-notif-close:hover { background:var(--dc-ch-hover); }
