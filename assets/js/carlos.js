@@ -19,23 +19,21 @@ window.Carlos = (function () {
   /* ── Send as Carlos ─────────────────────────────────── */
   async function send(text, fileUrl, serverId, channelId) {
     const sb = getSb();
-    if (!sb) return;
+    const uid = window.currentUserId;
+    if (!sb || !uid) return; // must be signed in to send
     const payload = {
-      user_id:    '00000000-0000-0000-0000-000000000000', // placeholder — RLS policy must allow this
-      username:   BOT_NAME,
-      tag:        BOT_TAG,
+      user_id:    uid,          // use real user — RLS requires it
+      username:   BOT_NAME,     // display as "carlos"
+      tag:        BOT_TAG,      // shows [BOT] badge
       avatar_url: BOT_AVATAR,
       role:       'bot',
       text:       text || '',
       file_url:   fileUrl || null,
     };
     if (channelId)  payload.channel_id = channelId;
-    if (!channelId && serverId) payload.server_id = serverId;
-
-    // Insert via service role via edge function OR directly if RLS allows bot role
-    await sb.from('messages').insert(payload).then(({ error }) => {
-      if (error) console.warn('Carlos send error:', error.message);
-    });
+    else if (serverId) payload.server_id = serverId;
+    const { error } = await sb.from('messages').insert(payload);
+    if (error) console.warn('Carlos send error:', error.message);
   }
 
   /* ── Command parser ─────────────────────────────────── */
@@ -58,12 +56,14 @@ window.Carlos = (function () {
 
   async function handleMessage(msg) {
     if (!msg.text?.startsWith('!')) return;
+    if (msg.username === BOT_NAME && msg.tag === BOT_TAG) return; // don't respond to self
     const room = myRoom();
     if (!room) return;
     // Check if Carlos is enabled for this server
     if (room.serverId) {
       const { data: cfg } = await getSb().from('server_bots').select('enabled').eq('server_id', room.serverId).eq('bot_name', BOT_NAME).maybeSingle();
-      if (cfg && !cfg.enabled) return;
+      // If no config row found, Carlos is disabled by default
+      if (!cfg || !cfg.enabled) return;
     }
     const parts = msg.text.trim().split(/\s+/);
     const cmd = parts[0].toLowerCase();
