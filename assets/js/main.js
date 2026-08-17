@@ -525,7 +525,7 @@ function renderSidebar() {
 
   slot.innerHTML = `
     <div class="sidebar-header">
-      <div class="logo-mark"></div>
+      <div class="logo-mark"><img src="/favicon-32x32.png"></div>
       <button id="settingsBtn">⚙</button>
     </div>
     ${position === "top" ? pinnedSectionHtml : ""}
