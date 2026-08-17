@@ -231,29 +231,68 @@ window.Meet = (function () {
   let prepareAction = null;
   let previewCamOn = true;
   let previewMicOn = true;
+  let pendingKnownSharerId = null;   // learned from join-response, applied once that peer connects
+  let pendingKnownSharerName = null;
 
   async function openPrepare(action, prefillCode) {
     prepareAction = action;
-    // We don't know a joined meeting's real mode until the host responds
-    // to the admission request, but default to showing/using the camera
-    // (most meetings are video) so camera + mic both start on when the
-    // person presses "Join meeting". handleJoinResponse corrects this
-    // down to voice-only afterward if the meeting turns out to be a
-    // voice chat, stripping the video track and hiding the camera button.
+    if (action === 'join') {
+      // Joining now happens in two steps: first the meeting code +
+      // passcode (validated against the host, which also tells us the
+      // meeting's real mode), THEN the camera/mic prepare screen — so a
+      // voice meeting and a video meeting can be told apart from the
+      // very start instead of guessing and correcting afterward.
+      openJoinCodeStep(prefillCode);
+      return;
+    }
     mode = action === 'host-voice' ? 'voice' : 'video';
     previewCamOn = mode === 'video';
     previewMicOn = true;
     showScreen('meet-prepare-screen');
-    renderPrepare(prefillCode || '');
+    renderPrepare();
     await refreshPreview();
   }
 
-  function renderPrepare(prefillCode) {
+  /* ── Step 1 of joining: meeting code + passcode only ─── */
+  function openJoinCodeStep(prefillCode) {
+    showScreen('meet-prepare-screen');
+    renderJoinCodeStep(prefillCode || '');
+  }
+
+  function renderJoinCodeStep(prefillCode) {
     const el = $('#meet-prepare-screen');
-    const isJoin = prepareAction === 'join';
     el.innerHTML = `
       <button class="meet-back-link" id="meet-back-btn">${ICONS.back} Back</button>
-      <h2 class="meet-title" style="margin-bottom:2px;">${isJoin ? 'Join meeting' : (mode === 'video' ? 'Start video call' : 'Start voice chat')}</h2>
+      <h2 class="meet-title" style="margin-bottom:2px;">Join meeting</h2>
+      <p class="meet-subtitle">Enter the meeting code to continue.</p>
+      <div class="meet-card" style="max-width:420px;">
+        <div class="meet-card-body">
+          <div class="meet-field-label">Meeting code</div>
+          <input class="meet-input" id="meet-code-input" placeholder="e.g. AB3-XY9" style="text-transform:uppercase;" value="${escapeHtml(prefillCode)}" />
+          <div class="meet-field-label">Passcode (if required)</div>
+          <input class="meet-input" id="meet-passcode-input" placeholder="Leave blank if none" />
+          <button class="meet-btn" id="meet-code-continue-btn">Continue</button>
+          <div class="meet-error" id="meet-error"></div>
+          <div class="meet-status-line" id="meet-status-line"><span class="meet-spinner"></span><span id="meet-status-text"></span></div>
+        </div>
+      </div>
+    `;
+    $('#meet-back-btn').onclick = () => showScreen('meet-action-select');
+    $('#meet-code-continue-btn').onclick = handleJoinCodeContinue;
+  }
+
+  function setJoinCodeBusy(busy) {
+    const btn = $('#meet-code-continue-btn');
+    if (btn) btn.disabled = busy;
+  }
+
+  function renderPrepare() {
+    const el = $('#meet-prepare-screen');
+    const isJoin = prepareAction === 'join';
+    const camAvailable = mode === 'video' && !camLocked;
+    el.innerHTML = `
+      <button class="meet-back-link" id="meet-back-btn">${ICONS.back} Back</button>
+      <h2 class="meet-title" style="margin-bottom:2px;">${isJoin ? 'Ready to join?' : (mode === 'video' ? 'Start video call' : 'Start voice chat')}</h2>
       <p class="meet-subtitle">Check your camera and microphone before ${isJoin ? 'joining' : 'starting'}.</p>
       <div class="meet-prepare">
         <div class="meet-card">
@@ -261,11 +300,11 @@ window.Meet = (function () {
             <video id="meet-preview-video" autoplay playsinline muted style="display:none;"></video>
             <div class="meet-preview-off" id="meet-preview-off">
               <div class="avatar-circle" style="width:60px;height:60px;font-size:20px;overflow:hidden;">${avatarHtml(user.username, user.avatarUrl)}</div>
-              <span>Camera is off</span>
+              <span>${mode === 'video' && camLocked ? 'Camera is locked off by the host' : 'Camera is off'}</span>
             </div>
             <div class="meet-preview-controls">
-              <button class="meet-mini-btn" id="meet-preview-mic" title="Toggle microphone">${ICONS.mic}</button>
-              ${mode === 'video' ? `<button class="meet-mini-btn" id="meet-preview-cam" title="Toggle camera">${ICONS.video}</button>` : ''}
+              <button class="meet-mini-btn${micLocked ? ' off' : ''}" id="meet-preview-mic" title="${micLocked ? 'Locked by the host' : 'Toggle microphone'}" ${micLocked ? 'disabled' : ''}>${micLocked ? ICONS.micOff : ICONS.mic}</button>
+              ${mode === 'video' ? `<button class="meet-mini-btn${camAvailable ? '' : ' off'}" id="meet-preview-cam" title="${camLocked ? 'Locked by the host' : 'Toggle camera'}" ${camLocked ? 'disabled' : ''}>${camAvailable ? ICONS.video : ICONS.videoOff}</button>` : ''}
             </div>
           </div>
         </div>
@@ -281,10 +320,9 @@ window.Meet = (function () {
             </div>
 
             ${isJoin ? `
-              <div class="meet-field-label">Meeting code</div>
-              <input class="meet-input" id="meet-code-input" placeholder="e.g. AB3-XY9" style="text-transform:uppercase;" value="${escapeHtml(prefillCode)}" />
-              <div class="meet-field-label">Passcode (if required)</div>
-              <input class="meet-input" id="meet-passcode-input" placeholder="Leave blank if none" />
+              ${micLocked ? `<p class="meet-error show" style="color:var(--mut);">The host has muted microphones for everyone right now.</p>` : ''}
+              ${camLocked && mode === 'video' ? `<p class="meet-error show" style="color:var(--mut);">The host has turned cameras off for everyone right now.</p>` : ''}
+              ${pendingKnownSharerName ? `<p class="meet-error show" style="color:var(--mut);">${escapeHtml(pendingKnownSharerName)} is currently sharing their screen.</p>` : ''}
               <button class="meet-btn" id="meet-primary-btn">Join meeting</button>
             ` : `
               <div class="meet-field-label">Passcode (optional)</div>
@@ -298,15 +336,27 @@ window.Meet = (function () {
       </div>
     `;
 
-    $('#meet-back-btn').onclick = () => { stopPreview(); showScreen('meet-action-select'); };
-    $('#meet-preview-mic').onclick = () => {
-      previewMicOn = !previewMicOn;
-      $('#meet-preview-mic').classList.toggle('off', !previewMicOn);
-      $('#meet-preview-mic').innerHTML = previewMicOn ? ICONS.mic : ICONS.micOff;
-      if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = previewMicOn);
+    $('#meet-back-btn').onclick = () => {
+      stopPreview();
+      if (isJoin) {
+        // Abandon this admission attempt cleanly rather than leaving a
+        // subscribed-but-unused channel behind.
+        if (channel && !inCall) { getSb().removeChannel(channel); channel = null; }
+        openJoinCodeStep(roomCode || '');
+      } else {
+        showScreen('meet-action-select');
+      }
     };
+    if (!micLocked) {
+      $('#meet-preview-mic').onclick = () => {
+        previewMicOn = !previewMicOn;
+        $('#meet-preview-mic').classList.toggle('off', !previewMicOn);
+        $('#meet-preview-mic').innerHTML = previewMicOn ? ICONS.mic : ICONS.micOff;
+        if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = previewMicOn);
+      };
+    }
     const camBtn = $('#meet-preview-cam');
-    if (camBtn) {
+    if (camBtn && !camLocked) {
       camBtn.onclick = () => {
         previewCamOn = !previewCamOn;
         camBtn.classList.toggle('off', !previewCamOn);
@@ -314,7 +364,7 @@ window.Meet = (function () {
         refreshPreview();
       };
     }
-    $('#meet-primary-btn').onclick = isJoin ? handleJoinSubmit : handleHostSubmit;
+    $('#meet-primary-btn').onclick = isJoin ? handleJoinFinalize : handleHostSubmit;
   }
 
   async function refreshPreview() {
@@ -415,9 +465,15 @@ window.Meet = (function () {
     channel.on('broadcast', { event: 'join-request' }, ({ payload }) => {
       if (!isHost) return; // only the host admits people
       const approved = !passcode || payload.passcode === passcode;
+      const sharerId = currentSharerId();
       channel.send({
         type: 'broadcast', event: 'join-response',
-        payload: { to: payload.from, approved, reason: approved ? null : 'passcode', mode }
+        payload: {
+          to: payload.from, approved, reason: approved ? null : 'passcode',
+          mode, micLocked: hostMicLocked, camLocked: hostCamLocked,
+          screenSharer: sharerId,
+          screenSharerName: sharerId ? (sharerId === myPeerId ? user.username : (peers[sharerId]?.name || null)) : null
+        }
       });
     });
 
@@ -533,20 +589,17 @@ window.Meet = (function () {
     channel.subscribe(status => { if (status === 'SUBSCRIBED') { enterCallRoom(); trackPresence(); } });
   }
 
-  /* ── Joiner: request admission ─────────────────────── */
-  async function handleJoinSubmit() {
+  /* ── Joiner step 1: submit code + passcode, wait for admission ── */
+  async function handleJoinCodeContinue() {
     showError('');
     const code = ($('#meet-code-input')?.value || '').trim().toUpperCase();
     const enteredPasscode = ($('#meet-passcode-input')?.value || '').trim();
     if (!code) { showError('Enter a meeting code.'); return; }
-    if (!localStream) { showError('Camera/microphone access is required.'); return; }
 
     roomCode = code;
     isHost = false;
-    micOn = previewMicOn;
-    camOn = previewCamOn;
 
-    setPrimaryBusy(true);
+    setJoinCodeBusy(true);
     showStatus('Waiting for the host to admit you...');
 
     pendingJoin = { settled: false, passcode: enteredPasscode };
@@ -560,7 +613,7 @@ window.Meet = (function () {
         admitTimer = setTimeout(() => {
           if (!pendingJoin || pendingJoin.settled) return;
           pendingJoin.settled = true;
-          setPrimaryBusy(false);
+          setJoinCodeBusy(false);
           showStatus('');
           showError('No response from the host. The meeting may not have started, or the code is wrong.');
           getSb().removeChannel(channel);
@@ -570,32 +623,48 @@ window.Meet = (function () {
     });
   }
 
-  function handleJoinResponse(payload) {
+  // Host has approved admission — we now know the meeting's real mode,
+  // current mic/camera lock state, and whether anyone is already
+  // screen-sharing, all BEFORE ever touching the camera/mic. Step 2 (the
+  // camera/mic prepare screen) is rendered accordingly.
+  async function handleJoinResponse(payload) {
     if (!pendingJoin || pendingJoin.settled) return;
     pendingJoin.settled = true;
     clearTimeout(admitTimer);
     if (payload.approved) {
       showStatus('');
-      setPrimaryBusy(false);
+      setJoinCodeBusy(false);
       passcode = pendingJoin.passcode;
-      // Trust the HOST's meeting mode, not our own guess from the prepare
-      // screen — this is what stops a voice-only meeting from ever
-      // offering a camera option to people who join it.
       mode = payload.mode === 'video' ? 'video' : 'voice';
-      if (mode === 'voice' && localStream) {
-        localStream.getVideoTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
-        camOn = false;
-      }
-      enterCallRoom();
-      trackPresence();
-      if (mode === 'video' && !camOn) acquireCameraIfNeeded();
+      micLocked = !!payload.micLocked;
+      camLocked = !!payload.camLocked;
+      pendingKnownSharerId = payload.screenSharer || null;
+      pendingKnownSharerName = payload.screenSharerName || null;
+
+      previewCamOn = mode === 'video' && !camLocked;
+      previewMicOn = !micLocked;
+      showScreen('meet-prepare-screen');
+      renderPrepare();
+      await refreshPreview();
     } else {
-      setPrimaryBusy(false);
+      setJoinCodeBusy(false);
       showStatus('');
       showError(payload.reason === 'passcode' ? 'Incorrect passcode.' : 'Unable to join this meeting.');
       getSb().removeChannel(channel);
       channel = null;
     }
+  }
+
+  // Step 2's "Join meeting" button — media is only acquired now, with the
+  // already-known mode/locks respected from the start.
+  function handleJoinFinalize() {
+    showError('');
+    if (!localStream) { showError('Camera/microphone access is required.'); return; }
+    micOn = previewMicOn;
+    camOn = previewCamOn;
+    enterCallRoom();
+    trackPresence();
+    if (mode === 'video' && !camOn && !camLocked) acquireCameraIfNeeded();
   }
 
   // Called after joining a video meeting when the prepare screen didn't
@@ -701,6 +770,32 @@ window.Meet = (function () {
     if (camTrack) camTransceiver.sender.replaceTrack(camTrack);
 
     peers[peerId].screenTransceiver = pc.addTransceiver('video', { direction: 'sendonly' });
+
+    // If I know (from my own join-response) that this specific peer is
+    // the current screen sharer, mark it immediately rather than waiting
+    // for a 'meta'/'screen-viewers' broadcast that might race with this
+    // connection being set up — this is the join-time screen-share sync.
+    if (pendingKnownSharerId && peerId === pendingKnownSharerId) {
+      peers[peerId].screenSharing = true;
+      pendingKnownSharerId = null;
+      pendingKnownSharerName = null;
+    }
+
+    // If I'M the one currently sharing my screen and a new peer just
+    // joined, route them into the (fixed, 2-viewer) whitelist the same
+    // way the original viewers were chosen — otherwise a late joiner's
+    // reserved screen slot would just sit empty/black forever, since
+    // computeScreenViewers() only ran once at share-start.
+    if (localScreenSharing && screenStream) {
+      const screenTrack = screenStream.getVideoTracks()[0];
+      if (allowedScreenViewers && allowedScreenViewers.size < 2) {
+        allowedScreenViewers.add(peerId);
+        peers[peerId].screenTransceiver.sender.replaceTrack(screenTrack);
+        channel?.send({ type: 'broadcast', event: 'screen-viewers', payload: { sharer: myPeerId, viewers: [...allowedScreenViewers] } });
+      } else {
+        peers[peerId].screenTransceiver.sender.replaceTrack(getBlackTrack());
+      }
+    }
 
     pc.onicecandidate = ({ candidate }) => { if (candidate) sendSignal(peerId, 'ice', candidate); };
 
