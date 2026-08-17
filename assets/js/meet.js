@@ -580,6 +580,7 @@ window.Meet = (function () {
   async function handleHostSubmit() {
     showError('');
     if (!localStream) { showError('Camera/microphone access is required.'); return; }
+    setPrimaryBusy(true);
     roomCode = genRoomCode();
     passcode = ($('#meet-passcode-input')?.value || '').trim();
     isHost = true;
@@ -660,6 +661,7 @@ window.Meet = (function () {
   function handleJoinFinalize() {
     showError('');
     if (!localStream) { showError('Camera/microphone access is required.'); return; }
+    setPrimaryBusy(true);
     micOn = previewMicOn;
     camOn = previewCamOn;
     enterCallRoom();
@@ -941,6 +943,11 @@ window.Meet = (function () {
 
     const hostControls = $('#meet-host-controls');
     if (hostControls) hostControls.style.display = isHost ? '' : 'none';
+
+    // Sync the lock state we already learned from the host at admission
+    // time (or that a fresh host starts with, which is always unlocked).
+    updateLockedButtonUI('#meet-mic-btn', micLocked);
+    updateLockedButtonUI('#meet-cam-btn', camLocked);
 
     renderStage();
     updateParticipantCount();
