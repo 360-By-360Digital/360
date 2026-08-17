@@ -225,6 +225,7 @@ body.wide-mode .reaction-pill {
 
 /* ── OVERLAY (sidebar open) ── */
 body.wide-mode .overlay.active {
+  z-index: 90 !important;
   background: rgba(0, 0, 0, 0.30) !important;
   backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
@@ -363,4 +364,11 @@ body.wide-mode .custom-search-form {
     box-shadow 0.35s ease,
     backdrop-filter 0.35s ease,
     transform 0.3s ease !important;
+}
+
+/* ── SIDEBAR & SETTINGS (sit above overlay) ── */
+body.wide-mode .sidebar,
+body.wide-mode .settings-panel {
+  z-index: 100 !important; /* Must be higher than .overlay.active */
+  position: fixed; /* Ensures z-index takes effect */
 }
