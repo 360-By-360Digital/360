@@ -1737,7 +1737,7 @@ body.dark {
 .dc-lp-url { font-size: 11px; color: var(--dc-muted); margin-top: 2px; }
 
 /* ── Grammar toast ── */
-.grammar-toast { position:fixed; bottom:66px; right:16px; background:var(--dc-sidebar-bg); border:1px solid var(--dc-sep); border-radius:8px; padding:4px 8px; display:flex; align-items:center; gap:6px; z-index:9000; font-size:11px; color:var(--dc-muted); box-shadow:0 2px 8px rgba(0,0,0,.2); opacity:.85; pointer-events:auto; }
+.grammar-toast { position:fixed; bottom:66px; right:16px; background:var(--dc-sidebar-bg); border:1px solid var(--dc-sep); border-radius:8px; padding:4px 8px; display:flex; align-items:center; gap:6px; z-index:9000; font-size:11px; color:var(--dc-muted); box-shadow:0 2px 8px rgba(0,0,0,.2); pointer-events:auto; animation:toastIn .2s ease; }
 .grammar-toast button { background:none; border:none; cursor:pointer; font-size:11px; color:var(--a); padding:0 2px; text-decoration:underline; }
 
 /* ── GIF Picker ── */
