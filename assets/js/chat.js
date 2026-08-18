@@ -821,8 +821,10 @@ function renderText(raw){
   t=t.replace(/^\d+\. (.+)$/gm,'<li class="dc-li">$1</li>');
   // Mentions
   t=t.replace(/@(\w+)/g,(m,name)=>{
-    const isMe=currentProfile&&name.toLowerCase()===(currentProfile.username||'').toLowerCase();
-    return `<span class="dc-mention${isMe?' dc-mention-me':''}">${m}</span>`;
+    const lower=name.toLowerCase();
+    const isAll=lower==='all';
+    const isMe=currentProfile&&(isAll||lower===(currentProfile.username||'').toLowerCase());
+    return `<span class="dc-mention${isMe?' dc-mention-me':''}${isAll?' dc-mention-all':''}">${m}</span>`;
   });
   // Channel links #channel-name
   t=t.replace(/#([a-zA-Z0-9\-_]+)/g,'<span class="dc-ch-link">#$1</span>');
@@ -907,7 +909,9 @@ function openCtxMenu(e,msg){
   menu.style.left=Math.min(e.clientX,window.innerWidth-menu.offsetWidth-8)+'px';
   document.getElementById('ctx-delete').style.display=(msg.user_id===currentUserId||isAdminOrMod(currentProfile))?'flex':'none';
   document.getElementById('ctx-edit').style.display=(msg.user_id===currentUserId)?'flex':'none';
-  setTimeout(()=>document.addEventListener('click',()=>menu.classList.add('hidden'),{once:true}),10);
+  requestAnimationFrame(()=>document.addEventListener('click',ev=>{
+    if(!menu.contains(ev.target)) menu.classList.add('hidden');
+  },{once:true}));
 }
 document.getElementById('ctx-reply').onclick=()=>ctxTargetMsg&&setReply(ctxTargetMsg);
 document.getElementById('ctx-react').onclick=e=>ctxTargetMsg&&openReactionPicker(ctxTargetMsg.id,e);
@@ -2031,12 +2035,9 @@ async function initGlobalDMWatcher() {
   if (window._dmGlobalChan) return;
   // Get all DM IDs this user is part of
   const { data: dms } = await sb.from('direct_messages')
-    .select('id').or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`);
+    .select('id').or(`user_a.eq.${currentUserId},user_b.eq.${currentUserId}`);
   if (!dms?.length) return;
-  // Also group DMs
-  const { data: gdms } = await sb.from('group_dms')
-    .select('id').contains('member_ids', [currentUserId]);
-  const allDmIds = [...(dms||[]).map(d=>d.id), ...(gdms||[]).map(d=>d.id)];
+  const allDmIds = dms.map(d => d.id);
   if (!allDmIds.length) return;
 
   window._dmGlobalChan = sb.channel('global-dm-watcher:'+currentUserId)
