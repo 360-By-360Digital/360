@@ -1,15 +1,19 @@
 {
-  "name": "360-desktop",
+  "name": "360-platform",
   "version": "3.6.0",
   "description": "360 — Search, Chat, Maps, Mail, News and Music. A privacy-respecting Google alternative.",
   "author": "360 Digital, Co. <admin@360-search.com>",
   "main": "electron/main.js",
   "homepage": "https://360-search.com",
   "scripts": {
-    "start": "electron .",
+    "start": "node server.js",
     "build:win": "electron-builder --win --x64",
     "build:linux": "electron-builder --linux deb AppImage",
     "build:mac": "electron-builder --mac dmg"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "electron": "^31.0.0",
@@ -28,20 +32,21 @@
       "*.html",
       "*.css",
       "*.js",
+      "!server.js",
       "!node_modules"
     ],
     "win": {
       "target": [{ "target": "nsis", "arch": ["x64"] }],
-      "icon": "assets/icons/icon.ico"
+      "icon": "electron/icons/icon.ico"
     },
     "linux": {
       "target": ["deb", "AppImage"],
-      "icon": "assets/icons/icon.png",
+      "icon": "electron/icons/icon.png",
       "category": "Network"
     },
     "mac": {
       "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
-      "icon": "assets/icons/icon.icns",
+      "icon": "electron/icons/icon.icns",
       "category": "public.app-category.productivity"
     },
     "nsis": {
