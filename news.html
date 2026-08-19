@@ -227,6 +227,20 @@
         <button class="news-cat" data-primary="https://feeds.bbci.co.uk/sport/rss.xml" data-backup="https://www.espn.com/espn/rss/news" data-label="Sports" data-icon="device-desktop" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Sports</button>
         <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/world/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/World.xml" data-label="World" data-icon="globe" onclick="switchCat(this)"><span data-octicon="globe"></span> World</button>
         <button class="news-cat" data-primary="https://www.theverge.com/rss/index.xml" data-backup="https://www.wired.com/feed/rss" data-label="Future" data-icon="device-desktop" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Future</button>
+        <button class="news-cat" id="savedTab" data-label="Saved" data-icon="bookmark" onclick="showSaved()"><span data-octicon="bookmark"></span> Saved</button>
+        <button class="news-cat" id="rssTab" data-label="Add RSS" data-icon="rss" onclick="showRssModal()"><span data-octicon="rss"></span> Add RSS</button>
+      </div>
+
+      <div id="rssModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.6);align-items:center;justify-content:center;">
+        <div style="background:var(--news-card);border:1px solid var(--news-border);border-radius:20px;padding:28px;width:min(480px,90vw);display:flex;flex-direction:column;gap:14px;">
+          <div style="font-weight:800;font-size:16px;color:var(--news-text);">Add RSS Feed</div>
+          <input id="rssInput" type="url" placeholder="https://example.com/feed.xml" style="padding:10px 14px;border-radius:10px;border:1px solid var(--news-border);background:rgba(255,255,255,.07);color:var(--news-text);font-size:14px;font-family:inherit;outline:none;width:100%;box-sizing:border-box;" />
+          <div id="rssCustomList" style="display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;"></div>
+          <div style="display:flex;gap:10px;">
+            <button onclick="addRssFeed()" style="flex:1;padding:10px;border-radius:999px;border:none;background:linear-gradient(120deg,var(--a),#8b5cf6);color:#fff;font-weight:700;cursor:pointer;font-family:inherit;">Add Feed</button>
+            <button onclick="document.getElementById('rssModal').style.display='none'" style="padding:10px 18px;border-radius:999px;border:1px solid var(--news-border);background:none;color:var(--news-muted);cursor:pointer;font-family:inherit;">Cancel</button>
+          </div>
+        </div>
       </div>
 
       <div class="insight-bar" id="insightBar">
@@ -414,6 +428,38 @@
     document.getElementById("savedState").textContent = localStorage.getItem("newsSavedDigest") ? "Saved locally" : "Not saved";
   }
 
+  const SOURCE_BIAS = {
+    'bbc': 'center', 'bbc news': 'center', 'reuters': 'center', 'ap': 'center', 'associated press': 'center',
+    'the guardian': 'center-left', 'nyt': 'center-left', 'new york times': 'center-left', 'washington post': 'center-left',
+    'cnn': 'center-left', 'msnbc': 'left', 'vox': 'left', 'huffpost': 'left',
+    'fox news': 'right', 'the daily wire': 'right', 'breitbart': 'right',
+    'wall street journal': 'center-right', 'wsj': 'center-right', 'the economist': 'center-right',
+    'techcrunch': 'center', 'nasa': 'center', 'ars technica': 'center',
+  };
+  const BIAS_COLOR = { 'left': '#3b82f6', 'center-left': '#60a5fa', 'center': '#94a3b8', 'center-right': '#f97316', 'right': '#ef4444' };
+  const BIAS_LABEL = { 'left': 'Left', 'center-left': 'Center-Left', 'center': 'Center', 'center-right': 'Center-Right', 'right': 'Right' };
+
+  function getBias(sourceName) {
+    const key = (sourceName || '').toLowerCase().trim();
+    return SOURCE_BIAS[key] || null;
+  }
+
+  let savedUrls = new Set(JSON.parse(localStorage.getItem('360_news_saved') || '[]'));
+
+  function toggleSave(url, btn) {
+    if (savedUrls.has(url)) {
+      savedUrls.delete(url);
+      btn.style.color = '';
+      btn.querySelector('svg').setAttribute('fill', 'none');
+    } else {
+      savedUrls.add(url);
+      btn.style.color = 'var(--a)';
+      btn.querySelector('svg').setAttribute('fill', 'currentColor');
+      showToast('Article saved.');
+    }
+    localStorage.setItem('360_news_saved', JSON.stringify([...savedUrls]));
+  }
+
   function renderCards(list, icon) {
     const grid = document.getElementById("news-grid");
     grid.classList.toggle("compact", currentDensity === "compact");
@@ -421,10 +467,22 @@
     grid.innerHTML = list.map((a, i) => {
       const img = extractImage(a);
       const imgEl = img ? `<img class="news-card-img" src="${escapeHTML(img)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=\'news-card-placeholder\'>${window.Octicons.icon(icon)}</div>'">` : `<div class="news-card-placeholder">${window.Octicons.icon(icon)}</div>`;
-      return `<a class="news-card" href="${escapeHTML(a.link)}" target="_blank" rel="noopener noreferrer" style="animation-delay:${Math.min(i, 12) * 0.035}s">
-        ${imgEl}<div class="news-card-body"><div class="news-card-source">${escapeHTML(extractSource(a, currentSource))}</div><div class="news-card-title">${escapeHTML(a.title)}</div>${a.description ? `<div class="news-card-desc">${escapeHTML(a.description)}</div>` : ""}<div class="news-card-footer"><span>${timeAgo(a.pubDate)}</span><span class="read-time">${readTime(a)}</span></div></div>
-      </a>`;
+      const src = extractSource(a, currentSource);
+      const bias = getBias(src);
+      const biasDot = bias ? `<span title="${BIAS_LABEL[bias]}" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${BIAS_COLOR[bias]};flex-shrink:0;margin-right:3px;vertical-align:middle;"></span>` : '';
+      const isSaved = savedUrls.has(a.link);
+      return `<div class="news-card" style="animation-delay:${Math.min(i, 12) * 0.035}s;position:relative;">
+        <a href="${escapeHTML(a.link)}" target="_blank" rel="noopener noreferrer" style="display:contents;">
+          ${imgEl}<div class="news-card-body"><div class="news-card-source" style="display:flex;align-items:center;gap:3px;">${biasDot}${escapeHTML(src)}</div><div class="news-card-title">${escapeHTML(a.title)}</div>${a.description ? `<div class="news-card-desc">${escapeHTML(a.description)}</div>` : ""}<div class="news-card-footer"><span>${timeAgo(a.pubDate)}</span><span class="read-time">${readTime(a)}</span></div></div>
+        </a>
+        <button class="news-bmk" data-url="${escapeHTML(a.link)}" style="position:absolute;top:9px;right:9px;background:rgba(0,0,0,.4);border:none;border-radius:6px;padding:5px 6px;cursor:pointer;color:${isSaved ? 'var(--a)' : '#fff'};display:flex;align-items:center;line-height:1;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        </button>
+      </div>`;
     }).join("");
+    grid.querySelectorAll('.news-bmk').forEach(btn => {
+      btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); toggleSave(btn.dataset.url, btn); });
+    });
   }
 
   function showToast(message) {
@@ -475,6 +533,66 @@
     localStorage.setItem("newsSavedDigest", JSON.stringify({ savedAt: new Date().toISOString(), digest }));
     updateInsights(allArticles); showToast("Digest saved on this device");
   });
+
+
+  function showSaved() {
+    document.querySelectorAll('.news-cat').forEach(b => b.classList.remove('active'));
+    document.getElementById('savedTab').classList.add('active');
+    const saved = [...savedUrls];
+    const grid = document.getElementById('news-grid');
+    document.getElementById('news-hero').style.display = 'none';
+    document.getElementById('briefingPanel')?.style && (document.getElementById('briefingPanel').style.display = 'none');
+    if (!saved.length) { grid.innerHTML = '<div class="news-status">No saved articles yet. Click the bookmark icon on any article.</div>'; return; }
+    grid.innerHTML = saved.map((url, i) => `
+      <div class="news-card" style="animation-delay:${i * 0.035}s;position:relative;">
+        <a href="${url}" target="_blank" rel="noopener noreferrer" style="display:contents;">
+          <div class="news-card-placeholder"><span data-octicon="bookmark"></span></div>
+          <div class="news-card-body"><div class="news-card-title" style="word-break:break-all;font-size:13px;">${url}</div></div>
+        </a>
+        <button class="news-bmk" data-url="${url}" style="position:absolute;top:9px;right:9px;background:rgba(0,0,0,.4);border:none;border-radius:6px;padding:5px 6px;cursor:pointer;color:var(--a);display:flex;align-items:center;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        </button>
+      </div>`).join('');
+    if (window.Octicons) window.Octicons.process(grid);
+    grid.querySelectorAll('.news-bmk').forEach(btn => {
+      btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); toggleSave(btn.dataset.url, btn); showSaved(); });
+    });
+  }
+
+  let customFeeds = JSON.parse(localStorage.getItem('360_rss_feeds') || '[]');
+
+  function showRssModal() {
+    renderCustomFeedList();
+    document.getElementById('rssModal').style.display = 'flex';
+  }
+
+  function renderCustomFeedList() {
+    const el = document.getElementById('rssCustomList');
+    if (!customFeeds.length) { el.innerHTML = '<div style="font-size:12px;color:var(--news-muted);">No custom feeds added yet.</div>'; return; }
+    el.innerHTML = customFeeds.map((url, i) => `
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--news-muted);">
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${url}</span>
+        <button data-i="${i}" onclick="removeRssFeed(${i})" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:14px;line-height:1;">✕</button>
+      </div>`).join('');
+  }
+
+  function addRssFeed() {
+    const input = document.getElementById('rssInput');
+    const url = input.value.trim();
+    if (!url || !url.startsWith('http')) { showToast('Enter a valid feed URL.'); return; }
+    if (customFeeds.includes(url)) { showToast('Feed already added.'); return; }
+    customFeeds.push(url);
+    localStorage.setItem('360_rss_feeds', JSON.stringify(customFeeds));
+    input.value = '';
+    renderCustomFeedList();
+    showToast('Feed added.');
+  }
+
+  function removeRssFeed(i) {
+    customFeeds.splice(i, 1);
+    localStorage.setItem('360_rss_feeds', JSON.stringify(customFeeds));
+    renderCustomFeedList();
+  }
 
   setInterval(loadNews, 5 * 60 * 1000);
   loadNews();
