@@ -1292,6 +1292,33 @@ function initPinnedAppsSettings() {
   });
 }
 
+
+function polishSettingsPanel() {
+  const panel = document.getElementById("settingsPanel");
+  if (!panel) return;
+
+  panel.querySelectorAll("label").forEach(label => {
+    if (label.textContent.trim().startsWith("Dark mode")) label.classList.add("settings-mode-row");
+  });
+
+  if (!panel.querySelector("#settingsLegalLinks")) {
+    const legal = document.createElement("details");
+    legal.id = "settingsLegalLinks";
+    legal.className = "settings-legal";
+    legal.innerHTML = `
+      <summary>Legal</summary>
+      <div class="settings-link-list">
+        <a href="/tos"><span data-octicon="law"></span> Terms of Service</a>
+        <a href="/privacypolicy"><span data-octicon="lock"></span> Privacy Policy</a>
+        <a href="/settings"><span data-octicon="gear"></span> Advanced Settings</a>
+      </div>
+    `;
+    panel.appendChild(legal);
+  }
+
+  if (window.Octicons?.hydrate) window.Octicons.hydrate(panel);
+}
+
 function initAppsPagePinButtons() {
   document.querySelectorAll(".app-card[href]").forEach(card => {
     const href = normalizeAppHref(card.getAttribute("href"));
@@ -1320,6 +1347,7 @@ function initAppsPagePinButtons() {
 }
 
 initPinnedAppsSettings();
+polishSettingsPanel();
 initAppsPagePinButtons();
 
 console.log("%c360 V.3.6.0 — main.js loaded.", "color:#4ade80;font-weight:bold;font-size:14px;");
