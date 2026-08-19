@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="/assets/css/responsive.css" />
   <link rel="stylesheet" href="/assets/css/cursor.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/octicons.js"></script>
 
   <style>
     .weather-page {
@@ -531,7 +532,7 @@
 
   <!-- ══════════ PAGE ══════════ -->
   <div class="weather-page">
-    <h2>🌦️ Weather</h2>
+    <h2 class="page-title"><span class="title-icon" data-octicon="cloud" data-octicon-size="22" data-octicon-label="Weather"></span> Weather</h2>
 
     <form class="weather-form" id="weatherForm">
       <input id="city" placeholder="Enter a city or location…" autocomplete="off" />

@@ -1682,3 +1682,111 @@ body.dark .app-pin-btn {
   width: 32px;
   height: 32px;
 }
+
+/* ============================================================
+   PROFESSIONAL PAGE TITLES + SETTINGS PANEL POLISH
+   ============================================================ */
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-title .title-icon,
+.page-title .title-icon .octicon {
+  width: 22px;
+  height: 22px;
+  color: var(--a);
+  fill: currentColor;
+  -webkit-text-fill-color: currentColor;
+  text-fill-color: currentColor;
+}
+
+.settings-panel {
+  width: 300px;
+  padding: 22px 18px 26px;
+}
+
+.settings-panel h3 {
+  margin: 18px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(148,163,184,.22);
+}
+.settings-panel h3:first-child { margin-top: 0; }
+
+.theme-swatches,
+.cursor-options,
+.pinned-apps-settings,
+.settings-legal {
+  padding: 12px;
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 14px;
+  background: rgba(148,163,184,.08);
+}
+body.dark .theme-swatches,
+body.dark .cursor-options,
+body.dark .pinned-apps-settings,
+body.dark .settings-legal {
+  background: rgba(255,255,255,.045);
+  border-color: rgba(255,255,255,.09);
+}
+
+.settings-mode-row,
+.cursor-color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 12px;
+  background: rgba(148,163,184,.08);
+}
+
+.settings-legal summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--mut);
+  list-style: none;
+}
+.settings-legal summary::-webkit-details-marker { display: none; }
+body.dark .settings-legal summary { color: var(--mutd); }
+.settings-legal summary::after {
+  content: "▾";
+  font-size: 12px;
+  transition: transform .2s ease;
+}
+.settings-legal[open] summary::after { transform: rotate(180deg); }
+.settings-link-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.settings-link-list a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  color: var(--txt);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 650;
+  background: rgba(255,255,255,.46);
+  border: 1px solid transparent;
+}
+body.dark .settings-link-list a {
+  color: var(--txtd);
+  background: rgba(15,23,42,.38);
+}
+.settings-link-list a:hover {
+  border-color: var(--a);
+  color: var(--a);
+}
