@@ -809,8 +809,20 @@
           <button class="vids-action-btn" id="addToPlaylistBtn">📃 Add to Playlist</button>
           <button class="vids-action-btn" id="shareBtn">🔗 Share</button>
           <button class="vids-action-btn" id="downloadBtn">⬇️ Download</button>
+          <button class="vids-action-btn" id="moreLikeBtn" title="More like this">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
+            More like this
+          </button>
         </div>
         <div class="vids-watch-desc" id="watchDesc"></div>
+
+        <details style="margin-top:12px;" open>
+          <summary style="font-size:13px;font-weight:600;cursor:pointer;color:var(--vid-mut);user-select:none;list-style:none;display:flex;align-items:center;gap:6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            Lyrics
+          </summary>
+          <div id="lyricsPanel" style="max-height:200px;overflow-y:auto;margin-top:6px;padding:4px 0;"></div>
+        </details>
 
         <div id="commentsSection" style="margin-top:14px;">
           <h4 style="font-size:14px;font-weight:700;margin:0 0 6px;">Comments</h4>
@@ -1420,7 +1432,7 @@
       miniTitle.textContent = track.title;
       miniPlayer.style.display = 'flex';
 
-      // Increment views -- atomic on the server now.
+      // Increment views
       sb.rpc('increment_music_views', { p_id: id }).then(({ error }) => {
         if (!error) {
           track.views = (track.views || 0) + 1;
@@ -1429,14 +1441,76 @@
         }
       });
 
+      // Write listening activity to profile so chat can show "Listening to X"
+      if (currentUser) {
+        sb.from('profiles').update({
+          current_activity: JSON.stringify({ type: 'music', track: track.title, artist: track.username || 'Unknown', track_id: track.id })
+        }).eq('id', currentUser.id).then(() => {});
+      }
+
+      // Fetch lyrics from LRCLIB (free, no key required)
+      fetchLyrics(track.title, track.username || '');
+
       commentSubmit.disabled = true;
       await loadComments(track.id);
       commentSubmit.disabled = false;
     }
 
+    let lyricsLines = [];
+    let lyricsInterval = null;
+
+    async function fetchLyrics(title, artist) {
+      const lyricsPanel = document.getElementById('lyricsPanel');
+      if (!lyricsPanel) return;
+      lyricsPanel.innerHTML = '<div style="color:var(--mut);font-size:12px;padding:8px;">Loading lyrics…</div>';
+      lyricsLines = [];
+      clearInterval(lyricsInterval);
+      try {
+        const url = `https://lrclib.net/api/get?track_name=${encodeURIComponent(title)}&artist_name=${encodeURIComponent(artist)}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('not found');
+        const data = await res.json();
+        if (data.syncedLyrics) {
+          lyricsLines = data.syncedLyrics.split('\n').map(line => {
+            const m = line.match(/^\[(\d+):(\d+\.\d+)\](.*)/);
+            return m ? { t: parseInt(m[1]) * 60 + parseFloat(m[2]), text: m[3].trim() } : null;
+          }).filter(Boolean);
+          lyricsPanel.innerHTML = '<div id="lyricsContent" style="font-size:13px;line-height:1.8;padding:8px;"></div>';
+          renderSyncedLyrics();
+          lyricsInterval = setInterval(renderSyncedLyrics, 500);
+        } else if (data.plainLyrics) {
+          lyricsPanel.innerHTML = `<div style="font-size:13px;line-height:1.8;padding:8px;white-space:pre-line;">${escHtml(data.plainLyrics)}</div>`;
+        } else {
+          lyricsPanel.innerHTML = '<div style="color:var(--mut);font-size:12px;padding:8px;">No lyrics found.</div>';
+        }
+      } catch {
+        lyricsPanel.innerHTML = '<div style="color:var(--mut);font-size:12px;padding:8px;">No lyrics found.</div>';
+      }
+    }
+
+    function renderSyncedLyrics() {
+      const el = document.getElementById('lyricsContent');
+      if (!el || !lyricsLines.length) return;
+      const t = player.currentTime;
+      let active = 0;
+      for (let i = 0; i < lyricsLines.length; i++) {
+        if (lyricsLines[i].t <= t) active = i;
+      }
+      el.innerHTML = lyricsLines.map((l, i) =>
+        `<div style="transition:all .3s;${i === active ? 'color:var(--a);font-weight:600;' : 'color:var(--mut);'}">${escHtml(l.text) || '&nbsp;'}</div>`
+      ).join('');
+      el.children[active]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+
     function closeWatch() {
       watchOverlay.classList.remove('open');
       document.body.style.overflow = '';
+      clearInterval(lyricsInterval);
+      lyricsLines = [];
+      // Clear listening activity
+      if (currentUser) {
+        sb.from('profiles').update({ current_activity: null }).eq('id', currentUser.id).then(() => {});
+      }
     }
 
     document.getElementById('watchCloseBtn').addEventListener('click', closeWatch);
@@ -1498,6 +1572,20 @@
       a.href = currentTrack.audio_url;
       a.download = (currentTrack.title || 'track') + '.mp3';
       document.body.appendChild(a); a.click(); a.remove();
+    });
+
+    document.getElementById('moreLikeBtn').addEventListener('click', async () => {
+      if (!currentTrack) return;
+      const { data: similar } = await sb.from('music_tracks')
+        .select('id,title,username,thumbnail_url,audio_url,category,views,likes,dislikes,created_at')
+        .eq('category', currentTrack.category || '')
+        .neq('id', currentTrack.id)
+        .limit(20);
+      if (!similar?.length) { showToast('No similar tracks found.'); return; }
+      manualQueue = similar.slice(0, 10);
+      allTracks = [...allTracks, ...similar.filter(s => !allTracks.find(t => t.id === s.id))];
+      renderQueuePanel();
+      showToast(`Added ${Math.min(similar.length, 10)} similar tracks to queue.`);
     });
 
     // ── Custom player controls ────────────────────────────────────────────────
