@@ -6,9 +6,8 @@ on:
     branches:
       - main
     paths:
-      - 'src/**'
+      - 'electron/**'
       - 'package.json'
-      - 'package-lock.json'
       - '.github/workflows/build-linux.yml'
 
 jobs:
@@ -23,10 +22,10 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Build Linux
-        run: npx electron-builder --linux deb AppImage
+        run: npm run build:linux
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
