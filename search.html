@@ -1,5 +1,5 @@
 <!-- ===============================
-  SEARCH.HTML V.3.6.0 CUSTOM SEARCH
+  SEARCH.HTML V.3.0 CUSTOM SEARCH
 ================================ -->
 
 <!--================================
@@ -1300,10 +1300,6 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         <span id="view-mode-label">Classic view</span>
       </button>
-      <button id="ai-summary-toggle" class="safe-search-toggle" title="Toggle AI summary">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 5 5"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-        <span id="ai-summary-label">AI: On</span>
-      </button>
     </div>
 
     <!-- Tools bar: time range + sort, only meaningful for Web/Videos (real
@@ -1395,7 +1391,6 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
       // edge function); GCSE's own web-results safe search is configured
       // at the CSE control-panel level, not adjustable per-request here.
       safeSearch: localStorage.getItem('360_safe_search') !== 'off',
-      aiSummary: localStorage.getItem('360_ai_summary') !== 'off',
       // Tools bar (Web/Videos only) — see buildFilteredQuery()
       timeRange: 'any',
       sortMode: 'relevance',
@@ -3052,26 +3047,6 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
     })();
 
     /* ─────────────────────────────────
-       AI SUMMARY TOGGLE
-    ───────────────────────────────── */
-    (function setupAiSummaryToggle() {
-      const btn   = document.getElementById('ai-summary-toggle');
-      const label = document.getElementById('ai-summary-label');
-      function render() {
-        label.textContent = state.aiSummary ? 'AI: On' : 'AI: Off';
-        btn.classList.toggle('off', !state.aiSummary);
-        if (!state.aiSummary) { aiPanel.innerHTML = ''; aiPanel.classList.remove('active'); }
-      }
-      render();
-      btn.addEventListener('click', () => {
-        state.aiSummary = !state.aiSummary;
-        localStorage.setItem('360_ai_summary', state.aiSummary ? 'on' : 'off');
-        render();
-        if (state.aiSummary && state.query) runAiSearch(state.query);
-      });
-    })();
-
-    /* ─────────────────────────────────
        CLASSIC / FULL-PAGE RESULTS VIEW
        Purely a body class + CSS override (see .classic-results rules
        above) — no re-render needed on toggle since the same result-card
@@ -3301,7 +3276,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
     }
 
     async function runAiSearch(q) {
-      if (!state.aiSummary) { aiPanel.innerHTML = ''; aiPanel.classList.remove('active'); return; }
+      // Offline check
       if (!navigator.onLine) {
         aiPanel.innerHTML = `
           <div class="ai-response-card">
