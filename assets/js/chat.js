@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════
-   360 Chat v3.3 — Full rewrite
+   360 Chat v3.3?
    Fixes: timestamps (UTC→local), delete+regroup, members=online,
    ephemeral bot messages, thread count, joined-only rail, all panels
 ════════════════════════════════════════════════════════ */
@@ -672,7 +672,7 @@ document.getElementById('dc-messages').addEventListener('scroll',async function(
 ══════════════════════════════════════════════════════ */
 function renderMessage(msg,isRealtime){
   // Fire Carlos event for commands (realtime messages only, not self)
-  if(isRealtime && msg.user_id !== currentUserId && msg.text?.startsWith('!')) {
+  if(isRealtime && msg.text?.startsWith('!')) {
     window.dispatchEvent(new CustomEvent('carlos-message', { detail: msg }));
   }
   const el=buildMsgEl(msg); if(!el) return;
@@ -1219,6 +1219,7 @@ async function loadMembers(){
       const badges=[]; if(isOwner)badges.push('👑 Owner');else if(p.role==='admin')badges.push('🛡 Admin');else if(p.role==='mod')badges.push('⚔️ Mod');
       if(p.tag)badges.push(p.tag); sub.textContent=badges.join(' · ')||'Member';
       nameWrap.appendChild(name); nameWrap.appendChild(sub);
+      if(p.current_activity){try{const act=typeof p.current_activity==='string'?JSON.parse(p.current_activity):p.current_activity;if(act?.type==='music'&&act.track){const chip=document.createElement('div');chip.style.cssText='font-size:10px;color:var(--a);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:3px;';chip.innerHTML=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><span>${act.track}${act.artist?' · '+act.artist:''}</span>`;nameWrap.appendChild(chip);}}catch(e){}}
       const dot=document.createElement('div'); dot.className='mi-status'+(onlineUids.has(uid)?' online':'');
       item.appendChild(av); item.appendChild(nameWrap); item.appendChild(dot);
       item.addEventListener('click',()=>showProfilePopup(uid,item)); list.appendChild(item);
@@ -1442,10 +1443,11 @@ async function sendMessage(){
     if (finalText.includes('@all') && activeRoom.serverId) {
       sb.from('server_members').select('user_id').eq('server_id', activeRoom.serverId).then(({data:members}) => {
         if (!members?.length) return;
+        const now = new Date().toISOString();
         const notifs = members
           .map(m => m.user_id).filter(uid => uid !== currentUserId)
-          .map(uid => ({ user_id: uid, type: 'mention_all', server_id: activeRoom.serverId, channel_id: activeRoom.id||null, from_user: currentUserId, read: false, created_at: new Date().toISOString() }));
-        if (notifs.length) sb.from('notifications').insert(notifs).catch(()=>{});
+          .map(uid => ({ user_id: uid, room_type: 'channel', room_id: activeRoom.id||activeRoom.serverId, notif_type: 'mention_all', title: '@all mention', body: (p.username||'Someone')+' mentioned @all', is_read: false, last_msg_at: now, updated_at: now, count: 1 }));
+        if (notifs.length) sb.from('chat_notifications').insert(notifs).catch(()=>{});
       });
     }
     const payload={user_id:session.user.id,username:p.username||session.user.email,avatar_url:p.avatar_url||null,tag:p.tag||null,role:p.role||'user',text:filterProfanity(applyShortcodes(finalText||'')),file_url:fileUrl};
