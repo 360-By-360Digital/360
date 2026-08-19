@@ -1,12 +1,10 @@
 <!-- ========================
       360 Maps — v3.1.0
-      Last updated by Mingze
+      Last updated by Zaki!
 ========================== -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
-  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-89NN1P6CEV');</script>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>360 - Maps</title>
@@ -173,5 +171,92 @@
   <script src="/assets/js/cookie.js"></script>
   <script src="/assets/js/cursor.js"></script>
   <script src="/assets/js/360Maps.js"></script>
+
+  <!-- ── Incident reporting layer ── -->
+  <button id="incidentBtn" title="Report a road incident" style="position:fixed;bottom:100px;right:20px;z-index:1000;width:44px;height:44px;border-radius:50%;border:none;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;font-size:18px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  </button>
+
+  <div id="incidentModal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center;">
+    <div style="background:#0f172a;border:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;padding:24px;width:min(480px,100vw);box-sizing:border-box;display:flex;flex-direction:column;gap:14px;">
+      <div style="font-weight:800;font-size:16px;color:#f1f5f9;">Report an incident</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="incidentTypeGrid">
+        <button class="inc-type-btn" data-type="speed_trap" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
+          <div style="font-size:20px;margin-bottom:4px;">📸</div>Speed trap
+        </button>
+        <button class="inc-type-btn" data-type="accident" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
+          <div style="font-size:20px;margin-bottom:4px;">💥</div>Accident
+        </button>
+        <button class="inc-type-btn" data-type="road_closed" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
+          <div style="font-size:20px;margin-bottom:4px;">🚧</div>Road closed
+        </button>
+        <button class="inc-type-btn" data-type="hazard" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
+          <div style="font-size:20px;margin-bottom:4px;">⚠️</div>Hazard
+        </button>
+        <button class="inc-type-btn" data-type="police" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
+          <div style="font-size:20px;margin-bottom:4px;">🚔</div>Police
+        </button>
+        <button class="inc-type-btn" data-type="traffic" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
+          <div style="font-size:20px;margin-bottom:4px;">🚦</div>Heavy traffic
+        </button>
+      </div>
+      <button onclick="document.getElementById('incidentModal').style.display='none'" style="padding:10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:none;color:#94a3b8;cursor:pointer;font-family:inherit;">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+  (function initIncidents() {
+    const sb = supabase.createClient(
+      'https://wiswfpfsjiowtrdyqpxy.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM'
+    );
+
+    const ICONS = { speed_trap:'📸', accident:'💥', road_closed:'🚧', hazard:'⚠️', police:'🚔', traffic:'🚦' };
+    const incidentMarkers = [];
+    let userLat = null, userLng = null;
+    let currentUser = null;
+
+    sb.auth.getUser().then(({ data: { user } }) => { currentUser = user; });
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        userLat = pos.coords.latitude;
+        userLng = pos.coords.longitude;
+      });
+    }
+
+    document.getElementById('incidentBtn').addEventListener('click', () => {
+      document.getElementById('incidentModal').style.display = 'flex';
+    });
+
+    document.querySelectorAll('.inc-type-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!currentUser) { document.getElementById('incidentModal').style.display = 'none'; alert('Sign in to report incidents.'); return; }
+        const type = btn.dataset.type;
+        const lat = userLat || 0, lng = userLng || 0;
+        const expires = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+        await sb.from('map_incidents').insert({ type, lat, lng, reported_by: currentUser.id, expires_at: expires });
+        document.getElementById('incidentModal').style.display = 'none';
+        loadIncidents();
+      });
+    });
+
+    async function loadIncidents() {
+      incidentMarkers.forEach(m => { try { window._leafletMap?.removeLayer(m); } catch(e){} });
+      incidentMarkers.length = 0;
+      const { data } = await sb.from('map_incidents').select('*').gt('expires_at', new Date().toISOString());
+      if (!data?.length || !window._leafletMap) return;
+      data.forEach(inc => {
+        const icon = L.divIcon({ html: `<div style="font-size:22px;line-height:1;">${ICONS[inc.type] || '📍'}</div>`, className: '', iconSize: [28, 28], iconAnchor: [14, 14] });
+        const m = L.marker([inc.lat, inc.lng], { icon }).addTo(window._leafletMap);
+        m.bindPopup(`<b>${(inc.type || '').replace('_', ' ')}</b><br><small>Expires in ~2h</small>`);
+        incidentMarkers.push(m);
+      });
+    }
+
+    setTimeout(loadIncidents, 2000);
+    setInterval(loadIncidents, 5 * 60 * 1000);
+  })();
+  </script>
 </body>
 </html>
