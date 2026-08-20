@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>360 — Games</title>
+  <link rel="icon" type="image/png" href="../favicon-32x32.png" />
+  <link rel="manifest" href="../manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/wide.css" />
+  <link rel="stylesheet" href="/assets/css/gallium.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+  <link rel="stylesheet" href="/assets/css/cursor.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ===============================
+       BLOCK BLAST FULL STYLES
+    =============================== */
+
+    .blockblast-container {
+      padding: 20px;
+      max-width: 640px;
+      margin: auto;
+      text-align: center;
+    }
+
+    .bb-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      gap: 10px;
+    }
+
+    .bb-top-bar h1 {
+      font-size: 22px;
+      margin: 0;
+    }
+
+    .bb-top-actions button {
+      margin-left: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--br);
+      background: rgba(255,255,255,.6);
+      color: var(--txt);
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    body.dark .bb-top-actions button {
+      background: rgba(15,23,42,.7);
+      color: var(--txtd);
+    }
+
+    .bb-stats {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .bb-stat {
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--br);
+      background: rgba(255,255,255,.5);
+      min-width: 90px;
+    }
+
+    body.dark .bb-stat {
+      background: rgba(15,23,42,.6);
+    }
+
+    .bb-stat .bb-stat-label {
+      font-size: 11px;
+      opacity: .65;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .bb-stat .bb-stat-value {
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(110deg, var(--a), var(--a2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .bb-board-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+
+    #bbBoard {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      gap: 4px;
+      width: min(420px, 90vw);
+      height: min(420px, 90vw);
+      padding: 8px;
+      border-radius: 14px;
+      border: 1px solid var(--br);
+      background: rgba(255,255,255,.35);
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+
+    body.dark #bbBoard {
+      background: rgba(15,23,42,.5);
+    }
+
+    .bb-cell {
+      border-radius: 5px;
+      background: rgba(120,120,140,.12);
+      transition: background .12s, transform .1s;
+    }
+
+    body.dark .bb-cell {
+      background: rgba(255,255,255,.06);
+    }
+
+    .bb-cell.filled {
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.35), 0 2px 6px rgba(0,0,0,.18);
+    }
+
+    .bb-cell.preview-ok {
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.6);
+      opacity: .55;
+    }
+
+    .bb-cell.preview-bad {
+      background: rgba(239,68,68,.45) !important;
+      opacity: .6;
+    }
+
+    .bb-cell.clearing {
+      animation: bbClear .28s ease forwards;
+    }
+
+    @keyframes bbClear {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(.2); opacity: 0; }
+    }
+
+    .bb-tray {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .bb-piece-slot {
+      width: 110px;
+      height: 110px;
+      border-radius: 12px;
+      border: 1px solid var(--br);
+      background: rgba(255,255,255,.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      touch-action: none;
+      position: relative;
+    }
+
+    body.dark .bb-piece-slot {
+      background: rgba(15,23,42,.55);
+    }
+
+    .bb-piece-slot.empty {
+      opacity: .25;
+      cursor: default;
+    }
+
+    .bb-piece-slot.dragging {
+      opacity: .3;
+    }
+
+    .bb-piece-grid {
+      display: grid;
+      gap: 3px;
+      pointer-events: none;
+    }
+
+    .bb-piece-cell {
+      border-radius: 4px;
+      width: 18px;
+      height: 18px;
+    }
+
+    .bb-piece-cell.on {
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.35);
+    }
+
+    .bb-drag-ghost {
+      position: fixed;
+      pointer-events: none;
+      z-index: 999;
+      display: grid;
+      gap: 4px;
+      opacity: .9;
+    }
+
+    .bb-drag-ghost .bb-piece-cell {
+      width: 34px;
+      height: 34px;
+      border-radius: 5px;
+    }
+
+    .bb-status {
+      min-height: 22px;
+      font-size: 14px;
+      opacity: .8;
+      margin-bottom: 8px;
+    }
+
+    .bb-gameover {
+      position: fixed;
+      inset: 0;
+      background: rgba(5,8,22,.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+    }
+
+    .bb-gameover.show { display: flex; }
+
+    .bb-gameover-box {
+      background: var(--bg, #fff);
+      border-radius: 16px;
+      padding: 28px 34px;
+      text-align: center;
+      border: 1px solid var(--br);
+      max-width: 320px;
+    }
+
+    body.dark .bb-gameover-box {
+      background: #0f172a;
+    }
+
+    .bb-gameover-box h2 { margin: 0 0 6px; }
+    .bb-gameover-box p { opacity: .75; margin: 4px 0 18px; }
+
+    .bb-gameover-box button {
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(110deg, var(--a), var(--a2));
+      color: #050816;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor-dot"></div>
+  <div class="cursor-trail"></div>
+  <div class="cursor-crosshair"></div>
+  <div class="cursor-blob"></div>
+
+  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-mark"></div>
+      <button id="settingsBtn">⚙</button>
+    </div>
+    <nav class="nav-list">
+      <div class="nav-item" data-href="../">Home</div>
+      <div class="nav-item" data-href="../ai">AI</div>
+      <div class="nav-item" data-href="../weather">Weather</div>
+      <div class="nav-item" data-href="../translator">Translator</div>
+      <div class="nav-item" data-href="../stocks">Stocks</div>
+      <div class="nav-item" data-href="../url-shortener">URL Shortener</div>
+      <div class="nav-item" data-href="../chat">Chat</div>
+      <div class="nav-item" data-href="../news">News</div>
+      <div class="nav-item" data-href="../apps">Apps</div>
+      <div class="nav-item active" data-href="../games">Games</div>
+    </nav>
+    <div class="sidebar-footer">© 2026 360 INC. · V.2.0.3</div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="settings-panel" id="settingsPanel">
+    <h3>Appearance</h3>
+    <div class="settings-label">Theme</div>
+    <div class="theme-swatches">
+      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+    </div>
+    <div class="settings-label" style="margin-top:20px;">Mode</div>
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <span style="font-size:14px;">Dark mode</span>
+      <input type="checkbox" id="darkToggle" />
+    </label>
+    <h3 style="margin-top:20px;">Cursor</h3>
+    <div class="settings-label">Style</div>
+    <div class="cursor-options">
+      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+    </div>
+    <div class="cursor-color-row">
+      <label>Cursor color</label>
+      <input type="color" id="cursorColorPicker" value="#3b82f6" />
+      <button id="cursorColorReset">Reset</button>
+    </div>
+  </div>
+
+  <div id="auth-popup" class="auth-popup hidden">
+    <div class="auth-box">
+      <h2>Account</h2>
+      <input id="auth-email" type="email" placeholder="Email" />
+      <input id="auth-password" type="password" placeholder="Password" />
+      <button id="auth-login-btn">Log In</button>
+      <button id="auth-signup-btn">Sign Up</button>
+      <button id="github-login" class="oauth-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span>Sign in with GitHub</span>
+      </button>
+      <button id="google-login" class="oauth-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        <span>Sign in with Google</span>
+      </button>
+      <p id="auth-error" class="auth-error"></p>
+      <button id="auth-close-btn" class="close-btn">Close</button>
+    </div>
+  </div>
+
+  <div class="games-page">
+    <div class="blockblast-container">
+
+      <div class="bb-top-bar">
+        <h1>Block Blast</h1>
+        <div class="bb-top-actions">
+          <button id="bbRestart">🔄 Restart</button>
+        </div>
+      </div>
+
+      <div class="bb-stats">
+        <div class="bb-stat">
+          <div class="bb-stat-label">Score</div>
+          <div class="bb-stat-value" id="bbScore">0</div>
+        </div>
+        <div class="bb-stat">
+          <div class="bb-stat-label">Best</div>
+          <div class="bb-stat-value" id="bbBest">0</div>
+        </div>
+        <div class="bb-stat">
+          <div class="bb-stat-label">Combo</div>
+          <div class="bb-stat-value" id="bbCombo">0</div>
+        </div>
+      </div>
+
+      <div class="bb-status" id="bbStatus">Drag a piece onto the grid. Fill a row or column to blast it!</div>
+
+      <div class="bb-board-wrap">
+        <div id="bbBoard"></div>
+      </div>
+
+      <div class="bb-tray" id="bbTray"></div>
+
+    </div>
+  </div>
+
+  <div class="bb-gameover" id="bbGameOver">
+    <div class="bb-gameover-box">
+      <h2>Game Over</h2>
+      <p id="bbFinalScore">Score: 0</p>
+      <button id="bbPlayAgain">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    "use strict";
+
+    /* =====================================================
+       CONFIG
+    ===================================================== */
+    const SIZE = 8;
+    const COLORS = ['#f43f5e', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#f97316', '#06b6d4'];
+
+    // Piece shapes as [row, col] offsets
+    const SHAPES = [
+      [[0,0]],
+      [[0,0],[0,1]],
+      [[0,0],[1,0]],
+      [[0,0],[0,1],[0,2]],
+      [[0,0],[1,0],[2,0]],
+      [[0,0],[0,1],[1,0],[1,1]],
+      [[0,0],[0,1],[0,2],[0,3]],
+      [[0,0],[1,0],[2,0],[3,0]],
+      [[0,0],[0,1],[1,0]],
+      [[0,0],[0,1],[1,1]],
+      [[0,1],[1,0],[1,1]],
+      [[0,0],[1,0],[1,1]],
+      [[0,0],[0,1],[0,2],[1,0]],
+      [[0,0],[0,1],[0,2],[1,2]],
+      [[0,0],[1,0],[1,1],[1,2]],
+      [[0,2],[1,0],[1,1],[1,2]],
+      [[0,0],[0,1],[1,1],[1,2]],
+      [[0,1],[0,2],[1,0],[1,1]],
+      [[0,0],[1,0],[1,1],[2,1]],
+      [[0,1],[1,0],[1,1],[2,0]],
+      [[0,0],[0,1],[1,0],[1,1],[2,0],[2,1]],
+    ];
+
+    /* =====================================================
+       STATE
+    ===================================================== */
+    let board = []; // SIZE x SIZE, null or color
+    let tray = [];  // up to 3 { shape, color, used }
+    let score = 0;
+    let best = Number(localStorage.getItem('bb-best') || 0);
+    let combo = 0;
+    let dragging = null; // { pieceIndex, shape, color, ghostEl, offsetR, offsetC }
+
+    const boardEl = document.getElementById('bbBoard');
+    const trayEl = document.getElementById('bbTray');
+    const scoreEl = document.getElementById('bbScore');
+    const bestEl = document.getElementById('bbBest');
+    const comboEl = document.getElementById('bbCombo');
+    const statusEl = document.getElementById('bbStatus');
+    const gameOverEl = document.getElementById('bbGameOver');
+    const finalScoreEl = document.getElementById('bbFinalScore');
+
+    bestEl.textContent = best;
+
+    /* =====================================================
+       BOARD RENDER
+    ===================================================== */
+    function newBoard() {
+      board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = '';
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'bb-cell';
+          cell.dataset.r = r;
+          cell.dataset.c = c;
+          if (board[r][c]) {
+            cell.classList.add('filled');
+            cell.style.background = board[r][c];
+          }
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function cellEl(r, c) {
+      return boardEl.children[r * SIZE + c];
+    }
+
+    /* =====================================================
+       PIECE TRAY
+    ===================================================== */
+    function randomPiece() {
+      const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      return { shape, color, used: false };
+    }
+
+    function refillTray() {
+      tray = [randomPiece(), randomPiece(), randomPiece()];
+      renderTray();
+    }
+
+    function renderTray() {
+      trayEl.innerHTML = '';
+      tray.forEach((piece, idx) => {
+        const slot = document.createElement('div');
+        slot.className = 'bb-piece-slot' + (piece.used ? ' empty' : '');
+        slot.dataset.idx = idx;
+
+        if (!piece.used) {
+          const grid = buildPieceGrid(piece, 18);
+          slot.appendChild(grid);
+          slot.addEventListener('pointerdown', (e) => startDrag(e, idx));
+        }
+        trayEl.appendChild(slot);
+      });
+    }
+
+    function pieceBounds(shape) {
+      const maxR = Math.max(...shape.map(p => p[0])) + 1;
+      const maxC = Math.max(...shape.map(p => p[1])) + 1;
+      return { maxR, maxC };
+    }
+
+    function buildPieceGrid(piece, cellPx) {
+      const { maxR, maxC } = pieceBounds(piece.shape);
+      const grid = document.createElement('div');
+      grid.className = 'bb-piece-grid';
+      grid.style.gridTemplateColumns = `repeat(${maxC}, ${cellPx}px)`;
+      grid.style.gridTemplateRows = `repeat(${maxR}, ${cellPx}px)`;
+      const set = new Set(piece.shape.map(p => p[0] + ',' + p[1]));
+      for (let r = 0; r < maxR; r++) {
+        for (let c = 0; c < maxC; c++) {
+          const cell = document.createElement('div');
+          const on = set.has(r + ',' + c);
+          cell.className = 'bb-piece-cell' + (on ? ' on' : '');
+          cell.style.background = on ? piece.color : 'transparent';
+          grid.appendChild(cell);
+        }
+      }
+      return grid;
+    }
+
+    /* =====================================================
+       DRAG & DROP (pointer events, touch + mouse)
+    ===================================================== */
+    function startDrag(e, idx) {
+      e.preventDefault();
+      const piece = tray[idx];
+      if (!piece || piece.used) return;
+
+      const slot = trayEl.children[idx];
+      slot.classList.add('dragging');
+
+      const ghost = document.createElement('div');
+      ghost.className = 'bb-drag-ghost';
+      const { maxC } = pieceBounds(piece.shape);
+      ghost.style.gridTemplateColumns = `repeat(${maxC}, 34px)`;
+      ghost.appendChild(buildPieceGrid(piece, 34));
+      document.body.appendChild(ghost);
+
+      dragging = { idx, piece, ghost };
+      positionGhost(e.clientX, e.clientY);
+      updatePreview(e.clientX, e.clientY);
+
+      window.addEventListener('pointermove', onDragMove);
+      window.addEventListener('pointerup', onDragEnd);
+    }
+
+    function positionGhost(x, y) {
+      if (!dragging) return;
+      const { maxR, maxC } = pieceBounds(dragging.piece.shape);
+      const w = maxC * 34 + (maxC - 1) * 4;
+      const h = maxR * 34 + (maxR - 1) * 4;
+      dragging.ghost.style.left = (x - w / 2) + 'px';
+      dragging.ghost.style.top = (y - h - 30) + 'px';
+    }
+
+    function boardCellFromPoint(x, y) {
+      const rect = boardEl.getBoundingClientRect();
+      // Aim above the finger/cursor so the piece is visible while dragging on touch
+      const targetY = y - 60;
+      if (x < rect.left || x > rect.right || targetY < rect.top || targetY > rect.bottom) return null;
+      const cellW = rect.width / SIZE;
+      const cellH = rect.height / SIZE;
+      const c = Math.floor((x - rect.left) / cellW);
+      const r = Math.floor((targetY - rect.top) / cellH);
+      if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) return null;
+      return { r, c };
+    }
+
+    function clearPreview() {
+      Array.from(boardEl.children).forEach(cell => {
+        cell.classList.remove('preview-ok', 'preview-bad');
+      });
+    }
+
+    function updatePreview(x, y) {
+      clearPreview();
+      if (!dragging) return;
+      const target = boardCellFromPoint(x, y);
+      dragging.target = target;
+      if (!target) return;
+
+      const shape = dragging.piece.shape;
+      const canPlace = canPlacePiece(shape, target.r, target.c);
+      shape.forEach(([dr, dc]) => {
+        const r = target.r + dr, c = target.c + dc;
+        if (r >= 0 && r < SIZE && c >= 0 && c < SIZE) {
+          cellEl(r, c).classList.add(canPlace ? 'preview-ok' : 'preview-bad');
+        }
+      });
+    }
+
+    function onDragMove(e) {
+      positionGhost(e.clientX, e.clientY);
+      updatePreview(e.clientX, e.clientY);
+    }
+
+    function onDragEnd(e) {
+      window.removeEventListener('pointermove', onDragMove);
+      window.removeEventListener('pointerup', onDragEnd);
+      if (!dragging) return;
+
+      clearPreview();
+      const { idx, piece, ghost, target } = dragging;
+      ghost.remove();
+      trayEl.children[idx] && trayEl.children[idx].classList.remove('dragging');
+
+      if (target && canPlacePiece(piece.shape, target.r, target.c)) {
+        placePiece(piece, target.r, target.c);
+        piece.used = true;
+        renderTray();
+        resolveBoard();
+
+        if (tray.every(p => p.used)) refillTray();
+
+        if (!anyPieceFits()) endGame();
+      }
+
+      dragging = null;
+    }
+
+    /* =====================================================
+       PLACEMENT LOGIC
+    ===================================================== */
+    function canPlacePiece(shape, baseR, baseC) {
+      return shape.every(([dr, dc]) => {
+        const r = baseR + dr, c = baseC + dc;
+        return r >= 0 && r < SIZE && c >= 0 && c < SIZE && !board[r][c];
+      });
+    }
+
+    function placePiece(piece, baseR, baseC) {
+      piece.shape.forEach(([dr, dc]) => {
+        board[baseR + dr][baseC + dc] = piece.color;
+      });
+      score += piece.shape.length;
+      renderBoard();
+      updateScore();
+    }
+
+    function resolveBoard() {
+      const fullRows = [];
+      const fullCols = [];
+      for (let r = 0; r < SIZE; r++) {
+        if (board[r].every(v => v)) fullRows.push(r);
+      }
+      for (let c = 0; c < SIZE; c++) {
+        if (board.every(row => row[c])) fullCols.push(c);
+      }
+
+      const linesCleared = fullRows.length + fullCols.length;
+      if (linesCleared === 0) {
+        combo = 0;
+        comboEl.textContent = combo;
+        return;
+      }
+
+      combo += 1;
+      comboEl.textContent = combo;
+
+      const cellsToClear = new Set();
+      fullRows.forEach(r => { for (let c = 0; c < SIZE; c++) cellsToClear.add(r + ',' + c); });
+      fullCols.forEach(c => { for (let r = 0; r < SIZE; r++) cellsToClear.add(r + ',' + c); });
+
+      cellsToClear.forEach(key => {
+        const [r, c] = key.split(',').map(Number);
+        cellEl(r, c).classList.add('clearing');
+      });
+
+      const bonus = linesCleared * SIZE * 10 * combo;
+      score += bonus;
+      updateScore();
+      statusEl.textContent = linesCleared > 1
+        ? `${linesCleared} lines blasted! Combo x${combo} · +${bonus}`
+        : `Line blasted! +${bonus}`;
+
+      setTimeout(() => {
+        cellsToClear.forEach(key => {
+          const [r, c] = key.split(',').map(Number);
+          board[r][c] = null;
+        });
+        renderBoard();
+      }, 260);
+    }
+
+    function anyPieceFits() {
+      return tray.some(piece => {
+        if (piece.used) return false;
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            if (canPlacePiece(piece.shape, r, c)) return true;
+          }
+        }
+        return false;
+      });
+    }
+
+    function updateScore() {
+      scoreEl.textContent = score;
+      if (score > best) {
+        best = score;
+        bestEl.textContent = best;
+        localStorage.setItem('bb-best', String(best));
+      }
+    }
+
+    function endGame() {
+      finalScoreEl.textContent = `Score: ${score}`;
+      gameOverEl.classList.add('show');
+    }
+
+    /* =====================================================
+       INIT / RESTART
+    ===================================================== */
+    function startGame() {
+      newBoard();
+      score = 0;
+      combo = 0;
+      renderBoard();
+      updateScore();
+      comboEl.textContent = 0;
+      statusEl.textContent = 'Drag a piece onto the grid. Fill a row or column to blast it!';
+      gameOverEl.classList.remove('show');
+      refillTray();
+    }
+
+    document.getElementById('bbRestart').addEventListener('click', startGame);
+    document.getElementById('bbPlayAgain').addEventListener('click', startGame);
+
+    startGame();
+  })();
+  </script>
+
+  <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/wide.js"></script>
+  <script src="/assets/js/gallium.js"></script>
+  <script src="/assets/js/cookie.js"></script>
+  <script src="/assets/js/cursor.js"></script>
+
+</body>
+</html>
