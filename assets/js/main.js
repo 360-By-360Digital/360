@@ -434,18 +434,18 @@ const body = document.body;
 const PINNED_APPS_STORAGE_KEY = "360_pinned_apps";
 const PINNED_APPS_POSITION_KEY = "360_pinned_apps_position";
 const PINNED_APP_CATALOG = [
-  { label: "360Vids", href: "/apps/360vids", icon: "🎬" },
-  { label: "360Music", href: "/apps/360Music", icon: "🎶" },
+  { label: "Vids", href: "/apps/360vids", icon: "🎬" },
+  { label: "Pulse", href: "/apps/360Music", icon: "🎶" },
   { label: "Zone", href: "/apps/360zone", icon: "🏫" },
-  { label: "360Notes", href: "/apps/360Notes", icon: "📖" },
-  { label: "360Draw", href: "/apps/360Draw", icon: "🎨" },
-  { label: "360Docs", href: "/apps/360Docs", icon: "📃" },
-  { label: "360Do", href: "/apps/360Do", icon: "💡" },
-  { label: "360Mail", href: "/apps/360mail-claim", icon: "✉️" },
+  { label: "Folio", href: "/apps/360Notes", icon: "📖" },
+  { label: "Slate", href: "/apps/360Draw", icon: "🎨" },
+  { label: "Quill", href: "/apps/360Docs", icon: "📃" },
+  { label: "Stack", href: "/apps/360Do", icon: "💡" },
+  { label: "Postmark", href: "/apps/360mail-claim", icon: "✉️" },
   { label: "360Studio", href: "/apps/360Studio", icon: "🎛️" },
-  { label: "360MySite", href: "/apps/360MySite", icon: "🌐" },
+  { label: "Anchor", href: "/apps/360MySite", icon: "🌐" },
   { label: "360Canvas", href: "/apps/360Canvas", icon: "🎨" },
-  { label: "360Meet", href: "/apps/360Meet", icon: "👥" }
+  { label: "Gather", href: "/apps/360Meet", icon: "👥" }
 ];
 
 function safeParseJSON(raw, fallback) {
