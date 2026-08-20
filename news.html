@@ -114,17 +114,23 @@
     .toast { position:fixed; right:18px; bottom:18px; z-index:20; padding:12px 14px; border-radius:14px; border:1px solid var(--news-border); background:var(--news-card); color:var(--news-text); box-shadow:0 16px 40px rgba(2,6,23,.2); opacity:0; transform:translateY(8px); pointer-events:none; transition:.25s; }
     .toast.show { opacity:1; transform:none; }
     @media (max-width: 820px) { .news-header, .control-deck, .top-layout, .insight-bar { grid-template-columns:1fr; } .news-actions { justify-content:flex-start; } .news-shell { padding:16px; border-radius:22px; } .news-hero { min-height:310px; } }
-    .news-card-wrap { position: relative; animation: fadeUp .4s ease both; }
-    .news-card-wrap .news-card { animation: none; }
+    .news-card { position: relative; }
     .news-card-source { display: flex; align-items: center; gap: 4px; }
-    .bias-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-    .news-bmk { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 7px; border: none; background: rgba(0,0,0,.45); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s, color .15s; }
-    .news-card-wrap:hover .news-bmk { opacity: 1; }
+    .bias-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 1px; }
+    .news-bmk { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 7px; border: none; background: rgba(0,0,0,.45); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s, color .15s; z-index: 2; }
+    .news-card:hover .news-bmk { opacity: 1; }
     .news-bmk.bmk-active { opacity: 1; color: var(--a); }
     .news-bmk.bmk-active svg { fill: currentColor; }
-    .news-grid.compact .news-card-wrap { display: grid; grid-template-columns: 150px 1fr; min-height: 128px; }
-    .news-grid.compact .news-card-wrap .news-card { display: contents; }
-    @media (max-width: 600px) { .news-page { padding-inline:14px; } .news-grid { grid-template-columns:1fr; } .news-grid.compact .news-card-wrap { grid-template-columns:112px 1fr; } .news-card-desc { display:none; } }
+    .news-modal-backdrop { display: none; position: fixed; inset: 0; z-index: 999; background: rgba(0,0,0,.6); align-items: center; justify-content: center; }
+    .news-modal-backdrop.open { display: flex; }
+    .news-modal { background: var(--news-card); border: 1px solid var(--news-border); border-radius: 20px; padding: 28px; width: min(480px, 90vw); display: flex; flex-direction: column; gap: 14px; }
+    .news-modal-title { font-weight: 800; font-size: 16px; color: var(--news-text); }
+    .news-modal-input { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--news-border); background: rgba(255,255,255,.07); color: var(--news-text); font-size: 14px; font-family: inherit; outline: none; width: 100%; box-sizing: border-box; }
+    .news-modal-list { display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto; }
+    .news-modal-actions { display: flex; gap: 10px; }
+    .news-modal-btn-primary { flex: 1; padding: 10px; border-radius: 999px; border: none; background: linear-gradient(120deg, var(--a), #8b5cf6); color: #fff; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .news-modal-btn-cancel { padding: 10px 18px; border-radius: 999px; border: 1px solid var(--news-border); background: none; color: var(--news-muted); cursor: pointer; font-family: inherit; }
+    @media (max-width: 600px) { .news-page { padding-inline:14px; } .news-grid { grid-template-columns:1fr; } .news-grid.compact .news-card { grid-template-columns:112px 1fr; } .news-card-desc { display:none; } }
   </style>
   <script src="assets/js/octicons.js"></script>
 </head>
@@ -238,17 +244,17 @@
         <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/world/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/World.xml" data-label="World" data-icon="globe" onclick="switchCat(this)"><span data-octicon="globe"></span> World</button>
         <button class="news-cat" data-primary="https://www.theverge.com/rss/index.xml" data-backup="https://www.wired.com/feed/rss" data-label="Future" data-icon="device-desktop" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Future</button>
         <button class="news-cat" id="savedTab" data-label="Saved" data-icon="bookmark" onclick="showSaved()"><span data-octicon="bookmark"></span> Saved</button>
-        <button class="news-cat" id="rssTab" data-label="Add RSS" data-icon="rss" onclick="showRssModal()"><span data-octicon="rss"></span> Add RSS</button>
+        <button class="news-cat" id="rssTab" onclick="showRssModal()"><span data-octicon="rss"></span> Add RSS</button>
       </div>
 
-      <div id="rssModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.6);align-items:center;justify-content:center;">
-        <div style="background:var(--news-card);border:1px solid var(--news-border);border-radius:20px;padding:28px;width:min(480px,90vw);display:flex;flex-direction:column;gap:14px;">
-          <div style="font-weight:800;font-size:16px;color:var(--news-text);">Add RSS Feed</div>
-          <input id="rssInput" type="url" placeholder="https://example.com/feed.xml" style="padding:10px 14px;border-radius:10px;border:1px solid var(--news-border);background:rgba(255,255,255,.07);color:var(--news-text);font-size:14px;font-family:inherit;outline:none;width:100%;box-sizing:border-box;" />
-          <div id="rssCustomList" style="display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;"></div>
-          <div style="display:flex;gap:10px;">
-            <button onclick="addRssFeed()" style="flex:1;padding:10px;border-radius:999px;border:none;background:linear-gradient(120deg,var(--a),#8b5cf6);color:#fff;font-weight:700;cursor:pointer;font-family:inherit;">Add Feed</button>
-            <button onclick="document.getElementById('rssModal').style.display='none'" style="padding:10px 18px;border-radius:999px;border:1px solid var(--news-border);background:none;color:var(--news-muted);cursor:pointer;font-family:inherit;">Cancel</button>
+      <div class="news-modal-backdrop" id="rssModal">
+        <div class="news-modal">
+          <div class="news-modal-title">Add RSS Feed</div>
+          <input id="rssInput" class="news-modal-input" type="url" placeholder="https://example.com/feed.xml" />
+          <div class="news-modal-list" id="rssCustomList"></div>
+          <div class="news-modal-actions">
+            <button class="news-modal-btn-primary" onclick="addRssFeed()">Add Feed</button>
+            <button class="news-modal-btn-cancel" onclick="document.getElementById('rssModal').classList.remove('open')">Cancel</button>
           </div>
         </div>
       </div>
@@ -446,24 +452,16 @@
     'wall street journal': 'center-right', 'wsj': 'center-right', 'the economist': 'center-right',
     'techcrunch': 'center', 'nasa': 'center', 'ars technica': 'center',
   };
-  const BIAS_COLOR = { 'left': '#3b82f6', 'center-left': '#60a5fa', 'center': '#94a3b8', 'center-right': '#f97316', 'right': '#ef4444' };
-  const BIAS_LABEL = { 'left': 'Left', 'center-left': 'Center-Left', 'center': 'Center', 'center-right': 'Center-Right', 'right': 'Right' };
+  const BIAS_COLOR = { left:'#3b82f6', 'center-left':'#60a5fa', center:'#94a3b8', 'center-right':'#f97316', right:'#ef4444' };
+  const BIAS_LABEL = { left:'Left', 'center-left':'Center-Left', center:'Center', 'center-right':'Center-Right', right:'Right' };
 
-  function getBias(sourceName) {
-    return SOURCE_BIAS[(sourceName || '').toLowerCase().trim()] || null;
-  }
+  function getBias(src) { return SOURCE_BIAS[(src||'').toLowerCase().trim()] || null; }
 
   let savedUrls = new Set(JSON.parse(localStorage.getItem('360_news_saved') || '[]'));
 
   function toggleSave(url, btn) {
-    if (savedUrls.has(url)) {
-      savedUrls.delete(url);
-      btn.classList.remove('bmk-active');
-    } else {
-      savedUrls.add(url);
-      btn.classList.add('bmk-active');
-      showToast('Saved.');
-    }
+    if (savedUrls.has(url)) { savedUrls.delete(url); btn.classList.remove('bmk-active'); }
+    else { savedUrls.add(url); btn.classList.add('bmk-active'); showToast('Saved.'); }
     localStorage.setItem('360_news_saved', JSON.stringify([...savedUrls]));
   }
 
@@ -473,39 +471,22 @@
     if (!list.length) { grid.innerHTML = `<div class="news-status">No articles found. Try a different category or search.</div>`; return; }
     grid.innerHTML = list.map((a, i) => {
       const img = extractImage(a);
-      const imgEl = img
-        ? `<img class="news-card-img" src="${escapeHTML(img)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=\'news-card-placeholder\'>${window.Octicons.icon(icon)}</div>'">`
-        : `<div class="news-card-placeholder">${window.Octicons.icon(icon)}</div>`;
+      const imgEl = img ? `<img class="news-card-img" src="${escapeHTML(img)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=\'news-card-placeholder\'>${window.Octicons.icon(icon)}</div>'">` : `<div class="news-card-placeholder">${window.Octicons.icon(icon)}</div>`;
       const src = extractSource(a, currentSource);
       const bias = getBias(src);
-      const biasDot = bias
-        ? `<span class="bias-dot" title="${BIAS_LABEL[bias]}" style="background:${BIAS_COLOR[bias]};"></span>`
-        : '';
+      const biasDot = bias ? `<span class="bias-dot" title="${BIAS_LABEL[bias]}" style="background:${BIAS_COLOR[bias]};"></span>` : '';
       const isSaved = savedUrls.has(a.link);
-      return `<div class="news-card-wrap" style="position:relative;animation-delay:${Math.min(i, 12) * 0.035}s;">
-        <a class="news-card" href="${escapeHTML(a.link)}" target="_blank" rel="noopener noreferrer">
-          ${imgEl}
-          <div class="news-card-body">
-            <div class="news-card-source">${biasDot}${escapeHTML(src)}</div>
-            <div class="news-card-title">${escapeHTML(a.title)}</div>
-            ${a.description ? `<div class="news-card-desc">${escapeHTML(a.description)}</div>` : ""}
-            <div class="news-card-footer">
-              <span>${timeAgo(a.pubDate)}</span>
-              <span class="read-time">${readTime(a)}</span>
-            </div>
-          </div>
-        </a>
-        <button class="news-bmk${isSaved ? ' bmk-active' : ''}" data-url="${escapeHTML(a.link)}" aria-label="${isSaved ? 'Remove from saved' : 'Save'}">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-        </button>
-      </div>`;
+      return `<a class="news-card" href="${escapeHTML(a.link)}" target="_blank" rel="noopener noreferrer" style="animation-delay:${Math.min(i, 12) * 0.035}s">
+        ${imgEl}<div class="news-card-body"><div class="news-card-source">${biasDot}${escapeHTML(src)}</div><div class="news-card-title">${escapeHTML(a.title)}</div>${a.description ? `<div class="news-card-desc">${escapeHTML(a.description)}</div>` : ""}<div class="news-card-footer"><span>${timeAgo(a.pubDate)}</span><span class="read-time">${readTime(a)}</span></div></div>
+        <button class="news-bmk${isSaved?' bmk-active':''}" data-url="${escapeHTML(a.link)}" aria-label="Save"><svg width="12" height="12" viewBox="0 0 24 24" fill="${isSaved?'currentColor':'none'}" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>
+      </a>`;
     }).join("");
     grid.querySelectorAll('.news-bmk').forEach(btn => {
       btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); toggleSave(btn.dataset.url, btn); });
     });
   }
 
-    function showToast(message) {
+  function showToast(message) {
     const toast = document.getElementById("newsToast");
     toast.textContent = message;
     toast.classList.add("show");
@@ -554,25 +535,21 @@
     updateInsights(allArticles); showToast("Digest saved on this device");
   });
 
+  setInterval(loadNews, 5 * 60 * 1000);
+  loadNews();
 
   function showSaved() {
     document.querySelectorAll('.news-cat').forEach(b => b.classList.remove('active'));
     document.getElementById('savedTab').classList.add('active');
-    const saved = [...savedUrls];
-    const grid = document.getElementById('news-grid');
     document.getElementById('news-hero').style.display = 'none';
-    document.getElementById('briefingPanel')?.style && (document.getElementById('briefingPanel').style.display = 'none');
-    if (!saved.length) { grid.innerHTML = '<div class="news-status">No saved articles yet. Click the bookmark icon on any article.</div>'; return; }
-    grid.innerHTML = saved.map((url, i) => `
-      <div class="news-card" style="animation-delay:${i * 0.035}s;position:relative;">
-        <a href="${url}" target="_blank" rel="noopener noreferrer" style="display:contents;">
-          <div class="news-card-placeholder"><span data-octicon="bookmark"></span></div>
-          <div class="news-card-body"><div class="news-card-title" style="word-break:break-all;font-size:13px;">${url}</div></div>
-        </a>
-        <button class="news-bmk" data-url="${url}" style="position:absolute;top:9px;right:9px;background:rgba(0,0,0,.4);border:none;border-radius:6px;padding:5px 6px;cursor:pointer;color:var(--a);display:flex;align-items:center;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-        </button>
-      </div>`).join('');
+    const grid = document.getElementById('news-grid');
+    const saved = [...savedUrls];
+    if (!saved.length) { grid.innerHTML = '<div class="news-status">No saved articles yet. Click the bookmark on any card.</div>'; return; }
+    grid.innerHTML = saved.map(url => `<a class="news-card" href="${url}" target="_blank" rel="noopener noreferrer">
+      <div class="news-card-placeholder"><span data-octicon="bookmark"></span></div>
+      <div class="news-card-body"><div class="news-card-title" style="word-break:break-all;font-size:13px;">${url}</div></div>
+      <button class="news-bmk bmk-active" data-url="${url}" aria-label="Remove"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>
+    </a>`).join('');
     if (window.Octicons) window.Octicons.process(grid);
     grid.querySelectorAll('.news-bmk').forEach(btn => {
       btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); toggleSave(btn.dataset.url, btn); showSaved(); });
@@ -582,40 +559,33 @@
   let customFeeds = JSON.parse(localStorage.getItem('360_rss_feeds') || '[]');
 
   function showRssModal() {
-    renderCustomFeedList();
-    document.getElementById('rssModal').style.display = 'flex';
+    renderRssList();
+    document.getElementById('rssModal').classList.add('open');
   }
 
-  function renderCustomFeedList() {
+  function renderRssList() {
     const el = document.getElementById('rssCustomList');
-    if (!customFeeds.length) { el.innerHTML = '<div style="font-size:12px;color:var(--news-muted);">No custom feeds added yet.</div>'; return; }
-    el.innerHTML = customFeeds.map((url, i) => `
-      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--news-muted);">
-        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${url}</span>
-        <button data-i="${i}" onclick="removeRssFeed(${i})" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:14px;line-height:1;">✕</button>
-      </div>`).join('');
+    if (!customFeeds.length) { el.innerHTML = '<div style="font-size:12px;color:var(--news-muted);">No custom feeds yet.</div>'; return; }
+    el.innerHTML = customFeeds.map((url, i) => `<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--news-muted);"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${url}</span><button onclick="removeRssFeed(${i})" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:16px;line-height:1;">×</button></div>`).join('');
   }
 
   function addRssFeed() {
     const input = document.getElementById('rssInput');
     const url = input.value.trim();
-    if (!url || !url.startsWith('http')) { showToast('Enter a valid feed URL.'); return; }
-    if (customFeeds.includes(url)) { showToast('Feed already added.'); return; }
+    if (!url.startsWith('http')) { showToast('Enter a valid URL.'); return; }
+    if (customFeeds.includes(url)) { showToast('Already added.'); return; }
     customFeeds.push(url);
     localStorage.setItem('360_rss_feeds', JSON.stringify(customFeeds));
     input.value = '';
-    renderCustomFeedList();
+    renderRssList();
     showToast('Feed added.');
   }
 
   function removeRssFeed(i) {
     customFeeds.splice(i, 1);
     localStorage.setItem('360_rss_feeds', JSON.stringify(customFeeds));
-    renderCustomFeedList();
+    renderRssList();
   }
-
-  setInterval(loadNews, 5 * 60 * 1000);
-  loadNews();
   </script>
 </body>
 </html>
