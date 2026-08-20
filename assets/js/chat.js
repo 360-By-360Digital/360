@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════
-   360 Chat v3.3?
+   360 Chat v3.3 — Full rewrite
    Fixes: timestamps (UTC→local), delete+regroup, members=online,
    ephemeral bot messages, thread count, joined-only rail, all panels
 ════════════════════════════════════════════════════════ */
@@ -744,6 +744,12 @@ function buildMsgEl(msg,container){
       const a=document.createElement('a'); a.className='dc-file-chip'; a.href=msg.file_url; a.target='_blank'; a.rel='noopener';
       a.innerHTML=`<span class="fc-icon">📎</span><div><div class="fc-name">${esc(fn)}</div></div>`; body.appendChild(a);
     }
+  }
+  if(msg.poll_id){
+    const pollWrap=document.createElement('div'); pollWrap.className='dc-poll'; pollWrap.dataset.pollId=msg.poll_id;
+    pollWrap.innerHTML='<div class="dc-poll-loading">Loading poll…</div>';
+    body.appendChild(pollWrap);
+    renderPoll(msg.poll_id, pollWrap);
   }
 
   // Thread pill
@@ -3066,4 +3072,110 @@ async function jumpToMessage(msgId, roomId) {
     const el2 = document.querySelector(`[data-msg-id="${msgId}"]`);
     if (el2) { el2.scrollIntoView({ behavior:'smooth', block:'center' }); el2.classList.add('msg-highlight'); setTimeout(()=>el2.classList.remove('msg-highlight'),2500); }
   }, 800);
+}
+
+/* ── POLLS ─────────────────────────────────────────────── */
+
+async function renderPoll(pollId, wrap) {
+  const { data: poll } = await sb.from('polls').select('*').eq('id', pollId).single();
+  if (!poll) { wrap.innerHTML = '<div class="dc-poll-loading">Poll not found.</div>'; return; }
+  const { data: votes } = await sb.from('poll_votes').select('option_index, user_id').eq('poll_id', pollId);
+  const allVotes = votes || [];
+  const myVote = allVotes.find(v => v.user_id === currentUserId);
+  const totalVotes = allVotes.length;
+  const counts = (poll.options || []).map((_, i) => allVotes.filter(v => v.option_index === i).length);
+
+  wrap.innerHTML = '';
+  const q = document.createElement('div'); q.className = 'dc-poll-question'; q.textContent = poll.question; wrap.appendChild(q);
+
+  (poll.options || []).forEach((opt, i) => {
+    const pct = totalVotes ? Math.round(counts[i] / totalVotes * 100) : 0;
+    const voted = myVote?.option_index === i;
+    const btn = document.createElement('button');
+    btn.className = 'dc-poll-option' + (voted ? ' voted' : '');
+    btn.innerHTML = `<div class="dc-poll-bar" style="width:${pct}%"></div><span class="dc-poll-label">${esc(opt)}</span><span class="dc-poll-pct">${pct}%</span>`;
+    btn.addEventListener('click', async () => {
+      if (!currentUserId) return;
+      if (myVote) {
+        if (myVote.option_index === i) {
+          await sb.from('poll_votes').delete().eq('poll_id', pollId).eq('user_id', currentUserId);
+        } else {
+          await sb.from('poll_votes').delete().eq('poll_id', pollId).eq('user_id', currentUserId);
+          await sb.from('poll_votes').insert({ poll_id: pollId, user_id: currentUserId, option_index: i });
+        }
+      } else {
+        await sb.from('poll_votes').insert({ poll_id: pollId, user_id: currentUserId, option_index: i });
+      }
+      renderPoll(pollId, wrap);
+    });
+    wrap.appendChild(btn);
+  });
+
+  const footer = document.createElement('div'); footer.className = 'dc-poll-footer';
+  footer.textContent = `${totalVotes} vote${totalVotes !== 1 ? 's' : ''}`;
+  wrap.appendChild(footer);
+}
+
+function openPollModal() {
+  document.getElementById('pollModal')?.remove();
+  const modal = document.createElement('div'); modal.id = 'pollModal'; modal.className = 'poll-modal-backdrop';
+  modal.innerHTML = `
+    <div class="poll-modal">
+      <div class="poll-modal-title">Create Poll</div>
+      <input class="poll-modal-input" id="pollQuestion" placeholder="Ask a question…" maxlength="200" />
+      <div id="pollOptions">
+        <input class="poll-modal-input" placeholder="Option 1" maxlength="100" />
+        <input class="poll-modal-input" placeholder="Option 2" maxlength="100" />
+      </div>
+      <button class="poll-add-option" id="pollAddOption">+ Add option</button>
+      <div class="poll-modal-actions">
+        <button class="poll-modal-btn-primary" id="pollSubmitBtn">Create Poll</button>
+        <button class="poll-modal-btn-cancel" id="pollCancelBtn">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.getElementById('pollCancelBtn').onclick = () => modal.remove();
+  document.getElementById('pollAddOption').onclick = () => {
+    const opts = document.getElementById('pollOptions');
+    if (opts.children.length >= 8) return;
+    const inp = document.createElement('input'); inp.className = 'poll-modal-input';
+    inp.placeholder = `Option ${opts.children.length + 1}`; inp.maxLength = 100;
+    opts.appendChild(inp); inp.focus();
+  };
+  document.getElementById('pollSubmitBtn').onclick = () => submitPoll(modal);
+  document.getElementById('pollQuestion').focus();
+}
+
+async function submitPoll(modal) {
+  if (!activeRoom || !currentUserId) return;
+  const question = document.getElementById('pollQuestion').value.trim();
+  if (!question) { showToast('Enter a question.'); return; }
+  const optEls = document.getElementById('pollOptions').querySelectorAll('input');
+  const options = [...optEls].map(i => i.value.trim()).filter(Boolean);
+  if (options.length < 2) { showToast('Add at least 2 options.'); return; }
+
+  const { data: poll, error } = await sb.from('polls').insert({
+    question, options,
+    created_by: currentUserId,
+    channel_id: activeRoom.type === 'channel' ? activeRoom.id : null,
+    server_id: activeRoom.serverId || null,
+  }).select().single();
+  if (error || !poll) { showToast('Failed to create poll.'); return; }
+
+  const { data: p } = await sb.from('profiles').select('username,avatar_url,role,tag').eq('id', currentUserId).single();
+  const { error: msgErr } = await sb.from('messages').insert({
+    text: '',
+    user_id: currentUserId,
+    username: p?.username || 'Unknown',
+    avatar_url: p?.avatar_url || null,
+    role: p?.role || null,
+    tag: p?.tag || null,
+    poll_id: poll.id,
+    channel_id: activeRoom.type === 'channel' ? activeRoom.id : null,
+    server_id: activeRoom.serverId || null,
+    dm_id: activeRoom.type === 'dm' ? activeRoom.id : null,
+  });
+  if (msgErr) showToast('Poll created but message failed.');
+  modal.remove();
 }
