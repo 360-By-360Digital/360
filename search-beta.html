@@ -21,6 +21,8 @@ SPDX-License-Identifier: Apache-2.0!
 Before taking an action to legal matter, please reach out to us at admin@360-search.com and we will respectfully remove anything strike-worthy.
 - This program uses cached data for speed! It is instantly deleted!
 - This program uses Google Tag Manager for page analytics. We only measure page visits! There are no other scopes.
+THIS PROGRAM IS NOT FULLY RELIANT ON GOOGLE'S CSE RESULTS! WE USE MULTIPLE API'S TO CREATE A FUNCTIONING METASEARCH ENGINE AND GOOGLE'S CSE PERFORMS BEST IN THE 
+ - FRONTEND.
 ============================================================================================================================================================= !-->
 
 <!DOCTYPE html>
@@ -667,6 +669,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
       border: none; box-shadow: none; border-radius: 0;
       padding: 10px 4px; margin-bottom: 2px;
     }
+    .result-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,.12); }
     body.classic-results .result-card:hover { transform: none; box-shadow: none; }
     body.classic-results .result-title { color: #1a73e8; font-size: 18px; font-weight: 400; margin-top: 2px; }
     body.dark.classic-results .result-title { color: #8ab4f8; }
@@ -1298,7 +1301,7 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
         </button>
         <button id="view-mode-toggle" class="safe-search-toggle" style="margin-left:0;" title="Switch results layout">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-          <span id="view-mode-label">Classic view</span>
+          <span id="view-mode-label">Card view</span>
         </button>
         <button id="ai-summary-toggle" class="safe-search-toggle" style="margin-left:0;" title="Toggle AI summary">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 5 5"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
@@ -3081,11 +3084,11 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
     (function setupViewModeToggle() {
       const btn = document.getElementById('view-mode-toggle');
       const label = document.getElementById('view-mode-label');
-      let classicMode = localStorage.getItem('360_view_mode') === 'classic';
+      let classicMode = localStorage.getItem('360_view_mode') !== 'standard';
 
       function render() {
         document.body.classList.toggle('classic-results', classicMode);
-        label.textContent = classicMode ? 'Standard view' : 'Classic view';
+        label.textContent = classicMode ? 'Card view' : 'Classic view';
         btn.classList.toggle('off', classicMode);
       }
       render();
