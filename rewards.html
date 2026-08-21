@@ -179,28 +179,6 @@
       margin-top: 0;
     }
 
-    .tier-group {
-      margin: 22px 0 30px;
-    }
-
-    .tier-group-title {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .tier-group-title h4 {
-      margin: 0;
-      font-size: 18px;
-    }
-
-    .tier-group-title span {
-      font-size: 12px;
-      opacity: .6;
-    }
-
     .tier-card {
       padding: 20px;
       display: flex;
@@ -217,10 +195,6 @@
 
     .tier-card.lifetime-card {
       border-width: 2px;
-    }
-
-    .tier-card .tier-icon {
-      font-size: 26px;
     }
 
     .tier-card .tier-name {
@@ -273,19 +247,9 @@
       line-height: 1.55;
     }
 
-    .policy-card h3 {
-      margin-top: 0;
-    }
-
-    .policy-card p {
-      margin: 8px 0 0;
-      font-size: 13px;
-      opacity: .78;
-    }
-
-    .policy-card strong {
-      opacity: 1;
-    }
+    .policy-card h3 { margin-top: 0; }
+    .policy-card p { margin: 8px 0 0; font-size: 13px; opacity: .78; }
+    .policy-card strong { opacity: 1; }
 
     .rewards-status {
       min-height: 20px;
@@ -453,11 +417,11 @@
         <p>Flexible membership durations for the standard 360 experience.</p>
 
         <div class="tiers-grid">
-          <div class="tier-card"><div class="tier-name">Lite · 3 Days</div><div class="tier-duration">3-day membership</div><button data-tier="lite_3day" data-cost="1000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Lite · 1 Week</div><div class="tier-duration">7-day membership</div><button data-tier="lite_1week" data-cost="2500" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Lite · 6 Months</div><div class="tier-duration">6-month membership</div><button data-tier="lite_6month" data-cost="25000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Lite · 1 Year</div><div class="tier-duration">1-year membership</div><button data-tier="lite_1year" data-cost="40000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Lite · 5 Years</div><div class="tier-duration">5-year membership</div><button data-tier="lite_5year" data-cost="100000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Lite · 3 Days</div><div class="tier-cost">1,000 pts</div><div class="tier-duration">3-day membership</div><button data-tier="lite_3day" data-cost="1000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Lite · 1 Week</div><div class="tier-cost">2,500 pts</div><div class="tier-duration">7-day membership</div><button data-tier="lite_1week" data-cost="2500" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Lite · 6 Months</div><div class="tier-cost">25,000 pts</div><div class="tier-duration">6-month membership</div><button data-tier="lite_6month" data-cost="25000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Lite · 1 Year</div><div class="tier-cost">40,000 pts</div><div class="tier-duration">1-year membership</div><button data-tier="lite_1year" data-cost="40000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Lite · 5 Years</div><div class="tier-cost">100,000 pts</div><div class="tier-duration">5-year membership</div><button data-tier="lite_5year" data-cost="100000" class="redeemBtn">Redeem</button></div>
         </div>
       </div>
 
@@ -466,11 +430,11 @@
         <p>More access and benefits for users who want more from 360.</p>
 
         <div class="tiers-grid">
-          <div class="tier-card"><div class="tier-name">Pro · 3 Days</div><div class="tier-duration">3-day membership</div><button data-tier="pro_3day" data-cost="2500" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Pro · 1 Week</div><div class="tier-duration">7-day membership</div><button data-tier="pro_1week" data-cost="6000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Pro · 6 Months</div><div class="tier-duration">6-month membership</div><button data-tier="pro_6month" data-cost="60000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Pro · 1 Year</div><div class="tier-duration">1-year membership</div><button data-tier="pro_1year" data-cost="100000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Pro · 5 Years</div><div class="tier-duration">5-year membership</div><button data-tier="pro_5year" data-cost="250000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Pro · 3 Days</div><div class="tier-cost">2,500 pts</div><div class="tier-duration">3-day membership</div><button data-tier="pro_3day" data-cost="2500" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Pro · 1 Week</div><div class="tier-cost">6,000 pts</div><div class="tier-duration">7-day membership</div><button data-tier="pro_1week" data-cost="6000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Pro · 6 Months</div><div class="tier-cost">60,000 pts</div><div class="tier-duration">6-month membership</div><button data-tier="pro_6month" data-cost="60000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Pro · 1 Year</div><div class="tier-cost">100,000 pts</div><div class="tier-duration">1-year membership</div><button data-tier="pro_1year" data-cost="100000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Pro · 5 Years</div><div class="tier-cost">250,000 pts</div><div class="tier-duration">5-year membership</div><button data-tier="pro_5year" data-cost="250000" class="redeemBtn">Redeem</button></div>
         </div>
       </div>
 
@@ -479,11 +443,11 @@
         <p>Premium is an earned status. Timed Premium options are available, while Lifetime Premium is the highest dedication tier.</p>
 
         <div class="tiers-grid">
-          <div class="tier-card premium-card"><div class="tier-name">Premium · 3 Days</div><div class="tier-duration">3-day membership</div><button data-tier="premium_3day" data-cost="10000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card premium-card"><div class="tier-name">Premium · 1 Week</div><div class="tier-duration">7-day membership</div><button data-tier="premium_1week" data-cost="25000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card premium-card"><div class="tier-name">Premium · 6 Months</div><div class="tier-duration">6-month membership</div><button data-tier="premium_6month" data-cost="250000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card premium-card"><div class="tier-name">Premium · 1 Year</div><div class="tier-duration">1-year membership</div><button data-tier="premium_1year" data-cost="400000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card premium-card"><div class="tier-name">Premium · 5 Years</div><div class="tier-duration">5-year membership</div><button data-tier="premium_5year" data-cost="750000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card premium-card"><div class="tier-name">Premium · 3 Days</div><div class="tier-cost">10,000 pts</div><div class="tier-duration">3-day membership</div><button data-tier="premium_3day" data-cost="10000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card premium-card"><div class="tier-name">Premium · 1 Week</div><div class="tier-cost">25,000 pts</div><div class="tier-duration">7-day membership</div><button data-tier="premium_1week" data-cost="25000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card premium-card"><div class="tier-name">Premium · 6 Months</div><div class="tier-cost">250,000 pts</div><div class="tier-duration">6-month membership</div><button data-tier="premium_6month" data-cost="250000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card premium-card"><div class="tier-name">Premium · 1 Year</div><div class="tier-cost">400,000 pts</div><div class="tier-duration">1-year membership</div><button data-tier="premium_1year" data-cost="400000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card premium-card"><div class="tier-name">Premium · 5 Years</div><div class="tier-cost">750,000 pts</div><div class="tier-duration">5-year membership</div><button data-tier="premium_5year" data-cost="750000" class="redeemBtn">Redeem</button></div>
           <div class="tier-card premium-card lifetime-card"><div class="tier-name">Premium · Lifetime</div><div class="tier-cost">1,000,000 lifetime pts</div><div class="tier-duration">Permanent under normal circumstances · earned, not purchased</div><button data-tier="premium_lifetime" data-cost="0" data-lifetime-required="1000000" class="redeemBtn">Unlock</button></div>
         </div>
       </div>
@@ -508,7 +472,7 @@
 
     const supabaseClient = supabase.createClient(
       "https://wiswfpfsjiowtrdyqpxy.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dncGZzamlvd3lxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM"
     );
 
     let currentUser = null;
@@ -637,8 +601,6 @@
 
       loginBanner.classList.remove('show');
 
-      // These columns extend the original reward profile without breaking
-      // older profiles that only have reward_points/premium_until.
       const { data, error } = await supabaseClient
         .from('profiles')
         .select('reward_points, reward_points_lifetime, premium_until, membership_tier, membership_revoked, membership_revoked_reason')
@@ -701,10 +663,6 @@
       statusEl.textContent = '';
 
       try {
-        // Keep the existing RPC integration point. The database function should
-        // validate the tier, deduct points atomically, and set membership_tier /
-        // premium_until as appropriate. Unknown tiers are intentionally rejected
-        // server-side rather than being trusted from the browser.
         const { data, error } = await supabaseClient.rpc('redeem_reward', {
           p_tier: tier
         });
