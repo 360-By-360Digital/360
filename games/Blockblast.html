@@ -14,6 +14,10 @@
   <link rel="stylesheet" href="/assets/css/cursor.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    /* ===============================
+       BLOCK BLAST FULL STYLES
+    =============================== */
+
     .blockblast-container {
       padding: 20px;
       max-width: 640px;
@@ -262,6 +266,12 @@
   <div class="cursor-crosshair"></div>
   <div class="cursor-blob"></div>
 
+  <div class="auth-top-right">
+    <button id="signInBtn"  class="auth-btn">Sign In</button>
+    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
+    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+  </div>
+
   <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
 
   <aside class="sidebar" id="sidebar">
@@ -491,11 +501,38 @@
       try {
         const { data: { session } } = await supabaseClient.auth.getSession();
         currentUser = session?.user || null;
-        if (currentUser) await refreshBalance();
-        else balanceEl.textContent = 'Log in';
+        if (currentUser) {
+          await refreshBalance();
+          subscribeToProfile();
+        } else {
+          balanceEl.textContent = 'Log in';
+        }
       } catch {
         balanceEl.textContent = '—';
       }
+    }
+
+    let profileChannel = null;
+
+    // Keep the on-screen balance synced to the profiles table (e.g. if the
+    // player redeems points in another tab, or another session banks more).
+    function subscribeToProfile() {
+      if (!currentUser) return;
+      if (profileChannel) supabaseClient.removeChannel(profileChannel);
+      profileChannel = supabaseClient
+        .channel('bb-profile-' + currentUser.id)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${currentUser.id}`
+        }, (payload) => {
+          if (typeof payload.new?.reward_points === 'number') {
+            rewardsBalance = payload.new.reward_points;
+            balanceEl.textContent = rewardsBalance.toLocaleString();
+          }
+        })
+        .subscribe();
     }
 
     async function refreshBalance() {
@@ -513,27 +550,33 @@
       }
     }
 
+    // In-game points accrue fast (exponential combos etc.) — they're
+    // converted down to actual Rewards points at this ratio when banked.
+    const IN_GAME_TO_ACTUAL_RATIO = 5;
+
     // Bank the pending session points into the user's rewards balance.
     // Called both when the player finishes the game manually and when
     // no more pieces fit (natural game over).
     async function bankSessionPoints() {
-      if (sessionPoints <= 0) return { banked: 0, note: '' };
+      const actualPoints = Math.floor(sessionPoints / IN_GAME_TO_ACTUAL_RATIO);
+      if (actualPoints <= 0) {
+        return { banked: 0, note: sessionPoints > 0 ? `Not quite enough for a point yet (${sessionPoints} in-game pts, needs ${IN_GAME_TO_ACTUAL_RATIO}).` : '' };
+      }
       if (!currentUser) {
         return { banked: 0, note: 'Log in to save these points to Rewards.' };
       }
       try {
         const { data, error } = await supabaseClient.rpc('award_game_points', {
           p_source: 'game:blockblast',
-          p_points: sessionPoints,
-          p_reason: `score ${score}`
+          p_points: actualPoints,
+          p_reason: `score ${score} (${sessionPoints} in-game pts @ ${IN_GAME_TO_ACTUAL_RATIO}:1)`
         });
         if (error) throw error;
-        const banked = sessionPoints;
-        rewardsBalance = data ?? (rewardsBalance || 0) + banked;
+        rewardsBalance = data ?? (rewardsBalance || 0) + actualPoints;
         balanceEl.textContent = rewardsBalance.toLocaleString();
-        sessionPoints = 0;
-        pendingEl.textContent = '0';
-        return { banked, note: `+${banked.toLocaleString()} pts added to your Rewards balance.` };
+        sessionPoints -= actualPoints * IN_GAME_TO_ACTUAL_RATIO;
+        pendingEl.textContent = sessionPoints.toLocaleString();
+        return { banked: actualPoints, note: `+${actualPoints.toLocaleString()} pts added to your Rewards balance (${IN_GAME_TO_ACTUAL_RATIO} in-game pts = 1).` };
       } catch (err) {
         return { banked: 0, note: 'Could not save points right now — try again later.' };
       }
@@ -736,7 +779,7 @@
       updateDragPosition(e.clientX, e.clientY);
     }
 
-    function onDragEnd(e) {
+    async function onDragEnd(e) {
       window.removeEventListener('pointermove', onDragMove);
       window.removeEventListener('pointerup', onDragEnd);
       if (!dragging) return;
@@ -745,19 +788,21 @@
       const { idx, piece, ghost, target } = dragging;
       ghost.remove();
       trayEl.children[idx] && trayEl.children[idx].classList.remove('dragging');
+      dragging = null;
 
       if (target && canPlacePiece(piece.shape, target.r, target.c)) {
         placePiece(piece, target.r, target.c);
         piece.used = true;
         renderTray();
-        resolveBoard();
+
+        // Wait for block destruction (line clears) to actually finish
+        // before checking what's left on the board.
+        await resolveBoard();
 
         if (tray.every(p => p.used)) refillTray();
 
         if (!anyPieceFits()) endGame();
       }
-
-      dragging = null;
     }
 
     /* =====================================================
@@ -797,7 +842,7 @@
       if (linesCleared === 0) {
         combo = 0;
         comboEl.textContent = combo;
-        return;
+        return Promise.resolve();
       }
 
       combo += 1;
@@ -825,13 +870,20 @@
         ? `${linesCleared} lines blasted! Combo x${combo} · +${bonus} score · +${rewardBonus} pts`
         : `Line blasted! +${bonus} score · +${rewardBonus} pts`;
 
-      setTimeout(() => {
-        cellsToClear.forEach(key => {
-          const [r, c] = key.split(',').map(Number);
-          board[r][c] = null;
-        });
-        renderBoard();
-      }, 260);
+      // Board destruction (the actual clearing of cells) finishes on this
+      // timer. Anything that depends on the post-clear board — like
+      // checking whether any piece still fits — must wait for this to
+      // resolve, or it'll judge the game over against stale, still-full cells.
+      return new Promise(resolve => {
+        setTimeout(() => {
+          cellsToClear.forEach(key => {
+            const [r, c] = key.split(',').map(Number);
+            board[r][c] = null;
+          });
+          renderBoard();
+          resolve();
+        }, 260);
+      });
     }
 
     function anyPieceFits() {
@@ -907,8 +959,13 @@
 
     supabaseClient.auth.onAuthStateChange((_event, session) => {
       currentUser = session?.user || null;
-      if (currentUser) refreshBalance();
-      else balanceEl.textContent = 'Log in';
+      if (currentUser) {
+        refreshBalance();
+        subscribeToProfile();
+      } else {
+        balanceEl.textContent = 'Log in';
+        if (profileChannel) supabaseClient.removeChannel(profileChannel);
+      }
     });
 
     initRewardsUser();
