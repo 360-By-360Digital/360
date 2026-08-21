@@ -16,8 +16,8 @@
 
   <style>
     .rewards-page {
-      padding: 30px 20px;
-      max-width: 900px;
+      padding: 30px 20px 50px;
+      max-width: 1040px;
       margin: auto;
     }
 
@@ -28,22 +28,30 @@
     }
 
     .rewards-hero {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 16px;
       margin: 20px 0 30px;
     }
 
-    .rewards-hero-card {
-      flex: 1 1 220px;
-      padding: 20px;
-      border-radius: 14px;
+    .rewards-hero-card,
+    .earn-card,
+    .tier-card,
+    .policy-card {
       border: 1px solid var(--br);
-      background: rgba(255,255,255,.5);
+      background: rgba(255,255,255,.45);
+      border-radius: 14px;
     }
 
-    body.dark .rewards-hero-card {
+    body.dark .rewards-hero-card,
+    body.dark .earn-card,
+    body.dark .tier-card,
+    body.dark .policy-card {
       background: rgba(15,23,42,.55);
+    }
+
+    .rewards-hero-card {
+      padding: 20px;
     }
 
     .rewards-hero-card .label {
@@ -92,64 +100,6 @@
       cursor: pointer;
     }
 
-    .tiers-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 18px;
-    }
-
-    .tier-card {
-      padding: 22px;
-      border-radius: 14px;
-      border: 1px solid var(--br);
-      background: rgba(255,255,255,.45);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      text-align: center;
-    }
-
-    body.dark .tier-card {
-      background: rgba(15,23,42,.55);
-    }
-
-    .tier-card .tier-icon { font-size: 30px; }
-
-    .tier-card .tier-name {
-      font-size: 17px;
-      font-weight: 700;
-    }
-
-    .tier-card .tier-cost {
-      font-size: 22px;
-      font-weight: 800;
-      background: linear-gradient(110deg, var(--a), var(--a2));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .tier-card .tier-duration {
-      font-size: 13px;
-      opacity: .7;
-    }
-
-    .tier-card button {
-      margin-top: 8px;
-      padding: 9px 16px;
-      border-radius: 8px;
-      border: none;
-      background: linear-gradient(110deg, var(--a), var(--a2));
-      color: #050816;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .tier-card button:disabled {
-      opacity: .45;
-      cursor: not-allowed;
-    }
-
     .rewards-tabs {
       display: flex;
       gap: 8px;
@@ -177,7 +127,8 @@
       border-bottom-color: var(--a);
     }
 
-    .earn-grid {
+    .earn-grid,
+    .tiers-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 18px;
@@ -185,22 +136,14 @@
 
     .earn-card {
       padding: 22px;
-      border-radius: 14px;
-      border: 1px solid var(--br);
-      background: rgba(255,255,255,.45);
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
 
-    body.dark .earn-card {
-      background: rgba(15,23,42,.55);
-    }
-
     .earn-card .earn-icon { font-size: 30px; }
     .earn-card .earn-title { font-size: 17px; font-weight: 700; }
     .earn-card .earn-desc { font-size: 13px; opacity: .75; }
-
     .earn-card .earn-rate {
       font-size: 13px;
       font-weight: 700;
@@ -220,6 +163,128 @@
       color: #050816;
       font-weight: 700;
       text-decoration: none;
+    }
+
+    .tier-section {
+      margin-top: 28px;
+    }
+
+    .tier-section h3 {
+      margin-bottom: 6px;
+    }
+
+    .tier-section > p {
+      opacity: .7;
+      font-size: 14px;
+      margin-top: 0;
+    }
+
+    .tier-group {
+      margin: 22px 0 30px;
+    }
+
+    .tier-group-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .tier-group-title h4 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .tier-group-title span {
+      font-size: 12px;
+      opacity: .6;
+    }
+
+    .tier-card {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tier-card.premium-card {
+      border-color: color-mix(in srgb, var(--a) 55%, var(--br));
+    }
+
+    .tier-card.lifetime-card {
+      border-width: 2px;
+    }
+
+    .tier-card .tier-icon {
+      font-size: 26px;
+    }
+
+    .tier-card .tier-name {
+      font-size: 17px;
+      font-weight: 750;
+    }
+
+    .tier-card .tier-cost {
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(110deg, var(--a), var(--a2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .tier-card .tier-duration {
+      font-size: 12px;
+      opacity: .68;
+    }
+
+    .tier-card button {
+      margin-top: 7px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(110deg, var(--a), var(--a2));
+      color: #050816;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tier-card button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .coming-soon {
+      margin-top: 14px;
+      padding: 13px 15px;
+      border: 1px dashed var(--br);
+      border-radius: 10px;
+      font-size: 13px;
+      opacity: .8;
+    }
+
+    .policy-card {
+      margin-top: 28px;
+      padding: 20px;
+      line-height: 1.55;
+    }
+
+    .policy-card h3 {
+      margin-top: 0;
+    }
+
+    .policy-card p {
+      margin: 8px 0 0;
+      font-size: 13px;
+      opacity: .78;
+    }
+
+    .policy-card strong {
+      opacity: 1;
     }
 
     .rewards-status {
@@ -326,7 +391,7 @@
     <h2><span data-octicon="gift"></span> Rewards</h2>
 
     <div class="rewards-login-banner" id="loginBanner">
-      Log in to see your balance and redeem points for Premium.
+      Log in to see your balance and membership status.
       <button id="loginBannerBtn">Log In</button>
     </div>
 
@@ -334,10 +399,10 @@
       <div class="rewards-hero-card">
         <div class="label">Points Balance</div>
         <div class="value" id="pointsBalance">—</div>
-        <div class="sub">Earned by playing games like Block Blast</div>
+        <div class="sub">Your current Rewards Points balance</div>
       </div>
       <div class="rewards-hero-card">
-        <div class="label">Premium Status</div>
+        <div class="label">Membership</div>
         <div class="value" id="premiumStatus" style="font-size:20px;">—</div>
         <div class="sub" id="premiumSub"></div>
       </div>
@@ -345,53 +410,95 @@
 
     <div class="rewards-tabs">
       <button class="rewards-tab active" data-tab="earn">Earn</button>
-      <button class="rewards-tab" data-tab="redeem">Redeem</button>
+      <button class="rewards-tab" data-tab="membership">Membership</button>
+      <button class="rewards-tab" data-tab="rules">Rules</button>
     </div>
 
     <div class="rewards-tab-panel" id="tab-earn">
       <h3 style="margin-bottom:6px;">Ways to Earn</h3>
-      <p style="opacity:.7;font-size:14px;margin-top:0;">Play games to earn in-game points, which convert to Rewards points when you finish a run or run out of moves.</p>
+      <p style="opacity:.7;font-size:14px;margin-top:0;">
+        Rewards Points are a general 360 rewards currency. Games are only one way to earn them.
+      </p>
 
       <div class="earn-grid">
         <div class="earn-card">
-          <div class="earn-icon">🧩</div>
-          <div class="earn-title">Block Blast</div>
-          <div class="earn-desc">Place pieces and clear lines. Longer runs and bigger combos earn exponentially more in-game points.</div>
-          <div class="earn-rate">5 in-game pts = 1 Rewards pt</div>
+          <div class="earn-icon">▦</div>
+          <div class="earn-title">Games</div>
+          <div class="earn-desc">Play supported 360 games and earn points through eligible activity.</div>
+          <div class="earn-rate">Currently available</div>
           <a href="../games/BlockBlast.html" class="earn-play-btn">Play Now</a>
         </div>
+
+        <div class="earn-card">
+          <div class="earn-icon">⌕</div>
+          <div class="earn-title">Search for Points</div>
+          <div class="earn-desc">Search, discover, and earn Rewards Points through 360 Search.</div>
+          <div class="earn-rate">Coming soon</div>
+        </div>
+
+        <div class="earn-card">
+          <div class="earn-icon">+</div>
+          <div class="earn-title">More Ways to Earn</div>
+          <div class="earn-desc">Additional Rewards activities and earning methods will be introduced over time.</div>
+          <div class="earn-rate">Coming soon</div>
+        </div>
       </div>
+
+      <div class="coming-soon"><strong>SEARCH FOR POINTS COMING SOON</strong> — 360 Search will be another way to earn Rewards Points.</div>
     </div>
 
-    <div class="rewards-tab-panel" id="tab-redeem" style="display:none;">
-      <h3 style="margin-bottom:6px;">Redeem for Premium</h3>
-      <p style="opacity:.7;font-size:14px;margin-top:0;">Points can only be redeemed for Premium time. Redeeming stacks on top of any remaining Premium you already have.</p>
+    <div class="rewards-tab-panel" id="tab-membership" style="display:none;">
+      <div class="tier-section">
+        <h3>Lite</h3>
+        <p>Flexible membership durations for the standard 360 experience.</p>
 
-      <div class="tiers-grid">
-        <div class="tier-card">
-          <div class="tier-icon">🥉</div>
-          <div class="tier-name">3-Day Premium</div>
-          <div class="tier-cost">1,000 pts</div>
-          <div class="tier-duration">3 days of Premium</div>
-          <button data-tier="3day" data-cost="1000" class="redeemBtn">Redeem</button>
+        <div class="tiers-grid">
+          <div class="tier-card"><div class="tier-name">Lite · 3 Days</div><div class="tier-duration">3-day membership</div><button data-tier="lite_3day" data-cost="1000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Lite · 1 Week</div><div class="tier-duration">7-day membership</div><button data-tier="lite_1week" data-cost="2500" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Lite · 6 Months</div><div class="tier-duration">6-month membership</div><button data-tier="lite_6month" data-cost="25000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Lite · 1 Year</div><div class="tier-duration">1-year membership</div><button data-tier="lite_1year" data-cost="40000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Lite · 5 Years</div><div class="tier-duration">5-year membership</div><button data-tier="lite_5year" data-cost="100000" class="redeemBtn">Redeem</button></div>
         </div>
-        <div class="tier-card">
-          <div class="tier-icon">🥈</div>
-          <div class="tier-name">1-Month Premium</div>
-          <div class="tier-cost">10,000 pts</div>
-          <div class="tier-duration">30 days of Premium</div>
-          <button data-tier="1month" data-cost="10000" class="redeemBtn">Redeem</button>
+      </div>
+
+      <div class="tier-section">
+        <h3>Pro</h3>
+        <p>More access and benefits for users who want more from 360.</p>
+
+        <div class="tiers-grid">
+          <div class="tier-card"><div class="tier-name">Pro · 3 Days</div><div class="tier-duration">3-day membership</div><button data-tier="pro_3day" data-cost="2500" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Pro · 1 Week</div><div class="tier-duration">7-day membership</div><button data-tier="pro_1week" data-cost="6000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Pro · 6 Months</div><div class="tier-duration">6-month membership</div><button data-tier="pro_6month" data-cost="60000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Pro · 1 Year</div><div class="tier-duration">1-year membership</div><button data-tier="pro_1year" data-cost="100000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card"><div class="tier-name">Pro · 5 Years</div><div class="tier-duration">5-year membership</div><button data-tier="pro_5year" data-cost="250000" class="redeemBtn">Redeem</button></div>
         </div>
-        <div class="tier-card">
-          <div class="tier-icon">🥇</div>
-          <div class="tier-name">1-Year Premium</div>
-          <div class="tier-cost">100,000 pts</div>
-          <div class="tier-duration">365 days of Premium</div>
-          <button data-tier="1year" data-cost="100000" class="redeemBtn">Redeem</button>
+      </div>
+
+      <div class="tier-section">
+        <h3>Premium</h3>
+        <p>Premium is an earned status. Timed Premium options are available, while Lifetime Premium is the highest dedication tier.</p>
+
+        <div class="tiers-grid">
+          <div class="tier-card premium-card"><div class="tier-name">Premium · 3 Days</div><div class="tier-duration">3-day membership</div><button data-tier="premium_3day" data-cost="10000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card premium-card"><div class="tier-name">Premium · 1 Week</div><div class="tier-duration">7-day membership</div><button data-tier="premium_1week" data-cost="25000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card premium-card"><div class="tier-name">Premium · 6 Months</div><div class="tier-duration">6-month membership</div><button data-tier="premium_6month" data-cost="250000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card premium-card"><div class="tier-name">Premium · 1 Year</div><div class="tier-duration">1-year membership</div><button data-tier="premium_1year" data-cost="400000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card premium-card"><div class="tier-name">Premium · 5 Years</div><div class="tier-duration">5-year membership</div><button data-tier="premium_5year" data-cost="750000" class="redeemBtn">Redeem</button></div>
+          <div class="tier-card premium-card lifetime-card"><div class="tier-name">Premium · Lifetime</div><div class="tier-cost">1,000,000 lifetime pts</div><div class="tier-duration">Permanent under normal circumstances · earned, not purchased</div><button data-tier="premium_lifetime" data-cost="0" data-lifetime-required="1000000" class="redeemBtn">Unlock</button></div>
         </div>
       </div>
 
       <div class="rewards-status" id="rewardsStatus"></div>
+    </div>
+
+    <div class="rewards-tab-panel" id="tab-rules" style="display:none;">
+      <div class="policy-card">
+        <h3>Membership Status Notice</h3>
+        <p><strong>Membership roles are privileges, not permanent ownership.</strong> 360 may revoke, suspend, or modify any membership status at any time for abuse, fraud, manipulation, harassment, cheating, or other seriously inappropriate activity.</p>
+        <p>Lifetime means the membership does not expire under normal circumstances. Premium Lifetime is earned after 1,000,000 lifetime Rewards Points have been earned. It does not make the status irrevocable.</p>
+        <p>Membership may only be transferred to another account when legitimate proof of ownership or eligibility is provided and the transfer is approved.</p>
+        <p>Verified alternate accounts belonging to the same user may receive qualifying membership benefits at no additional cost. Attempts to use alternate accounts to evade restrictions can result in revocation across associated accounts.</p>
+      </div>
     </div>
   </div>
 
@@ -401,29 +508,84 @@
 
     const supabaseClient = supabase.createClient(
       "https://wiswfpfsjiowtrdyqpxy.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dncGZzamlvd3lxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM"
     );
 
     let currentUser = null;
     let balance = 0;
+    let membershipUntil = null;
+    let membershipTier = null;
 
     const loginBanner = document.getElementById('loginBanner');
     const loginBannerBtn = document.getElementById('loginBannerBtn');
     const balanceEl = document.getElementById('pointsBalance');
-    const premiumStatusEl = document.getElementById('premiumStatus');
-    const premiumSubEl = document.getElementById('premiumSub');
+    const membershipEl = document.getElementById('premiumStatus');
+    const membershipSubEl = document.getElementById('premiumSub');
     const statusEl = document.getElementById('rewardsStatus');
     const redeemBtns = Array.from(document.querySelectorAll('.redeemBtn'));
 
     function fmtDate(iso) {
-      return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      return new Date(iso).toLocaleDateString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric'
+      });
     }
 
     function updateRedeemButtonStates() {
       redeemBtns.forEach(btn => {
-        const cost = Number(btn.dataset.cost);
-        btn.disabled = !currentUser || balance < cost;
+        const lifetimeRequired = Number(btn.dataset.lifetimeRequired || 0);
+
+        if (!currentUser) {
+          btn.disabled = true;
+          return;
+        }
+
+        if (lifetimeRequired > 0) {
+          btn.disabled = !Number.isFinite(window.__lifetimePoints) ||
+                          window.__lifetimePoints < lifetimeRequired ||
+                          window.__membershipRevoked === true;
+          return;
+        }
+
+        const cost = Number(btn.dataset.cost || 0);
+        btn.disabled = window.__membershipRevoked === true || balance < cost;
       });
+    }
+
+    function renderMembership(tier, until) {
+      membershipTier = tier || null;
+      membershipUntil = until ? new Date(until) : null;
+
+      if (!currentUser) {
+        membershipEl.textContent = '—';
+        membershipSubEl.textContent = 'Log in to view your status.';
+        return;
+      }
+
+      if (window.__membershipRevoked === true) {
+        membershipEl.textContent = 'Membership revoked';
+        membershipSubEl.textContent = 'Membership access has been revoked.';
+        return;
+      }
+
+      if (tier === 'premium_lifetime') {
+        membershipEl.textContent = 'Premium · Lifetime';
+        membershipSubEl.textContent = 'Lifetime status — does not expire under normal circumstances.';
+        return;
+      }
+
+      if (membershipUntil && membershipUntil.getTime() > Date.now()) {
+        const label = (tier || 'membership')
+          .replaceAll('_', ' · ')
+          .replaceAll('premium ·', 'Premium ·')
+          .replaceAll('pro ·', 'Pro ·')
+          .replaceAll('lite ·', 'Lite ·');
+
+        membershipEl.textContent = label;
+        membershipSubEl.textContent = `Until ${fmtDate(membershipUntil)}`;
+      } else {
+        membershipEl.textContent = 'No active membership';
+        membershipSubEl.textContent = 'Choose a membership option below.';
+      }
     }
 
     async function loadProfile() {
@@ -433,37 +595,43 @@
       if (!currentUser) {
         loginBanner.classList.add('show');
         balanceEl.textContent = '—';
-        premiumStatusEl.textContent = '—';
-        premiumSubEl.textContent = 'Log in to view your status.';
+        renderMembership(null, null);
         updateRedeemButtonStates();
         return;
       }
 
       loginBanner.classList.remove('show');
 
+      // These columns extend the original reward profile without breaking
+      // older profiles that only have reward_points/premium_until.
       const { data, error } = await supabaseClient
         .from('profiles')
-        .select('reward_points, premium_until')
+        .select('reward_points, reward_points_lifetime, premium_until, membership_tier, membership_revoked, membership_revoked_reason')
         .eq('id', currentUser.id)
         .maybeSingle();
 
       if (error || !data) {
         balanceEl.textContent = '—';
-        premiumStatusEl.textContent = '—';
+        renderMembership(null, null);
         updateRedeemButtonStates();
         return;
       }
 
-      balance = data.reward_points || 0;
+      balance = Number(data.reward_points || 0);
+      window.__lifetimePoints = Number(data.reward_points_lifetime || 0);
+      window.__membershipRevoked = data.membership_revoked === true;
       balanceEl.textContent = balance.toLocaleString();
 
-      const until = data.premium_until ? new Date(data.premium_until) : null;
-      if (until && until.getTime() > Date.now()) {
-        premiumStatusEl.textContent = 'Active';
-        premiumSubEl.textContent = `Until ${fmtDate(until)}`;
+      if (window.__membershipRevoked) {
+        membershipEl.textContent = 'Membership revoked';
+        membershipSubEl.textContent = data.membership_revoked_reason
+          ? data.membership_revoked_reason
+          : 'Membership access has been revoked.';
       } else {
-        premiumStatusEl.textContent = 'Not active';
-        premiumSubEl.textContent = 'Redeem points below to activate Premium.';
+        renderMembership(
+          data.membership_tier || (data.premium_until ? 'premium' : null),
+          data.premium_until
+        );
       }
 
       updateRedeemButtonStates();
@@ -471,37 +639,64 @@
 
     async function redeem(tier, cost, btn) {
       if (!currentUser) {
-        statusEl.textContent = 'Log in first to redeem points.';
+        statusEl.textContent = 'Log in first to redeem a membership.';
         return;
       }
-      if (balance < cost) {
-        statusEl.textContent = "You don't have enough points for this tier yet.";
+
+      if (window.__membershipRevoked === true) {
+        statusEl.textContent = 'Membership is currently revoked.';
+        return;
+      }
+
+      const lifetimeRequired = Number(btn.dataset.lifetimeRequired || 0);
+
+      if (lifetimeRequired > 0) {
+        if (Number(window.__lifetimePoints || 0) < lifetimeRequired) {
+          statusEl.textContent = 'Premium Lifetime requires 1,000,000 lifetime Rewards Points earned.';
+          return;
+        }
+      } else if (balance < cost) {
+        statusEl.textContent = "You don't have enough Rewards Points for this option yet.";
         return;
       }
 
       const originalLabel = btn.textContent;
       btn.disabled = true;
-      btn.textContent = 'Redeeming…';
+      btn.textContent = 'Processing…';
       statusEl.textContent = '';
 
       try {
-        const { data, error } = await supabaseClient.rpc('redeem_reward', { p_tier: tier });
+        // Keep the existing RPC integration point. The database function should
+        // validate the tier, deduct points atomically, and set membership_tier /
+        // premium_until as appropriate. Unknown tiers are intentionally rejected
+        // server-side rather than being trusted from the browser.
+        const { data, error } = await supabaseClient.rpc('redeem_reward', {
+          p_tier: tier
+        });
+
         if (error) throw error;
+
         const row = Array.isArray(data) ? data[0] : data;
-        balance = row?.new_balance ?? (balance - cost);
+        balance = Number(row?.new_balance ?? (balance - cost));
         balanceEl.textContent = balance.toLocaleString();
 
-        if (row?.premium_until) {
-          const until = new Date(row.premium_until);
-          premiumStatusEl.textContent = 'Active';
-          premiumSubEl.textContent = `Until ${fmtDate(until)}`;
+        if (tier === 'premium_lifetime') {
+          window.__membershipRevoked = false;
+          membershipEl.textContent = 'Premium · Lifetime';
+          membershipSubEl.textContent = 'Lifetime status — does not expire under normal circumstances.';
+          statusEl.textContent = 'Premium Lifetime unlocked.';
+        } else {
+          renderMembership(
+            row?.membership_tier || tier,
+            row?.premium_until || null
+          );
+          statusEl.textContent = `Membership activated. ${balance.toLocaleString()} pts remaining.`;
         }
-
-        statusEl.textContent = `Redeemed! Premium extended. ${balance.toLocaleString()} pts remaining.`;
       } catch (err) {
-        statusEl.textContent = (err && err.message === 'insufficient points')
-          ? "You don't have enough points for this tier."
-          : 'Something went wrong redeeming that tier — try again.';
+        statusEl.textContent =
+          (err && err.message === 'insufficient points')
+            ? "You don't have enough Rewards Points for this option."
+            : 'This membership option is not available yet. Try again after the rewards system is updated.';
       } finally {
         btn.textContent = originalLabel;
         updateRedeemButtonStates();
@@ -519,28 +714,34 @@
       if (popup) popup.classList.remove('hidden');
     });
 
-    /* Tabs */
     const tabBtns = Array.from(document.querySelectorAll('.rewards-tab'));
     const tabPanels = {
       earn: document.getElementById('tab-earn'),
-      redeem: document.getElementById('tab-redeem')
+      membership: document.getElementById('tab-membership'),
+      rules: document.getElementById('tab-rules')
     };
+
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         tabBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+
         Object.keys(tabPanels).forEach(key => {
-          tabPanels[key].style.display = key === btn.dataset.tab ? '' : 'none';
+          tabPanels[key].style.display =
+            key === btn.dataset.tab ? '' : 'none';
         });
       });
     });
 
-    /* Keep balance/premium synced with the profiles table live — e.g. if a
-       game session banks points, or a redemption happens in another tab. */
     let profileChannel = null;
+
     function subscribeToProfile() {
       if (!currentUser) return;
-      if (profileChannel) supabaseClient.removeChannel(profileChannel);
+
+      if (profileChannel) {
+        supabaseClient.removeChannel(profileChannel);
+      }
+
       profileChannel = supabaseClient
         .channel('rewards-profile-' + currentUser.id)
         .on('postgres_changes', {
@@ -554,15 +755,30 @@
             balanceEl.textContent = balance.toLocaleString();
             updateRedeemButtonStates();
           }
-          if (payload.new?.premium_until !== undefined) {
-            const until = payload.new.premium_until ? new Date(payload.new.premium_until) : null;
-            if (until && until.getTime() > Date.now()) {
-              premiumStatusEl.textContent = 'Active';
-              premiumSubEl.textContent = `Until ${fmtDate(until)}`;
+
+          if (typeof payload.new?.reward_points_lifetime === 'number') {
+            window.__lifetimePoints = payload.new.reward_points_lifetime;
+          }
+
+          if (payload.new?.membership_revoked !== undefined) {
+            window.__membershipRevoked = payload.new.membership_revoked === true;
+          }
+
+          if (
+            payload.new?.premium_until !== undefined ||
+            payload.new?.membership_tier !== undefined ||
+            payload.new?.membership_revoked !== undefined
+          ) {
+            if (window.__membershipRevoked) {
+              membershipEl.textContent = 'Membership revoked';
+              membershipSubEl.textContent = 'Membership access has been revoked.';
             } else {
-              premiumStatusEl.textContent = 'Not active';
-              premiumSubEl.textContent = 'Redeem points below to activate Premium.';
+              renderMembership(
+                payload.new?.membership_tier || membershipTier,
+                payload.new?.premium_until || null
+              );
             }
+            updateRedeemButtonStates();
           }
         })
         .subscribe();
