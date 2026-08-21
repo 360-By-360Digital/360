@@ -3163,12 +3163,12 @@ async function submitPoll(modal) {
   const labels = [...optEls].map(i => i.value.trim()).filter(Boolean);
   if (labels.length < 2) { showToast('Add at least 2 options.'); return; }
 
+  const isChannel = activeRoom.type === 'channel' || activeRoom.serverId;
   const { data: poll, error: pollErr } = await sb.from('polls').insert({
     question,
     created_by: currentUserId,
-    channel_id: activeRoom.type === 'channel' ? activeRoom.id : null,
-    dm_id: activeRoom.type === 'dm' ? activeRoom.id : null,
-    server_id: activeRoom.serverId || null,
+    channel_id: isChannel ? (activeRoom.id || null) : null,
+    dm_id: !isChannel ? (activeRoom.id || null) : null,
   }).select().single();
   if (pollErr || !poll) { showToast('Failed to create poll.'); console.error(pollErr); return; }
 
