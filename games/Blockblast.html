@@ -14,10 +14,6 @@
   <link rel="stylesheet" href="/assets/css/cursor.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* ===============================
-       BLOCK BLAST FULL STYLES
-    =============================== */
-
     .blockblast-container {
       padding: 20px;
       max-width: 640px;
@@ -284,6 +280,7 @@
       <div class="nav-item" data-href="../news">News</div>
       <div class="nav-item" data-href="../apps">Apps</div>
       <div class="nav-item active" data-href="../games">Games</div>
+      <div class="nav-item" data-href="../rewards">Rewards</div>
     </nav>
     <div class="sidebar-footer">© 2026 360 INC. · V.2.0.3</div>
   </aside>
@@ -349,7 +346,9 @@
       <div class="bb-top-bar">
         <h1>Block Blast</h1>
         <div class="bb-top-actions">
+          <button id="bbFinish">🏁 Finish</button>
           <button id="bbRestart">🔄 Restart</button>
+          <button id="bbRewardsLink">🎁 Rewards</button>
         </div>
       </div>
 
@@ -366,6 +365,14 @@
           <div class="bb-stat-label">Combo</div>
           <div class="bb-stat-value" id="bbCombo">0</div>
         </div>
+        <div class="bb-stat">
+          <div class="bb-stat-label">Pending Pts</div>
+          <div class="bb-stat-value" id="bbPending">0</div>
+        </div>
+        <div class="bb-stat">
+          <div class="bb-stat-label">Rewards Bal.</div>
+          <div class="bb-stat-value" id="bbBalance">—</div>
+        </div>
       </div>
 
       <div class="bb-status" id="bbStatus">Drag a piece onto the grid. Fill a row or column to blast it!</div>
@@ -381,8 +388,9 @@
 
   <div class="bb-gameover" id="bbGameOver">
     <div class="bb-gameover-box">
-      <h2>Game Over</h2>
+      <h2 id="bbGameOverTitle">Game Over</h2>
       <p id="bbFinalScore">Score: 0</p>
+      <p id="bbBankedNote" style="font-size:13px;"></p>
       <button id="bbPlayAgain">Play Again</button>
     </div>
   </div>
@@ -423,6 +431,32 @@
     ];
 
     /* =====================================================
+       SUPABASE + REWARDS
+    ===================================================== */
+    const supabaseClient = supabase.createClient(
+      "https://wiswfpfsjiowtrdyqpxy.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM"
+    );
+
+    let currentUser = null;
+
+    // Exponential rewards: every additional piece placed and every additional
+    // line clear in the SAME session is worth more than the last, so longer
+    // play sessions pay off faster than linearly.
+    const PLACEMENT_BASE_PTS = 2;
+    const PLACEMENT_GROWTH = 1.01;   // per piece placed this session
+    const LINE_BASE_PTS = 12;
+    const LINE_GROWTH = 1.18;        // per line-clear event this session
+
+    function placementPoints(nthPlacement) {
+      return Math.round(PLACEMENT_BASE_PTS * Math.pow(PLACEMENT_GROWTH, nthPlacement));
+    }
+
+    function lineClearPoints(nthLineClearEvent, linesInThisEvent) {
+      return Math.round(LINE_BASE_PTS * linesInThisEvent * Math.pow(LINE_GROWTH, nthLineClearEvent));
+    }
+
+    /* =====================================================
        STATE
     ===================================================== */
     let board = []; // SIZE x SIZE, null or color
@@ -432,16 +466,78 @@
     let combo = 0;
     let dragging = null; // { pieceIndex, shape, color, ghostEl, offsetR, offsetC }
 
+    // Session reward tracking (pending, not yet banked to the user's account)
+    let sessionPoints = 0;
+    let placementsThisSession = 0;
+    let lineClearEventsThisSession = 0;
+    let rewardsBalance = null;
+
     const boardEl = document.getElementById('bbBoard');
     const trayEl = document.getElementById('bbTray');
     const scoreEl = document.getElementById('bbScore');
     const bestEl = document.getElementById('bbBest');
     const comboEl = document.getElementById('bbCombo');
+    const pendingEl = document.getElementById('bbPending');
+    const balanceEl = document.getElementById('bbBalance');
     const statusEl = document.getElementById('bbStatus');
     const gameOverEl = document.getElementById('bbGameOver');
+    const gameOverTitleEl = document.getElementById('bbGameOverTitle');
     const finalScoreEl = document.getElementById('bbFinalScore');
+    const bankedNoteEl = document.getElementById('bbBankedNote');
 
     bestEl.textContent = best;
+
+    async function initRewardsUser() {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        currentUser = session?.user || null;
+        if (currentUser) await refreshBalance();
+        else balanceEl.textContent = 'Log in';
+      } catch {
+        balanceEl.textContent = '—';
+      }
+    }
+
+    async function refreshBalance() {
+      if (!currentUser) return;
+      try {
+        const { data } = await supabaseClient
+          .from('profiles')
+          .select('reward_points')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+        rewardsBalance = data?.reward_points ?? 0;
+        balanceEl.textContent = rewardsBalance.toLocaleString();
+      } catch {
+        balanceEl.textContent = '—';
+      }
+    }
+
+    // Bank the pending session points into the user's rewards balance.
+    // Called both when the player finishes the game manually and when
+    // no more pieces fit (natural game over).
+    async function bankSessionPoints() {
+      if (sessionPoints <= 0) return { banked: 0, note: '' };
+      if (!currentUser) {
+        return { banked: 0, note: 'Log in to save these points to Rewards.' };
+      }
+      try {
+        const { data, error } = await supabaseClient.rpc('award_game_points', {
+          p_source: 'game:blockblast',
+          p_points: sessionPoints,
+          p_reason: `score ${score}`
+        });
+        if (error) throw error;
+        const banked = sessionPoints;
+        rewardsBalance = data ?? (rewardsBalance || 0) + banked;
+        balanceEl.textContent = rewardsBalance.toLocaleString();
+        sessionPoints = 0;
+        pendingEl.textContent = '0';
+        return { banked, note: `+${banked.toLocaleString()} pts added to your Rewards balance.` };
+      } catch (err) {
+        return { banked: 0, note: 'Could not save points right now — try again later.' };
+      }
+    }
 
     /* =====================================================
        BOARD RENDER
@@ -529,6 +625,10 @@
     /* =====================================================
        DRAG & DROP (pointer events, touch + mouse)
     ===================================================== */
+    const GHOST_CELL = 34;
+    const GHOST_GAP = 4;
+    const GHOST_LIFT = 90; // vertical offset above the pointer, in board-cell units below
+
     function startDrag(e, idx) {
       e.preventDefault();
       const piece = tray[idx];
@@ -540,36 +640,38 @@
       const ghost = document.createElement('div');
       ghost.className = 'bb-drag-ghost';
       const { maxC } = pieceBounds(piece.shape);
-      ghost.style.gridTemplateColumns = `repeat(${maxC}, 34px)`;
-      ghost.appendChild(buildPieceGrid(piece, 34));
+      ghost.style.gridTemplateColumns = `repeat(${maxC}, ${GHOST_CELL}px)`;
+      ghost.appendChild(buildPieceGrid(piece, GHOST_CELL));
       document.body.appendChild(ghost);
 
       dragging = { idx, piece, ghost };
-      positionGhost(e.clientX, e.clientY);
-      updatePreview(e.clientX, e.clientY);
+      updateDragPosition(e.clientX, e.clientY);
 
       window.addEventListener('pointermove', onDragMove);
       window.addEventListener('pointerup', onDragEnd);
     }
 
-    function positionGhost(x, y) {
-      if (!dragging) return;
+    // Ghost's top-left corner in viewport coordinates for a given pointer position.
+    function ghostOrigin(x, y) {
       const { maxR, maxC } = pieceBounds(dragging.piece.shape);
-      const w = maxC * 34 + (maxC - 1) * 4;
-      const h = maxR * 34 + (maxR - 1) * 4;
-      dragging.ghost.style.left = (x - w / 2) + 'px';
-      dragging.ghost.style.top = (y - h - 30) + 'px';
+      const w = maxC * GHOST_CELL + (maxC - 1) * GHOST_GAP;
+      const h = maxR * GHOST_CELL + (maxR - 1) * GHOST_GAP;
+      return { left: x - w / 2, top: y - h - GHOST_LIFT, w, h };
     }
 
+    function positionGhost(origin) {
+      dragging.ghost.style.left = origin.left + 'px';
+      dragging.ghost.style.top = origin.top + 'px';
+    }
+
+    // Map a viewport point to a board cell (or null if outside the board).
     function boardCellFromPoint(x, y) {
       const rect = boardEl.getBoundingClientRect();
-      // Aim above the finger/cursor so the piece is visible while dragging on touch
-      const targetY = y - 60;
-      if (x < rect.left || x > rect.right || targetY < rect.top || targetY > rect.bottom) return null;
+      if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return null;
       const cellW = rect.width / SIZE;
       const cellH = rect.height / SIZE;
       const c = Math.floor((x - rect.left) / cellW);
-      const r = Math.floor((targetY - rect.top) / cellH);
+      const r = Math.floor((y - rect.top) / cellH);
       if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) return null;
       return { r, c };
     }
@@ -580,10 +682,8 @@
       });
     }
 
-    function updatePreview(x, y) {
+    function updatePreview(target) {
       clearPreview();
-      if (!dragging) return;
-      const target = boardCellFromPoint(x, y);
       dragging.target = target;
       if (!target) return;
 
@@ -597,9 +697,43 @@
       });
     }
 
+    // Keep the site's custom cursor (dot/trail/crosshair/blob) alive during drag.
+    // We drive it manually here instead of relying solely on the global mousemove
+    // listener, since pointer capture on the dragged element can otherwise starve it.
+    function updateSiteCursor(x, y) {
+      const dot = document.querySelector('.cursor-dot');
+      const trail = document.querySelector('.cursor-trail');
+      const crosshair = document.querySelector('.cursor-crosshair');
+      const blob = document.querySelector('.cursor-blob');
+      [dot, crosshair].forEach(el => {
+        if (el) { el.style.left = x + 'px'; el.style.top = y + 'px'; }
+      });
+      [trail, blob].forEach(el => {
+        if (el) { el.style.left = x + 'px'; el.style.top = y + 'px'; }
+      });
+    }
+
+    // Single source of truth: wherever the ghost visually sits, the preview
+    // and the drop target derive from that same rect — not a separate,
+    // independently-tuned offset from the raw pointer position. This is what
+    // keeps the highlighted cells matching the piece you actually see.
+    function updateDragPosition(x, y) {
+      if (!dragging) return;
+      const origin = ghostOrigin(x, y);
+      positionGhost(origin);
+
+      // Anchor cell = the piece's [0,0] cell, at the center of the ghost's
+      // first grid cell.
+      const anchorX = origin.left + GHOST_CELL / 2;
+      const anchorY = origin.top + GHOST_CELL / 2;
+      const target = boardCellFromPoint(anchorX, anchorY);
+      updatePreview(target);
+
+      updateSiteCursor(x, y);
+    }
+
     function onDragMove(e) {
-      positionGhost(e.clientX, e.clientY);
-      updatePreview(e.clientX, e.clientY);
+      updateDragPosition(e.clientX, e.clientY);
     }
 
     function onDragEnd(e) {
@@ -643,6 +777,10 @@
       score += piece.shape.length;
       renderBoard();
       updateScore();
+
+      placementsThisSession += 1;
+      sessionPoints += placementPoints(placementsThisSession);
+      pendingEl.textContent = sessionPoints.toLocaleString();
     }
 
     function resolveBoard() {
@@ -677,9 +815,15 @@
       const bonus = linesCleared * SIZE * 10 * combo;
       score += bonus;
       updateScore();
+
+      lineClearEventsThisSession += 1;
+      const rewardBonus = lineClearPoints(lineClearEventsThisSession, linesCleared);
+      sessionPoints += rewardBonus;
+      pendingEl.textContent = sessionPoints.toLocaleString();
+
       statusEl.textContent = linesCleared > 1
-        ? `${linesCleared} lines blasted! Combo x${combo} · +${bonus}`
-        : `Line blasted! +${bonus}`;
+        ? `${linesCleared} lines blasted! Combo x${combo} · +${bonus} score · +${rewardBonus} pts`
+        : `Line blasted! +${bonus} score · +${rewardBonus} pts`;
 
       setTimeout(() => {
         cellsToClear.forEach(key => {
@@ -711,9 +855,28 @@
       }
     }
 
-    function endGame() {
+    async function endGame() {
+      gameOverTitleEl.textContent = 'Game Over';
       finalScoreEl.textContent = `Score: ${score}`;
+      bankedNoteEl.textContent = 'Banking your points…';
       gameOverEl.classList.add('show');
+      const { note } = await bankSessionPoints();
+      bankedNoteEl.textContent = note;
+    }
+
+    // Manually ends the current run early and banks whatever points have
+    // been earned so far — same banking path as a natural game over.
+    async function finishGame() {
+      if (placementsThisSession === 0) {
+        statusEl.textContent = 'Place at least one block before finishing.';
+        return;
+      }
+      gameOverTitleEl.textContent = 'Run Finished';
+      finalScoreEl.textContent = `Score: ${score}`;
+      bankedNoteEl.textContent = 'Banking your points…';
+      gameOverEl.classList.add('show');
+      const { note } = await bankSessionPoints();
+      bankedNoteEl.textContent = note;
     }
 
     /* =====================================================
@@ -723,9 +886,13 @@
       newBoard();
       score = 0;
       combo = 0;
+      sessionPoints = 0;
+      placementsThisSession = 0;
+      lineClearEventsThisSession = 0;
       renderBoard();
       updateScore();
       comboEl.textContent = 0;
+      pendingEl.textContent = '0';
       statusEl.textContent = 'Drag a piece onto the grid. Fill a row or column to blast it!';
       gameOverEl.classList.remove('show');
       refillTray();
@@ -733,7 +900,18 @@
 
     document.getElementById('bbRestart').addEventListener('click', startGame);
     document.getElementById('bbPlayAgain').addEventListener('click', startGame);
+    document.getElementById('bbFinish').addEventListener('click', finishGame);
+    document.getElementById('bbRewardsLink').addEventListener('click', () => {
+      window.location.href = '../rewards.html';
+    });
 
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+      currentUser = session?.user || null;
+      if (currentUser) refreshBalance();
+      else balanceEl.textContent = 'Log in';
+    });
+
+    initRewardsUser();
     startGame();
   })();
   </script>
