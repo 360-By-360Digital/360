@@ -150,21 +150,84 @@
       cursor: not-allowed;
     }
 
+    .rewards-tabs {
+      display: flex;
+      gap: 8px;
+      margin: 6px 0 22px;
+      border-bottom: 1px solid var(--br);
+    }
+
+    .rewards-tab {
+      padding: 10px 18px;
+      border: none;
+      background: none;
+      color: var(--txt);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      opacity: .6;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+
+    body.dark .rewards-tab { color: var(--txtd); }
+
+    .rewards-tab.active {
+      opacity: 1;
+      border-bottom-color: var(--a);
+    }
+
+    .earn-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+    }
+
+    .earn-card {
+      padding: 22px;
+      border-radius: 14px;
+      border: 1px solid var(--br);
+      background: rgba(255,255,255,.45);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    body.dark .earn-card {
+      background: rgba(15,23,42,.55);
+    }
+
+    .earn-card .earn-icon { font-size: 30px; }
+    .earn-card .earn-title { font-size: 17px; font-weight: 700; }
+    .earn-card .earn-desc { font-size: 13px; opacity: .75; }
+
+    .earn-card .earn-rate {
+      font-size: 13px;
+      font-weight: 700;
+      background: linear-gradient(110deg, var(--a), var(--a2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .earn-card .earn-play-btn {
+      margin-top: 6px;
+      display: inline-block;
+      text-align: center;
+      padding: 9px 16px;
+      border-radius: 8px;
+      background: linear-gradient(110deg, var(--a), var(--a2));
+      color: #050816;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
     .rewards-status {
       min-height: 20px;
       font-size: 14px;
       margin-top: 18px;
       text-align: center;
       opacity: .85;
-    }
-
-    .rewards-earn-note {
-      margin-top: 30px;
-      padding: 16px 18px;
-      border-radius: 12px;
-      border: 1px dashed var(--br);
-      font-size: 13px;
-      opacity: .8;
     }
   </style>
 </head>
@@ -174,6 +237,12 @@
   <div class="cursor-trail"></div>
   <div class="cursor-crosshair"></div>
   <div class="cursor-blob"></div>
+
+  <div class="auth-top-right">
+    <button id="signInBtn"  class="auth-btn">Sign In</button>
+    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
+    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+  </div>
 
   <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
 
@@ -274,37 +343,55 @@
       </div>
     </div>
 
-    <h3 style="margin-bottom:6px;">Redeem for Premium</h3>
-    <p style="opacity:.7;font-size:14px;margin-top:0;">Points can only be redeemed for Premium time. Redeeming stacks on top of any remaining Premium you already have.</p>
+    <div class="rewards-tabs">
+      <button class="rewards-tab active" data-tab="earn">Earn</button>
+      <button class="rewards-tab" data-tab="redeem">Redeem</button>
+    </div>
 
-    <div class="tiers-grid">
-      <div class="tier-card">
-        <div class="tier-icon">🥉</div>
-        <div class="tier-name">3-Day Premium</div>
-        <div class="tier-cost">1,000 pts</div>
-        <div class="tier-duration">3 days of Premium</div>
-        <button data-tier="3day" data-cost="1000" class="redeemBtn">Redeem</button>
-      </div>
-      <div class="tier-card">
-        <div class="tier-icon">🥈</div>
-        <div class="tier-name">1-Month Premium</div>
-        <div class="tier-cost">10,000 pts</div>
-        <div class="tier-duration">30 days of Premium</div>
-        <button data-tier="1month" data-cost="10000" class="redeemBtn">Redeem</button>
-      </div>
-      <div class="tier-card">
-        <div class="tier-icon">🥇</div>
-        <div class="tier-name">1-Year Premium</div>
-        <div class="tier-cost">100,000 pts</div>
-        <div class="tier-duration">365 days of Premium</div>
-        <button data-tier="1year" data-cost="100000" class="redeemBtn">Redeem</button>
+    <div class="rewards-tab-panel" id="tab-earn">
+      <h3 style="margin-bottom:6px;">Ways to Earn</h3>
+      <p style="opacity:.7;font-size:14px;margin-top:0;">Play games to earn in-game points, which convert to Rewards points when you finish a run or run out of moves.</p>
+
+      <div class="earn-grid">
+        <div class="earn-card">
+          <div class="earn-icon">🧩</div>
+          <div class="earn-title">Block Blast</div>
+          <div class="earn-desc">Place pieces and clear lines. Longer runs and bigger combos earn exponentially more in-game points.</div>
+          <div class="earn-rate">5 in-game pts = 1 Rewards pt</div>
+          <a href="../games/BlockBlast.html" class="earn-play-btn">Play Now</a>
+        </div>
       </div>
     </div>
 
-    <div class="rewards-status" id="rewardsStatus"></div>
+    <div class="rewards-tab-panel" id="tab-redeem" style="display:none;">
+      <h3 style="margin-bottom:6px;">Redeem for Premium</h3>
+      <p style="opacity:.7;font-size:14px;margin-top:0;">Points can only be redeemed for Premium time. Redeeming stacks on top of any remaining Premium you already have.</p>
 
-    <div class="rewards-earn-note">
-      💡 Points grow the more you play — longer runs and bigger combos in games like <a href="../games/BlockBlast.html">Block Blast</a> earn exponentially more points per session. Points are banked to your Rewards balance when you finish a run or run out of moves.
+      <div class="tiers-grid">
+        <div class="tier-card">
+          <div class="tier-icon">🥉</div>
+          <div class="tier-name">3-Day Premium</div>
+          <div class="tier-cost">1,000 pts</div>
+          <div class="tier-duration">3 days of Premium</div>
+          <button data-tier="3day" data-cost="1000" class="redeemBtn">Redeem</button>
+        </div>
+        <div class="tier-card">
+          <div class="tier-icon">🥈</div>
+          <div class="tier-name">1-Month Premium</div>
+          <div class="tier-cost">10,000 pts</div>
+          <div class="tier-duration">30 days of Premium</div>
+          <button data-tier="1month" data-cost="10000" class="redeemBtn">Redeem</button>
+        </div>
+        <div class="tier-card">
+          <div class="tier-icon">🥇</div>
+          <div class="tier-name">1-Year Premium</div>
+          <div class="tier-cost">100,000 pts</div>
+          <div class="tier-duration">365 days of Premium</div>
+          <button data-tier="1year" data-cost="100000" class="redeemBtn">Redeem</button>
+        </div>
+      </div>
+
+      <div class="rewards-status" id="rewardsStatus"></div>
     </div>
   </div>
 
@@ -432,11 +519,60 @@
       if (popup) popup.classList.remove('hidden');
     });
 
-    supabaseClient.auth.onAuthStateChange(() => {
-      loadProfile();
+    /* Tabs */
+    const tabBtns = Array.from(document.querySelectorAll('.rewards-tab'));
+    const tabPanels = {
+      earn: document.getElementById('tab-earn'),
+      redeem: document.getElementById('tab-redeem')
+    };
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        Object.keys(tabPanels).forEach(key => {
+          tabPanels[key].style.display = key === btn.dataset.tab ? '' : 'none';
+        });
+      });
     });
 
-    loadProfile();
+    /* Keep balance/premium synced with the profiles table live — e.g. if a
+       game session banks points, or a redemption happens in another tab. */
+    let profileChannel = null;
+    function subscribeToProfile() {
+      if (!currentUser) return;
+      if (profileChannel) supabaseClient.removeChannel(profileChannel);
+      profileChannel = supabaseClient
+        .channel('rewards-profile-' + currentUser.id)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${currentUser.id}`
+        }, (payload) => {
+          if (typeof payload.new?.reward_points === 'number') {
+            balance = payload.new.reward_points;
+            balanceEl.textContent = balance.toLocaleString();
+            updateRedeemButtonStates();
+          }
+          if (payload.new?.premium_until !== undefined) {
+            const until = payload.new.premium_until ? new Date(payload.new.premium_until) : null;
+            if (until && until.getTime() > Date.now()) {
+              premiumStatusEl.textContent = 'Active';
+              premiumSubEl.textContent = `Until ${fmtDate(until)}`;
+            } else {
+              premiumStatusEl.textContent = 'Not active';
+              premiumSubEl.textContent = 'Redeem points below to activate Premium.';
+            }
+          }
+        })
+        .subscribe();
+    }
+
+    supabaseClient.auth.onAuthStateChange(() => {
+      loadProfile().then(subscribeToProfile);
+    });
+
+    loadProfile().then(subscribeToProfile);
   })();
   </script>
 
