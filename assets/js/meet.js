@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════
-   360Meet v3 — sign-in required, optional passcode, prepare
+   Gather v3 — sign-in required, optional passcode, prepare
    room, Zoom-style call chamber, profile-picture avatars,
    and host-approved screen sharing for non-host participants.
    Requires: supabaseClient + getGravatarUrl (globals from main.js)
@@ -138,7 +138,7 @@ window.Meet = (function () {
   async function init() {
     const sb = getSb();
     if (!sb) {
-      console.error('360Meet: supabaseClient not found — check that main.js loaded before meet.js.');
+      console.error('Gather: supabaseClient not found — check that main.js loaded before meet.js.');
       renderGate(false);
       showScreen('meet-gate');
       return;
@@ -198,7 +198,7 @@ window.Meet = (function () {
     const el = $('#meet-action-select');
     if (!el) return;
     el.innerHTML = `
-      <h2 class="meet-title">360Meet</h2>
+      <h2 class="meet-title">Gather</h2>
       <p class="meet-subtitle">Start a video call, start a voice chat, or join an existing meeting.</p>
       <div class="meet-action-grid">
         <div class="meet-card meet-action-card" id="meet-card-video">
