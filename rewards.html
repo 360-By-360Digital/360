@@ -426,7 +426,7 @@
           <div class="earn-title">Games</div>
           <div class="earn-desc">Play supported 360 games and earn points through eligible activity.</div>
           <div class="earn-rate">Currently available</div>
-          <a href="../games/BlockBlast.html" class="earn-play-btn">Play Now</a>
+          <button type="button" id="randomGameBtn" class="earn-play-btn">Play a Random Game</button>
         </div>
 
         <div class="earn-card">
@@ -523,6 +523,41 @@
     const membershipSubEl = document.getElementById('premiumSub');
     const statusEl = document.getElementById('rewardsStatus');
     const redeemBtns = Array.from(document.querySelectorAll('.redeemBtn'));
+    const randomGameBtn = document.getElementById('randomGameBtn');
+
+    async function playRandomGame() {
+      if (!randomGameBtn) return;
+      randomGameBtn.disabled = true;
+      randomGameBtn.textContent = 'Choosing…';
+      try {
+        const response = await fetch('../games.html', { cache: 'no-store' });
+        if (!response.ok) throw new Error('games page unavailable');
+        const source = await response.text();
+        const doc = new DOMParser().parseFromString(source, 'text/html');
+        const candidates = Array.from(doc.querySelectorAll('a.game-card[href]'))
+          .map(a => a.getAttribute('href'))
+          .filter(href => href && href.startsWith('../games/') && !/^https?:/i.test(href));
+
+        if (!candidates.length) throw new Error('no eligible games');
+        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+        window.location.href = chosen;
+      } catch (err) {
+        statusEl.textContent = 'Could not find an available game right now.';
+        randomGameBtn.disabled = false;
+        randomGameBtn.textContent = 'Play a Random Game';
+      }
+    }
+
+    if (randomGameBtn) randomGameBtn.addEventListener('click', playRandomGame);
+
+    try {
+      const notice = sessionStorage.getItem('360_reward_notice');
+      if (notice) {
+        sessionStorage.removeItem('360_reward_notice');
+        const noticeEl = document.getElementById('rewardsStatus');
+        if (noticeEl) noticeEl.textContent = notice;
+      }
+    } catch (_) {}
 
     function fmtDate(iso) {
       return new Date(iso).toLocaleDateString(undefined, {
