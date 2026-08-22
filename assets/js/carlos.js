@@ -10,13 +10,12 @@ window.Carlos = (function () {
 
   const BOT_NAME    = 'carlos';
   const BOT_TAG     = 'BOT';
-  const BOT_AVATAR  = null; // set to a URL if you upload one @mingzew2
+  const BOT_AVATAR  = null; // set to a URL if you upload one @Mingzew2
   const GIPHY_KEY   = 'yYDIeMP7wEWRDqJuToCyfMTmOqSQkZRj';
 
   const CARLOS_BOT_ID = 'eb84ed95-5f72-49a8-9096-73ac6847a620';
 
   function getSb()  { return window.supabaseClient || window.sb; }
-  function myRoom() { return window.activeRoom; }
 
   async function isCarlosEnabled(serverId) {
     if (!serverId) return true;
@@ -28,6 +27,7 @@ window.Carlos = (function () {
       .maybeSingle();
     return !!data;
   }
+  function myRoom() { return window.activeRoom; }
 
   /* ── Send as Carlos ─────────────────────────────────── */
   async function send(text, fileUrl, serverId, channelId) {
@@ -72,7 +72,10 @@ window.Carlos = (function () {
     if (msg.username === BOT_NAME && msg.tag === BOT_TAG) return; // don't respond to self
     const room = myRoom();
     if (!room) return;
-    if (!await isCarlosEnabled(room.serverId)) return;
+    // Check if Carlos is enabled for this server
+    if (room.serverId) {
+      if (!await isCarlosEnabled(room.serverId)) return;
+    }
     const parts = msg.text.trim().split(/\s+/);
     const cmd = parts[0].toLowerCase();
     const args = parts.slice(1);
