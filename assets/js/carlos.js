@@ -10,11 +10,24 @@ window.Carlos = (function () {
 
   const BOT_NAME    = 'carlos';
   const BOT_TAG     = 'BOT';
-  const BOT_AVATAR  = null; // set to a URL if you upload one
+  const BOT_AVATAR  = null; // set to a URL if you upload one @mingzew2
   const GIPHY_KEY   = 'yYDIeMP7wEWRDqJuToCyfMTmOqSQkZRj';
+
+  const CARLOS_BOT_ID = 'eb84ed95-5f72-49a8-9096-73ac6847a620';
 
   function getSb()  { return window.supabaseClient || window.sb; }
   function myRoom() { return window.activeRoom; }
+
+  async function isCarlosEnabled(serverId) {
+    if (!serverId) return true;
+    const { data } = await getSb()
+      .from('bot_server_installs')
+      .select('id')
+      .eq('server_id', serverId)
+      .eq('bot_id', CARLOS_BOT_ID)
+      .maybeSingle();
+    return !!data;
+  }
 
   /* ── Send as Carlos ─────────────────────────────────── */
   async function send(text, fileUrl, serverId, channelId) {
@@ -59,12 +72,7 @@ window.Carlos = (function () {
     if (msg.username === BOT_NAME && msg.tag === BOT_TAG) return; // don't respond to self
     const room = myRoom();
     if (!room) return;
-    // Check if Carlos is enabled for this server
-    if (room.serverId) {
-      const { data: cfg } = await getSb().from('server_bots').select('enabled').eq('server_id', room.serverId).eq('bot_name', BOT_NAME).maybeSingle();
-      // If no config row found, Carlos is disabled by default
-      if (!cfg || !cfg.enabled) return;
-    }
+    if (!await isCarlosEnabled(room.serverId)) return;
     const parts = msg.text.trim().split(/\s+/);
     const cmd = parts[0].toLowerCase();
     const args = parts.slice(1);
@@ -212,8 +220,7 @@ window.Carlos = (function () {
   /* ── Welcome new members ────────────────────────────── */
   async function welcomeMember(userId, username, serverId) {
     const sb = getSb();
-    const { data: cfg } = await sb.from('server_bots').select('*').eq('server_id', serverId).eq('bot_name', BOT_NAME).maybeSingle();
-    if (!cfg?.enabled || !cfg?.welcome_enabled) return;
+    if (!await isCarlosEnabled(serverId)) return;
     const { data: firstCh } = await sb.from('channels').select('id').eq('server_id', serverId).order('position').limit(1).maybeSingle();
     if (!firstCh) return;
     const msg = (cfg.welcome_message || 'Welcome to the server, {user}! 🎉').replace('{user}', `**${username}**`).replace('{server}', '');
