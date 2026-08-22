@@ -439,14 +439,46 @@ async function handleServerClick(server){
 }
 async function joinServer(serverId){
   const{error}=await sb.from('server_members').insert({server_id:serverId,user_id:currentUserId});
-  if(error&&!error.message?.includes('unique')&&!error.code?.includes('23505')) showToast('❌ '+error.message);
-  else joinedServerIds.add(serverId);
+  if(error&&!error.message?.includes('unique')&&!error.code?.includes('23505')){ showToast('❌ '+error.message); return; }
+  joinedServerIds.add(serverId);
+  window.dispatchEvent(new CustomEvent('carlos-member-join',{detail:{userId:currentUserId,username:currentProfile?.username||'Someone',serverId}}));
 }
 async function enterServer(server){
   setActiveServer(server.id); await buildSidebar(server);
   const{data:chs}=await sb.from('channels').select('*').eq('server_id',server.id).order('position').order('name').limit(1);
   if(chs?.length) switchRoom({type:'channel',id:chs[0].id,name:chs[0].name,icon:'#',serverName:server.name,serverId:server.id,serverSlug:server.slug||null,topic:chs[0].topic||''});
+  // Show onboarding modal for first-time members
+  if(currentUserId && server.onboarding_enabled){
+    const{data:mem}=await sb.from('server_members').select('onboarding_done').eq('server_id',server.id).eq('user_id',currentUserId).maybeSingle();
+    if(!mem?.onboarding_done) showOnboardingModal(server);
+  }
 }
+function showOnboardingModal(server) {
+  document.getElementById('onboarding-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'onboarding-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);';
+  const rules = server.onboarding_rules ? `<div style="margin-bottom:14px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--dc-muted);margin-bottom:6px;">Server Rules</div><div style="background:rgba(255,255,255,.04);border:1px solid var(--dc-sep);border-radius:10px;padding:12px;font-size:13px;line-height:1.6;color:var(--dc-text);white-space:pre-wrap;max-height:180px;overflow-y:auto;">${esc(server.onboarding_rules)}</div></div>` : '';
+  modal.innerHTML = `<div style="background:var(--dc-sidebar-bg);border:1px solid var(--dc-sep);border-radius:18px;padding:28px;width:min(480px,90vw);max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
+    <div style="font-size:26px;text-align:center;">👋</div>
+    <div style="font-size:18px;font-weight:800;text-align:center;color:var(--dc-text);">Welcome to ${esc(server.name)}</div>
+    ${server.onboarding_welcome_text ? `<div style="font-size:13px;color:var(--dc-muted);text-align:center;line-height:1.5;">${esc(server.onboarding_welcome_text)}</div>` : ''}
+    ${rules}
+    <a href="/discover?bots=1&server=${server.id}" style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;border:1px solid var(--dc-sep);background:rgba(255,255,255,.03);text-decoration:none;color:var(--dc-text);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+      <div><div style="font-size:13px;font-weight:700;">Explore Bot Marketplace</div><div style="font-size:11px;color:var(--dc-muted);">Add bots to this server</div></div>
+      <svg style="margin-left:auto;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    <button onclick="completeOnboarding('${server.id}')" style="padding:12px;border-radius:10px;border:none;background:linear-gradient(120deg,var(--a),var(--a2,#8b5cf6));color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;">I agree, let's go →</button>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+window.completeOnboarding = async function(serverId) {
+  await sb.from('server_members').update({ onboarding_done: true }).eq('server_id', serverId).eq('user_id', currentUserId);
+  document.getElementById('onboarding-modal')?.remove();
+};
+
 function showPasscodeGate(server){
   document.getElementById('passcode-gate')?.remove();
   const gate=document.createElement('div'); gate.id='passcode-gate';
@@ -478,7 +510,7 @@ function showPasscodeGate(server){
 function switchRoom(room){ 
   updateUrlForRoom(room);
   // Persist so reload restores position
-  try { sessionStorage.setItem('360_last_room', JSON.stringify({
+  try { localStorage.setItem('360_last_room', JSON.stringify({
     type: room.type, id: room.id, name: room.name, icon: room.icon,
     serverId: room.serverId, serverName: room.serverName,
     serverSlug: room.serverSlug||null, topic: room.topic||null,
@@ -2211,7 +2243,7 @@ function updateUserChip(){
     // If URL had no routing info, restore last room from sessionStorage
     if (!_routed) {
       try {
-        const saved = sessionStorage.getItem('360_last_room');
+        const saved = localStorage.getItem('360_last_room');
         if (saved) {
           const room = JSON.parse(saved);
           // Validate room still accessible before restoring
@@ -2711,16 +2743,31 @@ function openOnboardingSetup(server) {
           <label style="font-size:12px;font-weight:700;color:var(--dc-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;">Server Slug (URL: 360.app/chat/<b id="slug-preview">${ob.slug||''}</b>)</label>
           <input type="text" id="ob-slug" value="${ob.slug||''}" placeholder="my-server" oninput="document.getElementById('slug-preview').textContent=this.value" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--dc-sep);background:var(--dc-input-bg);color:var(--dc-text);font-size:13px;"/>
         </div>
-        <button class="dc-btn-pri" onclick="saveOnboarding('${server.id}')">Save Onboarding Settings</button>
+        <div style="border-top:1px solid var(--dc-sep);padding-top:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--dc-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Bots</div>
+          <label style="display:flex;align-items:center;justify-content:space-between;font-size:14px;cursor:pointer;">
+            <span>🤖 Carlos — 360's built-in bot</span>
+            <input type="checkbox" id="ob-carlos" style="accent-color:var(--a);width:16px;height:16px;"/>
+          </label>
+          <div style="font-size:11px;color:var(--dc-muted);margin-top:4px;">Type !help in chat to see Carlos commands.</div>
+        </div>
+        <button class="dc-btn-pri" onclick="saveOnboarding('${server.id}')">Save Settings</button>
       </div>
     </div>`;
   modal.classList.remove('hidden');
+  // Load current Carlos state
+  const CARLOS_ID = 'eb84ed95-5f72-49a8-9096-73ac6847a620';
+  sb.from('bot_server_installs').select('id').eq('bot_id', CARLOS_ID).eq('server_id', server.id).maybeSingle().then(({ data }) => {
+    const cb = document.getElementById('ob-carlos');
+    if (cb) cb.checked = !!data;
+  });
 }
 
 async function saveOnboarding(serverId) {
   const enabled = document.getElementById('ob-enabled')?.checked;
   const welcome = document.getElementById('ob-welcome')?.value?.trim();
   const rules = document.getElementById('ob-rules')?.value?.trim();
+  const carlosEnabled = document.getElementById('ob-carlos')?.checked;
   let slug = document.getElementById('ob-slug')?.value?.trim()
     .toLowerCase().replace(/[^a-z0-9-]/g,'-').replace(/-+/g,'-');
   const { error } = await sb.from('servers').update({
@@ -2730,8 +2777,15 @@ async function saveOnboarding(serverId) {
     slug: slug || null
   }).eq('id', serverId);
   if (error) { showToast('❌ ' + error.message); return; }
+  // Save Carlos bot install/uninstall
+  const CARLOS_ID = 'eb84ed95-5f72-49a8-9096-73ac6847a620';
+  if (carlosEnabled) {
+    await sb.from('bot_server_installs').upsert({ bot_id: CARLOS_ID, server_id: serverId, installed_by: currentUserId }, { onConflict: 'bot_id,server_id' });
+  } else {
+    await sb.from('bot_server_installs').delete().eq('bot_id', CARLOS_ID).eq('server_id', serverId);
+  }
   document.getElementById('ob-setup-modal')?.classList.add('hidden');
-  showToast('✅ Onboarding saved!');
+  showToast('✅ Settings saved!');
 }
 
 /* ══════════════════════════════════════════════════════
