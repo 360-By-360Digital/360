@@ -3,256 +3,112 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Discover Servers — 360</title>
-  <link rel="icon" type="image/png" href="favicon-32x32.png" />
-  <link rel="manifest" href="manifest.json" />
+  <title>Discover &mdash; 360</title>
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
+  <link rel="manifest" href="/manifest.json" />
   <link rel="stylesheet" href="/assets/css/main.css" />
   <link rel="stylesheet" href="/assets/css/wide.css" />
   <link rel="stylesheet" href="/assets/css/gallium.css" />
   <link rel="stylesheet" href="/assets/css/cursor.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { min-height: 100vh; }
-
-    .disc-shell {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 80px 20px 60px;
-    }
-
-    .disc-header {
-      margin-bottom: 28px;
-    }
-
-    .disc-header h1 {
-      font-size: clamp(22px, 4vw, 32px);
-      font-weight: 800;
-      margin: 0 0 6px;
-      color: var(--txt);
-    }
-
-    body.dark .disc-header h1 { color: var(--txtd); }
-
-    .disc-header p {
-      font-size: 14px;
-      color: var(--mut);
-      margin: 0;
-    }
-
-    body.dark .disc-header p { color: var(--mutd); }
-
-    .disc-controls {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 24px;
-    }
-
-    .disc-search {
-      flex: 1;
-      min-width: 200px;
-      padding: 10px 16px;
-      border-radius: 999px;
-      border: 1px solid var(--br);
-      background: rgba(255,255,255,0.08);
-      color: var(--txt);
-      font-size: 14px;
-      font-family: inherit;
-      outline: none;
-      transition: border-color .2s;
-    }
-
-    .disc-search:focus { border-color: var(--a); }
-    body.dark .disc-search { background: rgba(255,255,255,0.06); color: var(--txtd); }
-
-    .disc-category {
-      padding: 10px 16px;
-      border-radius: 999px;
-      border: 1px solid var(--br);
-      background: rgba(255,255,255,0.08);
-      color: var(--txt);
-      font-size: 13px;
-      font-family: inherit;
-      cursor: pointer;
-      outline: none;
-    }
-
-    body.dark .disc-category { background: rgba(255,255,255,0.06); color: var(--txtd); }
-
-    .disc-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 16px;
-    }
-
-    .disc-card {
-      background: rgba(255,255,255,0.07);
-      border: 1px solid var(--br);
-      border-radius: 14px;
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      transition: border-color .2s, transform .15s;
-      cursor: default;
-    }
-
-    body.dark .disc-card { background: rgba(255,255,255,0.04); }
-    .disc-card:hover { border-color: var(--a); transform: translateY(-2px); }
-
-    .disc-card-top {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .disc-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--a), var(--a2, #8b5cf6));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      font-weight: 800;
-      color: #fff;
-      flex-shrink: 0;
-      overflow: hidden;
-    }
-
-    .disc-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-    .disc-name {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--txt);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    body.dark .disc-name { color: var(--txtd); }
-
-    .disc-category-tag {
-      font-size: 11px;
-      color: var(--mut);
-    }
-
-    body.dark .disc-category-tag { color: var(--mutd); }
-
-    .disc-desc {
-      font-size: 13px;
-      color: var(--mut);
-      line-height: 1.5;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    body.dark .disc-desc { color: var(--mutd); }
-
-    .disc-card-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: auto;
-    }
-
-    .disc-members {
-      font-size: 12px;
-      color: var(--mut);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    body.dark .disc-members { color: var(--mutd); }
-
-    .disc-join-btn {
-      padding: 7px 18px;
-      border-radius: 999px;
-      border: none;
-      background: linear-gradient(120deg, var(--a), var(--a2, #8b5cf6));
-      color: #fff;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      transition: opacity .2s;
-    }
-
-    .disc-join-btn:hover { opacity: .85; }
-    .disc-join-btn:disabled { opacity: .5; cursor: default; }
-
-    .disc-empty {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--mut);
-    }
-
-    body.dark .disc-empty { color: var(--mutd); }
-
-    .disc-empty svg { opacity: .3; margin-bottom: 12px; }
-
-    .disc-skeleton {
-      background: linear-gradient(90deg, rgba(255,255,255,.06) 25%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.06) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.4s infinite;
-      border-radius: 8px;
-      height: 14px;
-    }
-
-    @keyframes shimmer { to { background-position: -200% 0; } }
+    .disc-shell{max-width:960px;margin:0 auto;padding:72px 24px 80px;}
+    .disc-tabs{display:flex;gap:4px;margin-bottom:28px;border-bottom:1px solid var(--br);}
+    .disc-tab{padding:10px 20px;font-size:14px;font-weight:600;color:var(--mut);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;transition:color .15s,border-color .15s;margin-bottom:-1px;}
+    .disc-tab.active{color:var(--a);border-bottom-color:var(--a);}
+    body.dark .disc-tab{color:var(--mutd);}
+    .disc-header{margin-bottom:22px;}
+    .disc-header h1{font-size:clamp(20px,4vw,28px);font-weight:800;margin:0 0 4px;color:var(--txt);}
+    body.dark .disc-header h1{color:var(--txtd);}
+    .disc-header p{font-size:13px;color:var(--mut);margin:0;}
+    body.dark .disc-header p{color:var(--mutd);}
+    .disc-controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+    .disc-search{flex:1;min-width:200px;padding:9px 16px;border-radius:999px;border:1px solid var(--br);background:rgba(255,255,255,.07);color:var(--txt);font-size:14px;font-family:inherit;outline:none;}
+    .disc-search:focus{border-color:var(--a);}
+    body.dark .disc-search{background:rgba(255,255,255,.05);color:var(--txtd);}
+    .disc-select{padding:9px 14px;border-radius:999px;border:1px solid var(--br);background:rgba(255,255,255,.07);color:var(--txt);font-size:13px;font-family:inherit;cursor:pointer;outline:none;}
+    body.dark .disc-select{background:rgba(255,255,255,.05);color:var(--txtd);}
+    .disc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;}
+    .disc-card,.bot-card{background:rgba(255,255,255,.06);border:1px solid var(--br);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;transition:border-color .2s,transform .15s;}
+    body.dark .disc-card,body.dark .bot-card{background:rgba(255,255,255,.04);}
+    .disc-card:hover,.bot-card:hover{border-color:var(--a);transform:translateY(-2px);}
+    .disc-avatar,.bot-avatar{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--a),#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;}
+    .bot-avatar{width:48px;height:48px;border-radius:14px;}
+    .disc-avatar img,.bot-avatar img{width:100%;height:100%;object-fit:cover;}
+    .disc-name,.bot-name{font-size:14px;font-weight:700;color:var(--txt);}
+    body.dark .disc-name,body.dark .bot-name{color:var(--txtd);}
+    .disc-cat,.bot-handle{font-size:11px;color:var(--mut);}
+    body.dark .disc-cat,body.dark .bot-handle{color:var(--mutd);}
+    .disc-desc,.bot-desc{font-size:13px;color:var(--mut);line-height:1.5;}
+    body.dark .disc-desc,body.dark .bot-desc{color:var(--mutd);}
+    .disc-footer,.bot-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto;}
+    .disc-members,.bot-installs{font-size:12px;color:var(--mut);}
+    body.dark .disc-members,body.dark .bot-installs{color:var(--mutd);}
+    .disc-join-btn,.bot-add-btn{padding:7px 16px;border-radius:999px;border:none;background:linear-gradient(120deg,var(--a),#8b5cf6);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .2s;}
+    .disc-join-btn:hover,.bot-add-btn:hover{opacity:.85;}
+    .disc-join-btn:disabled{opacity:.5;cursor:default;}
+    .bot-verified{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#3b82f6;background:rgba(59,130,246,.12);border-radius:4px;padding:2px 6px;}
+    .disc-empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--mut);}
+    body.dark .disc-empty{color:var(--mutd);}
+    .disc-skeleton{background:linear-gradient(90deg,rgba(255,255,255,.06) 25%,rgba(255,255,255,.11) 50%,rgba(255,255,255,.06) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px;height:14px;}
+    @keyframes shimmer{to{background-position:-200% 0;}}
+    .bot-picker-backdrop{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;}
+    .bot-picker-inner{background:var(--dc-sidebar-bg,#1e1f2e);border:1px solid var(--br);border-radius:16px;padding:24px;width:min(400px,90vw);display:flex;flex-direction:column;gap:12px;}
+    .bot-server-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;}
+    .bot-server-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--br);background:rgba(255,255,255,.04);cursor:pointer;color:var(--txt);font-size:13px;transition:border-color .15s;}
+    body.dark .bot-server-item{color:var(--txtd);}
+    .bot-server-item:hover{border-color:var(--a);}
   </style>
 </head>
 <body>
-
   <div class="auth-top-right">
     <button id="signInBtn" class="auth-btn">Sign In</button>
     <button id="signUpBtn" class="auth-btn">Sign Up</button>
     <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
   </div>
-
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+  <button class="sidebar-toggle" id="sidebarToggle">&#9776; Menu</button>
   <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
   <div class="overlay" id="overlay"></div>
 
   <div class="disc-shell">
-    <div class="disc-header">
-      <h1>Discover Servers</h1>
-      <p>Find communities to join — no invite link needed.</p>
+    <div class="disc-tabs">
+      <button class="disc-tab active" id="tab-servers" onclick="switchTab('servers')">Servers</button>
+      <button class="disc-tab" id="tab-bots" onclick="switchTab('bots')">Bot Marketplace</button>
     </div>
 
-    <div class="disc-controls">
-      <input class="disc-search" id="discSearch" type="text" placeholder="Search servers…" autocomplete="off" />
-      <select class="disc-category" id="discCategory">
-        <option value="">All categories</option>
-        <option value="Gaming">Gaming</option>
-        <option value="Tech">Tech</option>
-        <option value="Art">Art</option>
-        <option value="Music">Music</option>
-        <option value="Science">Science</option>
-        <option value="Education">Education</option>
-        <option value="Social">Social</option>
-        <option value="Other">Other</option>
-      </select>
+    <div id="view-servers">
+      <div class="disc-header"><h1>Discover Servers</h1><p>Find public communities to join.</p></div>
+      <div class="disc-controls">
+        <input class="disc-search" id="serverSearch" type="text" placeholder="Search servers..." autocomplete="off" />
+        <select class="disc-select" id="serverCategory">
+          <option value="">All categories</option>
+          <option value="Gaming">Gaming</option><option value="Tech">Tech</option>
+          <option value="Art">Art</option><option value="Music">Music</option>
+          <option value="Science">Science</option><option value="Education">Education</option>
+          <option value="Social">Social</option><option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="disc-grid" id="serverGrid">
+        <div class="disc-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:44px;height:44px;border-radius:12px;"></div><div class="disc-skeleton" style="width:60%;"></div><div class="disc-skeleton" style="width:85%;"></div></div>
+        <div class="disc-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:44px;height:44px;border-radius:12px;"></div><div class="disc-skeleton" style="width:55%;"></div><div class="disc-skeleton" style="width:80%;"></div></div>
+        <div class="disc-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:44px;height:44px;border-radius:12px;"></div><div class="disc-skeleton" style="width:65%;"></div><div class="disc-skeleton" style="width:75%;"></div></div>
+      </div>
     </div>
 
-    <div class="disc-grid" id="discGrid">
-      <div class="disc-card" style="pointer-events:none;">
-        <div class="disc-card-top"><div class="disc-avatar"></div><div style="flex:1;"><div class="disc-skeleton" style="width:60%;margin-bottom:6px;"></div><div class="disc-skeleton" style="width:35%;height:10px;"></div></div></div>
-        <div class="disc-skeleton"></div><div class="disc-skeleton" style="width:75%;"></div>
+    <div id="view-bots" style="display:none;">
+      <div class="disc-header"><h1>Bot Marketplace</h1><p>Add bots to your servers.</p></div>
+      <div class="disc-controls">
+        <input class="disc-search" id="botSearch" type="text" placeholder="Search bots..." autocomplete="off" />
+        <select class="disc-select" id="botCategory">
+          <option value="">All categories</option>
+          <option value="Utility">Utility</option><option value="Moderation">Moderation</option>
+          <option value="Fun">Fun</option><option value="Music">Music</option>
+          <option value="Productivity">Productivity</option>
+        </select>
       </div>
-      <div class="disc-card" style="pointer-events:none;">
-        <div class="disc-card-top"><div class="disc-avatar"></div><div style="flex:1;"><div class="disc-skeleton" style="width:60%;margin-bottom:6px;"></div><div class="disc-skeleton" style="width:35%;height:10px;"></div></div></div>
-        <div class="disc-skeleton"></div><div class="disc-skeleton" style="width:75%;"></div>
-      </div>
-      <div class="disc-card" style="pointer-events:none;">
-        <div class="disc-card-top"><div class="disc-avatar"></div><div style="flex:1;"><div class="disc-skeleton" style="width:60%;margin-bottom:6px;"></div><div class="disc-skeleton" style="width:35%;height:10px;"></div></div></div>
-        <div class="disc-skeleton"></div><div class="disc-skeleton" style="width:75%;"></div>
+      <div class="disc-grid" id="botGrid">
+        <div class="bot-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:48px;height:48px;border-radius:14px;"></div><div class="disc-skeleton" style="width:50%;"></div><div class="disc-skeleton" style="width:85%;"></div></div>
+        <div class="bot-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:48px;height:48px;border-radius:14px;"></div><div class="disc-skeleton" style="width:45%;"></div><div class="disc-skeleton" style="width:80%;"></div></div>
       </div>
     </div>
   </div>
@@ -262,127 +118,119 @@
   <script src="/assets/js/wide.js"></script>
   <script src="/assets/js/gallium.js"></script>
   <script src="/assets/js/cursor.js"></script>
-
   <script>
-  (async function initDiscover() {
-    const sb = supabase.createClient(
-      'https://wiswfpfsjiowtrdyqpxy.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM'
-    );
+  (async function() {
+    const SB_URL = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
+    const sb = window.supabaseClient || supabase.createClient(SB_URL, SB_KEY);
 
-    const grid     = document.getElementById('discGrid');
-    const search   = document.getElementById('discSearch');
-    const catSel   = document.getElementById('discCategory');
+    let currentUser=null, myServerIds=new Set(), myBotInstalls=new Set(), myServers=[], allServers=[], allBots=[];
 
-    let allServers = [];
-    let currentUser = null;
-    let joinedIds   = new Set();
-
-    const { data: { user } } = await sb.auth.getUser();
+    const { data:{ user } } = await sb.auth.getUser();
     currentUser = user;
-
     if (currentUser) {
-      const { data: memberships } = await sb.from('server_members').select('server_id').eq('user_id', currentUser.id);
-      joinedIds = new Set((memberships || []).map(m => m.server_id));
+      const [{ data:mem },{ data:owned },{ data:installs }] = await Promise.all([
+        sb.from('server_members').select('server_id').eq('user_id',currentUser.id),
+        sb.from('servers').select('id,name,icon_url').eq('owner_id',currentUser.id),
+        sb.from('bot_server_installs').select('bot_id,server_id'),
+      ]);
+      (mem||[]).forEach(m=>myServerIds.add(m.server_id));
+      myServers = owned||[];
+      (installs||[]).forEach(i=>myBotInstalls.add(i.bot_id+':'+i.server_id));
     }
 
-    const { data: servers } = await sb
-      .from('servers')
-      .select('id, name, description, icon_url, category, owner_id, created_at')
-      .eq('is_public', true)
-      .order('created_at', { ascending: false })
-      .limit(100);
-
+    const { data:servers } = await sb.from('servers').select('id,name,description,icon_url,category,created_at').eq('is_public',true).order('created_at',{ascending:false}).limit(100);
     if (servers?.length) {
-      const ids = servers.map(s => s.id);
-      const { data: counts } = await sb
-        .from('server_members')
-        .select('server_id')
-        .in('server_id', ids);
-
-      const memberCount = {};
-      (counts || []).forEach(r => { memberCount[r.server_id] = (memberCount[r.server_id] || 0) + 1; });
-      allServers = servers.map(s => ({ ...s, memberCount: memberCount[s.id] || 0 }));
-    } else {
-      allServers = [];
+      const { data:counts } = await sb.from('server_members').select('server_id').in('server_id',servers.map(s=>s.id));
+      const mc={};
+      (counts||[]).forEach(r=>{ mc[r.server_id]=(mc[r.server_id]||0)+1; });
+      allServers = servers.map(s=>({...s,memberCount:mc[s.id]||0}));
     }
 
-    render();
+    const { data:bots } = await sb.from('bots').select('*').order('install_count',{ascending:false});
+    allBots = bots||[];
 
-    search.addEventListener('input', render);
-    catSel.addEventListener('change', render);
+    renderServers(); renderBots();
+    document.getElementById('serverSearch').addEventListener('input',renderServers);
+    document.getElementById('serverCategory').addEventListener('change',renderServers);
+    document.getElementById('botSearch').addEventListener('input',renderBots);
+    document.getElementById('botCategory').addEventListener('change',renderBots);
 
-    function render() {
-      const q   = search.value.trim().toLowerCase();
-      const cat = catSel.value;
-      const filtered = allServers.filter(s =>
-        (!q || s.name.toLowerCase().includes(q) || (s.description||'').toLowerCase().includes(q)) &&
-        (!cat || s.category === cat)
-      );
+    const params = new URLSearchParams(location.search);
+    if (params.get('bots')==='1') switchTab('bots');
+    if (params.get('server')) window._preselectedServer = params.get('server');
 
-      if (!filtered.length) {
-        grid.innerHTML = `<div class="disc-empty">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <p>No public servers found${q ? ` for "${q}"` : ''}.</p>
-          <p style="font-size:13px;">Server owners can make their server public in server settings.</p>
-        </div>`;
-        return;
-      }
+    function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-      grid.innerHTML = filtered.map(s => {
-        const initial = (s.name || '?')[0].toUpperCase();
-        const joined  = joinedIds.has(s.id);
-        const avatar  = s.icon_url
-          ? `<img src="${s.icon_url}" alt="" loading="lazy" />`
-          : initial;
-        return `<div class="disc-card">
-          <div class="disc-card-top">
-            <div class="disc-avatar">${avatar}</div>
-            <div style="min-width:0;">
-              <div class="disc-name">${escHtml(s.name)}</div>
-              <div class="disc-category-tag">${escHtml(s.category || 'General')}</div>
-            </div>
-          </div>
-          <div class="disc-desc">${escHtml(s.description || 'No description.')}</div>
-          <div class="disc-card-footer">
-            <div class="disc-members">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              ${s.memberCount.toLocaleString()} member${s.memberCount !== 1 ? 's' : ''}
-            </div>
-            <button class="disc-join-btn" data-id="${s.id}" ${joined ? 'disabled' : ''}>
-              ${joined ? 'Joined' : 'Join'}
-            </button>
-          </div>
-        </div>`;
+    function renderServers() {
+      const q=document.getElementById('serverSearch').value.trim().toLowerCase();
+      const cat=document.getElementById('serverCategory').value;
+      const f=allServers.filter(s=>(!q||s.name.toLowerCase().includes(q)||(s.description||'').toLowerCase().includes(q))&&(!cat||s.category===cat));
+      const grid=document.getElementById('serverGrid');
+      if (!f.length){ grid.innerHTML='<div class="disc-empty"><p>No public servers found.</p><p style="font-size:13px;margin-top:4px;">Server owners can list their server in server settings.</p></div>'; return; }
+      grid.innerHTML=f.map(s=>{
+        const joined=myServerIds.has(s.id);
+        const av=s.icon_url?'<img src="'+esc(s.icon_url)+'" alt="" loading="lazy">':(s.name[0]||'?').toUpperCase();
+        return '<div class="disc-card"><div class="disc-card-top"><div class="disc-avatar">'+av+'</div><div style="min-width:0;"><div class="disc-name">'+esc(s.name)+'</div><div class="disc-cat">'+esc(s.category||'General')+'</div></div></div><div class="disc-desc">'+esc(s.description||'No description.')+'</div><div class="disc-footer"><div class="disc-members">'+s.memberCount.toLocaleString()+' members</div><button class="disc-join-btn" data-id="'+s.id+'"'+(joined?' disabled':'')+'>'+(joined?'Joined':'Join')+'</button></div></div>';
       }).join('');
-
-      grid.querySelectorAll('.disc-join-btn:not([disabled])').forEach(btn => {
-        btn.addEventListener('click', () => joinServer(btn.dataset.id, btn));
-      });
+      grid.querySelectorAll('.disc-join-btn:not([disabled])').forEach(btn=>btn.addEventListener('click',()=>joinServer(btn.dataset.id,btn)));
     }
 
-    async function joinServer(serverId, btn) {
-      if (!currentUser) {
-        document.getElementById('signInBtn')?.click();
-        return;
-      }
-      btn.disabled = true;
-      btn.textContent = 'Joining…';
-      const { error } = await sb.from('server_members').insert({ server_id: serverId, user_id: currentUser.id, role: 'member' });
-      if (error) {
-        btn.disabled = false;
-        btn.textContent = 'Join';
-        return;
-      }
-      joinedIds.add(serverId);
-      const s = allServers.find(s => s.id === serverId);
-      if (s) s.memberCount++;
-      btn.textContent = 'Joined';
-      setTimeout(() => { window.location.href = '/chat?server=' + serverId; }, 600);
+    async function joinServer(serverId,btn) {
+      if (!currentUser){ document.getElementById('signInBtn')?.click(); return; }
+      btn.disabled=true; btn.textContent='Joining...';
+      const { error } = await sb.from('server_members').insert({server_id:serverId,user_id:currentUser.id,role:'member'});
+      if (error&&!error.code?.includes('23505')){ btn.disabled=false; btn.textContent='Join'; return; }
+      myServerIds.add(serverId); btn.textContent='Joined';
+      setTimeout(()=>{ window.location.href='/chat?s='+serverId; },600);
     }
 
-    function escHtml(s) {
-      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    function renderBots() {
+      const q=document.getElementById('botSearch').value.trim().toLowerCase();
+      const cat=document.getElementById('botCategory').value;
+      const f=allBots.filter(b=>(!q||b.name.toLowerCase().includes(q)||b.handle.toLowerCase().includes(q)||(b.description||'').toLowerCase().includes(q))&&(!cat||b.category===cat));
+      const grid=document.getElementById('botGrid');
+      if (!f.length){ grid.innerHTML='<div class="disc-empty"><p>No bots found.</p></div>'; return; }
+      grid.innerHTML=f.map(b=>{
+        const av=b.avatar_url?'<img src="'+esc(b.avatar_url)+'" alt="">':'&#129302;';
+        const ver=b.verified?'<span class="bot-verified">&#10003; Verified</span>':'';
+        return '<div class="bot-card"><div style="display:flex;align-items:center;gap:12px;"><div class="bot-avatar">'+av+'</div><div><div style="display:flex;align-items:center;gap:6px;">'+' <div class="bot-name">'+esc(b.name)+'</div>'+ver+'</div><div class="bot-handle">@'+esc(b.handle)+'</div></div></div><div class="bot-desc">'+esc(b.description||'No description.')+'</div><div class="bot-footer"><div class="bot-installs">'+((b.install_count||0).toLocaleString())+' installs</div><button class="bot-add-btn" data-bot-id="'+b.id+'" data-bot-name="'+esc(b.name)+'">Add to Server</button></div></div>';
+      }).join('');
+      grid.querySelectorAll('.bot-add-btn').forEach(btn=>btn.addEventListener('click',()=>openBotPicker(btn.dataset.botId,btn.dataset.botName)));
+    }
+
+    window.switchTab = function(tab) {
+      document.getElementById('view-servers').style.display=tab==='servers'?'':'none';
+      document.getElementById('view-bots').style.display=tab==='bots'?'':'none';
+      document.getElementById('tab-servers').classList.toggle('active',tab==='servers');
+      document.getElementById('tab-bots').classList.toggle('active',tab==='bots');
+    };
+
+    function openBotPicker(botId,botName) {
+      if (!currentUser){ document.getElementById('signInBtn')?.click(); return; }
+      document.getElementById('bot-picker')?.remove();
+      const picker=document.createElement('div'); picker.id='bot-picker'; picker.className='bot-picker-backdrop';
+      const presel=window._preselectedServer;
+      const srvs=presel?myServers.filter(s=>s.id===presel).concat(myServers.filter(s=>s.id!==presel)):myServers;
+      const listHTML=srvs.length?srvs.map(s=>{
+        const inst=myBotInstalls.has(botId+':'+s.id);
+        const av=s.icon_url?'<img src="'+esc(s.icon_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">':(s.name[0]||'?').toUpperCase();
+        return '<div class="bot-server-item" data-server-id="'+s.id+'"><div style="width:28px;height:28px;border-radius:8px;background:var(--a);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">'+av+'</div><span>'+esc(s.name)+'</span>'+(inst?'<span style="margin-left:auto;font-size:11px;color:#22c55e;">Installed</span>':'')+'</div>';
+      }).join(''):'<div style="font-size:13px;color:var(--mut);text-align:center;padding:16px;">You don't own any servers yet. Create one in 360 Chat.</div>';
+      picker.innerHTML='<div class="bot-picker-inner"><div style="font-size:15px;font-weight:800;color:var(--txt);">Add '+esc(botName)+' to...</div><div class="bot-server-list">'+listHTML+'</div><button onclick="document.getElementById('bot-picker').remove()" style="padding:9px;border-radius:8px;border:1px solid var(--br);background:none;color:var(--mut);cursor:pointer;font-family:inherit;font-size:13px;">Cancel</button></div>';
+      document.body.appendChild(picker);
+      picker.addEventListener('click',e=>{ if(e.target===picker) picker.remove(); });
+      picker.querySelectorAll('.bot-server-item').forEach(item=>item.addEventListener('click',()=>installBot(botId,botName,item.dataset.serverId,picker)));
+    }
+
+    async function installBot(botId,botName,serverId,picker) {
+      const key=botId+':'+serverId;
+      if (myBotInstalls.has(key)){ picker.remove(); return; }
+      const { error } = await sb.from('bot_server_installs').upsert({bot_id:botId,server_id:serverId,installed_by:currentUser.id},{onConflict:'bot_id,server_id'});
+      if (error){ alert('Failed: '+error.message); return; }
+      myBotInstalls.add(key); picker.remove();
+      const t=document.createElement('div'); t.style.cssText='position:fixed;bottom:24px;right:24px;background:#1a1b2e;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 18px;font-size:13px;color:#fff;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3);';
+      t.textContent='&#10003; '+botName+' added!'; document.body.appendChild(t); setTimeout(()=>t.remove(),3000);
     }
   })();
   </script>
