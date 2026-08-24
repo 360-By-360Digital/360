@@ -642,14 +642,12 @@ async function purgeCacheAndReload() {
     }
   } catch {}
 
-  // 3. localStorage — clear everything except the update flag we just set,
-  //    since we want to actually blow away stale cached site state
+  // 3. localStorage only — this is where the site's own cached state lives
   //    (theme/version markers etc. will simply be re-derived after reload).
+  //    Cookies and sessionStorage (including our update flag and nav
+  //    history) are intentionally left untouched.
   try {
-    const updating = sessionStorage.getItem(VERSION_UPDATING_FLAG_KEY);
     localStorage.clear();
-    sessionStorage.clear();
-    if (updating) sessionStorage.setItem(VERSION_UPDATING_FLAG_KEY, updating);
   } catch {}
 
   // 4. Hard reload, bypassing bfcache/HTTP cache where possible
@@ -661,7 +659,7 @@ async function purgeCacheAndReload() {
 function showUpdatePopup(remoteVersion) {
   showCustomPopup({
     title: "&l&a360 Update Available",
-    body: `&fA new version &e(${escapeHtml(remoteVersion)})&f is available — you're on &c${escapeHtml(version)}&f. Update now to get the latest fixes and features?`,
+    body: `&rA new version &e(${escapeHtml(remoteVersion)})&r is available — you're on &c${escapeHtml(version)}&r. Update now to get the latest fixes and features?`,
     buttonText: "Update Now",
     onClose: () => {
       // "Update Now" is the only button, so closing IS the confirmation.
