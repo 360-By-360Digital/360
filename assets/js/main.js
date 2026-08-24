@@ -654,7 +654,7 @@ async function purgeCacheAndReload() {
 function showUpdatePopup(remoteVersion) {
   showCustomPopup({
     title: "&l&a360 Update Available",
-    body: `&fA new version &e(${escapeHtml(remoteVersion)})&f is available — you're on &c${escapeHtml(version)}&f. Update now to get the latest fixes and features?`,
+    body: `&rA new version &e(${escapeHtml(remoteVersion)})&r is available — you're on &c${escapeHtml(version)}&r. Update now to get the latest fixes and features?`,
     buttonText: "Update Now",
     onClose: () => {
       // "Update Now" is the only button, so closing IS the confirmation.
