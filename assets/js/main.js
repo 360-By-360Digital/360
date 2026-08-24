@@ -141,6 +141,10 @@ function isMcLeafElement(el) {
   if (MC_SKIP_TAGS.has(el.tagName)) return false;
   if (el.isContentEditable) return false;
   if (el.closest && el.closest(".mc-code-token")) return false;
+  // Obfuscated (§k/&k) spans are owned by the glitch engine below — never
+  // let the code-parser/mutation-observer re-parse their constantly
+  // changing random text as if it were new source content.
+  if (el.classList && el.classList.contains("mc-obfuscated")) return false;
   // Only elements that contain text directly or exclusively text-node
   // children qualify — elements with element children are just containers
   // and get skipped in favor of their individual text-holding children.
@@ -319,6 +323,53 @@ function setupMcInputs(root = document) {
 }
 
 /* ============================================================
+   1c. OBFUSCATED TEXT (§k / &k) — LIVE CHARACTER GLITCH
+   Any span the parser above tagged class="mc-obfuscated" gets its
+   visible characters swapped for random glyphs on an interval,
+   matching vanilla Minecraft's §k behavior. Character COUNT is
+   locked in once from the first real render (mc-obf-source), so
+   it never drifts across frames.
+   ============================================================ */
+const MC_OBFUSCATE_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?@#$%&";
+const MC_OBFUSCATE_INTERVAL_MS = 50;
+
+function injectObfuscatedStyles() {
+  if (document.getElementById("mc-obfuscated-style")) return;
+  const style = document.createElement("style");
+  style.id = "mc-obfuscated-style";
+  style.textContent = `
+    .mc-obfuscated {
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function glitchObfuscatedElements() {
+  document.querySelectorAll(".mc-obfuscated").forEach(el => {
+    // Capture the "real" rendered text once — never re-derive length from
+    // an already-glitched frame, or it would drift over time.
+    if (!el.dataset.mcObfSource) {
+      el.dataset.mcObfSource = el.textContent;
+    }
+    const length = el.dataset.mcObfSource.length;
+    let result = "";
+    for (let i = 0; i < length; i++) {
+      result += MC_OBFUSCATE_CHARS.charAt(Math.floor(Math.random() * MC_OBFUSCATE_CHARS.length));
+    }
+    el.textContent = result;
+  });
+}
+
+function initObfuscatedGlitch() {
+  if (window.__mcObfuscateInterval) return;
+  injectObfuscatedStyles();
+  window.__mcObfuscateInterval = setInterval(glitchObfuscatedElements, MC_OBFUSCATE_INTERVAL_MS);
+}
+
+/* ============================================================
    2. POPUP SYSTEM & TITLE-CHANGE DETECTOR
    ============================================================ */
 const POPUP_TITLE_STORAGE_KEY = "360_popup_last_title";
@@ -398,6 +449,7 @@ function initMinecraftFormatting() {
   applyMinecraftFormattingToDom(document.body);
   setupMcInputs(document);
   initMinecraftFormattingObserver();
+  initObfuscatedGlitch();
 }
 
 if (document.readyState === "loading") {
@@ -474,10 +526,6 @@ function getPinnedApps() {
 
 function getPinnedAppsPosition() {
   return localStorage.getItem(PINNED_APPS_POSITION_KEY) || "after-apps";
-}
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
 }
 
 const SIDEBAR_NAV_ITEMS = [
