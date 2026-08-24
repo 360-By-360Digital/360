@@ -600,9 +600,9 @@ const supabaseClient = supabase.createClient(
    VERSION DETECTION / FORCE-UPDATE SYSTEM
    Checks the "site_meta" table (key='version') on load. If the
    remote version is newer than the local `version` const above,
-   prompts the user to update — then purges caches (Cache Storage,
-   this-origin localStorage/sessionStorage, and any Service
-   Worker registrations) and hard-reloads.
+   prompts the user to update — then purges the browser's Cache
+   Storage (and any Service Worker registrations) and hard-reloads.
+   localStorage, sessionStorage, and cookies are never touched.
    ============================================================ */
 const VERSION_CHECK_STORAGE_KEY = "360_version_check_snoozed"; // per-tab-session "later" dismissal
 const VERSION_UPDATING_FLAG_KEY = "360_version_updating";      // survives the reload we trigger
@@ -642,13 +642,9 @@ async function purgeCacheAndReload() {
     }
   } catch {}
 
-  // 3. localStorage only — this is where the site's own cached state lives
-  //    (theme/version markers etc. will simply be re-derived after reload).
-  //    Cookies and sessionStorage (including our update flag and nav
-  //    history) are intentionally left untouched.
-  try {
-    localStorage.clear();
-  } catch {}
+  // 3. That's it — only the browser's Cache Storage (and any service
+  //    worker owning it) is purged. localStorage, sessionStorage, and
+  //    cookies are never touched by this function.
 
   // 4. Hard reload, bypassing bfcache/HTTP cache where possible
   const url = new URL(window.location.href);
