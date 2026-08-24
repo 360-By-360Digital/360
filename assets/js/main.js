@@ -604,7 +604,6 @@ const supabaseClient = supabase.createClient(
    Storage (and any Service Worker registrations) and hard-reloads.
    localStorage, sessionStorage, and cookies are never touched.
    ============================================================ */
-const VERSION_CHECK_STORAGE_KEY = "360_version_check_snoozed"; // per-tab-session "later" dismissal
 const VERSION_UPDATING_FLAG_KEY = "360_version_updating";      // survives the reload we trigger
 
 /* Compares two "x.y.z" (any number of numeric segments) version
@@ -655,7 +654,7 @@ async function purgeCacheAndReload() {
 function showUpdatePopup(remoteVersion) {
   showCustomPopup({
     title: "&l&a360 Update Available",
-    body: `&rA new version &e(${escapeHtml(remoteVersion)})&r is available — you're on &c${escapeHtml(version)}&r. Update now to get the latest fixes and features?`,
+    body: `&fA new version &e(${escapeHtml(remoteVersion)})&f is available — you're on &c${escapeHtml(version)}&f. Update now to get the latest fixes and features?`,
     buttonText: "Update Now",
     onClose: () => {
       // "Update Now" is the only button, so closing IS the confirmation.
@@ -681,7 +680,10 @@ function showUpdatePopup(remoteVersion) {
     laterBtn.style.cursor = "pointer";
     laterBtn.onclick = e => {
       e.stopPropagation();
-      try { sessionStorage.setItem(VERSION_CHECK_STORAGE_KEY, remoteVersion); } catch {}
+      // No snoozing/dismissal is persisted anywhere (no storage, no
+      // cookies) — the popup will simply reappear on the next load or
+      // redirect, since checkSiteVersion() re-queries site_meta fresh
+      // every time and there's nothing here to make it skip that check.
       document.getElementById("custom-popup-modal").style.display = "none";
     };
     card.appendChild(laterBtn);
@@ -707,11 +709,6 @@ async function checkSiteVersion() {
     if (error || !data || !data.value) return;
 
     const remoteVersion = String(data.value).trim();
-
-    // Respect a "Later" snooze for this exact remote version within the tab session.
-    let snoozed = null;
-    try { snoozed = sessionStorage.getItem(VERSION_CHECK_STORAGE_KEY); } catch {}
-    if (snoozed === remoteVersion) return;
 
     if (compareVersions(remoteVersion, version) > 0) {
       showUpdatePopup(remoteVersion);
