@@ -1482,7 +1482,7 @@ async function sendMessage(){
     let finalText = text || '';
     if (finalText.trim().length > 3) finalText = await correctGrammar(finalText);
     // @all — fetch all server members and insert notifications
-    if ((finalText.includes('@all') || finalText.includes('@everyone') && activeRoom.serverId) {
+    if ((finalText.includes('@all') || finalText.includes('@everyone')) && activeRoom.serverId) {
       sb.from('server_members').select('user_id').eq('server_id', activeRoom.serverId).then(({data:members}) => {
         if (!members?.length) return;
         const now = new Date().toISOString();
