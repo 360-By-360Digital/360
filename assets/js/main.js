@@ -597,6 +597,137 @@ const supabaseClient = supabase.createClient(
 );
 
 /* ============================================================
+   VERSION DETECTION / FORCE-UPDATE SYSTEM
+   Checks the "site_meta" table (key='version') on load. If the
+   remote version is newer than the local `version` const above,
+   prompts the user to update — then purges caches (Cache Storage,
+   this-origin localStorage/sessionStorage, and any Service
+   Worker registrations) and hard-reloads.
+   ============================================================ */
+const VERSION_CHECK_STORAGE_KEY = "360_version_check_snoozed"; // per-tab-session "later" dismissal
+const VERSION_UPDATING_FLAG_KEY = "360_version_updating";      // survives the reload we trigger
+
+/* Compares two "x.y.z" (any number of numeric segments) version
+   strings. Returns >0 if a > b, <0 if a < b, 0 if equal. Falls
+   back gracefully on malformed/missing segments (treated as 0). */
+function compareVersions(a, b) {
+  const pa = String(a || "0").split(".").map(n => parseInt(n, 10) || 0);
+  const pb = String(b || "0").split(".").map(n => parseInt(n, 10) || 0);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const diff = (pa[i] || 0) - (pb[i] || 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
+/* Wipes everything reasonably considered "local cache" for this
+   origin, then hard-reloads straight from the server. */
+async function purgeCacheAndReload() {
+  try { sessionStorage.setItem(VERSION_UPDATING_FLAG_KEY, "1"); } catch {}
+
+  // 1. Cache Storage (PWA/service-worker caches)
+  try {
+    if (window.caches && caches.keys) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch {}
+
+  // 2. Unregister any Service Workers so they can't re-serve stale assets
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  } catch {}
+
+  // 3. localStorage — clear everything except the update flag we just set,
+  //    since we want to actually blow away stale cached site state
+  //    (theme/version markers etc. will simply be re-derived after reload).
+  try {
+    const updating = sessionStorage.getItem(VERSION_UPDATING_FLAG_KEY);
+    localStorage.clear();
+    sessionStorage.clear();
+    if (updating) sessionStorage.setItem(VERSION_UPDATING_FLAG_KEY, updating);
+  } catch {}
+
+  // 4. Hard reload, bypassing bfcache/HTTP cache where possible
+  const url = new URL(window.location.href);
+  url.searchParams.set("_v", Date.now().toString());
+  window.location.replace(url.toString());
+}
+
+function showUpdatePopup(remoteVersion) {
+  showCustomPopup({
+    title: "&l&a360 Update Available",
+    body: `&fA new version &e(${escapeHtml(remoteVersion)})&f is available — you're on &c${escapeHtml(version)}&f. Update now to get the latest fixes and features?`,
+    buttonText: "Update Now",
+    onClose: () => {
+      // "Update Now" is the only button, so closing IS the confirmation.
+      purgeCacheAndReload();
+    }
+  });
+
+  // Add a lightweight "Later" link under the popup card, if the modal exists.
+  const card = document.querySelector("#custom-popup-modal .custom-modal-card .custom-modal-actions");
+  if (card && !card.querySelector("#versionUpdateLaterBtn")) {
+    const laterBtn = document.createElement("button");
+    laterBtn.id = "versionUpdateLaterBtn";
+    laterBtn.className = "custom-modal-btn-secondary";
+    laterBtn.textContent = "Later";
+    // Inline fallback styling in case .custom-modal-btn-secondary isn't
+    // defined in the site CSS yet — safe to remove once it is.
+    laterBtn.style.marginLeft = "8px";
+    laterBtn.style.background = "transparent";
+    laterBtn.style.border = "1px solid var(--br, #444)";
+    laterBtn.style.color = "inherit";
+    laterBtn.style.borderRadius = "8px";
+    laterBtn.style.padding = "8px 12px";
+    laterBtn.style.cursor = "pointer";
+    laterBtn.onclick = e => {
+      e.stopPropagation();
+      try { sessionStorage.setItem(VERSION_CHECK_STORAGE_KEY, remoteVersion); } catch {}
+      document.getElementById("custom-popup-modal").style.display = "none";
+    };
+    card.appendChild(laterBtn);
+  }
+}
+
+async function checkSiteVersion() {
+  // If we just purged/reloaded for an update, don't immediately re-prompt
+  // even if propagation makes the row look stale for a moment.
+  try {
+    if (sessionStorage.getItem(VERSION_UPDATING_FLAG_KEY)) {
+      sessionStorage.removeItem(VERSION_UPDATING_FLAG_KEY);
+    }
+  } catch {}
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("site_meta")
+      .select("value")
+      .eq("key", "version")
+      .maybeSingle();
+
+    if (error || !data || !data.value) return;
+
+    const remoteVersion = String(data.value).trim();
+
+    // Respect a "Later" snooze for this exact remote version within the tab session.
+    let snoozed = null;
+    try { snoozed = sessionStorage.getItem(VERSION_CHECK_STORAGE_KEY); } catch {}
+    if (snoozed === remoteVersion) return;
+
+    if (compareVersions(remoteVersion, version) > 0) {
+      showUpdatePopup(remoteVersion);
+    }
+  } catch {
+    // Network/table issues shouldn't break the page — fail silently.
+  }
+}
+
+/* ============================================================
    GRAVATAR HELPER
    MD5 is needed for Gravatar — we use a lightweight implementation
    ============================================================ */
@@ -938,6 +1069,7 @@ async function updateAuthUI() {
 
 // Run on load
 updateAuthUI();
+checkSiteVersion();
 
 // React to auth state changes (e.g. OAuth redirect)
 supabaseClient.auth.onAuthStateChange((event, session) => {
