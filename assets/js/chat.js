@@ -256,7 +256,6 @@ async function buildSidebar(server){
     body.appendChild(makeChanItem({id:'public',name:'general'},activeRoom.type==='public',
       ()=>switchRoom({type:'public',id:'public',name:'general',icon:'#',serverName:'360 Chat',serverId:null})));
     addSidebarBtn(body,'＋ Create Server',()=>{if(!currentUserId){location.href='/account';return;}openServerModal(null);});
-    addSidebarBtn(body,'🔍 Browse Servers',()=>browseSidebar(body));
     return;
   }
   header.textContent=server.name;
