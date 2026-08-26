@@ -264,37 +264,38 @@
   // Injects a badge next to the user-chip name and inside its dropdown
   // header. The chip is built asynchronously by main.js, so this is
   // driven by a MutationObserver rather than a one-shot query.
+  //
+  // IMPORTANT: this must be idempotent. It runs every time the observer
+  // fires, and if it always writes to the DOM, that write itself re-triggers
+  // the observer -> infinite loop -> frozen tab ("Page Unresponsive").
+  // So we only touch the DOM when the badge is actually missing or wrong.
+  function applyBadge(container, status) {
+    if (!container) return;
+    const existing = container.querySelector(":scope > .membership-badge");
+
+    if (status.family === "free") {
+      if (existing) existing.remove();
+      return;
+    }
+
+    const wantedClass = "membership-badge tier-" + status.family;
+    if (existing) {
+      if (existing.className !== wantedClass) existing.className = wantedClass;
+      if (existing.textContent !== status.label) existing.textContent = status.label;
+      return; // already correct — no DOM mutation, no re-trigger
+    }
+
+    const span = document.createElement("span");
+    span.className = wantedClass;
+    span.textContent = status.label;
+    container.appendChild(span);
+  }
+
   function renderChipBadge(status) {
     const chip = document.querySelector(".user-chip");
     if (!chip) return;
-
-    const nameEl = chip.querySelector(".user-chip-name");
-    if (nameEl) {
-      let badge = nameEl.querySelector(".membership-badge");
-      if (status.family === "free") {
-        if (badge) badge.remove();
-      } else {
-        if (!badge) {
-          badge = document.createElement("span");
-          nameEl.appendChild(badge);
-        }
-        badge.outerHTML = badgeHTML(status);
-      }
-    }
-
-    const usernameEl = chip.querySelector(".ucd-username");
-    if (usernameEl) {
-      let badge = usernameEl.querySelector(".membership-badge");
-      if (status.family === "free") {
-        if (badge) badge.remove();
-      } else {
-        if (!badge) {
-          badge = document.createElement("span");
-          usernameEl.appendChild(badge);
-        }
-        badge.outerHTML = badgeHTML(status);
-      }
-    }
+    applyBadge(chip.querySelector(".user-chip-name"), status);
+    applyBadge(chip.querySelector(".ucd-username"), status);
   }
 
   function renderAll(status) {
@@ -312,6 +313,15 @@
 
   // Watch for the chip appearing/re-rendering (main.js builds it async
   // and can rebuild it on auth state changes) and re-apply the badge.
+  //
+  // subtree:true is required: main.js appends an *empty* chip div first,
+  // then fills it in later via chip.innerHTML after its own async
+  // profile/avatar fetch — that later mutation happens *inside* the chip,
+  // not as a direct child of the container, so subtree:false would miss
+  // it and the badge would never appear. This is safe against the
+  // infinite-loop bug because applyBadge() above is idempotent: once the
+  // badge matches, our own re-render is a no-op and doesn't mutate the
+  // DOM, so the observer has nothing left to re-trigger on.
   const chipObserver = new MutationObserver(() => {
     if (currentStatus) renderChipBadge(currentStatus);
   });
