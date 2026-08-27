@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>360 Search API</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+    --bg:#ffffff;
+    --sidebar:#fafafa;
+    --border:#e5e7eb;
+    --text:#111827;
+    --muted:#6b7280;
+    --green:#3ecf8e;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    font-family:Inter,system-ui,sans-serif;
+    color:var(--text);
+    background:#fff;
+}
+
+.wrapper{
+    max-width:1200px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:240px 1fr;
+}
+
+.sidebar{
+    position:sticky;
+    top:0;
+    height:100vh;
+    border-right:1px solid var(--border);
+    background:var(--sidebar);
+    padding:32px 24px;
+}
+
+.logo{
+    font-weight:700;
+    font-size:20px;
+    margin-bottom:28px;
+}
+
+.logo span{
+    color:var(--green);
+}
+
+.sidebar nav{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.sidebar a{
+    color:#4b5563;
+    text-decoration:none;
+    font-size:14px;
+}
+
+.sidebar a:hover{
+    color:#111827;
+}
+
+main{
+    padding:48px;
+    max-width:900px;
+}
+
+h1{
+    font-size:42px;
+    margin-bottom:8px;
+    letter-spacing:-1px;
+}
+
+.subtitle{
+    color:var(--muted);
+    margin-bottom:48px;
+}
+
+section{
+    margin-bottom:56px;
+}
+
+h2{
+    font-size:24px;
+    margin-bottom:16px;
+}
+
+h3{
+    font-size:17px;
+    margin:24px 0 10px;
+}
+
+p{
+    line-height:1.7;
+    margin-bottom:16px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:16px;
+}
+
+th,
+td{
+    border:1px solid var(--border);
+    padding:12px;
+    text-align:left;
+    vertical-align:top;
+}
+
+th{
+    background:#fafafa;
+}
+
+.code{
+    background:#fafafa;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:18px;
+    overflow:auto;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:14px;
+    line-height:1.6;
+    white-space:pre;
+}
+
+.endpoint{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#fafafa;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:14px 16px;
+    margin:18px 0;
+    overflow:auto;
+}
+
+.method{
+    color:#166534;
+    font-weight:700;
+    font-family:ui-monospace,monospace;
+}
+
+.url{
+    font-family:ui-monospace,monospace;
+    color:#374151;
+    white-space:nowrap;
+}
+
+.badge{
+    display:inline-block;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:3px 7px;
+    font-size:12px;
+    font-family:ui-monospace,monospace;
+    background:#fff;
+}
+
+.tester{
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:20px;
+    margin-top:20px;
+}
+
+.field{
+    margin-bottom:16px;
+}
+
+label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    margin-bottom:7px;
+}
+
+input,
+select{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:7px;
+    padding:10px 11px;
+    font:inherit;
+    font-size:14px;
+    background:#fff;
+    color:var(--text);
+}
+
+button{
+    border:0;
+    border-radius:7px;
+    padding:10px 15px;
+    background:#111827;
+    color:#fff;
+    font:inherit;
+    font-size:14px;
+    cursor:pointer;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+.status{
+    margin-top:16px;
+    color:var(--muted);
+    font-size:13px;
+}
+
+.result{
+    margin-top:16px;
+    display:none;
+}
+
+.error{
+    color:#b91c1c;
+}
+
+ul{
+    padding-left:20px;
+}
+
+li{
+    margin:8px 0;
+}
+
+footer{
+    margin-top:64px;
+    padding-top:24px;
+    border-top:1px solid var(--border);
+    color:var(--muted);
+    font-size:14px;
+}
+
+@media(max-width:900px){
+
+    .wrapper{
+        display:block;
+    }
+
+    .sidebar{
+        position:relative;
+        height:auto;
+        border-right:none;
+        border-bottom:1px solid var(--border);
+    }
+
+    main{
+        padding:24px;
+    }
+
+    h1{
+        font-size:34px;
+    }
+
+    .endpoint{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+<aside class="sidebar">
+
+<div class="logo">360<span>.</span>docs</div>
+
+<nav>
+<a href="#overview">Overview</a>
+<a href="#endpoint">Endpoint</a>
+<a href="#parameters">Parameters</a>
+<a href="#types">Search Types</a>
+<a href="#responses">Responses</a>
+<a href="#examples">Examples</a>
+<a href="#tester">API Tester</a>
+<a href="#errors">Errors</a>
+</nav>
+
+</aside>
+
+<main>
+
+<h1>360 Search API</h1>
+
+<p class="subtitle">
+A simple HTTP API for accessing 360 Search results.
+</p>
+
+<section id="overview">
+
+<h2>Overview</h2>
+
+<p>
+The 360 Search API provides programmatic access to web, news, shopping,
+and image search results through a single HTTP endpoint.
+</p>
+
+<p>
+Requests are sent using <span class="badge">GET</span> and responses are
+returned as JSON. No SDK is required.
+</p>
+
+<div class="endpoint">
+<span class="method">GET</span>
+<span class="url">https://api.360-search.com/?q=YOUR_QUERY</span>
+</div>
+
+</section>
+
+<section id="endpoint">
+
+<h2>Endpoint</h2>
+
+<p>
+All API requests use the same endpoint. The search type is selected with
+the <span class="badge">type</span> query parameter.
+</p>
+
+<div class="code">https://api.360-search.com/?q=example
+https://api.360-search.com/?q=example&amp;type=news
+https://api.360-search.com/?q=laptop&amp;type=shopping
+https://api.360-search.com/?q=cats&amp;type=image</div>
+
+<p>
+The <span class="badge">q</span> parameter is required and may contain up
+to 500 characters.
+</p>
+
+</section>
+
+<section id="parameters">
+
+<h2>Parameters</h2>
+
+<table>
+
+<tr>
+<th>Parameter</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><span class="badge">q</span></td>
+<td>Yes</td>
+<td>None</td>
+<td>The search query. Maximum 500 characters.</td>
+</tr>
+
+<tr>
+<td><span class="badge">type</span></td>
+<td>No</td>
+<td>web</td>
+<td>Search type: web, news, shopping, or image.</td>
+</tr>
+
+<tr>
+<td><span class="badge">safe</span></td>
+<td>No</td>
+<td>moderate</td>
+<td>Safe search mode. Use moderate or off.</td>
+</tr>
+
+<tr>
+<td><span class="badge">limit</span></td>
+<td>No</td>
+<td>50</td>
+<td>Maximum number of results. Range: 1-100.</td>
+</tr>
+
+<tr>
+<td><span class="badge">page</span></td>
+<td>No</td>
+<td>1</td>
+<td>Result page. Range: 1-100. Used by web and image search.</td>
+</tr>
+
+</table>
+
+</section>
+
+<section id="types">
+
+<h2>Search Types</h2>
+
+<table>
+
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><span class="badge">web</span></td>
+<td>General web search results.</td>
+</tr>
+
+<tr>
+<td><span class="badge">news</span></td>
+<td>News and recent articles.</td>
+</tr>
+
+<tr>
+<td><span class="badge">shopping</span></td>
+<td>Products, prices, ratings, and shopping results.</td>
+</tr>
+
+<tr>
+<td><span class="badge">image</span></td>
+<td>Image search results with source URLs and dimensions.</td>
+</tr>
+
+</table>
+
+</section>
+
+<section id="responses">
+
+<h2>Responses</h2>
+
+<p>
+Successful requests return JSON containing the original query, search type,
+result count, and an array of results.
+</p>
+
+<h3>Web response</h3>
+
+<div class="code">{
+  "query": "open source",
+  "type": "web",
+  "page": 1,
+  "result_count": 2,
+  "results": [
+    {
+      "type": "web",
+      "title": "Example Result",
+      "url": "https://example.com",
+      "description": "Example description.",
+      "thumbnail": "",
+      "favicon": "",
+      "source": "example.com",
+      "age": ""
+    }
+  ]
+}</div>
+
+<h3>Shopping response</h3>
+
+<div class="code">{
+  "query": "laptop",
+  "type": "shopping",
+  "result_count": 1,
+  "results": [
+    {
+      "type": "shopping",
+      "title": "Example Laptop",
+      "url": "https://example.com/product",
+      "description": "Example product.",
+      "thumbnail": "",
+      "price": "$999",
+      "source": "example.com",
+      "rating": 4.5,
+      "reviews": 120
+    }
+  ]
+}</div>
+
+<h3>Image response</h3>
+
+<div class="code">{
+  "query": "cats",
+  "type": "image",
+  "page": 1,
+  "result_count": 1,
+  "total_results": 1000,
+  "results": [
+    {
+      "type": "image",
+      "title": "Example image",
+      "url": "https://example.com",
+      "image": "https://example.com/image.jpg",
+      "width": 1200,
+      "height": 800
+    }
+  ]
+}</div>
+
+</section>
+
+<section id="examples">
+
+<h2>Examples</h2>
+
+<h3>Web search</h3>
+
+<div class="code">fetch("https://api.360-search.com/?q=open+source")
+  .then(response =&gt; response.json())
+  .then(data =&gt; console.log(data));</div>
+
+<h3>News search</h3>
+
+<div class="code">fetch("https://api.360-search.com/?q=technology&amp;type=news")
+  .then(response =&gt; response.json())
+  .then(data =&gt; console.log(data));</div>
+
+<h3>Shopping search</h3>
+
+<div class="code">fetch("https://api.360-search.com/?q=laptop&amp;type=shopping&amp;limit=10")
+  .then(response =&gt; response.json())
+  .then(data =&gt; console.log(data));</div>
+
+<h3>Image search</h3>
+
+<div class="code">fetch("https://api.360-search.com/?q=cats&amp;type=image&amp;limit=20")
+  .then(response =&gt; response.json())
+  .then(data =&gt; console.log(data));</div>
+
+</section>
+
+<section id="tester">
+
+<h2>API Tester</h2>
+
+<p>
+Try the API directly from this page.
+</p>
+
+<div class="tester">
+
+<div class="field">
+<label for="query">Query</label>
+<input id="query" type="text" value="open source">
+</div>
+
+<div class="field">
+<label for="type">Type</label>
+<select id="type">
+<option value="web">Web</option>
+<option value="news">News</option>
+<option value="shopping">Shopping</option>
+<option value="image">Image</option>
+</select>
+</div>
+
+<div class="field">
+<label for="safe">Safe Search</label>
+<select id="safe">
+<option value="moderate">Moderate</option>
+<option value="off">Off</option>
+</select>
+</div>
+
+<div class="field">
+<label for="limit">Limit</label>
+<input id="limit" type="number" value="10" min="1" max="100">
+</div>
+
+<button id="run">Run Request</button>
+
+<div id="status" class="status"></div>
+
+<div id="result" class="result">
+<div id="output" class="code"></div>
+</div>
+
+</div>
+
+</section>
+
+<section id="errors">
+
+<h2>Errors</h2>
+
+<p>
+Errors are returned as JSON with an HTTP status code.
+</p>
+
+<table>
+
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+</tr>
+
+<tr>
+<td>400</td>
+<td>Missing, invalid, or excessively long query parameters.</td>
+</tr>
+
+<tr>
+<td>405</td>
+<td>The request method is not supported.</td>
+</tr>
+
+<tr>
+<td>500</td>
+<td>Server configuration error.</td>
+</tr>
+
+<tr>
+<td>502</td>
+<td>An upstream search service returned an error.</td>
+</tr>
+
+</table>
+
+<h3>Example error</h3>
+
+<div class="code">{
+  "error": "Missing required parameter: q"
+}</div>
+
+</section>
+
+<footer>
+360 Search API · Built for the 360 platform
+</footer>
+
+</main>
+
+</div>
+
+<script>
+const API = "https://api.360-search.com/";
+
+const queryInput = document.getElementById("query");
+const typeInput = document.getElementById("type");
+const safeInput = document.getElementById("safe");
+const limitInput = document.getElementById("limit");
+const runButton = document.getElementById("run");
+const status = document.getElementById("status");
+const result = document.getElementById("result");
+const output = document.getElementById("output");
+
+runButton.addEventListener("click", async () => {
+    const query = queryInput.value.trim();
+
+    if (!query) {
+        status.textContent = "Enter a search query.";
+        status.className = "status error";
+        result.style.display = "none";
+        return;
+    }
+
+    const params = new URLSearchParams({
+        q: query,
+        type: typeInput.value,
+        safe: safeInput.value,
+        limit: String(Math.min(100, Math.max(1, Number(limitInput.value) || 10)))
+    });
+
+    const url = API + "?" + params.toString();
+
+    runButton.disabled = true;
+    status.className = "status";
+    status.textContent = "Requesting...";
+    result.style.display = "none";
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || `Request failed with ${response.status}`);
+        }
+
+        output.textContent = JSON.stringify(data, null, 2);
+        result.style.display = "block";
+        status.textContent = `HTTP ${response.status} · ${data.result_count ?? 0} results`;
+    } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+    } finally {
+        runButton.disabled = false;
+    }
+});
+</script>
+
+</body>
+</html>
