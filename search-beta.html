@@ -3556,7 +3556,22 @@ THIS PROGRAM IS NOT FULLY RELIANT ON GOOGLE'S CSE RESULTS! WE USE MULTIPLE API'S
        #knowledge-panel + #custom-results-area) broke the layout into a
        mismatched narrow/wide split.
     ───────────────────────────────── */
-    const EDGE_SEARCH = 'https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/search';
+    const EDGE_SEARCH  = 'https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/search';
+    const EDGE_CRAWLER = 'https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/crawler';
+
+    function queueSearchResultsForCrawl(results) {
+      if (!results?.length) return;
+      const urls = results
+        .filter(r => r.url && r.url.startsWith('http'))
+        .map(r => r.url)
+        .slice(0, 20);
+      if (!urls.length) return;
+      fetch(EDGE_CRAWLER, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...SUPABASE_FN_HEADERS },
+        body: JSON.stringify({ seed: urls, depth: 1 }),
+      }).catch(() => {});
+    }
     let edgeWebFallback = null; // full last web-tab response, used to merge into GCSE results and as a fallback if GCSE never loads
 
     async function fetch360IndexResults(q) {
@@ -3568,6 +3583,8 @@ THIS PROGRAM IS NOT FULLY RELIANT ON GOOGLE'S CSE RESULTS! WE USE MULTIPLE API'S
         });
         const data = await res.json();
         edgeWebFallback = data;
+        // Queue external results for crawling so the Neon index grows with every search
+        if (data.web?.length) queueSearchResultsForCrawl(data.web.filter(r => !r._from360));
         // If GCSE already finished rendering before this resolved, re-merge
         // now so index results still show up without a full reload.
         if (state.tab === 'web' && !state.pendingSearch) scrapeAndRender();
