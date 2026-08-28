@@ -33,6 +33,9 @@
   let chartInstance = null;
   let searchDebounce = null;
 
+  const PREF_SYMBOL_KEY = "stocksSymbol";
+  const PREF_RANGE_KEY = "stocksRange";
+
   function fmtNum(n, opts = {}) {
     if (n === null || n === undefined || Number.isNaN(n)) return "—";
     return Number(n).toLocaleString(undefined, opts);
@@ -225,11 +228,18 @@
     });
   }
 
+  function setActiveRangeBtn(range) {
+    els.rangeBtns.querySelectorAll(".s-range-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.range === range);
+    });
+  }
+
   async function loadSymbol(symbol, range) {
     currentSymbol = symbol.toUpperCase();
     currentRange = range || currentRange;
     setLoading(true);
     setActiveWatchlistChip(currentSymbol);
+    setActiveRangeBtn(currentRange);
     try {
       const data = await fetchStock(currentSymbol, currentRange);
       renderQuote(data);
@@ -240,6 +250,8 @@
       els.loading.style.display = "none";
       els.error.style.display = "none";
       els.grid.classList.add("visible");
+      localStorage.setItem(PREF_SYMBOL_KEY, currentSymbol);
+      localStorage.setItem(PREF_RANGE_KEY, currentRange);
       const url = new URL(window.location);
       url.searchParams.set("symbol", currentSymbol);
       window.history.replaceState({}, "", url);
@@ -252,8 +264,6 @@
   els.rangeBtns.addEventListener("click", (e) => {
     const btn = e.target.closest(".s-range-btn");
     if (!btn) return;
-    els.rangeBtns.querySelectorAll(".s-range-btn").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
     loadSymbol(currentSymbol, btn.dataset.range);
   });
 
@@ -306,6 +316,8 @@
   });
 
   // --- init ---
-  const initialSymbol = new URLSearchParams(window.location.search).get("symbol") || "AAPL";
-  loadSymbol(initialSymbol, currentRange);
+  const urlSymbol = new URLSearchParams(window.location.search).get("symbol");
+  const initialSymbol = urlSymbol || localStorage.getItem(PREF_SYMBOL_KEY) || "AAPL";
+  const initialRange = localStorage.getItem(PREF_RANGE_KEY) || "6mo";
+  loadSymbol(initialSymbol, initialRange);
 })();
