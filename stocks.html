@@ -1,17 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-89NN1P6CEV');
-</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 — Stocks</title>
-  <link rel="icon" type="image/png" href="../favicon-32x32.png" />
+  <title>360 Stocks</title>
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#3b82f6" />
   <link rel="stylesheet" href="/assets/css/main.css" />
@@ -19,469 +12,28 @@
   <link rel="stylesheet" href="/assets/css/gallium.css" />
   <link rel="stylesheet" href="/assets/css/responsive.css" />
   <link rel="stylesheet" href="/assets/css/cursor.css" />
+  <link rel="stylesheet" href="/assets/css/stocks.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-  <style>
-    .stocks-page {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 80px 24px 60px;
-    }
-    .stocks-page h2 {
-      font-size: 22px;
-      font-weight: 700;
-      margin-bottom: 20px;
-      background: linear-gradient(120deg, var(--a), var(--a2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    /* ── Search row ── */
-    .stock-form {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .stock-form input {
-      flex: 1;
-      padding: 12px 16px;
-      border-radius: 12px;
-      border: 1px solid var(--br);
-      background: rgba(255,255,255,.08);
-      color: var(--txt);
-      font-size: 14px;
-      outline: none;
-      font-family: inherit;
-      backdrop-filter: blur(6px);
-      transition: border-color .2s;
-    }
-    body.dark .stock-form input { color: var(--txtd); background: rgba(15,23,42,.4); }
-    .stock-form input:focus { border-color: var(--a); }
-    .stock-form button {
-      padding: 12px 22px;
-      border-radius: 12px;
-      border: none;
-      background: linear-gradient(110deg, var(--a), var(--a2));
-      color: #050816;
-      font-weight: 700;
-      font-size: 14px;
-      cursor: pointer;
-      white-space: nowrap;
-      font-family: inherit;
-    }
-
-    /* ── Quick picks ── */
-    .quick-picks {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-    .quick-chip {
-      padding: 6px 14px;
-      border-radius: 999px;
-      border: 1px solid var(--br);
-      background: rgba(255,255,255,.06);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: .15s;
-      color: var(--txt);
-      backdrop-filter: blur(6px);
-    }
-    body.dark .quick-chip { color: var(--txtd); }
-    .quick-chip:hover { border-color: var(--a); background: rgba(59,130,246,.1); color: var(--a); }
-    .quick-chip.crypto { border-color: rgba(249,115,22,.4); color: #f97316; background: rgba(249,115,22,.06); }
-    .quick-chip.crypto:hover { background: rgba(249,115,22,.15); }
-
-    /* ── Quote card ── */
-    #quoteCard {
-      background: rgba(255,255,255,.6);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--br);
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 20px;
-      display: none;
-    }
-    body.dark #quoteCard { background: rgba(15,23,42,.7); border-color: rgba(255,255,255,.1); }
-
-    .quote-top {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-    .quote-left {}
-    .quote-ticker {
-      font-size: 28px;
-      font-weight: 900;
-      background: linear-gradient(120deg, var(--a), var(--a2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      letter-spacing: -.01em;
-      line-height: 1;
-    }
-    .quote-name {
-      font-size: 13px;
-      color: var(--mut);
-      margin-top: 4px;
-    }
-    body.dark .quote-name { color: var(--mutd); }
-    .quote-right { text-align: right; }
-    .quote-price {
-      font-size: 36px;
-      font-weight: 800;
-      letter-spacing: -.02em;
-      color: var(--txt);
-      line-height: 1;
-    }
-    body.dark .quote-price { color: var(--txtd); }
-    .quote-change {
-      font-size: 15px;
-      font-weight: 700;
-      margin-top: 4px;
-    }
-    .quote-change.pos { color: #22c55e; }
-    .quote-change.neg { color: #ef4444; }
-
-    /* ── Stats grid ── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .stat-card {
-      background: rgba(148,163,184,.08);
-      border: 1px solid var(--br);
-      border-radius: 10px;
-      padding: 10px 12px;
-    }
-    .stat-label {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      color: var(--mut);
-      margin-bottom: 4px;
-    }
-    body.dark .stat-label { color: var(--mutd); }
-    .stat-value {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--txt);
-    }
-    body.dark .stat-value { color: var(--txtd); }
-
-    /* ── Chart ── */
-    .chart-wrap {
-      position: relative;
-      height: 220px;
-      margin-bottom: 20px;
-    }
-    .chart-controls {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .chart-period-btn {
-      padding: 4px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--br);
-      background: transparent;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: .15s;
-      color: var(--mut);
-      font-family: inherit;
-    }
-    body.dark .chart-period-btn { color: var(--mutd); }
-    .chart-period-btn.active,
-    .chart-period-btn:hover {
-      background: linear-gradient(110deg, var(--a), var(--a2));
-      color: #050816;
-      border-color: transparent;
-    }
-    .chart-type-btn {
-      padding: 4px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--br);
-      background: transparent;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: .15s;
-      color: var(--mut);
-      margin-left: auto;
-      font-family: inherit;
-    }
-    body.dark .chart-type-btn { color: var(--mutd); }
-    .chart-type-btn:hover { border-color: var(--a); color: var(--a); }
-    .chart-loading {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      color: var(--mut);
-      background: transparent;
-    }
-    .spinner-sm {
-      width: 20px; height: 20px;
-      border: 2px solid var(--br);
-      border-top-color: var(--a);
-      border-radius: 50%;
-      animation: spin .8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Watchlist ── */
-    .watchlist-wrap {
-      margin-top: 24px;
-    }
-    .watchlist-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
-    .watchlist-title {
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .07em;
-      color: var(--mut);
-    }
-    body.dark .watchlist-title { color: var(--mutd); }
-    .watchlist-add-btn {
-      padding: 5px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--br);
-      background: transparent;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      color: var(--a);
-      transition: .15s;
-      font-family: inherit;
-    }
-    .watchlist-add-btn:hover { background: rgba(59,130,246,.1); }
-
-    .watchlist-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .watchlist-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid var(--br);
-      background: rgba(255,255,255,.5);
-      backdrop-filter: blur(6px);
-      cursor: pointer;
-      transition: .15s;
-    }
-    body.dark .watchlist-item { background: rgba(15,23,42,.5); }
-    .watchlist-item:hover { border-color: var(--a); transform: translateX(2px); }
-    .wl-ticker {
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--a);
-      min-width: 52px;
-    }
-    .wl-name {
-      font-size: 12px;
-      color: var(--mut);
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    body.dark .wl-name { color: var(--mutd); }
-    .wl-price {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--txt);
-      min-width: 70px;
-      text-align: right;
-    }
-    body.dark .wl-price { color: var(--txtd); }
-    .wl-change {
-      font-size: 12px;
-      font-weight: 700;
-      min-width: 65px;
-      text-align: right;
-    }
-    .wl-change.pos { color: #22c55e; }
-    .wl-change.neg { color: #ef4444; }
-    .wl-remove {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--mut);
-      font-size: 14px;
-      padding: 0 2px;
-      opacity: .4;
-      transition: opacity .15s;
-      line-height: 1;
-    }
-    .wl-remove:hover { opacity: 1; color: #ef4444; }
-    .wl-empty {
-      font-size: 13px;
-      color: var(--mut);
-      text-align: center;
-      padding: 16px 0;
-    }
-    body.dark .wl-empty { color: var(--mutd); }
-
-    /* ── Sentiment ── */
-    .sentiment-bar-wrap {
-      margin-bottom: 16px;
-    }
-    .sentiment-label-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      font-weight: 600;
-      margin-bottom: 5px;
-    }
-    .sentiment-label-row .bull { color: #22c55e; }
-    .sentiment-label-row .bear { color: #ef4444; }
-    .sentiment-bar {
-      height: 8px;
-      border-radius: 999px;
-      background: rgba(239,68,68,.25);
-      overflow: hidden;
-    }
-    .sentiment-fill {
-      height: 100%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, #22c55e, #86efac);
-      transition: width .6s ease;
-    }
-    .sentiment-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 700;
-      margin-top: 6px;
-    }
-    .sentiment-badge.bull { background: rgba(34,197,94,.12); color: #22c55e; border: 1px solid rgba(34,197,94,.3); }
-    .sentiment-badge.bear { background: rgba(239,68,68,.12); color: #ef4444; border: 1px solid rgba(239,68,68,.3); }
-    .sentiment-badge.neutral { background: rgba(148,163,184,.1); color: var(--mut); border: 1px solid var(--br); }
-
-    .week-range-wrap { margin-bottom: 16px; }
-    .week-range-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--mut); margin-bottom: 6px; }
-    body.dark .week-range-label { color: var(--mutd); }
-    .week-range-bar {
-      height: 6px;
-      border-radius: 999px;
-      background: rgba(148,163,184,.2);
-      position: relative;
-    }
-    .week-range-fill {
-      position: absolute;
-      height: 100%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--a), var(--a2));
-    }
-    .week-range-numbers {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      font-weight: 600;
-      margin-top: 4px;
-    }
-    .week-range-current {
-      position: absolute;
-      top: -3px;
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      background: var(--a);
-      border: 2px solid #fff;
-      transform: translateX(-50%);
-      box-shadow: 0 0 0 2px rgba(59,130,246,.3);
-    }
-    body.dark .week-range-current { border-color: var(--bgd); }
-
-    .error-msg {
-      color: #ef4444;
-      font-size: 13px;
-      padding: 12px 16px;
-      border-radius: 10px;
-      background: rgba(239,68,68,.08);
-      border: 1px solid rgba(239,68,68,.2);
-      display: none;
-      margin-bottom: 16px;
-    }
-
-    @media (max-width: 600px) {
-      .quote-price { font-size: 26px; }
-      .quote-ticker { font-size: 22px; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-  </style>
-  <script src="assets/js/octicons.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-SCZB3M2PNX"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SCZB3M2PNX');</script>
 </head>
-<body>
-
+<body class="dark">
   <div class="cursor-dot"></div>
   <div class="cursor-trail"></div>
   <div class="cursor-crosshair"></div>
   <div class="cursor-blob"></div>
 
-  <button class="sidebar-toggle" id="sidebarToggle"><span data-octicon="three-bars"></span> Menu</button>
-
-  <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
-
-  <div class="overlay" id="overlay"></div>
-
-  <div class="settings-panel" id="settingsPanel">
-    <h3>Appearance</h3>
-    <div class="settings-label">Theme</div>
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-    </div>
-    <div class="settings-label" style="margin-top:20px;">Mode</div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:14px;">Dark mode</span>
-      <input type="checkbox" id="darkToggle" />
-    </label>
-    <h3 style="margin-top:20px;">Cursor</h3>
-    <div class="settings-label">Style</div>
-    <div class="cursor-options">
-      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-    </div>
-    <div class="cursor-color-row">
-      <label>Cursor color</label>
-      <input type="color" id="cursorColorPicker" value="#3b82f6" />
-      <button id="cursorColorReset">Reset</button>
-    </div>
+  <div class="auth-top-right">
+    <button id="signInBtn" class="auth-btn">Sign In</button>
+    <button id="signUpBtn" class="auth-btn">Sign Up</button>
+    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
   </div>
+
+  <!-- 360 navigation sidebar (required by main.js) -->
+  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+  <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
+  <div class="overlay" id="overlay"></div>
 
   <div id="auth-popup" class="auth-popup hidden">
     <div class="auth-box">
@@ -495,513 +47,97 @@
     </div>
   </div>
 
-  <div class="auth-top-right">
-    <button id="signInBtn" class="auth-btn">Sign In</button>
-    <button id="signUpBtn" class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-
-  <div class="stocks-page">
-    <h2 class="page-title"><span class="title-icon" data-octicon="graph" data-octicon-size="22" data-octicon-label="Stocks and Crypto"></span> Stocks & Crypto</h2>
-
-    <form class="stock-form" id="stockForm">
-      <input id="ticker" placeholder="Ticker or crypto (AAPL, BTC, ETH...)" autocomplete="off" autocapitalize="characters" spellcheck="false" />
-      <button type="submit">Search</button>
-    </form>
-
-    <div class="quick-picks">
-      <span class="quick-chip" onclick="loadTicker('AAPL')">AAPL</span>
-      <span class="quick-chip" onclick="loadTicker('MSFT')">MSFT</span>
-      <span class="quick-chip" onclick="loadTicker('GOOGL')">GOOGL</span>
-      <span class="quick-chip" onclick="loadTicker('TSLA')">TSLA</span>
-      <span class="quick-chip" onclick="loadTicker('NVDA')">NVDA</span>
-      <span class="quick-chip" onclick="loadTicker('AMZN')">AMZN</span>
-      <span class="quick-chip crypto" onclick="loadTicker('BTC')">₿ BTC</span>
-      <span class="quick-chip crypto" onclick="loadTicker('ETH')">Ξ ETH</span>
-      <span class="quick-chip crypto" onclick="loadTicker('SOL')">◎ SOL</span>
-    </div>
-
-    <div class="error-msg" id="errorMsg"></div>
-
-    <div id="quoteCard">
-      <div class="quote-top">
-        <div class="quote-left">
-          <div class="quote-ticker" id="qTicker">--</div>
-          <div class="quote-name" id="qName">--</div>
-        </div>
-        <div class="quote-right">
-          <div class="quote-price" id="qPrice">--</div>
-          <div class="quote-change" id="qChange">--</div>
-        </div>
+  <main class="stocks-shell">
+    <div class="stocks-header">
+      <div class="stocks-title">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        360 Stocks
       </div>
-
-      <!-- 52-week range -->
-      <div class="week-range-wrap" id="weekRangeWrap" style="display:none;">
-        <div class="week-range-label">52-Week Range</div>
-        <div class="week-range-bar">
-          <div class="week-range-fill" id="weekFill"></div>
-          <div class="week-range-current" id="weekDot"></div>
-        </div>
-        <div class="week-range-numbers">
-          <span id="wkLow">--</span>
-          <span id="wkCurrent" style="color:var(--a);font-weight:800;">Current</span>
-          <span id="wkHigh">--</span>
-        </div>
-      </div>
-
-      <!-- Sentiment -->
-      <div class="sentiment-bar-wrap" id="sentimentWrap" style="display:none;">
-        <div class="sentiment-label-row">
-          <span class="bull">▲ Bullish</span>
-          <span class="bear">Bearish ▼</span>
-        </div>
-        <div class="sentiment-bar">
-          <div class="sentiment-fill" id="sentimentFill"></div>
-        </div>
-        <div id="sentimentBadge" class="sentiment-badge"></div>
-      </div>
-
-      <!-- Stats -->
-      <div class="stats-grid" id="statsGrid"></div>
-
-      <!-- Chart -->
-      <div class="chart-controls" id="chartControls">
-        <button class="chart-period-btn active" onclick="setPeriod('1W',this)">1W</button>
-        <button class="chart-period-btn" onclick="setPeriod('1M',this)">1M</button>
-        <button class="chart-period-btn" onclick="setPeriod('3M',this)">3M</button>
-        <button class="chart-period-btn" onclick="setPeriod('6M',this)">6M</button>
-        <button class="chart-period-btn" onclick="setPeriod('1Y',this)">1Y</button>
-        <button class="chart-type-btn" id="chartTypeBtn" onclick="toggleChartType()">Line</button>
-      </div>
-      <div class="chart-wrap">
-        <div class="chart-loading" id="chartLoading" style="display:none;">
-          <div class="spinner-sm"></div>
-        </div>
-        <canvas id="priceChart"></canvas>
-      </div>
-
-      <!-- Watchlist add -->
-      <button id="addToWatchlistBtn" onclick="addToWatchlist()" style="padding:8px 18px;border-radius:999px;border:1px solid var(--br);background:transparent;font-size:13px;font-weight:600;cursor:pointer;color:var(--a);font-family:inherit;transition:.15s;">
-        ＋ Add to Watchlist
-      </button>
-    </div>
-
-    <!-- Watchlist -->
-    <div class="watchlist-wrap">
-      <div class="watchlist-header">
-        <div class="watchlist-title">⭐ Watchlist</div>
-      </div>
-      <div class="watchlist-grid" id="watchlistGrid">
-        <div class="wl-empty">Search a stock and add it to your watchlist.</div>
+      <div class="stocks-search">
+        <input id="stockSearchInput" type="text" placeholder="Search a ticker or company (e.g. AAPL, Tesla)…" autocomplete="off" />
+        <div class="stocks-search-results" id="stockSearchResults"></div>
       </div>
     </div>
-  </div>
 
-  <audio id="clickSound" src="../click-sound.mp3" preload="auto"></audio>
+    <div class="stocks-watchlist" id="watchlistChips">
+      <button class="watchlist-chip" data-symbol="AAPL">AAPL</button>
+      <button class="watchlist-chip" data-symbol="MSFT">MSFT</button>
+      <button class="watchlist-chip" data-symbol="NVDA">NVDA</button>
+      <button class="watchlist-chip" data-symbol="GOOGL">GOOGL</button>
+      <button class="watchlist-chip" data-symbol="AMZN">AMZN</button>
+      <button class="watchlist-chip" data-symbol="TSLA">TSLA</button>
+      <button class="watchlist-chip" data-symbol="SPY">SPY</button>
+    </div>
+
+    <div class="stocks-loading" id="stocksLoading">Loading market data…</div>
+    <div class="stocks-error" id="stocksError" style="display:none;"></div>
+
+    <div class="stocks-grid" id="stocksGrid">
+      <!-- LEFT COLUMN -->
+      <div>
+        <div class="s-card" style="margin-bottom:20px;">
+          <div class="s-quote-top">
+            <div>
+              <div class="s-company" id="qCompany">—</div>
+              <div class="s-symbol" id="qSymbol">—</div>
+            </div>
+            <div class="s-price-block">
+              <div class="s-price" id="qPrice">—</div>
+              <div class="s-change" id="qChange">—</div>
+            </div>
+          </div>
+
+          <div class="s-range-btns" id="rangeBtns">
+            <button class="s-range-btn" data-range="1mo">1M</button>
+            <button class="s-range-btn active" data-range="6mo">6M</button>
+            <button class="s-range-btn" data-range="1y">1Y</button>
+            <button class="s-range-btn" data-range="5y">5Y</button>
+            <button class="s-range-btn" data-range="max">Max</button>
+          </div>
+
+          <div class="s-chart-wrap">
+            <canvas id="priceChart"></canvas>
+          </div>
+        </div>
+
+        <div class="s-card">
+          <div class="s-card-title">Key Statistics</div>
+          <div class="s-stats-grid" id="statsGrid"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div>
+        <div class="s-card" style="margin-bottom:20px;">
+          <div class="s-card-title">Technical Outlook</div>
+          <span class="s-outlook-badge neutral" id="outlookBadge">—</span>
+
+          <div class="s-gauge-row">
+            <span class="s-gauge-label">Bear</span>
+            <div class="s-gauge-track"><div class="s-gauge-dot" id="gaugeDot" style="left:50%;"></div></div>
+            <span class="s-gauge-label" style="text-align:right;">Bull</span>
+          </div>
+
+          <ul class="s-signals" id="signalsList"></ul>
+
+          <div class="s-disclaimer">
+            <strong>Not financial advice.</strong> This "outlook" is a plain read of common technical indicators
+            (moving averages, RSI, short-term trend slope) — it describes what the recent price action looks like,
+            not a forecast of what will happen next. No model, including this one, can accurately predict future
+            stock prices. Markets are affected by countless unpredictable factors. Always do your own research
+            and consider consulting a licensed financial advisor before making investment decisions.
+          </div>
+        </div>
+
+        <div class="s-card">
+          <div class="s-card-title">Analyst Snapshot</div>
+          <div class="s-stats-grid" id="analystGrid"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
   <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-
-  <script>
-  /* ─────────────────────────────────────────────────────
-     360 STOCKS V2 — Chart.js + Crypto + Watchlist + 52-wk
-  ───────────────────────────────────────────────────── */
-
-  const PROXY      = "https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/stocks-proxy";
-  // Alpha Vantage calls always go through the stocks-proxy edge function now --
-  // the API key used to be hardcoded here and shipped to every visitor's browser.
-
-  // CoinGecko IDs for crypto tickers
-  const CRYPTO_IDS = {
-    BTC: "bitcoin", ETH: "ethereum", SOL: "solana",
-    BNB: "binancecoin", ADA: "cardano", XRP: "ripple",
-    DOGE: "dogecoin", DOT: "polkadot", AVAX: "avalanche-2",
-    MATIC: "matic-network", LINK: "chainlink", LTC: "litecoin",
-    SHIB: "shiba-inu", UNI: "uniswap", ATOM: "cosmos"
-  };
-
-  let chart = null;
-  let chartType = "line"; // "line" or "bar"
-  let currentPeriod = "1W";
-  let currentTicker = "";
-  let currentIsCrypto = false;
-  let currentPrice = 0;
-  let lastHistData = null;
-
-  // Watchlist persisted in localStorage
-  let watchlist = JSON.parse(localStorage.getItem("360_watchlist") || "[]");
-
-  /* ── Form submit ── */
-  document.getElementById("stockForm").onsubmit = e => {
-    e.preventDefault();
-    const t = document.getElementById("ticker").value.trim().toUpperCase();
-    if (t) loadTicker(t);
-  };
-
-  /* ── Main load function ── */
-  async function loadTicker(ticker) {
-    ticker = ticker.toUpperCase();
-    currentTicker = ticker;
-    currentIsCrypto = !!CRYPTO_IDS[ticker];
-    document.getElementById("ticker").value = ticker;
-
-    const card = document.getElementById("quoteCard");
-    const err  = document.getElementById("errorMsg");
-    err.style.display = "none";
-    card.style.display = "none";
-
-    try {
-      if (currentIsCrypto) {
-        await loadCrypto(ticker);
-      } else {
-        await loadStock(ticker);
-      }
-      card.style.display = "block";
-      await loadChart(ticker, currentPeriod);
-      renderWatchlist();
-    } catch (e) {
-      err.innerHTML = `${window.Octicons.icon("alert")} ${e.message}`;
-      err.style.display = "block";
-    }
-  }
-
-  /* ── Stock via proxy ── */
-  async function loadStock(ticker) {
-    const res  = await fetch(`${PROXY}?ticker=${encodeURIComponent(ticker)}`);
-    const data = await res.json();
-    const g    = data["Global Quote"];
-    if (!g || !g["05. price"]) throw new Error("No data found for " + ticker);
-
-    const price   = parseFloat(g["05. price"]);
-    const prev    = parseFloat(g["08. previous close"]);
-    const change  = parseFloat(g["09. change"]);
-    const changePct = parseFloat(g["10. change percent"]);
-    const high52  = parseFloat(g["03. high"]) || null;
-    const low52   = parseFloat(g["04. low"])  || null;
-    const vol     = parseInt(g["06. volume"])  || null;
-    const prevClose = parseFloat(g["08. previous close"]) || null;
-
-    currentPrice = price;
-    const isPos  = change >= 0;
-
-    document.getElementById("qTicker").textContent = ticker;
-    document.getElementById("qName").textContent   = "Stock · NYSE / NASDAQ";
-    document.getElementById("qPrice").textContent  = "$" + price.toFixed(2);
-    const chEl = document.getElementById("qChange");
-    chEl.textContent  = `${isPos?"+":""}${change.toFixed(2)} (${isPos?"+":""}${changePct.toFixed(2)}%)`;
-    chEl.className    = "quote-change " + (isPos?"pos":"neg");
-
-    // Stats
-    buildStats([
-      { label: "Prev Close", value: prevClose ? "$"+prevClose.toFixed(2) : "N/A" },
-      { label: "Volume",     value: vol ? fmtNum(vol) : "N/A" },
-      { label: "Day High",   value: g["03. high"] ? "$"+parseFloat(g["03. high"]).toFixed(2) : "N/A" },
-      { label: "Day Low",    value: g["04. low"]  ? "$"+parseFloat(g["04. low"]).toFixed(2)  : "N/A" },
-    ]);
-
-    // 52-wk — fetch separately
-    fetch52Week(ticker, price);
-
-    // Sentiment from momentum
-    showSentiment(change, changePct);
-  }
-
-  /* ── Crypto via CoinGecko (no key needed) ── */
-  async function loadCrypto(ticker) {
-    const id  = CRYPTO_IDS[ticker];
-    const url = `https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Crypto data unavailable.");
-    const d   = await res.json();
-    const md  = d.market_data;
-
-    const price    = md.current_price.usd;
-    const change24 = md.price_change_24h;
-    const changePct = md.price_change_percentage_24h;
-    const high52   = md["ath"]?.usd || null;
-    const low52    = md["atl"]?.usd || null;
-    const vol24    = md.total_volume?.usd || null;
-    const cap      = md.market_cap?.usd || null;
-    const low24    = md.low_24h?.usd || null;
-    const high24   = md.high_24h?.usd || null;
-
-    currentPrice   = price;
-    const isPos    = change24 >= 0;
-
-    document.getElementById("qTicker").textContent = ticker;
-    document.getElementById("qName").textContent   = d.name + " · Crypto";
-    document.getElementById("qPrice").textContent  = "$" + fmtPrice(price);
-    const chEl = document.getElementById("qChange");
-    chEl.textContent = `${isPos?"+":""}$${Math.abs(change24).toFixed(4)} (${isPos?"+":""}${changePct.toFixed(2)}%)`;
-    chEl.className   = "quote-change " + (isPos?"pos":"neg");
-
-    buildStats([
-      { label: "24h High",   value: "$"+fmtPrice(high24) },
-      { label: "24h Low",    value: "$"+fmtPrice(low24)  },
-      { label: "Volume 24h", value: "$"+fmtNum(vol24)    },
-      { label: "Market Cap", value: "$"+fmtNum(cap)      },
-      { label: "ATH",        value: "$"+fmtPrice(high52) },
-      { label: "ATL",        value: "$"+fmtPrice(low52)  },
-    ]);
-
-    // 52-week range: use ATH/ATL
-    if (high52 && low52) {
-      showWeekRange(low52, high52, price);
-    }
-
-    showSentiment(change24, changePct);
-  }
-
-  /* ── 52-week fetch for stocks ── */
-  async function fetch52Week(ticker, currentPrice) {
-    try {
-      const url = `${PROXY}?fn=TIME_SERIES_WEEKLY&symbol=${encodeURIComponent(ticker)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const ts = data["Weekly Time Series"];
-      if (!ts) return;
-      const keys = Object.keys(ts).slice(0, 52);
-      let low = Infinity, high = -Infinity;
-      keys.forEach(k => {
-        const h = parseFloat(ts[k]["2. high"]);
-        const l = parseFloat(ts[k]["3. low"]);
-        if (h > high) high = h;
-        if (l < low)  low  = l;
-      });
-      if (low !== Infinity && high !== -Infinity) {
-        showWeekRange(low, high, currentPrice);
-      }
-    } catch {}
-  }
-
-  function showWeekRange(low, high, current) {
-    const wrap = document.getElementById("weekRangeWrap");
-    wrap.style.display = "block";
-    const pct = Math.max(0, Math.min(100, ((current - low) / (high - low)) * 100));
-    document.getElementById("weekFill").style.width = pct + "%";
-    document.getElementById("weekDot").style.left   = pct + "%";
-    document.getElementById("wkLow").textContent     = "$" + fmtPrice(low);
-    document.getElementById("wkHigh").textContent    = "$" + fmtPrice(high);
-    document.getElementById("wkCurrent").textContent = "$" + fmtPrice(current);
-  }
-
-  function showSentiment(change, changePct) {
-    const wrap = document.getElementById("sentimentWrap");
-    wrap.style.display = "block";
-    // Momentum score 0-100 (50 = neutral)
-    const score = Math.min(100, Math.max(0, 50 + changePct * 3));
-    document.getElementById("sentimentFill").style.width = score + "%";
-    const badge = document.getElementById("sentimentBadge");
-    if (score > 60) {
-      badge.className = "sentiment-badge bull";
-      badge.textContent = "▲ Bullish Momentum";
-    } else if (score < 40) {
-      badge.className = "sentiment-badge bear";
-      badge.textContent = "▼ Bearish Momentum";
-    } else {
-      badge.className = "sentiment-badge neutral";
-      badge.textContent = "→ Neutral";
-    }
-  }
-
-  /* ── Chart ── */
-  async function loadChart(ticker, period) {
-    const loading = document.getElementById("chartLoading");
-    loading.style.display = "flex";
-    try {
-      let labels = [], prices = [];
-      if (currentIsCrypto) {
-        ({ labels, prices } = await fetchCryptoHistory(ticker, period));
-      } else {
-        ({ labels, prices } = await fetchStockHistory(ticker, period));
-      }
-      lastHistData = { labels, prices };
-      renderChart(labels, prices);
-    } catch {
-      // silently fail chart — quote card still shows
-    }
-    loading.style.display = "none";
-  }
-
-  async function fetchStockHistory(ticker, period) {
-    const periodMap = {
-      "1W": { fn: "TIME_SERIES_DAILY", sliceKey: "Time Series (Daily)", count: 7 },
-      "1M": { fn: "TIME_SERIES_DAILY", sliceKey: "Time Series (Daily)", count: 30 },
-      "3M": { fn: "TIME_SERIES_DAILY", sliceKey: "Time Series (Daily)", count: 90 },
-      "6M": { fn: "TIME_SERIES_WEEKLY", sliceKey: "Weekly Time Series", count: 26 },
-      "1Y": { fn: "TIME_SERIES_WEEKLY", sliceKey: "Weekly Time Series", count: 52 },
-    };
-    const { fn, sliceKey, count } = periodMap[period];
-    const url  = `${PROXY}?fn=${encodeURIComponent(fn)}&symbol=${encodeURIComponent(ticker)}&outputsize=compact`;
-    const res  = await fetch(url);
-    const data = await res.json();
-    const ts   = data[sliceKey];
-    if (!ts) throw new Error("No history");
-    const keys   = Object.keys(ts).slice(0, count).reverse();
-    const labels = keys.map(k => k.slice(5));
-    const prices = keys.map(k => parseFloat(ts[k]["4. close"]));
-    return { labels, prices };
-  }
-
-  async function fetchCryptoHistory(ticker, period) {
-    const periodDays = { "1W": 7, "1M": 30, "3M": 90, "6M": 180, "1Y": 365 };
-    const days = periodDays[period];
-    const id   = CRYPTO_IDS[ticker];
-    const url  = `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}`;
-    const res  = await fetch(url);
-    const data = await res.json();
-    const pts  = data.prices || [];
-    const step = Math.max(1, Math.floor(pts.length / 60));
-    const sampled = pts.filter((_, i) => i % step === 0);
-    const labels  = sampled.map(p => {
-      const d = new Date(p[0]);
-      return days <= 7 ? `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:00` : `${d.getMonth()+1}/${d.getDate()}`;
-    });
-    const prices = sampled.map(p => p[1]);
-    return { labels, prices };
-  }
-
-  function renderChart(labels, prices) {
-    const isDark = document.body.classList.contains("dark");
-    const isUp   = prices[prices.length - 1] >= prices[0];
-    const color  = isUp ? "#22c55e" : "#ef4444";
-    const ctx    = document.getElementById("priceChart").getContext("2d");
-
-    if (chart) { chart.destroy(); chart = null; }
-
-    const grad = ctx.createLinearGradient(0, 0, 0, 200);
-    grad.addColorStop(0, isUp ? "rgba(34,197,94,.25)" : "rgba(239,68,68,.25)");
-    grad.addColorStop(1, "rgba(0,0,0,0)");
-
-    chart = new Chart(ctx, {
-      type: chartType === "bar" ? "bar" : "line",
-      data: {
-        labels,
-        datasets: [{
-          data: prices,
-          borderColor: color,
-          backgroundColor: chartType === "bar" ? color + "80" : grad,
-          borderWidth: 2,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-          fill: chartType !== "bar",
-          tension: 0.35,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: "index", intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => "$" + fmtPrice(ctx.raw)
-            }
-          }
-        },
-        scales: {
-          x: {
-            grid: { color: isDark ? "rgba(255,255,255,.05)" : "rgba(0,0,0,.05)" },
-            ticks: {
-              color: isDark ? "#a3a7b3" : "#6b7280",
-              maxTicksLimit: 8,
-              maxRotation: 0,
-              font: { size: 10 }
-            }
-          },
-          y: {
-            position: "right",
-            grid: { color: isDark ? "rgba(255,255,255,.05)" : "rgba(0,0,0,.05)" },
-            ticks: {
-              color: isDark ? "#a3a7b3" : "#6b7280",
-              callback: v => "$" + fmtPrice(v),
-              font: { size: 10 }
-            }
-          }
-        }
-      }
-    });
-  }
-
-  async function setPeriod(period, btn) {
-    currentPeriod = period;
-    document.querySelectorAll(".chart-period-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    if (currentTicker) await loadChart(currentTicker, period);
-  }
-
-  function toggleChartType() {
-    chartType = chartType === "line" ? "bar" : "line";
-    document.getElementById("chartTypeBtn").textContent = chartType === "line" ? "Line" : "Bar";
-    if (lastHistData) renderChart(lastHistData.labels, lastHistData.prices);
-  }
-
-  /* ── Stats grid ── */
-  function buildStats(items) {
-    const grid = document.getElementById("statsGrid");
-    grid.innerHTML = items.map(i =>
-      `<div class="stat-card"><div class="stat-label">${i.label}</div><div class="stat-value">${i.value}</div></div>`
-    ).join("");
-  }
-
-  /* ── Watchlist ── */
-  function addToWatchlist() {
-    if (!currentTicker) return;
-    if (watchlist.find(w => w.ticker === currentTicker)) return;
-    watchlist.push({
-      ticker: currentTicker,
-      isCrypto: currentIsCrypto,
-      price: currentPrice,
-      name: document.getElementById("qName").textContent
-    });
-    localStorage.setItem("360_watchlist", JSON.stringify(watchlist));
-    renderWatchlist();
-  }
-
-  function removeFromWatchlist(ticker) {
-    watchlist = watchlist.filter(w => w.ticker !== ticker);
-    localStorage.setItem("360_watchlist", JSON.stringify(watchlist));
-    renderWatchlist();
-  }
-
-  function renderWatchlist() {
-    const grid = document.getElementById("watchlistGrid");
-    if (!watchlist.length) {
-      grid.innerHTML = `<div class="wl-empty">Search a stock or crypto and add it to your watchlist.</div>`;
-      return;
-    }
-    grid.innerHTML = watchlist.map(w => `
-      <div class="watchlist-item" onclick="loadTicker('${w.ticker}')">
-        <div class="wl-ticker">${w.ticker}</div>
-        <div class="wl-name">${w.name}</div>
-        <div class="wl-price">$${fmtPrice(w.price)}</div>
-        <button class="wl-remove" onclick="event.stopPropagation();removeFromWatchlist('${w.ticker}')"><span data-octicon="x-circle"></span></button>
-      </div>`).join("");
-  }
-
-  /* ── Helpers ── */
-  function fmtPrice(n) {
-    if (!n && n !== 0) return "N/A";
-    if (n < 0.01) return n.toFixed(8);
-    if (n < 1)    return n.toFixed(4);
-    if (n < 1000) return n.toFixed(2);
-    return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-  function fmtNum(n) {
-    if (!n) return "N/A";
-    if (n >= 1e12) return (n/1e12).toFixed(2) + "T";
-    if (n >= 1e9)  return (n/1e9).toFixed(2)  + "B";
-    if (n >= 1e6)  return (n/1e6).toFixed(2)  + "M";
-    if (n >= 1e3)  return (n/1e3).toFixed(1)  + "K";
-    return n.toLocaleString();
-  }
-
-  // Init
-  renderWatchlist();
-  </script>
+  <script src="/assets/js/stocks.js"></script>
 </body>
 </html>
