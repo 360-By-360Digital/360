@@ -1134,6 +1134,15 @@ THIS PROGRAM IS NOT FULLY RELIANT ON GOOGLE'S CSE RESULTS! WE USE MULTIPLE API'S
       .results-tab { padding: 6px 12px; font-size: 12px; }
     }
   </style>
+  <style>
+    .sr-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(12px);
+      background: rgba(17,20,29,.93); color: #fff; padding: 9px 18px; border-radius: 999px;
+      font-size: 13px; z-index: 6500; opacity: 0; pointer-events: none;
+      transition: opacity .2s, transform .2s; white-space: nowrap;
+    }
+    .sr-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
   <script src="assets/js/octicons.js"></script>
 </head>
 <body>
@@ -3415,11 +3424,7 @@ THIS PROGRAM IS NOT FULLY RELIANT ON GOOGLE'S CSE RESULTS! WE USE MULTIPLE API'S
         }
 
         showResultsArea(true);
-        if (q.trim().length >= 3) {
-          sb360.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user) sb360.rpc('award_search_points', { p_query: q }).catch(() => {});
-          }).catch(() => {});
-        }
+        maybeStartSearchReward(q);
         if (state.tab === 'maps') {
           renderMapsResults(q);
           return;
@@ -4199,6 +4204,67 @@ THIS PROGRAM IS NOT FULLY RELIANT ON GOOGLE'S CSE RESULTS! WE USE MULTIPLE API'S
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    /* ─────────────────────────────────
+       SEARCH REWARDS
+    ───────────────────────────────── */
+    let _srClaimId   = null;
+    let _srCompleted = false;
+    let _srClicked   = false;
+    let _srTimer     = null;
+
+    function showRewardToast(pts) {
+      let el = document.getElementById('sr-toast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'sr-toast';
+        el.className = 'sr-toast';
+        document.body.appendChild(el);
+      }
+      el.textContent = `+${pts} Rewards Points earned from searching`;
+      el.classList.add('show');
+      clearTimeout(el._t);
+      el._t = setTimeout(() => el.classList.remove('show'), 3000);
+    }
+
+    function completeSearchReward() {
+      if (!_srClaimId || _srCompleted) return;
+      _srCompleted = true;
+      const resultCount = resultsArea
+        ? resultsArea.querySelectorAll('.gsc-webResult.gsc-result, .news-result-card, .image-result-item').length
+        : 0;
+      sb360.rpc('complete_search_reward', {
+        p_claim_id: _srClaimId,
+        p_result_count: Math.min(resultCount || 1, 1000),
+        p_result_clicked: _srClicked,
+      }).then(({ data }) => {
+        const row = Array.isArray(data) ? data[0] : data;
+        if (row?.points_awarded > 0) showRewardToast(row.points_awarded);
+      }).catch(() => {});
+    }
+
+    async function maybeStartSearchReward(q) {
+      clearTimeout(_srTimer);
+      _srClaimId   = null;
+      _srCompleted = false;
+      _srClicked   = false;
+      if (!q || q.trim().length < 4) return;
+      try {
+        const { data: { session } } = await sb360.auth.getSession();
+        if (!session?.user) return;
+        const { data: claimId, error } = await sb360.rpc('start_search_reward', { p_query: q });
+        if (error || !claimId) return;
+        _srClaimId = claimId;
+        _srTimer = setTimeout(completeSearchReward, 7000);
+      } catch (_) {}
+    }
+
+    // track result clicks for the reward signal
+    if (resultsArea) {
+      resultsArea.addEventListener('click', e => {
+        if (e.target.closest('a')) _srClicked = true;
+      });
     }
 
     /* ─────────────────────────────────
