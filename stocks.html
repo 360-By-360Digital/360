@@ -35,6 +35,49 @@
   <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
   <div class="overlay" id="overlay"></div>
 
+  <div class="settings-panel" id="settingsPanel">
+    <h3>Appearance</h3>
+    <div class="settings-label">Theme</div>
+    <div class="theme-swatches">
+      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+    </div>
+    <div class="settings-label" style="margin-top:20px;">Mode</div>
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <span style="font-size:14px;">Dark mode</span>
+      <input type="checkbox" id="darkToggle" />
+    </label>
+    <h3 style="margin-top:20px;">Cursor</h3>
+    <div class="settings-label">Style</div>
+    <div class="cursor-options">
+      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+    </div>
+    <div class="settings-label" style="margin-top:20px;">Background</div>
+    <div class="settings-box">
+      <input type="file" id="bgUpload" accept="image/*" class="settings-input" />
+      <input type="text" id="bgUrlInput" placeholder="Paste image URL…" class="settings-input" />
+      <button id="bgUrlBtn" class="settings-btn">Apply URL</button>
+      <button id="bgResetBtn" class="settings-btn">Reset</button>
+    </div>
+    <h3 style="margin-top:25px;">Legal</h3>
+    <a href="/privacypolicy" class="legal-link">Privacy Policy</a>
+    <a href="/tos" class="legal-link">Terms of Service</a>
+    <h3 style="margin-top:25px;">About</h3>
+    <details class="about-dropdown">
+      <summary>What is 360?</summary>
+      <p>360 is a next-generation search engine and digital workspace. Built by 360 Digital, Co.</p>
+    </details>
+  </div>
+
   <div id="auth-popup" class="auth-popup hidden">
     <div class="auth-box">
       <h2>Account</h2>
