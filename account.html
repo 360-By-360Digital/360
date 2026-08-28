@@ -568,6 +568,7 @@
         </div>
         <p class="ac-msg" id="siMsg"></p>
         <button class="ac-btn" id="siBtn">Sign In</button>
+        <p class="ac-switch" style="margin-top:8px;"><a href="#" id="forgotPassLink">Forgot password?</a></p>
         <div class="ac-divider">or continue with</div>
         <div class="ac-oauth">
           <button class="ac-oauth-btn" id="siGithub">
@@ -587,6 +588,7 @@
       document.getElementById('siBtn').onclick      = doSignIn;
       document.getElementById('siGithub').onclick   = ()=>oAuth('github');
       document.getElementById('siGoogle').onclick   = ()=>oAuth('google');
+      document.getElementById('forgotPassLink').onclick = e=>{ e.preventDefault(); history.replaceState(null,'','/account?forgot'); renderForgotPassword(); };
       const siLogin = document.getElementById('siLogin');
       const siPass  = document.getElementById('siPass');
       siLogin.addEventListener('keydown', e=>{ if(e.key==='Enter') siPass.focus(); });
@@ -608,11 +610,157 @@
         emailToUse = prof.email;
       }
       const { error } = await sb.auth.signInWithPassword({ email:emailToUse, password:passVal });
-      if(error){ setMsg(msg,error.message,'err'); btn.disabled=false; btn.textContent='Sign In'; }
-      else {
+      if(error){ setMsg(msg,error.message,'err'); btn.disabled=false; btn.textContent='Sign In'; return; }
+
+      // If this account has 2FA enabled, the session is only aal1 so far —
+      // prompt for the authenticator code before letting them in.
+      const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+      if(aal && aal.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel){
+        renderMfaChallenge();
+        return;
+      }
+
+      sessionStorage.removeItem('360_auth_redirect');
+      setMsg(msg,'Signed in! Redirecting…','ok');
+      setTimeout(()=>location.replace(getBestRedirect()), 600);
+    }
+
+    async function renderMfaChallenge(){
+      const { data: factors, error } = await sb.auth.mfa.listFactors();
+      const factor = (factors?.totp || []).find(f => f.status === 'verified');
+      if(error || !factor){ content.innerHTML = `<p class="ac-msg err">Couldn't load your two-factor setup. Please try signing in again.</p>`; return; }
+      content.innerHTML = `
+        <div class="ac-tabs"><button class="ac-tab active">Two-Factor Code</button></div>
+        <p style="font-size:13px;color:var(--mut);margin-bottom:10px;">Enter the 6-digit code from your authenticator app.</p>
+        <div class="ac-field">
+          <label>Code</label>
+          <input id="mfaChallengeCode" type="text" inputmode="numeric" maxlength="6" placeholder="123456" autofocus />
+        </div>
+        <p class="ac-msg" id="mfaChallengeMsg"></p>
+        <button class="ac-btn" id="mfaChallengeBtn">Verify</button>
+      `;
+      const codeInput = document.getElementById('mfaChallengeCode');
+      const msg = document.getElementById('mfaChallengeMsg');
+      const btn = document.getElementById('mfaChallengeBtn');
+      codeInput.addEventListener('keydown', e => { if(e.key==='Enter') btn.click(); });
+      btn.onclick = async () => {
+        const code = codeInput.value.trim();
+        if(!code){ setMsg(msg,'Enter your 6-digit code.','err'); return; }
+        btn.disabled = true; btn.textContent = 'Verifying…'; setMsg(msg,'','');
+        const { data: challenge, error: chErr } = await sb.auth.mfa.challenge({ factorId: factor.id });
+        if(chErr){ setMsg(msg, chErr.message, 'err'); btn.disabled=false; btn.textContent='Verify'; return; }
+        const { error: verErr } = await sb.auth.mfa.verify({ factorId: factor.id, challengeId: challenge.id, code });
+        if(verErr){ setMsg(msg, verErr.message, 'err'); btn.disabled=false; btn.textContent='Verify'; return; }
         sessionStorage.removeItem('360_auth_redirect');
-        setMsg(msg,'Signed in! Redirecting…','ok');
-        setTimeout(()=>location.replace(getBestRedirect()), 600);
+        setMsg(msg,'Verified! Redirecting…','ok');
+        setTimeout(()=>location.replace(getBestRedirect()), 500);
+      };
+    }
+
+    /* ═══════════════════════════════════════════════
+       FORGOT PASSWORD — reset via email link or SMS code
+    ═══════════════════════════════════════════════ */
+    function renderForgotPassword(){
+      content.innerHTML = `
+        <div class="ac-tabs">
+          <button class="ac-tab active" id="fpTabEmail">Email</button>
+          <button class="ac-tab" id="fpTabPhone">Text Message</button>
+        </div>
+        <div id="fpBody"></div>
+        <p class="ac-switch" style="margin-top:14px;"><a href="#" id="fpBack">← Back to Sign In</a></p>
+      `;
+      document.getElementById('fpBack').onclick = e=>{ e.preventDefault(); history.replaceState(null,'','/account?signin'); renderSignIn(); };
+      document.getElementById('fpTabEmail').onclick = ()=>renderFpEmail();
+      document.getElementById('fpTabPhone').onclick = ()=>renderFpPhone();
+      renderFpEmail();
+
+      function renderFpEmail(){
+        document.getElementById('fpTabEmail').classList.add('active');
+        document.getElementById('fpTabPhone').classList.remove('active');
+        document.getElementById('fpBody').innerHTML = `
+          <div class="ac-field">
+            <label>Email</label>
+            <input id="fpEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+          </div>
+          <p class="ac-msg" id="fpEmailMsg"></p>
+          <button class="ac-btn" id="fpEmailBtn">Send Reset Link</button>
+        `;
+        const email = document.getElementById('fpEmail');
+        const msg   = document.getElementById('fpEmailMsg');
+        const btn   = document.getElementById('fpEmailBtn');
+        email.addEventListener('keydown', e=>{ if(e.key==='Enter') btn.click(); });
+        btn.onclick = async ()=>{
+          const val = email.value.trim();
+          if(!val){ setMsg(msg,'Enter your email address.','err'); return; }
+          btn.disabled = true; btn.textContent = 'Sending…'; setMsg(msg,'','');
+          const { error } = await sb.auth.resetPasswordForEmail(val, {
+            redirectTo: window.location.origin + '/reset-password'
+          });
+          btn.disabled = false; btn.textContent = 'Send Reset Link';
+          // Always show a generic success message (avoids leaking which emails exist)
+          if(error && error.status && error.status !== 400) { setMsg(msg, error.message, 'err'); return; }
+          setMsg(msg, "If that email has an account, we've sent a password reset link.", 'ok');
+        };
+      }
+
+      function renderFpPhone(){
+        document.getElementById('fpTabPhone').classList.add('active');
+        document.getElementById('fpTabEmail').classList.remove('active');
+        document.getElementById('fpBody').innerHTML = `
+          <div class="ac-field">
+            <label>Phone Number</label>
+            <input id="fpPhone" type="tel" placeholder="+1 555 123 4567" autocomplete="tel" />
+          </div>
+          <p class="ac-msg" id="fpPhoneMsg"></p>
+          <button class="ac-btn" id="fpPhoneBtn">Send Code</button>
+          <div class="ac-field" id="fpCodeField" style="display:none;margin-top:12px;">
+            <label>6-digit code</label>
+            <input id="fpCode" type="text" inputmode="numeric" maxlength="6" placeholder="123456" />
+          </div>
+          <div class="ac-field" id="fpNewPassField" style="display:none;">
+            <label>New Password</label>
+            <input id="fpNewPass" type="password" placeholder="Min. 6 characters" autocomplete="new-password" />
+          </div>
+          <button class="ac-btn" id="fpCodeBtn" style="display:none;">Verify &amp; Set New Password</button>
+        `;
+        const phone = document.getElementById('fpPhone');
+        const msg   = document.getElementById('fpPhoneMsg');
+        const sendBtn = document.getElementById('fpPhoneBtn');
+        const codeField = document.getElementById('fpCodeField');
+        const passField = document.getElementById('fpNewPassField');
+        const code = document.getElementById('fpCode');
+        const newPass = document.getElementById('fpNewPass');
+        const verifyBtn = document.getElementById('fpCodeBtn');
+
+        sendBtn.onclick = async ()=>{
+          const val = phone.value.trim();
+          if(!val){ setMsg(msg,'Enter your phone number, e.g. +15551234567.','err'); return; }
+          sendBtn.disabled = true; sendBtn.textContent = 'Sending…'; setMsg(msg,'','');
+          // shouldCreateUser:false — this must be an existing account, not a signup
+          const { error } = await sb.auth.signInWithOtp({ phone: val, options:{ shouldCreateUser:false } });
+          sendBtn.disabled = false; sendBtn.textContent = 'Resend Code';
+          if(error){ setMsg(msg, error.message, 'err'); return; }
+          setMsg(msg, 'Code sent via text message.', 'ok');
+          codeField.style.display='block'; passField.style.display='block'; verifyBtn.style.display='block';
+        };
+
+        verifyBtn.onclick = async ()=>{
+          const codeVal = code.value.trim();
+          const passVal = newPass.value;
+          if(!codeVal){ setMsg(msg,'Enter the code you received.','err'); return; }
+          if(!passVal || passVal.length < 6){ setMsg(msg,'New password must be at least 6 characters.','err'); return; }
+          verifyBtn.disabled = true; verifyBtn.textContent = 'Verifying…'; setMsg(msg,'','');
+          // Verifying the SMS OTP signs the user in (proves phone ownership),
+          // which lets us then set a new password on that authenticated session.
+          const { error: verifyErr } = await sb.auth.verifyOtp({ phone: phone.value.trim(), token: codeVal, type: 'sms' });
+          if(verifyErr){ setMsg(msg, verifyErr.message, 'err'); verifyBtn.disabled=false; verifyBtn.textContent='Verify & Set New Password'; return; }
+          const { error: updateErr } = await sb.auth.updateUser({ password: passVal });
+          verifyBtn.disabled = false; verifyBtn.textContent = 'Verify & Set New Password';
+          if(updateErr){ setMsg(msg, updateErr.message, 'err'); return; }
+          setMsg(msg, 'Password updated! Redirecting…', 'ok');
+          sessionStorage.removeItem('360_auth_redirect');
+          setTimeout(()=>location.replace(getBestRedirect()), 900);
+        };
       }
     }
 
@@ -951,11 +1099,25 @@
           </div>
           <button class="ac-sec-btn" id="verifyPhoneOtp" style="display:none;">Verify</button>
           <p class="ac-msg" id="phoneMsg"></p>
+          <div style="margin-top:20px;text-align:left;border-top:1px solid var(--br);padding-top:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+              <div>
+                <div style="font-weight:700;font-size:14px;">Two-Factor Authentication</div>
+                <div style="font-size:12px;color:var(--mut);" id="mfaStatusLabel">Checking…</div>
+              </div>
+              <label class="bob-toggle-row" style="margin:0;">
+                <input type="checkbox" id="mfaToggle" style="width:18px;height:18px;" disabled />
+              </label>
+            </div>
+            <div id="mfaEnrollBody" style="display:none;margin-top:14px;"></div>
+            <p class="ac-msg" id="mfaMsg"></p>
+          </div>
           <button class="ac-sec-btn" onclick="window.location.href='/';">← Back to 360</button>
           <button class="ac-sec-btn ac-signout-btn" id="pgSignOut">Sign Out</button>
         </div>
       `;
       document.getElementById('editProfileBtn').onclick = ()=>renderCompleteProfile(user, profile, true);
+      initMfaSection();
       document.getElementById('pgSignOut').onclick = async()=>{
         const b=document.getElementById('pgSignOut'); b.textContent='Signing out…'; b.disabled=true;
         await sb.auth.signOut();
@@ -977,6 +1139,91 @@
         if(error){ setMsg(phoneMsg,error.message,'err'); return; }
         setMsg(phoneMsg,'Phone verified! ✓','ok'); verifyBtn.style.display='none';
       };
+    }
+
+    /* ─── Two-Factor Authentication (TOTP via Supabase MFA) ─── */
+    async function initMfaSection(){
+      const toggle = document.getElementById('mfaToggle');
+      const statusLabel = document.getElementById('mfaStatusLabel');
+      const enrollBody = document.getElementById('mfaEnrollBody');
+      const mfaMsg = document.getElementById('mfaMsg');
+      if(!toggle) return;
+
+      async function refreshFactors(){
+        const { data, error } = await sb.auth.mfa.listFactors();
+        if(error){ setMsg(mfaMsg, error.message, 'err'); toggle.disabled = true; return null; }
+        return (data?.totp || []).find(f => f.status === 'verified') || null;
+      }
+
+      let activeFactor = await refreshFactors();
+      toggle.disabled = false;
+      toggle.checked = !!activeFactor;
+      statusLabel.textContent = activeFactor ? 'Enabled — your account requires a code at sign-in.' : 'Disabled — add an authenticator app for extra security.';
+
+      toggle.onchange = async () => {
+        setMsg(mfaMsg, '', '');
+        if(toggle.checked && !activeFactor){
+          toggle.checked = false; // stays off until enrollment is confirmed
+          toggle.disabled = true;
+          const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp' });
+          toggle.disabled = false;
+          if(error){ setMsg(mfaMsg, error.message, 'err'); return; }
+          renderEnroll(data);
+        } else if(!toggle.checked && activeFactor){
+          toggle.checked = true; // stays on until user confirms
+          const factorId = activeFactor.id;
+          if(!confirm('Turn off two-factor authentication for your account?')) { toggle.checked = true; return; }
+          toggle.disabled = true;
+          const { error } = await sb.auth.mfa.unenroll({ factorId });
+          toggle.disabled = false;
+          if(error){ setMsg(mfaMsg, error.message, 'err'); toggle.checked = true; return; }
+          activeFactor = null;
+          toggle.checked = false;
+          statusLabel.textContent = 'Disabled — add an authenticator app for extra security.';
+          setMsg(mfaMsg, 'Two-factor authentication turned off.', 'ok');
+        }
+      };
+
+      function renderEnroll(factor){
+        enrollBody.style.display = 'block';
+        enrollBody.innerHTML = `
+          <p style="font-size:12px;color:var(--mut);margin-bottom:8px;">Scan this QR code with an authenticator app (Google Authenticator, Authy, 1Password, etc.), then enter the 6-digit code it shows.</p>
+          <img src="${factor.totp.qr_code}" alt="2FA QR code" style="width:160px;height:160px;border-radius:10px;background:#fff;padding:6px;" />
+          <div class="ac-field" style="margin-top:10px;">
+            <label>Can't scan? Enter this key manually</label>
+            <input type="text" readonly value="${esc(factor.totp.secret)}" onclick="this.select()" />
+          </div>
+          <div class="ac-field">
+            <label>6-digit code</label>
+            <input id="mfaCode" type="text" inputmode="numeric" maxlength="6" placeholder="123456" />
+          </div>
+          <button class="ac-sec-btn" id="mfaConfirmBtn">Confirm & Enable</button>
+          <button class="ac-sec-btn" id="mfaCancelBtn" style="background:transparent;">Cancel</button>
+        `;
+        document.getElementById('mfaCancelBtn').onclick = async () => {
+          await sb.auth.mfa.unenroll({ factorId: factor.id }); // discard the unconfirmed factor
+          enrollBody.style.display = 'none';
+          enrollBody.innerHTML = '';
+          setMsg(mfaMsg, '', '');
+        };
+        document.getElementById('mfaConfirmBtn').onclick = async () => {
+          const code = document.getElementById('mfaCode').value.trim();
+          if(!code){ setMsg(mfaMsg, 'Enter the code from your authenticator app.', 'err'); return; }
+          const btn = document.getElementById('mfaConfirmBtn');
+          btn.disabled = true; btn.textContent = 'Verifying…';
+          const { data: challenge, error: chErr } = await sb.auth.mfa.challenge({ factorId: factor.id });
+          if(chErr){ setMsg(mfaMsg, chErr.message, 'err'); btn.disabled=false; btn.textContent='Confirm & Enable'; return; }
+          const { error: verErr } = await sb.auth.mfa.verify({ factorId: factor.id, challengeId: challenge.id, code });
+          btn.disabled = false; btn.textContent = 'Confirm & Enable';
+          if(verErr){ setMsg(mfaMsg, verErr.message, 'err'); return; }
+          activeFactor = factor;
+          toggle.checked = true;
+          statusLabel.textContent = 'Enabled — your account requires a code at sign-in.';
+          enrollBody.style.display = 'none';
+          enrollBody.innerHTML = '';
+          setMsg(mfaMsg, 'Two-factor authentication enabled!', 'ok');
+        };
+      }
     }
 
     function showLogout(){
@@ -1003,6 +1250,11 @@
 
       const { data:{session} } = await sb.auth.getSession();
       if(session){
+        const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+        if(aal && aal.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel){
+          renderMfaChallenge();
+          return;
+        }
         if(_signInBtn)  _signInBtn.style.display='none';
         if(_signUpBtn)  _signUpBtn.style.display='none';
         if(_signOutBtn) _signOutBtn.style.display='inline-block';
@@ -1026,6 +1278,7 @@
         if(_signUpBtn)  _signUpBtn.style.display='inline-block';
         if(_signOutBtn) _signOutBtn.style.display='none';
         if(param==='signup') renderSignUp();
+        else if(param==='forgot') renderForgotPassword();
         else renderSignIn();
       }
 
