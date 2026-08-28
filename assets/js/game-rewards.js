@@ -11,7 +11,34 @@
 
   const GAME_SLUG = decodeURIComponent(path.split('/').pop().replace(/\.html$/i, ''));
   const SUPABASE_URL = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dncGZzamlvd3lxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
+
+  function showToast(msg) {
+    let el = document.getElementById('gr-toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'gr-toast';
+      Object.assign(el.style, {
+        position: 'fixed', bottom: '24px', left: '50%',
+        transform: 'translateX(-50%) translateY(12px)',
+        background: 'rgba(17,20,29,.93)', color: '#fff',
+        padding: '9px 18px', borderRadius: '999px',
+        fontSize: '13px', zIndex: '99999',
+        opacity: '0', pointerEvents: 'none',
+        transition: 'opacity .2s, transform .2s',
+        whiteSpace: 'nowrap',
+      });
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.opacity = '1';
+    el.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(-50%) translateY(12px)';
+    }, 3500);
+  }
 
   function boot() {
     if (!window.supabase?.createClient) return;
@@ -53,9 +80,7 @@
         if (!error && data) {
           const row = Array.isArray(data) ? data[0] : data;
           if (row && Number(row.points_awarded) > 0) {
-            try {
-              sessionStorage.setItem('360_reward_notice', `+${Number(row.points_awarded).toLocaleString()} Rewards Points earned in ${GAME_SLUG}.`);
-            } catch (_) {}
+            showToast(`+${Number(row.points_awarded).toLocaleString()} Rewards Points earned`);
           }
         }
       } catch (_) {}
