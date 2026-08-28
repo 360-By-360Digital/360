@@ -3,7 +3,7 @@
    ============================================================ */
 
 .stocks-shell {
-  margin-left: var(--sidebar-w, 240px);
+  margin: 0 auto;
   min-height: 100vh;
   padding: 32px 40px 80px;
   max-width: 1200px;
