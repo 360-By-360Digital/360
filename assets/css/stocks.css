@@ -55,7 +55,7 @@ body.dark .stocks-title { color: var(--txtd); }
   transition: border-color .15s;
 }
 
-body.dark .stocks-search input { background: #0b0b12; color: var(--txtd); }
+body.dark .stocks-search input { background: rgba(15,23,42,.7); color: var(--txtd); }
 .stocks-search input:focus { border-color: var(--accent); }
 
 .stocks-search-results {
@@ -72,7 +72,7 @@ body.dark .stocks-search input { background: #0b0b12; color: var(--txtd); }
   display: none;
 }
 
-body.dark .stocks-search-results { background: #0e0e17; }
+body.dark .stocks-search-results { background: rgba(15,23,42,.98); }
 .stocks-search-results.open { display: block; }
 
 .stocks-search-result {
@@ -144,7 +144,7 @@ body.dark .watchlist-chip { color: var(--txtd); }
   padding: 20px;
 }
 
-body.dark .s-card { background: #0b0b12; }
+body.dark .s-card { background: rgba(15,23,42,.7); }
 
 .s-quote-top {
   display: flex;
