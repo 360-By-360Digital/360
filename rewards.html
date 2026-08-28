@@ -259,86 +259,6 @@
       opacity: .85;
     }
 
-    .games-earn-section {
-      margin-top: 32px;
-    }
-
-    .games-earn-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      flex-wrap: wrap;
-      margin-bottom: 4px;
-    }
-
-    .game-search-input {
-      flex: 1;
-      min-width: 180px;
-      max-width: 280px;
-      padding: 8px 13px;
-      border-radius: 8px;
-      border: 1px solid var(--br);
-      background: rgba(255,255,255,.7);
-      color: var(--txt);
-      font-size: 13px;
-      outline: none;
-      transition: border-color .18s, box-shadow .18s;
-    }
-    body.dark .game-search-input {
-      background: rgba(255,255,255,.06);
-      color: var(--txtd);
-      border-color: rgba(255,255,255,.12);
-    }
-    .game-search-input:focus {
-      border-color: var(--a);
-      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
-    }
-
-    .earn-games-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 14px;
-    }
-
-    .earn-game-card {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding: 16px 18px;
-      border: 1px solid var(--br);
-      border-radius: 12px;
-      background: rgba(255,255,255,.45);
-      text-decoration: none;
-      color: inherit;
-      transition: border-color .18s, background .18s, transform .15s;
-    }
-    body.dark .earn-game-card {
-      background: rgba(15,23,42,.55);
-    }
-    .earn-game-card:hover {
-      border-color: var(--a);
-      background: rgba(59,130,246,.07);
-      transform: translateY(-2px);
-    }
-    .earn-game-card .egc-title {
-      font-size: 14px;
-      font-weight: 700;
-    }
-    .earn-game-card .egc-desc {
-      font-size: 12px;
-      opacity: .7;
-      line-height: 1.4;
-    }
-    .earn-game-card .egc-badge {
-      font-size: 11px;
-      font-weight: 700;
-      background: linear-gradient(110deg, var(--a), var(--a2));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      margin-top: 2px;
-    }
   </style>
 </head>
 <body>
@@ -469,7 +389,7 @@
         <div class="earn-card">
           <div class="earn-icon">▦</div>
           <div class="earn-title">Games</div>
-          <div class="earn-desc">Play any 360 game below — points are earned automatically based on your active playtime.</div>
+          <div class="earn-desc">Play supported 360 games and earn points through eligible activity.</div>
           <div class="earn-rate">Currently available</div>
           <button type="button" id="randomGameBtn" class="earn-play-btn">Play a Random Game</button>
         </div>
@@ -477,8 +397,9 @@
         <div class="earn-card">
           <div class="earn-icon">⌕</div>
           <div class="earn-title">Search for Points</div>
-          <div class="earn-desc">Search, discover, and earn Rewards Points through 360 Search.</div>
-          <div class="earn-rate">Coming soon</div>
+          <div class="earn-desc">Search on 360 and earn Rewards Points for every eligible search you run.</div>
+          <div class="earn-rate">Currently available</div>
+          <a class="earn-play-btn" href="/search">Search Now</a>
         </div>
 
         <div class="earn-card">
@@ -488,24 +409,6 @@
           <div class="earn-rate">Coming soon</div>
         </div>
       </div>
-
-      <div class="games-earn-section">
-        <div class="games-earn-header">
-          <h3 style="margin:0;">Games</h3>
-          <input
-            type="search"
-            id="gameSearch"
-            class="game-search-input"
-            placeholder="Search games…"
-            autocomplete="off"
-          />
-        </div>
-        <p style="opacity:.7;font-size:13px;margin:4px 0 16px;">All games below award Rewards Points. Play any of them while signed in to start earning.</p>
-        <div class="earn-games-grid" id="earnGamesGrid"></div>
-        <p class="games-no-results" id="gamesNoResults" style="display:none;opacity:.6;font-size:14px;">No games match your search.</p>
-      </div>
-
-      <div class="coming-soon"><strong>SEARCH FOR POINTS COMING SOON</strong> — 360 Search will be another way to earn Rewards Points.</div>
     </div>
 
     <div class="rewards-tab-panel" id="tab-membership" style="display:none;">
@@ -607,50 +510,6 @@
         randomGameBtn.disabled = false;
         randomGameBtn.textContent = 'Play a Random Game';
       }
-    }
-
-    // Game list for the earn tab
-    const GAMES = [
-      { title: 'Space Glider',                      desc: 'Navigate through space — dodge obstacles and survive.',           href: '../games/spaceGlider.html' },
-      { title: 'NYC Dream: The American Hustle',    desc: 'Start broke in NYC and dominate the revenue leaderboard.',       href: '../games/nyc_dream.html' },
-      { title: 'StarBlasted',                       desc: 'As easy as blasting stars.',                                     href: '../games/StarBlasted.html' },
-      { title: "Dan's Starfall RNG",                desc: '"What if gambling was rated E?"',                                href: '../games/starfallrng.html' },
-      { title: 'Starfall RNG Ultimate',             desc: '"What if gambling was rated E?"',                                href: '../games/starfallrngultimate.html' },
-      { title: 'STARFALL Ω',                        desc: 'The Omega edition of Starfall RNG.',                             href: '../games/STARFALL_%CE%A9jar.html' },
-      { title: 'CQB SIM',                           desc: 'Simulate as a guy in the CQB. Rated M+.',                        href: '../games/CQBSIM.html' },
-      { title: 'Penguin Knockout',                  desc: 'Based on the Roblox game Knockout.',                             href: '../games/PenguinKnockout.html' },
-      { title: 'Unwanted Problems',                 desc: 'Truly Unwanted!',                                                href: '../games/UnwantedProblems.html' },
-      { title: 'Blitz TD',                          desc: 'Tower defense made by Dan.',                                     href: '../games/BlitzTowerDefense.html' },
-      { title: 'Nightfall RNG',                     desc: 'Newer version of Starfall RNG.',                                 href: '../games/NightfallRNG.html' },
-      { title: '360 Fish',                          desc: 'Cast your line and see what you reel in.',                       href: '../games/360Fish.html' },
-      { title: 'Angel RNG',                         desc: 'Roll for your angel.',                                           href: '../games/angelrng.html' },
-      { title: 'Block Blast',                       desc: 'Drop and clear blocks to score.',                                href: '../games/BlockBlast.html' },
-      { title: 'Epoch Era',                         desc: 'Rewind time, freeze enemies, and survive.',                     href: '../games/epochera.html' },
-      { title: 'JJK RNG',                           desc: 'Roll for Jujutsu Kaisen abilities.',                             href: '../games/jjkrng.html' },
-      { title: 'Minesweeper',                       desc: 'Classic minesweeper.',                                           href: '../games/minesweeper.html' },
-      { title: 'Untitled Monster Fighter',          desc: 'Fight monsters in this untitled brawler.',                       href: '../games/untitledMonsterFighter.html' },
-    ];
-
-    const earnGrid = document.getElementById('earnGamesGrid');
-    const noResults = document.getElementById('gamesNoResults');
-    const gameSearchInput = document.getElementById('gameSearch');
-
-    function renderGames(filter) {
-      const q = (filter || '').trim().toLowerCase();
-      const visible = q ? GAMES.filter(g => g.title.toLowerCase().includes(q) || g.desc.toLowerCase().includes(q)) : GAMES;
-      earnGrid.innerHTML = visible.map(g => `
-        <a class="earn-game-card" href="${g.href}">
-          <div class="egc-title">${g.title}</div>
-          <div class="egc-desc">${g.desc}</div>
-          <div class="egc-badge">Earns Rewards Points</div>
-        </a>
-      `).join('');
-      noResults.style.display = visible.length ? 'none' : '';
-    }
-
-    renderGames('');
-    if (gameSearchInput) {
-      gameSearchInput.addEventListener('input', () => renderGames(gameSearchInput.value));
     }
 
     if (randomGameBtn) randomGameBtn.addEventListener('click', playRandomGame);
