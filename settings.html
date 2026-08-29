@@ -106,6 +106,50 @@
       flex-shrink: 0;
     }
 
+    /* BOLD FONT */
+    body.bold-font,
+    body.bold-font * {
+      font-weight: 700 !important;
+    }
+
+    .credits-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .credit-role {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--mut);
+      margin-bottom: 4px;
+    }
+
+    .credit-name {
+      color: var(--txt);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .credit-name:hover {
+      color: var(--a,#3b82f6);
+      text-decoration: underline;
+    }
+
+    .credit-alias {
+      color: var(--mut);
+      font-size: 12px;
+    }
+
+    .credits-divider {
+      height: 1px;
+      background: var(--br);
+      margin: 2px 0;
+    }
+
     /* PAGE LAYOUT */
     .page-wrap {
       display: flex;
@@ -592,6 +636,13 @@
             </div>
             <button class="st-toggle" id="darkModeToggle"></button>
           </div>
+          <div class="st-row">
+            <div>
+              <div class="st-row-label">Bold Font</div>
+              <div class="st-row-sub">Make text across 360 use a bold weight.</div>
+            </div>
+            <button class="st-toggle" id="boldFontToggle" aria-label="Toggle bold font"></button>
+          </div>
         </div>
 
         <!-- Cursor -->
@@ -689,6 +740,28 @@
             360 is a next-generation search engine and digital workspace — search, chat, translate, weather, stocks, and AI all in one place.
             <br><br>
             <span style="color:var(--mut);font-size:12px;">Built by 360 Digital, Co.</span>
+          </div>
+        </div>
+        <div class="st-card">
+          <div class="st-card-title">Credits</div>
+          <div class="credits-list">
+            <div>
+              <div class="credit-role">Lead Developers &amp; Founders</div>
+              <a class="credit-name" href="https://github.com/Zakii360" target="_blank" rel="noopener noreferrer">Zakii360</a><br>
+              <a class="credit-name" href="https://github.com/mingzew2" target="_blank" rel="noopener noreferrer">mingzew2</a>
+              <span class="credit-alias">(also known as <a class="credit-name" href="https://github.com/MingzeMC" target="_blank" rel="noopener noreferrer">MingzeMC</a>)</span>
+            </div>
+            <div class="credits-divider"></div>
+            <div>
+              <div class="credit-role">Analytics Advisor &amp; Feature Designer</div>
+              <a class="credit-name" href="https://github.com/GreatesSoup" target="_blank" rel="noopener noreferrer">GreatesSoup</a>
+            </div>
+            <div class="credits-divider"></div>
+            <div>
+              <div class="credit-role">Lead Games Developer</div>
+              <a class="credit-name" href="https://github.com/UntitledAngel" target="_blank" rel="noopener noreferrer">UntitledAngel</a>
+              <span class="credit-alias">(also known as <a class="credit-name" href="https://github.com/TheAngelV1" target="_blank" rel="noopener noreferrer">TheAngelV1</a>)</span>
+            </div>
           </div>
         </div>
       </div>
@@ -925,6 +998,22 @@
   const savedTheme = localStorage.getItem('360_theme') || 'ocean';
   const activeSwatch = document.querySelector(`#themeGrid .st-swatch[data-theme="${savedTheme}"]`);
   if (activeSwatch) activeSwatch.classList.add('active');
+
+  // Bold Font
+  const boldFontToggle = document.getElementById('boldFontToggle');
+  function syncBoldFont() {
+    const enabled = localStorage.getItem('360_bold_font') === 'true';
+    document.body.classList.toggle('bold-font', enabled);
+    if (boldFontToggle) boldFontToggle.classList.toggle('on', enabled);
+  }
+  syncBoldFont();
+  if (boldFontToggle) {
+    boldFontToggle.addEventListener('click', () => {
+      const enabled = localStorage.getItem('360_bold_font') !== 'true';
+      localStorage.setItem('360_bold_font', String(enabled));
+      syncBoldFont();
+    });
+  }
 
   // Cursor style
   document.querySelectorAll('#cursorGrid .st-cursor-opt').forEach(opt => {
