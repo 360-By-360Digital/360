@@ -11,6 +11,16 @@
 //CHANGE THE FOLLOWING TO CHANGE ALL THE PAGE'S VERSION!!
 const version = "3.6.0";
 
+// Apply the site-wide bold font preference before the rest of the page initializes.
+(function applyBoldFontPreference() {
+  try {
+    if (localStorage.getItem("360_bold_font") === "true") {
+      document.documentElement.classList.add("bold-font-preference");
+      document.addEventListener("DOMContentLoaded", () => document.body.classList.add("bold-font"), { once: true });
+    }
+  } catch (e) {}
+})();
+
 //EDIT THE FOLLOWING TO CHANGE THE POPUP SETTINGS!
 const popupConfig = {
   enabled: true,
