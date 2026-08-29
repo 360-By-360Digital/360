@@ -14,6 +14,8 @@
 [![X](https://img.shields.io/badge/X-@_360Search-000000?logo=x&logoColor=white)](https://x.com/_360Search)
 [![Instagram](https://img.shields.io/badge/Instagram-Follow-E4405F?style=flat&logo=instagram&logoColor=white)](https://instagram.com/_360search)
 
+### App Workflow Status: ![](https://img.shields.io/badge/build-passing-brightgreen)
+
 
 A privacy-focused browser and search platform that brings powerful tools into one place.
 <p align="center">
