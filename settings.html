@@ -389,14 +389,6 @@
 
   <!-- Hidden settings panel so main.js hooks work (theme, dark, cursor, bg, temp, bob) -->
   <div class="settings-panel" id="settingsPanel" style="display:none !important; visibility:hidden; position:absolute; pointer-events:none;">
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div></div>
-    </div>
     <input type="checkbox" id="darkToggle" />
     <div class="temp-unit-box">
       <span id="tempUnitLabel">°C</span>
@@ -598,13 +590,13 @@
         <!-- Theme -->
         <div class="st-card">
           <div class="st-card-title">Theme</div>
-          <div class="st-theme-grid" id="themeGrid">
-            <div class="st-theme-opt"><div class="st-swatch" data-theme="ocean"></div><span>Ocean</span></div>
-            <div class="st-theme-opt"><div class="st-swatch" data-theme="midnight"></div><span>Midnight</span></div>
-            <div class="st-theme-opt"><div class="st-swatch" data-theme="sunset"></div><span>Sunset</span></div>
-            <div class="st-theme-opt"><div class="st-swatch" data-theme="mint"></div><span>Mint</span></div>
-            <div class="st-theme-opt"><div class="st-swatch" data-theme="neon"></div><span>Neon</span></div>
-            <div class="st-theme-opt"><div class="st-swatch" data-theme="mono"></div><span>Mono</span></div>
+          <div class="theme-swatches" id="themeGrid">
+            <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+            <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+            <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+            <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+            <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+            <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
           </div>
           <div class="st-row" style="margin-top:16px;">
             <div>
@@ -683,6 +675,20 @@
               <div class="bob-toggle-sub">Animated stick figure that reacts to your search typing.</div>
             </div>
             <button class="st-toggle" id="visBobToggle"></button>
+          </div>
+        </div>
+
+        <!-- 360 Wide -->
+        <div class="st-card" id="settingsWideCard">
+          <div class="st-card-title">360 Wide Mode</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;">
+            <div>
+              <div style="font-size:14px;font-weight:500;">Enable 360 Wide</div>
+              <div style="font-size:12px;color:var(--mut);margin-top:2px;">
+                Deep glassmorphism across every UI surface. Replaces 360 Gallium when on.
+              </div>
+            </div>
+            <button class="st-toggle" id="settingsWideToggle"></button>
           </div>
         </div>
 
@@ -953,70 +959,124 @@
   }
 
   // ────────────────────────────────────────
-  // SECURITY — Two-Factor Authentication (TOTP)
+  // SECURITY — Two-Factor Authentication
+  // (Authenticator App / Phone / Alternative Email)
   // ────────────────────────────────────────
   async function initMfaSection() {
     const toggle = document.getElementById('secMfaToggle');
     const statusLabel = document.getElementById('secMfaStatus');
-    const enrollBody = document.getElementById('secMfaEnrollBody');
+    const flowBody = document.getElementById('secMfaEnrollBody');
     const mfaMsg = document.getElementById('secMfaMsg');
 
     async function refreshFactors() {
       const { data, error } = await sb.auth.mfa.listFactors();
       if (error) { setMsg(mfaMsg, error.message, 'err'); return null; }
-      return (data?.totp || []).find(f => f.status === 'verified') || null;
+      const all = [...(data?.totp || []), ...(data?.phone || [])];
+      return all.find(f => f.status === 'verified') || null;
     }
 
     let activeFactor = await refreshFactors();
     toggle.disabled = false;
     toggle.classList.toggle('on', !!activeFactor);
-    statusLabel.textContent = activeFactor
-      ? 'Enabled — your account requires a code at sign-in.'
-      : 'Disabled — add an authenticator app for extra security.';
+    updateStatus();
     syncPhoneCardVisibility(!!activeFactor);
+
+    function updateStatus(){
+      statusLabel.textContent = activeFactor
+        ? `Enabled via ${activeFactor.factor_type === 'phone' ? 'phone' : 'authenticator app'} — your account requires a code at sign-in.`
+        : 'Disabled — add a verification method for extra security.';
+    }
 
     function syncPhoneCardVisibility(on) {
       const card = document.getElementById('phoneVerifyCard');
       if (card) card.style.display = on ? 'block' : 'none';
     }
 
-    toggle.onclick = async () => {
-      setMsg(mfaMsg, '', '');
-      const turningOn = !toggle.classList.contains('on');
-
-      if (turningOn && !activeFactor) {
-        toggle.disabled = true;
-        // Clean up any stale/unverified factor left over from a previous
-        // incomplete attempt — Supabase rejects a new enroll otherwise with
-        // "A factor with the friendly name ... already exists."
-        const { data: existing } = await sb.auth.mfa.listFactors();
-        const stale = (existing?.totp || []).filter(f => f.status !== 'verified');
-        for (const f of stale) { await sb.auth.mfa.unenroll({ factorId: f.id }); }
-
-        const { data, error } = await sb.auth.mfa.enroll({
-          factorType: 'totp',
-          friendlyName: `authenticator-${Date.now()}`
-        });
-        toggle.disabled = false;
-        if (error) { setMsg(mfaMsg, error.message, 'err'); return; }
-        renderEnroll(data);
-      } else if (!turningOn && activeFactor) {
-        if (!confirm('Turn off two-factor authentication for your account?')) return;
-        toggle.disabled = true;
+    // Inline confirmation instead of window.confirm() — confirm() can be
+    // silently blocked in some embedded/sandboxed webviews, which is why
+    // turning 2FA back off could appear to do nothing.
+    function renderTurnOffConfirm() {
+      flowBody.style.display = 'block';
+      flowBody.innerHTML = `
+        <div style="font-size:13px;margin-bottom:10px;">Turn off two-factor authentication for your account?</div>
+        <div style="display:flex;gap:8px;">
+          <button class="st-btn danger" id="secMfaOffConfirm">Yes, turn off</button>
+          <button class="st-btn" id="secMfaOffCancel">Cancel</button>
+        </div>
+      `;
+      document.getElementById('secMfaOffCancel').onclick = () => {
+        flowBody.style.display = 'none';
+        flowBody.innerHTML = '';
+      };
+      document.getElementById('secMfaOffConfirm').onclick = async () => {
+        const btn = document.getElementById('secMfaOffConfirm');
+        btn.disabled = true; btn.textContent = 'Turning off…';
         const { error } = await sb.auth.mfa.unenroll({ factorId: activeFactor.id });
-        toggle.disabled = false;
-        if (error) { setMsg(mfaMsg, error.message, 'err'); return; }
+        if (error) { setMsg(mfaMsg, error.message, 'err'); btn.disabled = false; btn.textContent = 'Yes, turn off'; return; }
         activeFactor = null;
         toggle.classList.remove('on');
-        statusLabel.textContent = 'Disabled — add an authenticator app for extra security.';
+        updateStatus();
+        flowBody.style.display = 'none';
+        flowBody.innerHTML = '';
         setMsg(mfaMsg, 'Two-factor authentication turned off.', 'ok');
         syncPhoneCardVisibility(false);
+      };
+    }
+
+    toggle.onclick = () => {
+      setMsg(mfaMsg, '', '');
+      const turningOn = !toggle.classList.contains('on');
+      if (turningOn && !activeFactor) {
+        renderMethodSelect();
+      } else if (!turningOn && activeFactor) {
+        renderTurnOffConfirm();
       }
     };
 
-    function renderEnroll(factor) {
-      enrollBody.style.display = 'block';
-      enrollBody.innerHTML = `
+    // ── Method selection screen ──
+    function renderMethodSelect() {
+      flowBody.style.display = 'block';
+      flowBody.innerHTML = `
+        <div class="st-row-sub" style="margin-bottom:10px;">Choose how you'd like to verify it's you at sign-in.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button class="st-btn" id="mfaPickTotp" style="justify-content:flex-start;text-align:left;">📱 &nbsp;Authenticator App</button>
+          <button class="st-btn" id="mfaPickPhone" style="justify-content:flex-start;text-align:left;">💬 &nbsp;Phone Number</button>
+          <button class="st-btn" id="mfaPickEmail" style="justify-content:flex-start;text-align:left;">✉️ &nbsp;Alternative Email</button>
+        </div>
+      `;
+      document.getElementById('mfaPickTotp').onclick = () => renderTotpEnroll();
+      document.getElementById('mfaPickPhone').onclick = () => renderPhoneEnroll();
+      document.getElementById('mfaPickEmail').onclick = () => renderAltEmail();
+    }
+
+    function backButton(onClick) {
+      return `<button class="st-btn" id="mfaBackBtn" style="margin-top:10px;">← Back</button>`;
+    }
+    function wireBack(cleanupFn) {
+      document.getElementById('mfaBackBtn').onclick = async () => {
+        if (cleanupFn) await cleanupFn();
+        renderMethodSelect();
+      };
+    }
+
+    // ── Authenticator App (TOTP) ──
+    async function renderTotpEnroll() {
+      flowBody.innerHTML = `<div class="st-row-sub">Setting up authenticator app…</div>`;
+
+      // Clean up any stale/unverified factor left over from a previous
+      // incomplete attempt — Supabase rejects a new enroll otherwise with
+      // "A factor with the friendly name ... already exists."
+      const { data: existing } = await sb.auth.mfa.listFactors();
+      const stale = [...(existing?.totp || []), ...(existing?.phone || [])].filter(f => f.status !== 'verified');
+      for (const f of stale) { await sb.auth.mfa.unenroll({ factorId: f.id }); }
+
+      const { data, error } = await sb.auth.mfa.enroll({
+        factorType: 'totp',
+        friendlyName: `authenticator-${Date.now()}`
+      });
+      if (error) { setMsg(mfaMsg, error.message, 'err'); renderMethodSelect(); return; }
+
+      flowBody.innerHTML = `
         <p style="font-size:12px;color:var(--mut);margin-bottom:8px;">Scan this QR code with an authenticator app (Google Authenticator, Authy, 1Password, etc.), then enter the 6-digit code it shows.</p>
         <img id="secMfaQr" alt="2FA QR code" style="width:160px;height:160px;border-radius:10px;background:#fff;padding:6px;" />
         <div style="margin-top:10px;">
@@ -1028,37 +1088,125 @@
         </div>
         <div style="display:flex;gap:8px;margin-top:10px;">
           <button class="st-btn primary" id="secMfaConfirmBtn">Confirm & Enable</button>
-          <button class="st-btn" id="secMfaCancelBtn">Cancel</button>
         </div>
+        ${backButton()}
       `;
       // Set via properties, not string interpolation — the QR data URI and
       // secret can contain characters (quotes, etc.) that break template-string HTML.
-      document.getElementById('secMfaQr').src = factor.totp.qr_code;
-      document.getElementById('secMfaSecret').value = factor.totp.secret;
-      document.getElementById('secMfaCancelBtn').onclick = async () => {
-        await sb.auth.mfa.unenroll({ factorId: factor.id }); // discard the unconfirmed factor
-        enrollBody.style.display = 'none';
-        enrollBody.innerHTML = '';
-        setMsg(mfaMsg, '', '');
-      };
+      document.getElementById('secMfaQr').src = data.totp.qr_code;
+      document.getElementById('secMfaSecret').value = data.totp.secret;
+
+      wireBack(() => sb.auth.mfa.unenroll({ factorId: data.id })); // discard unconfirmed factor
+
       document.getElementById('secMfaConfirmBtn').onclick = async () => {
         const code = document.getElementById('secMfaCode').value.trim();
         if (!code) { setMsg(mfaMsg, 'Enter the code from your authenticator app.', 'err'); return; }
         const btn = document.getElementById('secMfaConfirmBtn');
         btn.disabled = true; btn.textContent = 'Verifying…';
-        const { data: challenge, error: chErr } = await sb.auth.mfa.challenge({ factorId: factor.id });
+        const { data: challenge, error: chErr } = await sb.auth.mfa.challenge({ factorId: data.id });
         if (chErr) { setMsg(mfaMsg, chErr.message, 'err'); btn.disabled = false; btn.textContent = 'Confirm & Enable'; return; }
-        const { error: verErr } = await sb.auth.mfa.verify({ factorId: factor.id, challengeId: challenge.id, code });
+        const { error: verErr } = await sb.auth.mfa.verify({ factorId: data.id, challengeId: challenge.id, code });
         btn.disabled = false; btn.textContent = 'Confirm & Enable';
         if (verErr) { setMsg(mfaMsg, verErr.message, 'err'); return; }
-        activeFactor = factor;
-        toggle.classList.add('on');
-        statusLabel.textContent = 'Enabled — your account requires a code at sign-in.';
-        enrollBody.style.display = 'none';
-        enrollBody.innerHTML = '';
-        setMsg(mfaMsg, 'Two-factor authentication enabled!', 'ok');
-        syncPhoneCardVisibility(true);
+        finishEnable(data);
       };
+    }
+
+    // ── Phone Number (real Supabase phone MFA factor) ──
+    async function renderPhoneEnroll() {
+      flowBody.innerHTML = `
+        <div class="st-field" style="margin-bottom:10px;">
+          <input class="st-input" id="secMfaPhone" type="tel" placeholder="+1 555 123 4567" style="width:100%;" />
+        </div>
+        <button class="st-btn primary" id="secMfaPhoneSendBtn">Send Code</button>
+        <div id="secMfaPhoneCodeArea" style="display:none;margin-top:10px;">
+          <input class="st-input" id="secMfaPhoneCode" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="width:100%;" />
+          <button class="st-btn primary" id="secMfaPhoneVerifyBtn" style="margin-top:10px;">Verify & Enable</button>
+        </div>
+        ${backButton()}
+      `;
+      let phoneFactorId = null;
+      wireBack(() => phoneFactorId && sb.auth.mfa.unenroll({ factorId: phoneFactorId }));
+
+      document.getElementById('secMfaPhoneSendBtn').onclick = async () => {
+        const phone = document.getElementById('secMfaPhone').value.trim();
+        if (!phone) { setMsg(mfaMsg, 'Enter your phone number.', 'err'); return; }
+        const btn = document.getElementById('secMfaPhoneSendBtn');
+        btn.disabled = true; btn.textContent = 'Sending…'; setMsg(mfaMsg, '', '');
+
+        const { data: existing } = await sb.auth.mfa.listFactors();
+        const stale = [...(existing?.totp || []), ...(existing?.phone || [])].filter(f => f.status !== 'verified');
+        for (const f of stale) { await sb.auth.mfa.unenroll({ factorId: f.id }); }
+
+        const { data, error } = await sb.auth.mfa.enroll({
+          factorType: 'phone', phone, friendlyName: `phone-${Date.now()}`
+        });
+        if (error) { setMsg(mfaMsg, error.message, 'err'); btn.disabled = false; btn.textContent = 'Send Code'; return; }
+        phoneFactorId = data.id;
+        // Enrolling a phone factor doesn't send the code by itself —
+        // issuing a challenge is what triggers the SMS.
+        const { error: chErr } = await sb.auth.mfa.challenge({ factorId: data.id });
+        btn.disabled = false; btn.textContent = 'Resend Code';
+        if (chErr) { setMsg(mfaMsg, chErr.message, 'err'); return; }
+        setMsg(mfaMsg, 'Code sent via text message.', 'ok');
+        document.getElementById('secMfaPhoneCodeArea').style.display = 'block';
+      };
+
+      document.getElementById('secMfaPhoneVerifyBtn').onclick = async () => {
+        const code = document.getElementById('secMfaPhoneCode').value.trim();
+        if (!code) { setMsg(mfaMsg, 'Enter the code you received.', 'err'); return; }
+        if (!phoneFactorId) { setMsg(mfaMsg, 'Send a code first.', 'err'); return; }
+        const btn = document.getElementById('secMfaPhoneVerifyBtn');
+        btn.disabled = true; btn.textContent = 'Verifying…';
+        const { data: challenge, error: chErr } = await sb.auth.mfa.challenge({ factorId: phoneFactorId });
+        if (chErr) { setMsg(mfaMsg, chErr.message, 'err'); btn.disabled = false; btn.textContent = 'Verify & Enable'; return; }
+        const { data: factorData, error: verErr } = await sb.auth.mfa.verify({ factorId: phoneFactorId, challengeId: challenge.id, code });
+        btn.disabled = false; btn.textContent = 'Verify & Enable';
+        if (verErr) { setMsg(mfaMsg, verErr.message, 'err'); return; }
+        finishEnable({ id: phoneFactorId, factor_type: 'phone' });
+      };
+    }
+
+    // ── Alternative Email ──
+    // NOTE: Supabase doesn't offer a native "email" MFA factor type (only
+    // totp and phone are real verifying factors), so this can't gate
+    // sign-in the way the other two do. We store it as a verified backup
+    // contact for account recovery instead, and say so plainly in the UI
+    // rather than imply it protects sign-in like a true second factor.
+    async function renderAltEmail() {
+      const { data: { user } } = await sb.auth.getUser();
+      const existingAlt = user?.user_metadata?.alt_email || '';
+      flowBody.innerHTML = `
+        <div class="st-row-sub" style="margin-bottom:10px;">
+          This is stored as a backup contact for account recovery — Supabase doesn't support email as a live sign-in verification code, so this does not by itself require a code at sign-in the way an authenticator app or phone does.
+        </div>
+        <input class="st-input" id="secAltEmail" type="email" placeholder="backup@example.com" value="${esc(existingAlt)}" style="width:100%;" />
+        <button class="st-btn primary" id="secAltEmailSaveBtn" style="margin-top:10px;">Save</button>
+        ${backButton()}
+      `;
+      wireBack();
+      document.getElementById('secAltEmailSaveBtn').onclick = async () => {
+        const email = document.getElementById('secAltEmail').value.trim();
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setMsg(mfaMsg, 'Enter a valid email address.', 'err'); return; }
+        const btn = document.getElementById('secAltEmailSaveBtn');
+        btn.disabled = true; btn.textContent = 'Saving…';
+        const { error } = await sb.auth.updateUser({ data: { alt_email: email } });
+        btn.disabled = false; btn.textContent = 'Save';
+        if (error) { setMsg(mfaMsg, error.message, 'err'); return; }
+        setMsg(mfaMsg, 'Backup email saved.', 'ok');
+        flowBody.style.display = 'none';
+        flowBody.innerHTML = '';
+      };
+    }
+
+    function finishEnable(factor) {
+      activeFactor = factor;
+      toggle.classList.add('on');
+      updateStatus();
+      flowBody.style.display = 'none';
+      flowBody.innerHTML = '';
+      setMsg(mfaMsg, 'Two-factor authentication enabled!', 'ok');
+      syncPhoneCardVisibility(true);
     }
   }
 
@@ -1082,18 +1230,8 @@
   new MutationObserver(syncDark).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
   // Theme swatches
-  document.querySelectorAll('#themeGrid .st-swatch').forEach(sw => {
-    sw.addEventListener('click', () => {
-      document.querySelectorAll('#themeGrid .st-swatch').forEach(s => s.classList.remove('active'));
-      sw.classList.add('active');
-      const h = document.querySelector(`.settings-panel .swatch[data-theme="${sw.dataset.theme}"]`);
-      if (h) h.click();
-    });
-  });
-  // Sync active swatch on load (check localStorage for theme)
-  const savedTheme = localStorage.getItem('360_theme') || 'ocean';
-  const activeSwatch = document.querySelector(`#themeGrid .st-swatch[data-theme="${savedTheme}"]`);
-  if (activeSwatch) activeSwatch.classList.add('active');
+  // Theme swatches are now the real .swatch elements — main.js binds
+  // clicks and syncs the active state on load itself.
 
   // Cursor style + color are now the real elements cursor.js binds to
   // directly (.cursor-option, #cursorColorPicker, #cursorColorReset) — no
