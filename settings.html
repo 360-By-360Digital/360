@@ -398,18 +398,6 @@
       <div class="theme-option"><div class="swatch" data-theme="mono"></div></div>
     </div>
     <input type="checkbox" id="darkToggle" />
-    <div class="cursor-options">
-      <div class="cursor-option active" data-cursor="default"></div>
-      <div class="cursor-option" data-cursor="dot"></div>
-      <div class="cursor-option" data-cursor="ring"></div>
-      <div class="cursor-option" data-cursor="crosshair"></div>
-      <div class="cursor-option" data-cursor="blob"></div>
-      <div class="cursor-option" data-cursor="system"></div>
-    </div>
-    <div class="cursor-color-row">
-      <input type="color" id="cursorColorPicker" value="#3b82f6" />
-      <button id="cursorColorReset">Reset</button>
-    </div>
     <div class="temp-unit-box">
       <span id="tempUnitLabel">°C</span>
       <button id="tempUnitBtn">Switch</button>
@@ -426,7 +414,7 @@
   <!-- ═══════════ TOP BAR ═══════════ -->
   <div class="st-topbar">
     <a class="st-topbar-logo" href="/">
-      <div class="st-logo-mark"></div>
+      <div class="logo-mark"><button onClick="window.location.href='/';" class="image-only-button" type="button"><img src="/favicon-32x32.png" alt="360"></button></div>
       <span class="st-logo-text">360</span>
     </a>
     <span class="st-topbar-sep">/</span>
@@ -501,8 +489,8 @@
             </div>
           </div>
 
-          <!-- Phone Verification -->
-          <div class="st-card">
+          <!-- Phone Verification (shown only once 2FA is enabled) -->
+          <div class="st-card" id="phoneVerifyCard" style="display:none;">
             <div class="st-card-title">Phone Verification</div>
             <div class="st-row">
               <div>
@@ -630,21 +618,18 @@
         <!-- Cursor -->
         <div class="st-card">
           <div class="st-card-title">Cursor Style</div>
-          <div class="st-cursor-grid" id="cursorGrid">
-            <div class="st-cursor-opt" data-cursor="default"><span style="font-size:18px;">🖱️</span><span>Default</span></div>
-            <div class="st-cursor-opt" data-cursor="dot"><span style="font-size:18px;">⚬</span><span>Dot</span></div>
-            <div class="st-cursor-opt" data-cursor="ring"><span style="font-size:18px;">◯</span><span>Ring</span></div>
-            <div class="st-cursor-opt" data-cursor="crosshair"><span style="font-size:18px;">✛</span><span>Cross</span></div>
-            <div class="st-cursor-opt" data-cursor="blob"><span style="font-size:18px;">🫧</span><span>Blob</span></div>
-            <div class="st-cursor-opt" data-cursor="system"><span style="font-size:18px;">↖</span><span>System</span></div>
+          <div class="cursor-options" id="cursorGrid">
+            <div class="cursor-option" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+            <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+            <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+            <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+            <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+            <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
           </div>
-          <div class="st-row" style="margin-top:14px;">
-            <div class="st-row-label">Cursor Color</div>
-            <div class="st-row-right">
-              <input type="color" id="visibleCursorColor" value="#3b82f6"
-                style="width:34px;height:34px;border:none;border-radius:8px;cursor:pointer;padding:2px;background:none;" />
-              <button class="st-btn" id="visibleCursorReset">Reset</button>
-            </div>
+          <div class="cursor-color-row">
+            <label>Cursor color</label>
+            <input type="color" id="cursorColorPicker" value="#3b82f6" />
+            <button id="cursorColorReset">Reset</button>
           </div>
         </div>
 
@@ -988,6 +973,12 @@
     statusLabel.textContent = activeFactor
       ? 'Enabled — your account requires a code at sign-in.'
       : 'Disabled — add an authenticator app for extra security.';
+    syncPhoneCardVisibility(!!activeFactor);
+
+    function syncPhoneCardVisibility(on) {
+      const card = document.getElementById('phoneVerifyCard');
+      if (card) card.style.display = on ? 'block' : 'none';
+    }
 
     toggle.onclick = async () => {
       setMsg(mfaMsg, '', '');
@@ -995,7 +986,17 @@
 
       if (turningOn && !activeFactor) {
         toggle.disabled = true;
-        const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp' });
+        // Clean up any stale/unverified factor left over from a previous
+        // incomplete attempt — Supabase rejects a new enroll otherwise with
+        // "A factor with the friendly name ... already exists."
+        const { data: existing } = await sb.auth.mfa.listFactors();
+        const stale = (existing?.totp || []).filter(f => f.status !== 'verified');
+        for (const f of stale) { await sb.auth.mfa.unenroll({ factorId: f.id }); }
+
+        const { data, error } = await sb.auth.mfa.enroll({
+          factorType: 'totp',
+          friendlyName: `authenticator-${Date.now()}`
+        });
         toggle.disabled = false;
         if (error) { setMsg(mfaMsg, error.message, 'err'); return; }
         renderEnroll(data);
@@ -1009,6 +1010,7 @@
         toggle.classList.remove('on');
         statusLabel.textContent = 'Disabled — add an authenticator app for extra security.';
         setMsg(mfaMsg, 'Two-factor authentication turned off.', 'ok');
+        syncPhoneCardVisibility(false);
       }
     };
 
@@ -1016,10 +1018,10 @@
       enrollBody.style.display = 'block';
       enrollBody.innerHTML = `
         <p style="font-size:12px;color:var(--mut);margin-bottom:8px;">Scan this QR code with an authenticator app (Google Authenticator, Authy, 1Password, etc.), then enter the 6-digit code it shows.</p>
-        <img src="${factor.totp.qr_code}" alt="2FA QR code" style="width:160px;height:160px;border-radius:10px;background:#fff;padding:6px;" />
+        <img id="secMfaQr" alt="2FA QR code" style="width:160px;height:160px;border-radius:10px;background:#fff;padding:6px;" />
         <div style="margin-top:10px;">
           <label class="st-row-sub" style="display:block;margin-bottom:4px;">Can't scan? Enter this key manually</label>
-          <input class="st-input" type="text" readonly value="${esc(factor.totp.secret)}" onclick="this.select()" style="width:100%;" />
+          <input class="st-input" type="text" readonly id="secMfaSecret" onclick="this.select()" style="width:100%;" />
         </div>
         <div style="margin-top:10px;">
           <input class="st-input" id="secMfaCode" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="width:100%;" />
@@ -1029,6 +1031,10 @@
           <button class="st-btn" id="secMfaCancelBtn">Cancel</button>
         </div>
       `;
+      // Set via properties, not string interpolation — the QR data URI and
+      // secret can contain characters (quotes, etc.) that break template-string HTML.
+      document.getElementById('secMfaQr').src = factor.totp.qr_code;
+      document.getElementById('secMfaSecret').value = factor.totp.secret;
       document.getElementById('secMfaCancelBtn').onclick = async () => {
         await sb.auth.mfa.unenroll({ factorId: factor.id }); // discard the unconfirmed factor
         enrollBody.style.display = 'none';
@@ -1051,6 +1057,7 @@
         enrollBody.style.display = 'none';
         enrollBody.innerHTML = '';
         setMsg(mfaMsg, 'Two-factor authentication enabled!', 'ok');
+        syncPhoneCardVisibility(true);
       };
     }
   }
@@ -1088,32 +1095,12 @@
   const activeSwatch = document.querySelector(`#themeGrid .st-swatch[data-theme="${savedTheme}"]`);
   if (activeSwatch) activeSwatch.classList.add('active');
 
-  // Cursor style
-  document.querySelectorAll('#cursorGrid .st-cursor-opt').forEach(opt => {
-    opt.addEventListener('click', () => {
-      document.querySelectorAll('#cursorGrid .st-cursor-opt').forEach(o => o.classList.remove('active'));
-      opt.classList.add('active');
-      const h = document.querySelector(`.cursor-option[data-cursor="${opt.dataset.cursor}"]`);
-      if (h) h.click();
-    });
-  });
-  // Sync active cursor on load
-  const savedCursor = localStorage.getItem('360_cursor') || 'default';
-  const activeCursor = document.querySelector(`#cursorGrid .st-cursor-opt[data-cursor="${savedCursor}"]`);
+  // Cursor style + color are now the real elements cursor.js binds to
+  // directly (.cursor-option, #cursorColorPicker, #cursorColorReset) — no
+  // proxy-forwarding needed. Just sync the active state on load.
+  const savedCursor = localStorage.getItem('360_cursor_style') || 'default';
+  const activeCursor = document.querySelector(`#cursorGrid .cursor-option[data-cursor="${savedCursor}"]`);
   if (activeCursor) activeCursor.classList.add('active');
-
-  // Cursor color
-  const visCursorColor = document.getElementById('visibleCursorColor');
-  visCursorColor.value = localStorage.getItem('360_cursor_color') || '#3b82f6';
-  visCursorColor.addEventListener('input', () => {
-    const h = document.getElementById('cursorColorPicker');
-    if (h) { h.value = visCursorColor.value; h.dispatchEvent(new Event('input')); }
-  });
-  document.getElementById('visibleCursorReset').addEventListener('click', () => {
-    const h = document.getElementById('cursorColorReset');
-    if (h) h.click();
-    visCursorColor.value = '#3b82f6';
-  });
 
   // Temp unit
   const visTempLabel = document.getElementById('visTempLabel');
