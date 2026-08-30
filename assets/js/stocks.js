@@ -74,7 +74,7 @@
 
   async function fetchStock(symbol, range) {
     const url = `${FN_BASE}?symbol=${encodeURIComponent(symbol)}&range=${encodeURIComponent(range)}`;
-    const resp = await fetch(url);
+    const resp = await fetch(url, { cache: "no-store" });
     const data = await resp.json();
     if (!resp.ok || data.error) throw new Error(data.error || "Failed to load stock data");
     return data;
