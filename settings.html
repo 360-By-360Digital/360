@@ -80,76 +80,6 @@
     }
     .st-back-btn:hover { background: rgba(148,163,184,.15); }
 
-    .github-stars {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 7px 10px;
-      border: 1px solid var(--br);
-      border-radius: 8px;
-      background: rgba(148,163,184,.08);
-      color: var(--mut);
-      text-decoration: none;
-      font-size: 13px;
-      font-weight: 600;
-      line-height: 1;
-      transition: background .18s, color .18s;
-    }
-    .github-stars:hover {
-      background: rgba(148,163,184,.15);
-      color: var(--txt);
-    }
-    .github-stars svg {
-      width: 18px;
-      height: 18px;
-      fill: currentColor;
-      flex-shrink: 0;
-    }
-
-    /* BOLD FONT */
-    body.bold-font,
-    body.bold-font * {
-      font-weight: 700 !important;
-    }
-
-    .credits-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .credit-role {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      color: var(--mut);
-      margin-bottom: 4px;
-    }
-
-    .credit-name {
-      color: var(--txt);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .credit-name:hover {
-      color: var(--a,#3b82f6);
-      text-decoration: underline;
-    }
-
-    .credit-alias {
-      color: var(--mut);
-      font-size: 12px;
-    }
-
-    .credits-divider {
-      height: 1px;
-      background: var(--br);
-      margin: 2px 0;
-    }
-
     /* PAGE LAYOUT */
     .page-wrap {
       display: flex;
@@ -254,6 +184,27 @@
     }
     .st-toggle.on { background: var(--a,#3b82f6); }
     .st-toggle.on::before { transform: translateX(17px); }
+    .st-toggle:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* PASSWORD STRENGTH METER (same as sign-up / reset-password) */
+    .pw-strength-wrap { margin-top: 8px; }
+    .pw-bar-track { height: 3px; background: rgba(148,163,184,.2); border-radius: 999px; overflow: hidden; margin-bottom: 5px; }
+    .pw-bar-fill { height: 100%; width: 0%; border-radius: 999px; transition: width .35s cubic-bezier(.34,1.56,.64,1), background .25s; }
+    .pw-meta { display: flex; justify-content: space-between; align-items: center; min-height: 14px; }
+    .pw-strength-label { font-size: 11px; font-weight: 600; }
+    .pw-strength-hint { font-size: 11px; color: var(--mut); }
+    .pw-checks { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+    .pw-pill {
+      display: flex; align-items: center; gap: 3px;
+      padding: 2px 7px; border-radius: 999px;
+      font-size: 10px; font-weight: 500;
+      border: 1px solid var(--br);
+      background: rgba(148,163,184,.08);
+      color: var(--mut); transition: background .2s, border-color .2s, color .2s;
+    }
+    .pw-pill.pass { background: rgba(16,185,129,.12); border-color: rgba(16,185,129,.35); color: #059669; }
+    .pw-pip { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .4; transition: opacity .2s; flex-shrink: 0; }
+    .pw-pill.pass .pw-pip { opacity: 1; }
 
     /* BUTTONS */
     .st-btn {
@@ -480,13 +431,7 @@
     </a>
     <span class="st-topbar-sep">/</span>
     <span class="st-topbar-section" id="topbarSection">Settings</span>
-    <div class="st-topbar-right" style="display:flex;align-items:center;gap:10px;">
-      <a class="github-stars" href="https://github.com/360DigitalCo/360" target="_blank" rel="noopener noreferrer" aria-label="360 on GitHub">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 .297a12 12 0 0 0-3.79 23.39c.6.113.82-.26.82-.577v-2.234c-3.34.726-4.04-1.416-4.04-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.084-.729.084-.729 1.205.085 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23a11.5 11.5 0 0 1 3.004-.404c1.02.005 2.047.138 3.004.404 2.28-1.552 3.285-1.23 3.285-1.23.65 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.623-5.475 5.92.43.372.81 1.103.81 2.222v3.293c0 .32.21.694.825.576A12 12 0 0 0 12 .297"/>
-        </svg>
-        <span id="github-star-count">—</span>
-      </a>
+    <div class="st-topbar-right">
       <button class="st-back-btn" onclick="window.location.href='/'">← Back to 360</button>
     </div>
   </div>
@@ -578,6 +523,50 @@
             <div class="st-msg" id="phoneMsg"></div>
           </div>
 
+          <!-- Security -->
+          <div class="st-card">
+            <div class="st-card-title">Security</div>
+
+            <div class="st-row-label" style="margin-bottom:4px;">Change Password</div>
+            <div class="st-row-sub" style="margin-bottom:12px;">Update your account password.</div>
+            <div style="display:flex;flex-direction:column;gap:10px;max-width:360px;">
+              <input class="st-input" id="secCurrentPass" type="password" placeholder="Current password" autocomplete="current-password" />
+              <div>
+                <input class="st-input" id="secNewPass" type="password" placeholder="New password (min. 6 characters)" autocomplete="new-password" style="width:100%;" />
+                <div class="pw-strength-wrap" id="secPwStrengthWrap">
+                  <div class="pw-bar-track"><div class="pw-bar-fill"></div></div>
+                  <div class="pw-meta"><span class="pw-strength-label"></span><span class="pw-strength-hint"></span></div>
+                  <div class="pw-checks">
+                    <div class="pw-pill" id="secPw-c-len"><span class="pw-pip"></span>8+ chars</div>
+                    <div class="pw-pill" id="secPw-c-up"><span class="pw-pip"></span>uppercase</div>
+                    <div class="pw-pill" id="secPw-c-num"><span class="pw-pip"></span>number</div>
+                    <div class="pw-pill" id="secPw-c-sym"><span class="pw-pip"></span>symbol</div>
+                  </div>
+                </div>
+              </div>
+              <input class="st-input" id="secConfirmPass" type="password" placeholder="Confirm new password" autocomplete="new-password" />
+              <button class="st-btn primary" id="secChangePassBtn" style="align-self:flex-start;">Update Password</button>
+            </div>
+            <div class="st-msg" id="secPassMsg"></div>
+            <div style="margin-top:6px;">
+              <a class="st-legal-link" href="/account?forgot" style="display:inline;">Forgot your current password?</a>
+            </div>
+
+            <div style="height:1px;background:var(--br);margin:20px 0;"></div>
+
+            <div class="st-row">
+              <div>
+                <div class="st-row-label">Two-Factor Authentication</div>
+                <div class="st-row-sub" id="secMfaStatus">Checking…</div>
+              </div>
+              <div class="st-row-right">
+                <button class="st-toggle" id="secMfaToggle" disabled></button>
+              </div>
+            </div>
+            <div id="secMfaEnrollBody" style="display:none;margin-top:14px;max-width:360px;"></div>
+            <div class="st-msg" id="secMfaMsg"></div>
+          </div>
+
           <!-- Legal -->
           <div class="st-card">
             <div class="st-card-title">Legal</div>
@@ -635,13 +624,6 @@
               <div class="st-row-sub">Switch between light and dark interface.</div>
             </div>
             <button class="st-toggle" id="darkModeToggle"></button>
-          </div>
-          <div class="st-row">
-            <div>
-              <div class="st-row-label">Bold Font</div>
-              <div class="st-row-sub">Make text across 360 use a bold weight.</div>
-            </div>
-            <button class="st-toggle" id="boldFontToggle" aria-label="Toggle bold font"></button>
           </div>
         </div>
 
@@ -742,28 +724,6 @@
             <span style="color:var(--mut);font-size:12px;">Built by 360 Digital, Co.</span>
           </div>
         </div>
-        <div class="st-card">
-          <div class="st-card-title">Credits</div>
-          <div class="credits-list">
-            <div>
-              <div class="credit-role">Lead Developers &amp; Founders</div>
-              <a class="credit-name" href="https://github.com/Zakii360" target="_blank" rel="noopener noreferrer">Zakii360</a><br>
-              <a class="credit-name" href="https://github.com/mingzew2" target="_blank" rel="noopener noreferrer">mingzew2</a>
-              <span class="credit-alias">(also known as <a class="credit-name" href="https://github.com/MingzeMC" target="_blank" rel="noopener noreferrer">MingzeMC</a>)</span>
-            </div>
-            <div class="credits-divider"></div>
-            <div>
-              <div class="credit-role">Analytics Advisor &amp; Feature Designer</div>
-              <a class="credit-name" href="https://github.com/GreatesSoup" target="_blank" rel="noopener noreferrer">GreatesSoup</a>
-            </div>
-            <div class="credits-divider"></div>
-            <div>
-              <div class="credit-role">Lead Games Developer</div>
-              <a class="credit-name" href="https://github.com/UntitledAngel" target="_blank" rel="noopener noreferrer">UntitledAngel</a>
-              <span class="credit-alias">(also known as <a class="credit-name" href="https://github.com/TheAngelV1" target="_blank" rel="noopener noreferrer">TheAngelV1</a>)</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- ══════════════════════════════
@@ -836,34 +796,6 @@
   <script src="/assets/js/cursor.js"></script>
 
   <script>
-  // ────────────────────────────────────────
-  // GITHUB STARS
-  // ────────────────────────────────────────
-  async function updateGitHubStars() {
-    const el = document.getElementById('github-star-count');
-    if (!el) return;
-
-    try {
-      const res = await fetch('https://api.github.com/repos/360DigitalCo/360');
-      if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
-
-      const repo = await res.json();
-      const stars = Number(repo.stargazers_count) || 0;
-
-      el.textContent = stars >= 1000000
-        ? `${(stars / 1000000).toFixed(1).replace(/\\.0$/, '')}M`
-        : stars >= 1000
-          ? `${(stars / 1000).toFixed(1).replace(/\\.0$/, '')}K`
-          : stars.toLocaleString();
-    } catch (error) {
-      el.textContent = '—';
-      console.warn('Unable to fetch GitHub star count:', error);
-    }
-  }
-
-  updateGitHubStars();
-  setInterval(updateGitHubStars, 60000);
-
   // ────────────────────────────────────────
   // TAB ROUTING
   // ────────────────────────────────────────
@@ -964,6 +896,163 @@
       await sb.auth.signOut();
       location.href = '/';
     };
+
+    initChangePassword();
+    initMfaSection();
+  }
+
+  // ────────────────────────────────────────
+  // SECURITY — Change Password
+  // ────────────────────────────────────────
+  function initStrengthMeter(passEl, wrapId, prefix) {
+    const wrap = document.getElementById(wrapId); if (!wrap) return;
+    const bar  = wrap.querySelector('.pw-bar-fill');
+    const lbl  = wrap.querySelector('.pw-strength-label');
+    const hint = wrap.querySelector('.pw-strength-hint');
+    const pills = {
+      len: document.getElementById(`${prefix}-c-len`),
+      up:  document.getElementById(`${prefix}-c-up`),
+      num: document.getElementById(`${prefix}-c-num`),
+      sym: document.getElementById(`${prefix}-c-sym`),
+    };
+    passEl.addEventListener('input', () => {
+      const v = passEl.value;
+      const checks = { len: v.length >= 8, up: /[A-Z]/.test(v), num: /[0-9]/.test(v), sym: /[^a-zA-Z0-9]/.test(v) };
+      Object.keys(pills).forEach(k => { if (pills[k]) pills[k].classList.toggle('pass', checks[k]); });
+      const score = Object.values(checks).filter(Boolean).length;
+      const pct = [0, 25, 50, 75, 100][score];
+      const colors = ['', '#ef4444', '#f59e0b', '#10b981', '#3b82f6'];
+      const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+      const hints  = ['', 'Add uppercase, numbers & symbols', 'Add numbers & symbols', 'Add a symbol', 'Great password!'];
+      bar.style.width = pct + '%'; bar.style.background = colors[score] || '';
+      if (lbl)  lbl.textContent  = labels[score] || '';
+      if (hint) hint.textContent = hints[score]  || '';
+    });
+  }
+
+  function initChangePassword() {
+    initStrengthMeter(document.getElementById('secNewPass'), 'secPwStrengthWrap', 'secPw');
+
+    document.getElementById('secChangePassBtn').onclick = async () => {
+      const cp  = document.getElementById('secCurrentPass').value;
+      const p1  = document.getElementById('secNewPass').value;
+      const p2  = document.getElementById('secConfirmPass').value;
+      const msg = document.getElementById('secPassMsg');
+      const btn = document.getElementById('secChangePassBtn');
+
+      if (!cp) { setMsg(msg, 'Enter your current password.', 'err'); return; }
+      if (!p1 || p1.length < 6) { setMsg(msg, 'New password must be at least 6 characters.', 'err'); return; }
+      if (p1 !== p2) { setMsg(msg, 'Passwords do not match.', 'err'); return; }
+
+      btn.disabled = true; btn.textContent = 'Updating…'; setMsg(msg, '', '');
+
+      // This project requires the current password to be supplied directly
+      // in the updateUser payload (supabase-js v2.102.0+) — see the
+      // "Enforce current password" Auth setting.
+      const { error } = await sb.auth.updateUser({ password: p1, current_password: cp });
+      btn.disabled = false; btn.textContent = 'Update Password';
+
+      if (error) {
+        if (error.code === 'current_password_required' || /current password/i.test(error.message)) {
+          setMsg(msg, 'Current password is incorrect.', 'err');
+        } else {
+          setMsg(msg, error.message, 'err');
+        }
+        return;
+      }
+      document.getElementById('secCurrentPass').value = '';
+      document.getElementById('secNewPass').value = '';
+      document.getElementById('secConfirmPass').value = '';
+      setMsg(msg, '✓ Password updated!', 'ok');
+    };
+  }
+
+  // ────────────────────────────────────────
+  // SECURITY — Two-Factor Authentication (TOTP)
+  // ────────────────────────────────────────
+  async function initMfaSection() {
+    const toggle = document.getElementById('secMfaToggle');
+    const statusLabel = document.getElementById('secMfaStatus');
+    const enrollBody = document.getElementById('secMfaEnrollBody');
+    const mfaMsg = document.getElementById('secMfaMsg');
+
+    async function refreshFactors() {
+      const { data, error } = await sb.auth.mfa.listFactors();
+      if (error) { setMsg(mfaMsg, error.message, 'err'); return null; }
+      return (data?.totp || []).find(f => f.status === 'verified') || null;
+    }
+
+    let activeFactor = await refreshFactors();
+    toggle.disabled = false;
+    toggle.classList.toggle('on', !!activeFactor);
+    statusLabel.textContent = activeFactor
+      ? 'Enabled — your account requires a code at sign-in.'
+      : 'Disabled — add an authenticator app for extra security.';
+
+    toggle.onclick = async () => {
+      setMsg(mfaMsg, '', '');
+      const turningOn = !toggle.classList.contains('on');
+
+      if (turningOn && !activeFactor) {
+        toggle.disabled = true;
+        const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp' });
+        toggle.disabled = false;
+        if (error) { setMsg(mfaMsg, error.message, 'err'); return; }
+        renderEnroll(data);
+      } else if (!turningOn && activeFactor) {
+        if (!confirm('Turn off two-factor authentication for your account?')) return;
+        toggle.disabled = true;
+        const { error } = await sb.auth.mfa.unenroll({ factorId: activeFactor.id });
+        toggle.disabled = false;
+        if (error) { setMsg(mfaMsg, error.message, 'err'); return; }
+        activeFactor = null;
+        toggle.classList.remove('on');
+        statusLabel.textContent = 'Disabled — add an authenticator app for extra security.';
+        setMsg(mfaMsg, 'Two-factor authentication turned off.', 'ok');
+      }
+    };
+
+    function renderEnroll(factor) {
+      enrollBody.style.display = 'block';
+      enrollBody.innerHTML = `
+        <p style="font-size:12px;color:var(--mut);margin-bottom:8px;">Scan this QR code with an authenticator app (Google Authenticator, Authy, 1Password, etc.), then enter the 6-digit code it shows.</p>
+        <img src="${factor.totp.qr_code}" alt="2FA QR code" style="width:160px;height:160px;border-radius:10px;background:#fff;padding:6px;" />
+        <div style="margin-top:10px;">
+          <label class="st-row-sub" style="display:block;margin-bottom:4px;">Can't scan? Enter this key manually</label>
+          <input class="st-input" type="text" readonly value="${esc(factor.totp.secret)}" onclick="this.select()" style="width:100%;" />
+        </div>
+        <div style="margin-top:10px;">
+          <input class="st-input" id="secMfaCode" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="width:100%;" />
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="st-btn primary" id="secMfaConfirmBtn">Confirm & Enable</button>
+          <button class="st-btn" id="secMfaCancelBtn">Cancel</button>
+        </div>
+      `;
+      document.getElementById('secMfaCancelBtn').onclick = async () => {
+        await sb.auth.mfa.unenroll({ factorId: factor.id }); // discard the unconfirmed factor
+        enrollBody.style.display = 'none';
+        enrollBody.innerHTML = '';
+        setMsg(mfaMsg, '', '');
+      };
+      document.getElementById('secMfaConfirmBtn').onclick = async () => {
+        const code = document.getElementById('secMfaCode').value.trim();
+        if (!code) { setMsg(mfaMsg, 'Enter the code from your authenticator app.', 'err'); return; }
+        const btn = document.getElementById('secMfaConfirmBtn');
+        btn.disabled = true; btn.textContent = 'Verifying…';
+        const { data: challenge, error: chErr } = await sb.auth.mfa.challenge({ factorId: factor.id });
+        if (chErr) { setMsg(mfaMsg, chErr.message, 'err'); btn.disabled = false; btn.textContent = 'Confirm & Enable'; return; }
+        const { error: verErr } = await sb.auth.mfa.verify({ factorId: factor.id, challengeId: challenge.id, code });
+        btn.disabled = false; btn.textContent = 'Confirm & Enable';
+        if (verErr) { setMsg(mfaMsg, verErr.message, 'err'); return; }
+        activeFactor = factor;
+        toggle.classList.add('on');
+        statusLabel.textContent = 'Enabled — your account requires a code at sign-in.';
+        enrollBody.style.display = 'none';
+        enrollBody.innerHTML = '';
+        setMsg(mfaMsg, 'Two-factor authentication enabled!', 'ok');
+      };
+    }
   }
 
 
@@ -998,22 +1087,6 @@
   const savedTheme = localStorage.getItem('360_theme') || 'ocean';
   const activeSwatch = document.querySelector(`#themeGrid .st-swatch[data-theme="${savedTheme}"]`);
   if (activeSwatch) activeSwatch.classList.add('active');
-
-  // Bold Font
-  const boldFontToggle = document.getElementById('boldFontToggle');
-  function syncBoldFont() {
-    const enabled = localStorage.getItem('360_bold_font') === 'true';
-    document.body.classList.toggle('bold-font', enabled);
-    if (boldFontToggle) boldFontToggle.classList.toggle('on', enabled);
-  }
-  syncBoldFont();
-  if (boldFontToggle) {
-    boldFontToggle.addEventListener('click', () => {
-      const enabled = localStorage.getItem('360_bold_font') !== 'true';
-      localStorage.setItem('360_bold_font', String(enabled));
-      syncBoldFont();
-    });
-  }
 
   // Cursor style
   document.querySelectorAll('#cursorGrid .st-cursor-opt').forEach(opt => {
