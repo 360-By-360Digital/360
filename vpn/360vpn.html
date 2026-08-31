@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,9 +16,9 @@
   --line:#dfe5ec;
   --text:#233044;
   --muted:#718096;
-  --accent:#3b6ee8;
-  --accent-soft:rgba(59,110,232,.10);
-  --good:#2f9e62;
+  --accent:#00c878;
+  --accent-soft:rgba(0,200,120,.10);
+  --good:#00a86b;
   --warn:#b7791f;
   --bad:#d64545;
   --shadow:0 8px 28px rgba(37,49,66,.06);
@@ -44,11 +45,11 @@ a{text-decoration:none;color:inherit}
 button,input,select{font:inherit}
 button{cursor:pointer}
 .topbar{height:58px;border-bottom:1px solid var(--line);background:var(--panel);display:flex;align-items:center;padding:0 22px;position:sticky;top:0;z-index:10}
-.back-apps{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 13px;border-radius:8px;font-size:13px;transition:.18s ease}
+.back-apps{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 13px;border-radius:3px;font-size:13px;transition:.18s ease}
 .back-apps:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
 .page{width:min(980px,calc(100% - 32px));margin:0 auto;padding:42px 0 64px}
 .page-tools{display:flex;justify-content:flex-end;gap:10px;margin-bottom:22px}
-.theme-toggle{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 12px;border-radius:8px;transition:.18s ease}
+.theme-toggle{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 12px;border-radius:3px;transition:.18s ease}
 .theme-toggle:hover{border-color:var(--accent);color:var(--accent)}
 .hero{margin-bottom:28px}
 .hero-tag{font-size:12px;color:var(--accent);font-weight:700;margin-bottom:5px}
@@ -56,23 +57,23 @@ button{cursor:pointer}
 .hero-sub{font-size:15px;color:var(--muted);max-width:700px}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .span2{grid-column:1/-1}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:3px;box-shadow:var(--shadow);overflow:hidden}
 .panel-head{padding:13px 16px;border-bottom:1px solid var(--line);font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:10px}
 .panel-body{padding:18px 16px}
 .connect-inner{display:grid;grid-template-columns:1.2fr 1fr auto;align-items:center;gap:22px}
 .connect-label,.field-label{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.04em;margin-bottom:3px}
 .connect-val{font-size:25px}
 .connect-sub,.note{font-size:12px;color:var(--muted);margin-top:3px}
-.btn{border:1px solid var(--line);border-radius:8px;padding:9px 13px;background:var(--panel);color:var(--text);font-size:12px;font-weight:700;transition:.18s ease}
+.btn{border:1px solid var(--line);border-radius:3px;padding:9px 13px;background:var(--panel);color:var(--text);font-size:12px;font-weight:700;transition:.18s ease}
 .btn:hover{transform:translateY(-1px)}
 .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .btn-primary:hover{filter:brightness(.96)}
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.badge{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700}
+.badge{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:3px;padding:4px 9px;font-size:11px;font-weight:700}
 .badge-good{color:var(--good);background:color-mix(in srgb,var(--good) 10%,transparent);border-color:color-mix(in srgb,var(--good) 35%,var(--line))}
 .badge-warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent);border-color:color-mix(in srgb,var(--warn) 35%,var(--line))}
 .badge-bad{color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,transparent);border-color:color-mix(in srgb,var(--bad) 35%,var(--line))}
-.log{margin-top:16px;background:var(--panel-soft);border:1px solid var(--line);border-radius:9px;padding:11px;max-height:150px;overflow:auto;font-size:12px}
+.log{margin-top:16px;background:var(--panel-soft);border:1px solid var(--line);border-radius:3px;padding:11px;max-height:150px;overflow:auto;font-size:12px}
 .log-line{display:flex;gap:10px;padding:2px 0}
 .log-time{color:var(--muted);min-width:58px}
 .log-msg.ok{color:var(--good)}
@@ -87,14 +88,14 @@ button{cursor:pointer}
 .stat-val.warn{color:var(--warn)}
 .stat-val.bad{color:var(--bad)}
 .test-input-row{display:flex;gap:8px}
-.test-input{width:100%;background:var(--panel-soft);border:1px solid var(--line);border-radius:8px;padding:9px 11px;color:var(--text);outline:0}
+.test-input{width:100%;background:var(--panel-soft);border:1px solid var(--line);border-radius:3px;padding:9px 11px;color:var(--text);outline:0}
 .test-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.test-result{margin-top:10px;background:var(--panel-soft);border:1px solid var(--line);border-radius:9px;padding:11px;min-height:72px;font-size:12px;color:var(--muted);white-space:pre-wrap;word-break:break-word}
+.test-result{margin-top:10px;background:var(--panel-soft);border:1px solid var(--line);border-radius:3px;padding:11px;min-height:72px;font-size:12px;color:var(--muted);white-space:pre-wrap;word-break:break-word}
 .dns-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .dns-actions{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .dns-note{font-size:11px;color:var(--muted);line-height:1.45}
 .speed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
-.speed-metric{border:1px solid var(--line);background:var(--panel-soft);border-radius:10px;padding:15px}
+.speed-metric{border:1px solid var(--line);background:var(--panel-soft);border-radius:3px;padding:15px}
 .speed-metric span{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
 .speed-metric strong{font-size:22px;font-weight:500}
 .speed-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -103,20 +104,20 @@ button{cursor:pointer}
 .toggle-row:last-child{border-bottom:0}
 .switch{position:relative;width:44px;height:24px;display:inline-block;flex:none}
 .switch input{opacity:0;width:0;height:0}
-.slider{position:absolute;inset:0;background:#c8d0da;border-radius:999px;transition:.2s ease}
+.slider{position:absolute;inset:0;background:#c8d0da;border-radius:3px;transition:.2s ease}
 .slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.2s ease;box-shadow:0 1px 4px rgba(0,0,0,.16)}
 .switch input:checked + .slider{background:var(--accent)}
 .switch input:checked + .slider:before{transform:translateX(20px)}
-.activity-list{margin-top:12px;max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:9px;background:var(--panel-soft)}
+.activity-list{margin-top:12px;max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:3px;background:var(--panel-soft)}
 .activity-item{padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px;display:flex;gap:9px}
 .activity-item:last-child{border-bottom:0}
 .activity-kind{color:var(--accent);min-width:54px;font-weight:700}
 .activity-text{color:var(--muted);word-break:break-word}
 .security-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.security-item{border:1px solid var(--line);background:var(--panel-soft);border-radius:10px;padding:12px}
+.security-item{border:1px solid var(--line);background:var(--panel-soft);border-radius:3px;padding:12px}
 .security-item strong{display:block;font-size:13px;margin-bottom:3px}
 .security-item span{font-size:11px;color:var(--muted);line-height:1.45}
-.muted-box{padding:11px 12px;border:1px dashed var(--line);border-radius:9px;color:var(--muted);font-size:12px;line-height:1.5}
+.muted-box{padding:11px 12px;border:1px dashed var(--line);border-radius:3px;color:var(--muted);font-size:12px;line-height:1.5}
 .footer{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .footer a:hover{color:var(--accent)}
 @media(max-width:760px){
@@ -164,6 +165,19 @@ button{cursor:pointer}
         </div>
         <div class="log" id="log">
           <div class="log-line"><span class="log-time">--:--:--</span><span class="log-msg info">Ready.</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">Proxy service</div>
+      <div class="panel-body">
+        <div class="stat-row"><span class="stat-key">Worker endpoint</span><span class="stat-val good" id="workerEndpoint">/vpn/proxy</span></div>
+        <div class="stat-row"><span class="stat-key">PAC file</span><span class="stat-val good" id="pacEndpoint">/vpn/proxy.pac</span></div>
+        <div class="stat-row"><span class="stat-key">Routing</span><span class="stat-val">Browser requests can be tested through the Worker</span></div>
+        <div class="copy-row" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn" id="copyPacBtn" type="button">Copy PAC URL</button>
+          <a class="btn" href="/vpn/proxy.pac">Open PAC</a>
         </div>
       </div>
     </article>
@@ -296,6 +310,11 @@ button{cursor:pointer}
     persist: false
   };
 
+  const WORKER_BASE = location.origin;
+  const WORKER_PROXY = WORKER_BASE + '/vpn/proxy';
+  const WORKER_HEALTH = WORKER_BASE + '/vpn';
+  const PAC_URL = WORKER_BASE + '/vpn/proxy.pac';
+
   const resolvers = {
     cloudflare: 'https://cloudflare-dns.com/dns-query',
     google: 'https://dns.google/resolve',
@@ -343,23 +362,42 @@ button{cursor:pointer}
     }
   }
 
-  async function fetchWithActivity(url, options={}){
-    activity('REQ','GET ' + url);
+  async function fetchThroughWorker(targetUrl, options={}){
+    const method = options.method || 'GET';
+    const workerUrl = WORKER_PROXY + '?url=' + encodeURIComponent(targetUrl);
+    activity('REQ', method + ' ' + targetUrl + ' via Worker');
     const start = performance.now();
     try{
-      const res = await fetch(url, options);
-      activity('RES', res.status + ' ' + url + ' (' + Math.round(performance.now()-start) + ' ms)');
+      const {headers: customHeaders, ...rest} = options;
+      const headers = new Headers(customHeaders || {});
+      headers.delete('host');
+      headers.delete('content-length');
+      const res = await fetch(workerUrl, {
+        ...rest,
+        method,
+        headers,
+        cache: rest.cache || 'no-store'
+      });
+      activity('RES', res.status + ' ' + targetUrl + ' via Worker (' + Math.round(performance.now()-start) + ' ms)');
       return res;
     }catch(err){
-      activity('ERR', url + ' (' + err.message + ')');
+      activity('ERR', targetUrl + ' via Worker (' + err.message + ')');
       throw err;
     }
+  }
+
+  async function workerJson(path='/vpn'){
+    const url = WORKER_BASE + path;
+    const start = performance.now();
+    const res = await fetch(url, {cache:'no-store'});
+    const data = await res.json();
+    return {res, data, ms:Math.round(performance.now()-start)};
   }
 
   async function fetchIp(){
     try{
       const start = performance.now();
-      const res = await fetchWithActivity('https://api64.ipify.org?format=json&ts=' + Date.now(), {cache:'no-store'});
+      const res = await fetchThroughWorker('https://api64.ipify.org?format=json&ts=' + Date.now());
       const data = await res.json();
       const ms = Math.round(performance.now()-start);
       $('realIp').textContent = data.ip || 'Unavailable';
@@ -378,19 +416,21 @@ button{cursor:pointer}
     btn.disabled = true; btn.textContent = 'Checking...';
     try{
       const start = performance.now();
-      const res = await fetchWithActivity(location.origin + '/favicon.ico?check=' + Date.now(), {cache:'no-store'});
+      const health = await workerJson('/vpn');
       const ms = Math.round(performance.now()-start);
-      if(!res.ok) throw new Error('HTTP ' + res.status);
+      if(!health.res.ok || health.data.status !== 'online') throw new Error('Worker is unavailable');
       $('proxyBadge').className='badge badge-good';
-      $('proxyBadge').textContent='CONNECTED';
-      $('proxyNote').textContent='This page responded in ' + ms + ' ms';
+      $('proxyBadge').textContent='WORKER ONLINE';
+      $('proxyNote').textContent='Worker responded in ' + ms + ' ms';
       $('statLatency').textContent=ms+' ms';
-      log('Connection check passed in ' + ms + ' ms','ok');
+      $('workerEndpoint').textContent=WORKER_PROXY;
+      $('pacEndpoint').textContent=PAC_URL;
+      log('Cloudflare Worker is online in ' + ms + ' ms','ok');
     }catch(err){
       $('proxyBadge').className='badge badge-bad';
-      $('proxyBadge').textContent='CHECK FAILED';
+      $('proxyBadge').textContent='WORKER OFFLINE';
       $('proxyNote').textContent=err.message;
-      log('Connection check failed: ' + err.message,'err');
+      log('Worker check failed: ' + err.message,'err');
     }finally{
       btn.disabled=false; btn.textContent='Check connection';
     }
@@ -403,7 +443,7 @@ button{cursor:pointer}
     out.textContent='Testing...';
     try{
       const start=performance.now();
-      const res=await fetchWithActivity(url,{cache:'no-store',mode:'cors'});
+      const res=await fetchThroughWorker(url);
       const ms=Math.round(performance.now()-start);
       const text=await res.text();
       out.textContent='HTTP ' + res.status + ' in ' + ms + ' ms\n\n' + text.slice(0,900);
@@ -431,7 +471,7 @@ button{cursor:pointer}
       const url=endpoint + (endpoint.includes('?')?'&':'?') + 'name=' + encodeURIComponent(host) + '&type=A';
       const headers={};
       if(mode==='cloudflare') headers.Accept='application/dns-json';
-      const res=await fetchWithActivity(url,{headers,cache:'no-store'});
+      const res=await fetchThroughWorker(url,{headers});
       if(!res.ok) throw new Error('HTTP ' + res.status);
       const data=await res.json();
       const answers=(data.Answer||[]).filter(x=>x.type===1).map(x=>x.data);
@@ -449,12 +489,12 @@ button{cursor:pointer}
     $('speedNote').textContent='Running a small browser-based estimate...';
     try{
       const lp=performance.now();
-      await fetchWithActivity(location.origin + '/favicon.ico?latency=' + Date.now(), {cache:'no-store'});
+      await fetchThroughWorker(location.origin + '/favicon.ico?latency=' + Date.now());
       $('speedLatency').textContent=Math.max(1,Math.round(performance.now()-lp))+' ms';
 
       const downBytes=1500000;
       const ds=performance.now();
-      const res=await fetchWithActivity('https://speed.cloudflare.com/__down?bytes=' + downBytes + '&ts=' + Date.now(), {cache:'no-store',mode:'cors'});
+      const res=await fetchThroughWorker('https://speed.cloudflare.com/__down?bytes=' + downBytes + '&ts=' + Date.now());
       const buf=await res.arrayBuffer();
       const sec=Math.max((performance.now()-ds)/1000,.001);
       const down=(buf.byteLength*8/sec)/1e6;
@@ -462,7 +502,7 @@ button{cursor:pointer}
 
       const payload=new Uint8Array(350000);
       const us=performance.now();
-      const up=await fetchWithActivity('https://httpbin.org/post?ts=' + Date.now(),{method:'POST',body:payload,headers:{'Content-Type':'application/octet-stream'},cache:'no-store',mode:'cors'});
+      const up=await fetchThroughWorker('https://httpbin.org/post?ts=' + Date.now(),{method:'POST',body:payload,headers:{'Content-Type':'application/octet-stream'}});
       if(!up.ok) throw new Error('Upload test returned HTTP ' + up.status);
       const usec=Math.max((performance.now()-us)/1000,.001);
       const upload=(payload.byteLength*8/usec)/1e6;
@@ -496,6 +536,15 @@ button{cursor:pointer}
     const s=[...b].map(x=>x.toString(16).padStart(2,'0')).join(':').toUpperCase();
     $('macResult').textContent=s;
   }
+
+  $('copyPacBtn').addEventListener('click',async()=>{
+    try{
+      await navigator.clipboard.writeText(PAC_URL);
+      log('PAC URL copied.','ok');
+    }catch{
+      log('Could not copy the PAC URL.','warn');
+    }
+  });
 
   $('themeToggle').addEventListener('click',()=>{state.dark=!state.dark;localStorage.setItem('network-theme',state.dark?'dark':'light');applyTheme();});
   $('checkBtn').addEventListener('click',checkConnection);
