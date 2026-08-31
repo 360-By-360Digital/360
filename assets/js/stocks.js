@@ -178,13 +178,21 @@
 
   function renderAnalyst(d) {
     const rows = [
-      ["Analyst Rating", d.recommendationKey ? d.recommendationKey.replace(/_/g, " ").toUpperCase() : "—"],
-      ["Analyst Target (avg)", d.targetMeanPrice != null ? fmtNum(d.targetMeanPrice, { maximumFractionDigits: 2 }) : "—"],
-      ["Revenue Growth (YoY)", d.revenueGrowth != null ? fmtPct(d.revenueGrowth) : "—"],
-      ["Profit Margin", d.profitMargins != null ? fmtPct(d.profitMargins) : "—"],
+      ["Analyst Rating", d.recommendationKey ? d.recommendationKey.replace(/_/g, " ").toUpperCase() : null],
+      ["Analyst Target (avg)", d.targetMeanPrice != null ? fmtNum(d.targetMeanPrice, { maximumFractionDigits: 2 }) : null],
+      ["Revenue Growth (YoY)", d.revenueGrowth != null ? fmtPct(d.revenueGrowth) : null],
+      ["Profit Margin", d.profitMargins != null ? fmtPct(d.profitMargins) : null],
     ];
+    const hasAny = rows.some(([, v]) => v != null);
+    if (!hasAny) {
+      els.analystGrid.innerHTML = `<div style="grid-column:1/-1;font-size:13px;color:var(--mut);">
+        No analyst coverage data available for this symbol — this is expected for ETFs and index funds,
+        which typically aren't covered by equity analysts.
+      </div>`;
+      return;
+    }
     els.analystGrid.innerHTML = rows
-      .map(([k, v]) => `<div class="s-stat"><span class="k">${k}</span><span class="v">${v}</span></div>`)
+      .map(([k, v]) => `<div class="s-stat"><span class="k">${k}</span><span class="v">${v ?? "—"}</span></div>`)
       .join("");
   }
 
