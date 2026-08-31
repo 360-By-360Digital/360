@@ -1,5 +1,5 @@
 /* ============================================================
-   360 — CURSOR.CSS V.3.0.0  — Smooth & Redesigned
+   360 — CURSOR.CSS V.2.0.3
    ============================================================ */
 
 /* Hide on touch devices */
@@ -14,7 +14,7 @@
   html, body, * { cursor: none !important; }
 }
 
-/* ── Base layer ────────────────────────────────────────────── */
+/* Base */
 .cursor-dot,
 .cursor-trail,
 .cursor-crosshair,
@@ -25,73 +25,29 @@
   pointer-events: none;
   z-index: calc(infinity);
   transform: translate(-50%, -50%);
-  will-change: left, top, transform;
-  backface-visibility: hidden;
+  will-change: left, top;
 }
 
-/* ── DEFAULT — dot + ring ─────────────────────────────────── */
+/* DEFAULT */
 .cursor-dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--cursor-color, #3b82f6);
-  box-shadow:
-    0 0 6px var(--cursor-color, #3b82f6),
-    0 0 14px color-mix(in srgb, var(--cursor-color, #3b82f6) 50%, transparent);
-  transition:
-    width   120ms cubic-bezier(.34,1.56,.64,1),
-    height  120ms cubic-bezier(.34,1.56,.64,1),
-    opacity 150ms ease,
-    box-shadow 200ms ease;
-}
-
-/* Dot shrinks when clicking */
-body.cursor-clicking .cursor-dot {
-  width: 5px;
-  height: 5px;
-  box-shadow: 0 0 12px var(--cursor-color, #3b82f6);
-}
-
-/* Dot grows on interactive elements */
-body.cursor-hover .cursor-dot {
-  width: 12px;
-  height: 12px;
+  box-shadow: 0 0 10px var(--cursor-color, #3b82f6);
 }
 
 .cursor-trail {
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  border: 1.5px solid color-mix(in srgb, var(--cursor-color, #3b82f6) 60%, transparent);
-  background: color-mix(in srgb, var(--cursor-color, #3b82f6) 6%, transparent);
-  backdrop-filter: blur(1px);
-  /* JS will set transition on trail for lag */
-  transition:
-    width   200ms cubic-bezier(.34,1.56,.64,1),
-    height  200ms cubic-bezier(.34,1.56,.64,1),
-    border-color 200ms ease,
-    background   200ms ease,
-    opacity 200ms ease;
+  border: 2px solid var(--cursor-color, rgba(59,130,246,0.5));
+  background: transparent;
 }
 
-/* Trail expands on interactive hover */
-body.cursor-hover .cursor-trail {
-  width: 40px;
-  height: 40px;
-  border-color: color-mix(in srgb, var(--cursor-color, #3b82f6) 80%, transparent);
-  background: color-mix(in srgb, var(--cursor-color, #3b82f6) 10%, transparent);
-}
-
-body.cursor-clicking .cursor-trail {
-  width: 22px;
-  height: 22px;
-  background: color-mix(in srgb, var(--cursor-color, #3b82f6) 18%, transparent);
-}
-
-/* ── CROSSHAIR ────────────────────────────────────────────── */
 .cursor-crosshair {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   display: none;
 }
 
@@ -102,115 +58,193 @@ body.cursor-clicking .cursor-trail {
   position: absolute;
   background: var(--cursor-color, #3b82f6);
   border-radius: 2px;
-  transition: width 120ms ease, height 120ms ease, opacity 120ms ease;
 }
-.cursor-crosshair::before { width: 24px; height: 2px; top: 11px; left: 0; }
-.cursor-crosshair::after  { width: 2px; height: 24px; top: 0; left: 11px; }
+.cursor-crosshair::before { width: 20px; height: 2px; top: 9px; left: 0; }
+.cursor-crosshair::after  { width: 2px; height: 20px; top: 0; left: 9px; }
 
-body.cursor-clicking .cursor-crosshair::before { width: 18px; left: 3px; }
-body.cursor-clicking .cursor-crosshair::after  { height: 18px; top: 3px; }
-
-/* ── BLOB ─────────────────────────────────────────────────── */
 .cursor-blob {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--cursor-color, #3b82f6);
-  opacity: 0.22;
-  filter: blur(10px);
-  display: none;
-  transition:
-    width   250ms cubic-bezier(.34,1.56,.64,1),
-    height  250ms cubic-bezier(.34,1.56,.64,1),
-    opacity 200ms ease,
-    filter  200ms ease;
-}
-
-body.cursor-hover .cursor-blob {
-  width: 64px;
-  height: 64px;
   opacity: 0.3;
-  filter: blur(14px);
+  filter: blur(8px);
+  display: none;
 }
 
-body.cursor-clicking .cursor-blob {
-  width: 36px;
-  height: 36px;
-  opacity: 0.35;
-  filter: blur(6px);
-}
-
-/* ── VARIANTS ─────────────────────────────────────────────── */
-/* DOT only */
+/* VARIANTS */
 [data-cursor="dot"] .cursor-trail     { display: none !important; }
 [data-cursor="dot"] .cursor-crosshair { display: none !important; }
 [data-cursor="dot"] .cursor-blob      { display: none !important; }
 
-/* RING — no dot */
 [data-cursor="ring"] .cursor-dot      { display: none !important; }
-[data-cursor="ring"] .cursor-crosshair{ display: none !important; }
+[data-cursor="ring"] .cursor-trail    { width: 24px; height: 24px; }
+[data-cursor="ring"] .cursor-crosshair { display: none !important; }
 [data-cursor="ring"] .cursor-blob     { display: none !important; }
 
-/* CROSSHAIR */
-[data-cursor="crosshair"] .cursor-dot      { display: none !important; }
-[data-cursor="crosshair"] .cursor-trail    { display: none !important; }
-[data-cursor="crosshair"] .cursor-crosshair{ display: block !important; }
-[data-cursor="crosshair"] .cursor-blob     { display: none !important; }
+[data-cursor="crosshair"] .cursor-dot       { display: none !important; }
+[data-cursor="crosshair"] .cursor-trail     { display: none !important; }
+[data-cursor="crosshair"] .cursor-crosshair { display: block !important; }
+[data-cursor="crosshair"] .cursor-blob      { display: none !important; }
 
-/* BLOB */
-[data-cursor="blob"] .cursor-dot      { display: none !important; }
-[data-cursor="blob"] .cursor-trail    { display: none !important; }
-[data-cursor="blob"] .cursor-crosshair{ display: none !important; }
-[data-cursor="blob"] .cursor-blob     { display: block !important; }
+[data-cursor="blob"] .cursor-dot       { display: none !important; }
+[data-cursor="blob"] .cursor-trail     { display: none !important; }
+[data-cursor="blob"] .cursor-crosshair { display: none !important; }
+[data-cursor="blob"] .cursor-blob      { display: block !important; }
 
-/* SYSTEM — restore everything */
-[data-cursor="system"] * { cursor: auto !important; }
 [data-cursor="system"] .cursor-dot,
 [data-cursor="system"] .cursor-trail,
 [data-cursor="system"] .cursor-crosshair,
 [data-cursor="system"] .cursor-blob { display: none !important; }
+[data-cursor="system"],
+[data-cursor="system"] * { cursor: auto !important; }
 
-/* ── Cursor click ripple ─────────────────────────────────── */
-.cursor-ripple {
-  position: fixed;
-  pointer-events: none;
-  z-index: calc(infinity - 1);
+/* ============================================================
+   SETTINGS UI
+   ============================================================ */
+.cursor-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cursor-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 6px;
+  border-radius: 10px;
+  border: 1.5px solid var(--br);
+  transition: .2s;
+  font-size: 11px;
+  color: var(--mut);
+  text-align: center;
+  user-select: none;
+}
+body.dark .cursor-option { color: var(--mutd); }
+.cursor-option:hover { background: rgba(148,163,184,.1); border-color: var(--a); }
+.cursor-option.active { border-color: var(--a); background: rgba(59,130,246,.1); color: var(--a); font-weight: 600; }
+
+/* Preview container */
+.cursor-preview {
+  width: 28px;
+  height: 28px;
+  position: relative;
+  display: block;
+}
+
+/* DEFAULT preview — dot + ring */
+.preview-default::before {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 7px; height: 7px;
   border-radius: 50%;
-  border: 2px solid var(--cursor-color, #3b82f6);
-  transform: translate(-50%, -50%) scale(0);
-  animation: cursorRipple 500ms cubic-bezier(0, 0, .2, 1) forwards;
+  background: var(--a, #3b82f6);
+  box-shadow: 0 0 5px var(--a, #3b82f6);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
 }
-@keyframes cursorRipple {
-  from { width: 10px; height: 10px; opacity: .8; transform: translate(-50%,-50%) scale(0); }
-  to   { width: 50px; height: 50px; opacity: 0; transform: translate(-50%,-50%) scale(1); }
-}
-
-/* ── Text cursor: I-beam style ───────────────────────────── */
-body.cursor-text .cursor-dot {
-  width: 2px;
-  height: 20px;
-  border-radius: 1px;
-  box-shadow: none;
-  background: var(--cursor-color, #3b82f6);
-}
-body.cursor-text .cursor-trail {
-  opacity: 0;
+.preview-default::after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--a, #3b82f6);
+  opacity: .5;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
 }
 
-/* ── Cursor hide on inactivity ───────────────────────────── */
-body.cursor-idle .cursor-dot,
-body.cursor-idle .cursor-trail,
-body.cursor-idle .cursor-crosshair,
-body.cursor-idle .cursor-blob {
-  opacity: 0;
-  transition: opacity 800ms ease;
+/* DOT preview */
+.preview-dot::before {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--a, #3b82f6);
+  box-shadow: 0 0 5px var(--a, #3b82f6);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
 }
 
-/* ── Accessibility ────────────────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  .cursor-dot, .cursor-trail,
-  .cursor-crosshair, .cursor-blob {
-    transition: none !important;
-    animation: none !important;
-  }
+/* RING preview */
+.preview-ring::before {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--a, #3b82f6);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
 }
+
+/* CROSSHAIR preview */
+.preview-crosshair::before {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 20px; height: 2px;
+  background: var(--a, #3b82f6);
+  border-radius: 999px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+.preview-crosshair::after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 2px; height: 20px;
+  background: var(--a, #3b82f6);
+  border-radius: 999px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* BLOB preview */
+.preview-blob::before {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--a, #3b82f6);
+  opacity: .35;
+  filter: blur(4px);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* SYSTEM preview */
+.preview-system::before {
+  content: "↖";
+  display: block;
+  position: absolute;
+  font-size: 18px;
+  color: var(--a, #3b82f6);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  line-height: 1;
+}
+
+/* Color picker row */
+.cursor-color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--br);
+  background: rgba(148,163,184,.06);
+}
+.cursor-color-row label { font-size: 12px; color: var(--mut); flex: 1; }
+body.dark .cursor-color-row label { color: var(--mutd); }
+#cursorColorPicker { width: 32px; height: 32px; border-radius: 50%; border: none; padding: 0; }
+#cursorColorReset { font-size: 11px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--br); background: transparent; color: var(--mut); }
+body.dark #cursorColorReset { color: var(--mutd); }
