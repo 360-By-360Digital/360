@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>360Draw | 360 Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
+:root{--bg:#fff;--sidebar:#fafafa;--border:#e5e7eb;--text:#111827;--muted:#6b7280;--green:#3ecf8e}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:Inter,system-ui,sans-serif;color:var(--text);background:#fff}
+.wrapper{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:240px 1fr}
+.sidebar{position:sticky;top:0;height:100vh;border-right:1px solid var(--border);background:var(--sidebar);padding:32px 24px}
+.logo{font-weight:700;font-size:20px;margin-bottom:28px}.logo span{color:var(--green)}
+.sidebar nav{display:flex;flex-direction:column;gap:10px}.sidebar a{color:#4b5563;text-decoration:none;font-size:14px}.sidebar a:hover{color:#111827}
+main{padding:48px;max-width:900px}h1{font-size:42px;margin-bottom:8px;letter-spacing:-1px}.subtitle{color:var(--muted);margin-bottom:48px}
+section{margin-bottom:56px}h2{font-size:24px;margin-bottom:16px}h3{font-size:17px;margin:24px 0 10px}p{line-height:1.7;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid var(--border);padding:12px;text-align:left;vertical-align:top}th{background:#fafafa}
+.code{background:#fafafa;border:1px solid var(--border);border-radius:8px;padding:18px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;line-height:1.6;white-space:pre}
+ul{padding-left:20px}li{margin:8px 0}.note{border-left:3px solid var(--green);padding:12px 16px;background:#fafafa;margin:18px 0}.muted{color:var(--muted)}
+footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:14px}
+@media(max-width:900px){.wrapper{display:block}.sidebar{position:relative;height:auto;border-right:none;border-bottom:1px solid var(--border)}main{padding:24px}}
+</style></head>
+<body><div class="wrapper"><aside class="sidebar"><div class="logo">360<span>.</span>docs</div><nav><a href="index.html">Apps</a><a href="#overview">Overview</a><a href="#tools">Tools</a><a href="#history">History</a><a href="#export">Export</a><a href="../api.html">API</a><a href="../supabase-integration.html">Supabase</a></nav></aside><main><h1>360Draw</h1><p class="subtitle">A lightweight drawing canvas with undo, redo, and PNG export.</p><section id="overview"><h2>Overview</h2><p>360Draw is a browser drawing tool built into the 360 app collection.</p></section>
+<section id="tools"><h2>Tools</h2><p>The toolbar includes drawing, erasing, line, rectangle, circle, and delete controls.</p></section>
+<section id="history"><h2>History</h2><p>Undo and redo controls are available while working on a drawing.</p></section>
+<section id="export"><h2>Export</h2><p>Finished drawings can be exported as PNG files with the Export PNG control.</p></section><footer>360 documentation</footer></main></div></body></html>
