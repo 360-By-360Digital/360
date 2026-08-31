@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>360Canvas — build a site on 360</title>
+<link rel="icon" type="image/png" href="/favicon-32x32.png" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#3b82f6" />
+<link rel="stylesheet" href="/assets/css/main.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/js/360-settings.js"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;}
+  :root{ --cv-card:#fff; --cv-border:rgba(15,23,42,.09); --cv-hover:rgba(59,130,246,.06); --cv-danger:#ef4444; }
+  body.dark{ --cv-card:#111827; --cv-border:rgba(255,255,255,.08); --cv-hover:rgba(59,130,246,.1); }
+  body{min-height:100vh;}
+  .cv-top{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--cv-border);position:sticky;top:0;z-index:30;background:var(--bg);}
+  body.dark .cv-top{background:var(--bgd);}
+  .cv-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;}
+  .cv-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--a),var(--a2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;}
+  .cv-title{font-weight:700;font-size:16px;}
+  .cv-sub{font-size:11px;color:var(--mut);}
+  body.dark .cv-sub{color:var(--mutd);}
+  .cv-spacer{flex:1;}
+  .cv-btn{padding:9px 16px;border-radius:10px;border:none;background:linear-gradient(120deg,var(--a),var(--a2));color:#fff;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .cv-btn:disabled{opacity:.5;cursor:default;}
+  .cv-btn-outline{padding:9px 16px;border-radius:10px;cursor:pointer;background:transparent;border:1px solid var(--cv-border);color:var(--txt);font-family:inherit;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px;}
+  body.dark .cv-btn-outline{color:var(--txtd);}
+  .cv-btn-outline:hover{background:var(--cv-hover);}
+  .cv-btn-sm{padding:5px 10px;font-size:11px;border-radius:7px;}
+  .cv-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--a),var(--a2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;cursor:pointer;border:none;}
+  .cv-signin{padding:8px 16px;border-radius:10px;border:none;background:linear-gradient(120deg,var(--a),var(--a2));color:#fff;font-weight:700;font-size:13px;text-decoration:none;}
+
+  .cv-main{max-width:1200px;margin:0 auto;padding:28px 20px;}
+  .cv-gate{max-width:460px;margin:12vh auto;text-align:center;padding:36px 28px;border-radius:20px;background:var(--cv-card);border:1px solid var(--cv-border);}
+  .cv-gate .cv-mark{margin:0 auto 16px;width:52px;height:52px;border-radius:14px;font-size:20px;}
+  .cv-gate p{color:var(--mut);font-size:14px;line-height:1.6;margin-bottom:22px;}
+  body.dark .cv-gate p{color:var(--mutd);}
+
+  .cv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px;flex-wrap:wrap;}
+  .cv-head p{color:var(--mut);font-size:13px;margin-top:4px;}
+  body.dark .cv-head p{color:var(--mutd);}
+  .cv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
+  .cv-site-card{padding:16px;border-radius:16px;cursor:pointer;background:var(--cv-card);border:1px solid var(--cv-border);transition:transform .12s;}
+  .cv-site-card:hover{transform:translateY(-2px);}
+  .cv-badge{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;}
+  .cv-badge-pub{background:rgba(16,185,129,.12);color:#10b981;}
+  .cv-badge-draft{background:rgba(107,114,128,.12);color:var(--mut);}
+  .cv-empty{text-align:center;padding:60px 20px;color:var(--mut);}
+  body.dark .cv-empty{color:var(--mutd);}
+
+  .cv-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
+  .cv-modal{width:100%;max-width:440px;max-height:88vh;overflow-y:auto;border-radius:18px;background:var(--cv-card);padding:22px;}
+  .cv-field{margin-bottom:14px;}
+  .cv-field label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:6px;}
+  body.dark .cv-field label{color:var(--mutd);}
+  .cv-field input,.cv-field select,.cv-field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--cv-border);background:var(--bg);color:var(--txt);font-family:inherit;font-size:13.5px;}
+  body.dark .cv-field input,body.dark .cv-field select,body.dark .cv-field textarea{background:var(--bgd);color:var(--txtd);}
+  .cv-field-row{display:flex;gap:8px;}
+  .cv-field-row .cv-field{flex:1;}
+  .cv-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+  .cv-modal-err{color:var(--cv-danger);font-size:12.5px;margin-top:8px;}
+  .cv-domain-preview{font-size:12.5px;color:var(--mut);margin-top:6px;}
+  body.dark .cv-domain-preview{color:var(--mutd);}
+  .cv-check-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mut);margin-bottom:10px;}
+  body.dark .cv-check-row{color:var(--mutd);}
+
+  .cv-editor{display:grid;grid-template-columns:250px 1fr;gap:16px;height:calc(100vh - 190px);min-height:500px;}
+  .cv-panel{background:var(--cv-card);border:1px solid var(--cv-border);border-radius:16px;padding:14px;overflow-y:auto;}
+  .cv-panel-label{font-size:11px;font-weight:700;color:var(--mut);margin:14px 0 8px;}
+  .cv-panel-label:first-child{margin-top:0;}
+  body.dark .cv-panel-label{color:var(--mutd);}
+  .cv-block-btn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:9px 10px;border-radius:10px;border:none;background:transparent;color:var(--txt);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;margin-bottom:2px;}
+  body.dark .cv-block-btn{color:var(--txtd);}
+  .cv-block-btn:hover{background:var(--cv-hover);}
+  .cv-preview-wrap{background:var(--cv-card);border:1px solid var(--cv-border);border-radius:16px;padding:0;overflow:hidden;display:flex;flex-direction:column;}
+  .cv-preview-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;border-bottom:1px solid var(--cv-border);font-size:12px;color:var(--mut);}
+  body.dark .cv-preview-bar{color:var(--mutd);}
+  .cv-preview-modes{display:flex;gap:4px;}
+  .cv-preview-mode-btn{width:26px;height:26px;border-radius:7px;border:1px solid var(--cv-border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mut);}
+  .cv-preview-mode-btn.active{background:var(--a);color:#fff;border-color:var(--a);}
+  .cv-preview-frame-wrap{flex:1;overflow:auto;display:flex;justify-content:center;background:var(--bg);}
+  body.dark .cv-preview-frame-wrap{background:#0b0f1a;}
+  .cv-preview-iframe{border:none;background:#fff;height:100%;transition:width .2s;}
+
+  .cv-block-list{display:flex;flex-direction:column;gap:8px;}
+  .cv-block-row{border:1px solid var(--cv-border);border-radius:12px;padding:10px;background:var(--bg);cursor:grab;}
+  .cv-block-row.dragging{opacity:.4;}
+  .cv-block-row.drag-over{border-color:var(--a);}
+  body.dark .cv-block-row{background:var(--bgd);}
+  .cv-block-row-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .cv-block-type{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--a);display:flex;align-items:center;gap:5px;}
+  .cv-block-actions{display:flex;gap:4px;}
+  .cv-icon-btn{width:24px;height:24px;border-radius:7px;border:none;background:transparent;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;}
+  body.dark .cv-icon-btn{color:var(--mutd);}
+  .cv-icon-btn:hover{background:var(--cv-hover);color:var(--txt);}
+  .cv-block-row textarea{min-height:56px;resize:vertical;}
+  .cv-block-empty{text-align:center;padding:40px 20px;color:var(--mut);font-size:13px;}
+  body.dark .cv-block-empty{color:var(--mutd);}
+  .cv-mini-row{display:flex;gap:6px;margin-top:6px;}
+  .cv-mini-row input,.cv-mini-row select{flex:1;padding:6px 8px;font-size:12px;border-radius:7px;border:1px solid var(--cv-border);background:var(--bg);color:var(--txt);}
+  body.dark .cv-mini-row input,body.dark .cv-mini-row select{background:var(--bgd);color:var(--txtd);}
+  .cv-col-item{border:1px dashed var(--cv-border);border-radius:8px;padding:6px;margin-top:6px;}
+  .cv-toggle-row{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11.5px;color:var(--mut);}
+  body.dark .cv-toggle-row{color:var(--mutd);}
+
+  .cv-back{display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-size:13px;cursor:pointer;margin-bottom:14px;}
+  body.dark .cv-back{color:var(--mutd);}
+  .cv-back:hover{color:var(--a);}
+  .cv-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+  .cv-tab{padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:700;cursor:pointer;background:var(--cv-card);border:1px solid var(--cv-border);color:var(--mut);display:flex;align-items:center;gap:6px;}
+  body.dark .cv-tab{color:var(--mutd);}
+  .cv-tab.active{background:linear-gradient(120deg,var(--a),var(--a2));color:#fff;border-color:transparent;}
+  .cv-tab-add{width:30px;height:30px;border-radius:50%;border:1px dashed var(--cv-border);background:transparent;cursor:pointer;color:var(--mut);}
+
+  .cv-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .cv-toast.show{opacity:1;}
+
+  @media (max-width:820px){ .cv-editor{grid-template-columns:1fr;height:auto;} .cv-preview-wrap{height:400px;} }
+</style>
+</head>
+<body>
+  <div class="cv-top">
+    <a href="/apps.html" class="cv-logo">
+      <div class="cv-mark">360</div>
+      <div><div class="cv-title">360Canvas</div><div class="cv-sub">Build a site on 360</div></div>
+    </a>
+    <div class="cv-spacer"></div>
+    <button class="cv-btn-outline" id="theme-toggle" title="Toggle theme" style="width:36px;padding:0;justify-content:center;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+    </button>
+    <div id="auth-slot"></div>
+  </div>
+  <div id="app" class="cv-main"></div>
+  <div id="toast" class="cv-toast"></div>
+
+<script>
+  const SUPABASE_URL='https://wiswfpfsjiowtrdyqpxy.supabase.co';
+  const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  const RESERVED = ['www','app','api','admin','mail','ftp','root','support','help','static','cdn','assets','blog','search'];
+
+  let currentUser=null, currentSession=null, sites=[], view='list', activeSiteId=null, activePage=null, dirty=false, pages=[];
+  const app=document.getElementById('app');
+  const authSlot=document.getElementById('auth-slot');
+
+  function applyTheme(t){document.body.classList.toggle('dark',t==='dark');}
+  let theme=localStorage.getItem('360_theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  applyTheme(theme);
+  document.getElementById('theme-toggle').addEventListener('click',()=>{
+    theme=theme==='dark'?'light':'dark'; localStorage.setItem('360_theme',theme); Settings360.set('theme',theme); applyTheme(theme);
+  });
+
+  function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),3000);}
+  function escHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function uid(){return 'b'+Math.random().toString(36).slice(2,10);}
+
+  async function initAuth(){
+    const {data:{session}}=await sb.auth.getSession();
+    currentSession=session; currentUser=session?.user??null;
+    renderAuthSlot(); render();
+    if(currentUser) loadSites();
+    await Settings360.init(sb);
+    const remoteTheme=Settings360.get('theme');
+    if(remoteTheme && remoteTheme!==theme){theme=remoteTheme;localStorage.setItem('360_theme',theme);applyTheme(theme);}
+  }
+  sb.auth.onAuthStateChange((_e,session)=>{
+    currentSession=session; currentUser=session?.user??null;
+    renderAuthSlot(); render();
+    if(currentUser) loadSites();
+  });
+
+  function renderAuthSlot(){
+    if(currentUser){
+      authSlot.innerHTML=`<button class="cv-avatar" id="signout-btn" title="Sign out">${(currentUser.email||'U')[0].toUpperCase()}</button>`;
+      document.getElementById('signout-btn').addEventListener('click',async()=>{await sb.auth.signOut();toast('Signed out');});
+    } else {
+      authSlot.innerHTML=`<a class="cv-signin" href="/signin.html?from=${encodeURIComponent(location.pathname)}">Sign in</a>`;
+    }
+  }
+
+  async function loadSites(){
+    const {data,error}=await sb.from('builder_sites').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
+    if(!error) sites=data||[];
+    render();
+  }
+
+  function render(){
+    if(!currentUser){ renderGate(); return; }
+    if(view==='editor' && activeSiteId){ renderEditor(); return; }
+    renderList();
+  }
+
+  function renderGate(){
+    app.innerHTML=`<div class="cv-gate">
+      <div class="cv-mark">360</div>
+      <h1>Sign in to build a site</h1>
+      <p>360Canvas is a full block builder — hero sections, columns, galleries, video, forms, animations, mouse-reactive tilt, multi-page nav, custom domains. Publish and it's live at <b>yourname.360-search.com</b>.</p>
+      <a class="cv-signin" href="/signin.html?from=${encodeURIComponent(location.pathname)}">Sign in to continue</a>
+    </div>`;
+  }
+
+  function renderList(){
+    app.innerHTML=`
+      <div class="cv-head">
+        <div><h1 style="font-size:21px;">Your sites</h1><p>Full block builder, published straight to a 360-search.com subdomain (or your own domain).</p></div>
+        <button class="cv-btn" id="new-site-btn">+ New site</button>
+      </div>
+      <div id="sites-box"></div>`;
+    document.getElementById('new-site-btn').addEventListener('click',openNewSiteModal);
+    const box=document.getElementById('sites-box');
+    if(!sites.length){ box.innerHTML=`<div class="cv-empty">🎨<br>No sites yet — start your first one.</div>`; return; }
+    box.innerHTML=`<div class="cv-grid">${sites.map(s=>`
+      <div class="cv-site-card" data-id="${s.id}">
+        <div style="font-weight:700;font-size:15px;margin-bottom:6px;">${escHtml(s.title)}</div>
+        <div style="font-size:12px;color:var(--mut);margin-bottom:8px;">${escHtml(s.custom_domain||(s.subdomain+'.360-search.com'))}</div>
+        <span class="cv-badge ${s.published?'cv-badge-pub':'cv-badge-draft'}">${s.published?'Published':'Draft'}</span>
+      </div>`).join('')}</div>`;
+    box.querySelectorAll('.cv-site-card').forEach(el=>el.addEventListener('click',()=>openEditor(el.dataset.id)));
+  }
+
+  function openNewSiteModal(){
+    const overlay=document.createElement('div'); overlay.className='cv-modal-overlay';
+    overlay.innerHTML=`<div class="cv-modal">
+      <h2 style="margin-bottom:14px;">New site</h2>
+      <div class="cv-field"><label>Title</label><input id="ns-title" placeholder="My Portfolio" /></div>
+      <div class="cv-field">
+        <label>Subdomain</label>
+        <input id="ns-sub" placeholder="yourname" />
+        <div class="cv-domain-preview" id="ns-preview">yourname.360-search.com</div>
+      </div>
+      <div class="cv-modal-err" id="ns-err"></div>
+      <div class="cv-modal-actions">
+        <button class="cv-btn-outline" id="ns-cancel">Cancel</button>
+        <button class="cv-btn" id="ns-confirm">Create</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    const close=()=>overlay.remove();
+    overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
+    document.getElementById('ns-cancel').addEventListener('click',close);
+    const subInput=document.getElementById('ns-sub');
+    subInput.addEventListener('input',()=>{
+      const v=subInput.value.toLowerCase().replace(/[^a-z0-9-]/g,'');
+      document.getElementById('ns-preview').textContent=`${v||'yourname'}.360-search.com`;
+    });
+    document.getElementById('ns-confirm').addEventListener('click',async()=>{
+      const errEl=document.getElementById('ns-err');
+      const title=document.getElementById('ns-title').value.trim()||'My Site';
+      const sub=subInput.value.trim().toLowerCase();
+      if(!sub || sub.length<3){errEl.textContent='Subdomain needs to be at least 3 characters.';return;}
+      if(RESERVED.includes(sub)){errEl.textContent='That subdomain is reserved.';return;}
+      if(!/^[a-z0-9](-?[a-z0-9])*$/.test(sub)){errEl.textContent='Lowercase letters, numbers, and hyphens only.';return;}
+      const {data:existing}=await sb.from('builder_sites').select('id').eq('subdomain',sub).maybeSingle();
+      if(existing){errEl.textContent='That subdomain is taken.';return;}
+      const {data:site,error}=await sb.from('builder_sites').insert({user_id:currentUser.id,subdomain:sub,title}).select().single();
+      if(error){errEl.textContent=error.message;return;}
+      await sb.from('builder_pages').insert({builder_site_id:site.id,slug:'index',title:'Home',nav_order:0,blocks:[
+        {id:uid(),type:'hero',props:{heading:title,subtext:'Welcome to my new site.',buttonText:'Get started',buttonHref:'#',overlay:0.4,tilt:true,animate:'fade'}},
+        {id:uid(),type:'text',props:{text:'Built on 360Canvas.',animate:'slide-up'}},
+      ]});
+      sites.unshift(site);
+      close();
+      openEditor(site.id);
+    });
+  }
+
+  const BLOCK_TYPES=[
+    {type:'hero',label:'Hero',icon:'🖼'},
+    {type:'heading',label:'Heading',icon:'H'},
+    {type:'text',label:'Text',icon:'¶'},
+    {type:'image',label:'Image',icon:'▨'},
+    {type:'button',label:'Button',icon:'▭'},
+    {type:'columns',label:'Columns',icon:'⚏'},
+    {type:'gallery',label:'Gallery',icon:'▦'},
+    {type:'video',label:'Video',icon:'▶'},
+    {type:'quote',label:'Quote',icon:'"'},
+    {type:'social',label:'Social',icon:'🔗'},
+    {type:'form',label:'Form',icon:'✉'},
+    {type:'divider',label:'Divider',icon:'—'},
+    {type:'spacer',label:'Spacer',icon:'↕'},
+    {type:'html',label:'Raw HTML',icon:'&lt;/&gt;'},
+  ];
+  const ANIM_OPTS=[['none','No animation'],['fade','Fade in'],['slide-up','Slide up'],['slide-left','Slide from left'],['slide-right','Slide from right'],['zoom','Zoom in']];
+
+  async function openEditor(siteId){
+    activeSiteId=siteId; view='editor';
+    const {data:pgs}=await sb.from('builder_pages').select('*').eq('builder_site_id',siteId).order('nav_order',{ascending:true});
+    pages=pgs&&pgs.length?pgs:[{builder_site_id:siteId,slug:'index',title:'Home',blocks:[],nav_order:0,show_in_nav:true}];
+    activePage=pages[0];
+    render();
+  }
+
+  function currentSite(){ return sites.find(s=>s.id===activeSiteId); }
+
+  function renderEditor(){
+    const site=currentSite();
+    if(!site){ view='list'; render(); return; }
+    app.innerHTML=`
+      <div class="cv-back" id="back-btn">← All sites</div>
+      <div class="cv-head">
+        <div>
+          <h1 style="font-size:19px;">${escHtml(site.title)}</h1>
+          <p>${escHtml(site.custom_domain||(site.subdomain+'.360-search.com'))} ${site.published?'· <span style="color:#10b981;font-weight:700;">live</span>':'· draft'}</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="cv-btn-outline" id="site-settings-btn">⚙ Site settings</button>
+          <button class="cv-btn-outline" id="save-btn">Save</button>
+          <button class="cv-btn" id="publish-btn">${site.published?'Unpublish':'Publish'}</button>
+        </div>
+      </div>
+      <div class="cv-tabs" id="page-tabs"></div>
+      <div class="cv-editor">
+        <div class="cv-panel">
+          <div class="cv-panel-label">ADD BLOCK</div>
+          ${BLOCK_TYPES.map(b=>`<button class="cv-block-btn" data-add="${b.type}"><span style="width:20px;text-align:center;">${b.icon}</span>${b.label}</button>`).join('')}
+          <div class="cv-panel-label">BLOCKS</div>
+          <div class="cv-block-list" id="block-list"></div>
+        </div>
+        <div class="cv-preview-wrap">
+          <div class="cv-preview-bar">
+            <span>Live preview</span>
+            <div class="cv-preview-modes">
+              <button class="cv-preview-mode-btn active" data-mode="desktop" title="Desktop">🖥</button>
+              <button class="cv-preview-mode-btn" data-mode="mobile" title="Mobile">📱</button>
+            </div>
+          </div>
+          <div class="cv-preview-frame-wrap"><iframe class="cv-preview-iframe" id="preview-frame" style="width:100%;"></iframe></div>
+        </div>
+      </div>`;
+
+    document.getElementById('back-btn').addEventListener('click',()=>{ view='list'; activeSiteId=null; render(); });
+    document.getElementById('save-btn').addEventListener('click',()=>savePage(false));
+    document.getElementById('publish-btn').addEventListener('click',togglePublish);
+    document.getElementById('site-settings-btn').addEventListener('click',openSiteSettingsModal);
+    app.querySelectorAll('[data-add]').forEach(b=>b.addEventListener('click',()=>addBlock(b.dataset.add)));
+    app.querySelectorAll('.cv-preview-mode-btn').forEach(b=>b.addEventListener('click',()=>{
+      app.querySelectorAll('.cv-preview-mode-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      document.getElementById('preview-frame').style.width = b.dataset.mode==='mobile' ? '390px' : '100%';
+    }));
+    renderPageTabs();
+    renderBlockList();
+    renderPreview();
+  }
+
+  function renderPageTabs(){
+    const box=document.getElementById('page-tabs');
+    box.innerHTML = pages.map(p=>`<div class="cv-tab ${p.slug===activePage.slug?'active':''}" data-slug="${escHtml(p.slug)}">${escHtml(p.title||p.slug)}</div>`).join('')
+      + `<button class="cv-tab-add" id="add-page-btn" title="Add page">+</button>`;
+    box.querySelectorAll('.cv-tab').forEach(el=>el.addEventListener('click',async()=>{
+      if(dirty) await savePage(true);
+      activePage=pages.find(p=>p.slug===el.dataset.slug);
+      renderPageTabs(); renderBlockList(); renderPreview();
+    }));
+    document.getElementById('add-page-btn').addEventListener('click',openAddPageModal);
+  }
+
+  function openAddPageModal(){
+    const overlay=document.createElement('div'); overlay.className='cv-modal-overlay';
+    overlay.innerHTML=`<div class="cv-modal">
+      <h2 style="margin-bottom:14px;">New page</h2>
+      <div class="cv-field"><label>Title</label><input id="np-title" placeholder="About" /></div>
+      <div class="cv-field"><label>URL slug</label><input id="np-slug" placeholder="about" /></div>
+      <div class="cv-modal-err" id="np-err"></div>
+      <div class="cv-modal-actions">
+        <button class="cv-btn-outline" id="np-cancel">Cancel</button>
+        <button class="cv-btn" id="np-confirm">Add page</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    const close=()=>overlay.remove();
+    overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
+    document.getElementById('np-cancel').addEventListener('click',close);
+    document.getElementById('np-confirm').addEventListener('click',async()=>{
+      const errEl=document.getElementById('np-err');
+      const title=document.getElementById('np-title').value.trim();
+      let slug=document.getElementById('np-slug').value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
+      if(!title||!slug){errEl.textContent='Title and slug are both required.';return;}
+      if(pages.some(p=>p.slug===slug)){errEl.textContent='That slug is already used on this site.';return;}
+      const {data,error}=await sb.from('builder_pages').insert({builder_site_id:activeSiteId,slug,title,nav_order:pages.length,blocks:[]}).select().single();
+      if(error){errEl.textContent=error.message;return;}
+      pages.push(data);
+      activePage=data;
+      close();
+      renderPageTabs(); renderBlockList(); renderPreview();
+    });
+  }
+
+  function renderBlockList(){
+    const box=document.getElementById('block-list');
+    if(!activePage.blocks.length){ box.innerHTML=`<div class="cv-block-empty">No blocks yet.<br>Add one above.</div>`; return; }
+    box.innerHTML=activePage.blocks.map((b,i)=>blockRowHtml(b,i)).join('');
+    box.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',()=>deleteBlock(el.dataset.del)));
+    box.querySelectorAll('[data-edit]').forEach(el=>el.addEventListener('input',()=>{updateBlockFromInputs(el.closest('.cv-block-row'));renderPreview();}));
+    box.querySelectorAll('[data-edit-select]').forEach(el=>el.addEventListener('change',()=>{updateBlockFromInputs(el.closest('.cv-block-row'));renderPreview();}));
+    box.querySelectorAll('[data-edit-check]').forEach(el=>el.addEventListener('change',()=>{updateBlockFromInputs(el.closest('.cv-block-row'));renderPreview();}));
+    box.querySelectorAll('[data-add-col]').forEach(el=>el.addEventListener('click',()=>addColumn(el.dataset.addCol)));
+    box.querySelectorAll('[data-add-social]').forEach(el=>el.addEventListener('click',()=>addSocialLink(el.dataset.addSocial)));
+    box.querySelectorAll('[data-add-gallery]').forEach(el=>el.addEventListener('click',()=>addGalleryImage(el.dataset.addGallery)));
+    wireDragDrop(box);
+  }
+
+  function wireDragDrop(box){
+    let dragId=null;
+    box.querySelectorAll('.cv-block-row').forEach(row=>{
+      row.draggable=true;
+      row.addEventListener('dragstart',()=>{dragId=row.dataset.id;row.classList.add('dragging');});
+      row.addEventListener('dragend',()=>row.classList.remove('dragging'));
+      row.addEventListener('dragover',e=>{e.preventDefault();row.classList.add('drag-over');});
+      row.addEventListener('dragleave',()=>row.classList.remove('drag-over'));
+      row.addEventListener('drop',e=>{
+        e.preventDefault(); row.classList.remove('drag-over');
+        if(!dragId||dragId===row.dataset.id) return;
+        const from=activePage.blocks.findIndex(b=>b.id===dragId);
+        const to=activePage.blocks.findIndex(b=>b.id===row.dataset.id);
+        const [moved]=activePage.blocks.splice(from,1);
+        activePage.blocks.splice(to,0,moved);
+        dirty=true;
+        renderBlockList(); renderPreview();
+      });
+    });
+  }
+
+  function animSelect(b,p){
+    return `<select data-edit-select data-field="animate" class="cv-mini-row" style="margin-top:8px;">${ANIM_OPTS.map(([v,l])=>`<option value="${v}" ${((p.animate||'none')===v)?'selected':''}>${l}</option>`).join('')}</select>`;
+  }
+  function tiltCheck(p){
+    return `<label class="cv-toggle-row"><input type="checkbox" data-edit-check data-field="tilt" ${p.tilt?'checked':''}/> Mouse-reactive tilt</label>`;
+  }
+
+  function blockRowHtml(b,i){
+    const p=b.props||{};
+    let fields='';
+    if(b.type==='hero') fields=`
+      <input data-edit data-field="heading" value="${escHtml(p.heading||'')}" placeholder="Headline" />
+      <textarea data-edit data-field="subtext" placeholder="Subtext">${escHtml(p.subtext||'')}</textarea>
+      <div class="cv-mini-row"><input data-edit data-field="buttonText" value="${escHtml(p.buttonText||'')}" placeholder="Button text" /><input data-edit data-field="buttonHref" value="${escHtml(p.buttonHref||'')}" placeholder="Button link" /></div>
+      <input data-edit data-field="bgImage" value="${escHtml(p.bgImage||'')}" placeholder="Background image URL" style="margin-top:6px;" />
+      ${tiltCheck(p)}${animSelect(b,p)}`;
+    else if(b.type==='heading') fields=`<input data-edit data-field="text" value="${escHtml(p.text||'')}" placeholder="Heading text" />
+      <select data-edit-select data-field="level" class="cv-mini-row" style="margin-top:6px;"><option value="1" ${p.level===1?'selected':''}>H1</option><option value="2" ${(!p.level||p.level===2)?'selected':''}>H2</option><option value="3" ${p.level===3?'selected':''}>H3</option></select>${animSelect(b,p)}`;
+    else if(b.type==='text') fields=`<textarea data-edit data-field="text" placeholder="Paragraph text">${escHtml(p.text||'')}</textarea>${animSelect(b,p)}`;
+    else if(b.type==='image') fields=`<input data-edit data-field="src" value="${escHtml(p.src||'')}" placeholder="Image URL" /><input data-edit data-field="alt" value="${escHtml(p.alt||'')}" placeholder="Alt text" style="margin-top:6px;" />${tiltCheck(p)}${animSelect(b,p)}`;
+    else if(b.type==='button') fields=`<input data-edit data-field="text" value="${escHtml(p.text||'')}" placeholder="Button label" /><input data-edit data-field="href" value="${escHtml(p.href||'')}" placeholder="Link URL" style="margin-top:6px;" />${animSelect(b,p)}`;
+    else if(b.type==='spacer') fields=`<input data-edit data-field="height" type="number" value="${p.height||40}" placeholder="Height (px)" />`;
+    else if(b.type==='html') fields=`<textarea data-edit data-field="code" placeholder="&lt;div&gt;Your HTML&lt;/div&gt;" style="min-height:90px;font-family:ui-monospace,monospace;">${escHtml(p.code||'')}</textarea>`;
+    else if(b.type==='quote') fields=`<textarea data-edit data-field="text" placeholder="Quote text">${escHtml(p.text||'')}</textarea><input data-edit data-field="author" value="${escHtml(p.author||'')}" placeholder="Author" style="margin-top:6px;" />${animSelect(b,p)}`;
+    else if(b.type==='video') fields=`<input data-edit data-field="url" value="${escHtml(p.url||'')}" placeholder="YouTube or Vimeo URL" />${animSelect(b,p)}`;
+    else if(b.type==='columns'){
+      const cols=Array.isArray(p.columns)?p.columns:[];
+      fields=`${cols.map((c,ci)=>`<div class="cv-col-item">
+          <input data-edit data-field="col-${ci}-heading" value="${escHtml(c.heading||'')}" placeholder="Column ${ci+1} heading" />
+          <textarea data-edit data-field="col-${ci}-text" placeholder="Text" style="margin-top:4px;">${escHtml(c.text||'')}</textarea>
+          <input data-edit data-field="col-${ci}-image" value="${escHtml(c.image||'')}" placeholder="Image URL" style="margin-top:4px;" />
+        </div>`).join('')}
+        <button class="cv-btn-outline cv-btn-sm" data-add-col="${b.id}" style="margin-top:6px;">+ Add column</button>
+        ${tiltCheck(p)}${animSelect(b,p)}`;
+    }
+    else if(b.type==='gallery'){
+      const imgs=Array.isArray(p.images)?p.images:[];
+      fields=`${imgs.map((src,gi)=>`<input data-edit data-field="img-${gi}" value="${escHtml(src)}" placeholder="Image ${gi+1} URL" style="margin-top:4px;" />`).join('')}
+        <button class="cv-btn-outline cv-btn-sm" data-add-gallery="${b.id}" style="margin-top:6px;">+ Add image</button>${animSelect(b,p)}`;
+    }
+    else if(b.type==='social'){
+      const links=Array.isArray(p.links)?p.links:[];
+      fields=`${links.map((l,si)=>`<div class="cv-mini-row"><input data-edit data-field="soc-${si}-platform" value="${escHtml(l.platform||'')}" placeholder="twitter/instagram/..." /><input data-edit data-field="soc-${si}-url" value="${escHtml(l.url||'')}" placeholder="URL" /></div>`).join('')}
+        <button class="cv-btn-outline cv-btn-sm" data-add-social="${b.id}" style="margin-top:6px;">+ Add link</button>`;
+    }
+    else if(b.type==='form'){
+      fields=`<input data-edit data-field="fieldsCsv" value="${escHtml((p.fields||['Name','Email','Message']).join(', '))}" placeholder="Name, Email, Message" />
+        <input data-edit data-field="buttonText" value="${escHtml(p.buttonText||'Send')}" placeholder="Button text" style="margin-top:6px;" />
+        <div class="cv-toggle-row">Submissions land in your Supabase form_submissions table.</div>`;
+    }
+    else fields='';
+    return `<div class="cv-block-row" data-id="${b.id}">
+      <div class="cv-block-row-head">
+        <span class="cv-block-type">⠿ ${b.type}</span>
+        <div class="cv-block-actions">
+          <button class="cv-icon-btn" data-del="${b.id}" title="Delete" style="color:var(--cv-danger);">✕</button>
+        </div>
+      </div>
+      ${fields}
+    </div>`;
+  }
+
+  function addColumn(blockId){
+    const b=activePage.blocks.find(x=>x.id===blockId);
+    if(!b.props.columns) b.props.columns=[];
+    if(b.props.columns.length>=4) return;
+    b.props.columns.push({heading:'',text:'',image:''});
+    dirty=true; renderBlockList(); renderPreview();
+  }
+  function addGalleryImage(blockId){
+    const b=activePage.blocks.find(x=>x.id===blockId);
+    if(!b.props.images) b.props.images=[];
+    b.props.images.push('');
+    dirty=true; renderBlockList(); renderPreview();
+  }
+  function addSocialLink(blockId){
+    const b=activePage.blocks.find(x=>x.id===blockId);
+    if(!b.props.links) b.props.links=[];
+    b.props.links.push({platform:'',url:''});
+    dirty=true; renderBlockList(); renderPreview();
+  }
+
+  function addBlock(type){
+    const defaults={
+      hero:{heading:'New headline',subtext:'A short subtext goes here.',buttonText:'Learn more',buttonHref:'#',overlay:0.4,tilt:true,animate:'fade'},
+      heading:{text:'New heading',level:2,animate:'none'}, text:{text:'Some text…',animate:'none'}, image:{src:'',alt:'',tilt:false,animate:'none'},
+      button:{text:'Click me',href:'#',animate:'none'}, divider:{}, spacer:{height:40}, html:{code:''},
+      columns:{columns:[{heading:'',text:'',image:''},{heading:'',text:'',image:''}],tilt:false,animate:'none'},
+      gallery:{images:[''],animate:'none'}, video:{url:'',animate:'none'}, quote:{text:'',author:'',animate:'none'},
+      social:{links:[{platform:'twitter',url:''}]}, form:{fields:['Name','Email','Message'],buttonText:'Send'},
+    };
+    activePage.blocks.push({id:uid(),type,props:defaults[type]||{}});
+    dirty=true;
+    renderBlockList(); renderPreview();
+  }
+  function deleteBlock(id){
+    activePage.blocks=activePage.blocks.filter(b=>b.id!==id);
+    dirty=true;
+    renderBlockList(); renderPreview();
+  }
+  function updateBlockFromInputs(row){
+    const id=row.dataset.id;
+    const b=activePage.blocks.find(x=>x.id===id);
+    if(!b) return;
+    row.querySelectorAll('[data-field]').forEach(inp=>{
+      const f=inp.dataset.field;
+      let v = inp.type==='checkbox' ? inp.checked : inp.value;
+      if(f==='level') v=parseInt(v);
+      if(f==='height') v=parseInt(v)||40;
+      if(f==='fieldsCsv'){ b.props.fields=v.split(',').map(s=>s.trim()).filter(Boolean); return; }
+      const colMatch=f.match(/^col-(\d+)-(\w+)$/);
+      if(colMatch){ if(!b.props.columns) b.props.columns=[]; if(!b.props.columns[colMatch[1]]) b.props.columns[colMatch[1]]={}; b.props.columns[colMatch[1]][colMatch[2]]=v; return; }
+      const imgMatch=f.match(/^img-(\d+)$/);
+      if(imgMatch){ if(!b.props.images) b.props.images=[]; b.props.images[imgMatch[1]]=v; return; }
+      const socMatch=f.match(/^soc-(\d+)-(\w+)$/);
+      if(socMatch){ if(!b.props.links) b.props.links=[]; if(!b.props.links[socMatch[1]]) b.props.links[socMatch[1]]={}; b.props.links[socMatch[1]][socMatch[2]]=v; return; }
+      b.props[f]=v;
+    });
+    dirty=true;
+  }
+
+  function renderBlockHtml(b){
+    const p=b.props||{};
+    const accent=site_accent();
+    switch(b.type){
+      case 'hero':{
+        const bgStyle=p.bgImage?`background-image:linear-gradient(rgba(0,0,0,${p.overlay??0.4}),rgba(0,0,0,${p.overlay??0.4})),url('${escHtml(p.bgImage)}');background-size:cover;background-position:center;`:'background:'+accent+';';
+        return `<div style="${bgStyle}padding:70px 24px;text-align:center;border-radius:14px;color:#fff;margin:0 0 1em;"><h1 style="font-size:32px;margin:0 0 10px;">${escHtml(p.heading||'')}</h1>${p.subtext?`<p style="font-size:16px;opacity:.9;max-width:480px;margin:0 auto 16px;">${escHtml(p.subtext)}</p>`:''}${p.buttonText?`<a href="${escHtml(p.buttonHref||'#')}" style="display:inline-block;padding:11px 20px;border-radius:9px;background:#fff;color:#111;text-decoration:none;font-weight:700;">${escHtml(p.buttonText)}</a>`:''}</div>`;
+      }
+      case 'heading':{const lvl=[1,2,3].includes(p.level)?p.level:2;return `<h${lvl} style="font-weight:800;margin:.6em 0 .3em;">${escHtml(p.text||'')}</h${lvl}>`;}
+      case 'text': return `<p style="margin:.6em 0;opacity:.9;">${escHtml(p.text||'').replace(/\n/g,'<br>')}</p>`;
+      case 'image': return p.src?`<img src="${escHtml(p.src)}" alt="${escHtml(p.alt||'')}" style="max-width:100%;border-radius:12px;display:block;margin:1em 0;" />`:'';
+      case 'button': return `<a href="${escHtml(p.href||'#')}" style="display:inline-block;padding:12px 22px;border-radius:10px;background:${accent};color:#fff;text-decoration:none;font-weight:700;margin:.6em 0;">${escHtml(p.text||'Click me')}</a>`;
+      case 'divider': return `<hr style="border:none;border-top:1px solid rgba(0,0,0,.1);margin:2em 0;" />`;
+      case 'spacer': return `<div style="height:${Number(p.height)||40}px"></div>`;
+      case 'html': return String(p.code||'');
+      case 'quote': return `<blockquote style="border-left:4px solid ${accent};margin:1.2em 0;padding:4px 0 4px 20px;font-style:italic;opacity:.9;"><p>"${escHtml(p.text||'')}"</p>${p.author?`<cite style="display:block;margin-top:8px;font-style:normal;font-size:13px;opacity:.7;">— ${escHtml(p.author)}</cite>`:''}</blockquote>`;
+      case 'video':{
+        const url=String(p.url||''); const yt=url.match(/(?:youtu\.be\/|watch\?v=|embed\/)([\w-]{11})/); const vimeo=url.match(/vimeo\.com\/(\d+)/);
+        const embed=yt?`https://www.youtube.com/embed/${yt[1]}`:vimeo?`https://player.vimeo.com/video/${vimeo[1]}`:'';
+        if(!embed) return `<div style="padding:30px;text-align:center;opacity:.5;border:1px dashed #999;border-radius:10px;">Paste a YouTube/Vimeo URL</div>`;
+        return `<div style="position:relative;padding-top:56.25%;margin:1em 0;border-radius:12px;overflow:hidden;"><iframe src="${escHtml(embed)}" style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe></div>`;
+      }
+      case 'columns':{
+        const cols=Array.isArray(p.columns)?p.columns:[];
+        return `<div style="display:grid;grid-template-columns:repeat(${Math.max(1,cols.length)},1fr);gap:16px;margin:1em 0;">${cols.map(c=>`<div>${c.image?`<img src="${escHtml(c.image)}" style="width:100%;border-radius:8px;margin-bottom:8px;" />`:''}${c.heading?`<h3 style="margin:0 0 4px;font-size:15px;">${escHtml(c.heading)}</h3>`:''}${c.text?`<p style="margin:0;font-size:13px;opacity:.85;">${escHtml(c.text)}</p>`:''}</div>`).join('')}</div>`;
+      }
+      case 'gallery':{
+        const imgs=(Array.isArray(p.images)?p.images:[]).filter(Boolean);
+        return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin:1em 0;">${imgs.map(s=>`<img src="${escHtml(s)}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;" />`).join('')}</div>`;
+      }
+      case 'social':{
+        const links=(Array.isArray(p.links)?p.links:[]).filter(l=>l.platform);
+        return `<div style="display:flex;gap:10px;margin:1em 0;">${links.map(l=>`<span style="width:34px;height:34px;border-radius:50%;background:#0001;display:flex;align-items:center;justify-content:center;font-size:13px;">${escHtml((l.platform||'?')[0].toUpperCase())}</span>`).join('')}</div>`;
+      }
+      case 'form':{
+        const fields=Array.isArray(p.fields)&&p.fields.length?p.fields:['Name','Email','Message'];
+        return `<div style="display:flex;flex-direction:column;gap:8px;max-width:360px;margin:1em 0;">${fields.map(f=>/message|comment/i.test(f)?`<textarea placeholder="${escHtml(f)}" style="padding:9px;border-radius:7px;border:1px solid #ccc;" disabled></textarea>`:`<input placeholder="${escHtml(f)}" style="padding:9px;border-radius:7px;border:1px solid #ccc;" disabled />`).join('')}<button style="padding:9px;border-radius:7px;border:none;background:${accent};color:#fff;font-weight:700;" disabled>${escHtml(p.buttonText||'Send')}</button></div>`;
+      }
+      default: return '';
+    }
+  }
+  function site_accent(){ return (currentSite()?.theme?.accent) || '#3b82f6'; }
+
+  function renderPreview(){
+    const frame=document.getElementById('preview-frame');
+    if(!frame) return;
+    const body=activePage.blocks.map(renderBlockHtml).join('\n');
+    frame.srcdoc=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+      *{box-sizing:border-box;} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:0 0 32px;max-width:820px;margin:0 auto;}
+    </style></head><body>${body}</body></html>`;
+  }
+
+  async function savePage(silent){
+    const {data,error}=await sb.from('builder_pages').upsert({
+      id: activePage.id, builder_site_id: activePage.builder_site_id, slug: activePage.slug,
+      title: activePage.title, blocks: activePage.blocks, nav_order: activePage.nav_order ?? 0,
+      show_in_nav: activePage.show_in_nav !== false, meta_description: activePage.meta_description || null,
+      updated_at: new Date().toISOString(),
+    }, {onConflict:'builder_site_id,slug'}).select().single();
+    if(error){ toast(error.message); return false; }
+    Object.assign(activePage,data);
+    const idx=pages.findIndex(p=>p.slug===activePage.slug);
+    if(idx>=0) pages[idx]=activePage;
+    dirty=false;
+    if(!silent) toast('Saved');
+    return true;
+  }
+
+  async function togglePublish(){
+    const site=currentSite();
+    if(dirty){ const ok=await savePage(true); if(!ok) return; }
+    const {data,error}=await sb.from('builder_sites').update({published:!site.published,updated_at:new Date().toISOString()}).eq('id',site.id).select().single();
+    if(error){ toast(error.message); return; }
+    Object.assign(site,data);
+    toast(site.published ? `Published — live at ${site.custom_domain||(site.subdomain+'.360-search.com')}` : 'Unpublished');
+    renderEditor();
+  }
+
+  function openSiteSettingsModal(){
+    const site=currentSite();
+    const theme=site.theme||{accent:'#3b82f6',bg:'#ffffff',text:'#111827'};
+    const overlay=document.createElement('div'); overlay.className='cv-modal-overlay';
+    overlay.innerHTML=`<div class="cv-modal">
+      <h2 style="margin-bottom:14px;">Site settings</h2>
+      <div class="cv-field"><label>Site title</label><input id="ss-title" value="${escHtml(site.title)}" /></div>
+      <div class="cv-field"><label>Logo URL</label><input id="ss-logo" value="${escHtml(site.logo_url||'')}" placeholder="https://…" /></div>
+      <div class="cv-field-row">
+        <div class="cv-field"><label>Accent color</label><input id="ss-accent" type="color" value="${theme.accent||'#3b82f6'}" /></div>
+        <div class="cv-field"><label>Background</label><input id="ss-bg" type="color" value="${theme.bg||'#ffffff'}" /></div>
+        <div class="cv-field"><label>Text color</label><input id="ss-text" type="color" value="${theme.text||'#111827'}" /></div>
+      </div>
+      <div class="cv-field"><label>Custom domain (optional)</label><input id="ss-domain" value="${escHtml(site.custom_domain||'')}" placeholder="www.yoursite.com" />
+        <div class="cv-domain-preview">CNAME your domain to <b>${escHtml(site.subdomain)}.360-search.com</b>, then click Verify. Requires the domain be pointed through Cloudflare (custom hostnames) — ask if you need the DNS steps.</div>
+      </div>
+      <div class="cv-modal-err" id="ss-err"></div>
+      <div class="cv-modal-actions">
+        <button class="cv-btn-outline" id="ss-cancel">Cancel</button>
+        <button class="cv-btn-outline" id="ss-verify-domain">Verify domain</button>
+        <button class="cv-btn" id="ss-save">Save</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    const close=()=>overlay.remove();
+    overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
+    document.getElementById('ss-cancel').addEventListener('click',close);
+    document.getElementById('ss-verify-domain').addEventListener('click',async()=>{
+      const domain=document.getElementById('ss-domain').value.trim().toLowerCase();
+      const errEl=document.getElementById('ss-err');
+      if(!domain){errEl.textContent='Enter a domain first.';return;}
+      try{
+        const res=await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=CNAME`);
+        const data=await res.json();
+        const target=(data.Answer||[]).map(a=>String(a.data||'').replace(/\.$/,'').toLowerCase());
+        const expected=`${site.subdomain}.360-search.com`;
+        if(target.includes(expected)){
+          await sb.from('builder_sites').update({custom_domain:domain,custom_domain_verified:true}).eq('id',site.id);
+          toast('Domain verified!'); close(); loadSites(); openEditor(site.id);
+        } else {
+          errEl.textContent=`CNAME not found yet — make sure ${domain} points to ${expected}.`;
+        }
+      }catch(e){ errEl.textContent='DNS lookup failed, try again.'; }
+    });
+    document.getElementById('ss-save').addEventListener('click',async()=>{
+      const {error}=await sb.from('builder_sites').update({
+        title:document.getElementById('ss-title').value.trim()||site.title,
+        logo_url:document.getElementById('ss-logo').value.trim()||null,
+        theme:{accent:document.getElementById('ss-accent').value,bg:document.getElementById('ss-bg').value,text:document.getElementById('ss-text').value},
+      }).eq('id',site.id);
+      if(error){document.getElementById('ss-err').textContent=error.message;return;}
+      toast('Saved'); close(); loadSites(); openEditor(site.id);
+    });
+  }
+
+  initAuth();
+</script>
+</body>
+</html>

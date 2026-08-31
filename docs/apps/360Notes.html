@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>360Notes</title>
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/wide.css" />
+  <link rel="stylesheet" href="/assets/css/gallium.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+  <link rel="stylesheet" href="/assets/css/cursor.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --notes-bg: #f3f4f6;
+      --notes-surface: #ffffff;
+      --notes-border: rgba(15,23,42,.08);
+      --notes-txt: #0f172a;
+      --notes-muted: #6b7280;
+      --notes-accent: #3b82f6;
+      --notes-accent2: #0ea5e9;
+      --notes-topbar-h: 56px;
+      --notes-sidebar-w: 240px;
+      --notes-doc-bg: #f9fafb;
+    }
+    body.dark {
+      --notes-bg: #020617;
+      --notes-surface: #020617;
+      --notes-border: rgba(148,163,184,.35);
+      --notes-txt: #e5e7eb;
+      --notes-muted: #9ca3af;
+      --notes-doc-bg: #020617;
+    }
+
+    body {
+      background: var(--notes-bg);
+      color: var(--notes-txt);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+
+    .notes-root {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Topbar – more Google Docs than 360Music */
+    .notes-topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--notes-topbar-h);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      background: rgba(255,255,255,.9);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--notes-border);
+      z-index: 50;
+    }
+    body.dark .notes-topbar {
+      background: rgba(15,23,42,.9);
+    }
+
+    .notes-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .notes-logo {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .notes-logo-main {
+      background: linear-gradient(120deg, var(--notes-accent), var(--notes-accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .notes-logo-sub {
+      font-size: 13px;
+      color: var(--notes-muted);
+      font-weight: 500;
+    }
+
+    .notes-topbar-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      padding: 0 16px;
+    }
+    .notes-search {
+      max-width: 420px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      background: var(--notes-bg);
+      border-radius: 999px;
+      border: 1px solid var(--notes-border);
+      overflow: hidden;
+    }
+    .notes-search input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 8px 14px;
+      font-size: 13px;
+      color: var(--notes-txt);
+      outline: none;
+    }
+    .notes-search input::placeholder {
+      color: var(--notes-muted);
+    }
+    .notes-search button {
+      border: none;
+      background: none;
+      padding: 8px 12px;
+      font-size: 15px;
+      cursor: pointer;
+      color: var(--notes-muted);
+    }
+
+    .notes-topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .notes-btn-primary {
+      border: none;
+      border-radius: 999px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(120deg, var(--notes-accent), var(--notes-accent2));
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .notes-btn-primary:hover {
+      opacity: .9;
+    }
+    .notes-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      border: 2px solid var(--notes-accent);
+      background: linear-gradient(135deg, var(--notes-accent), var(--notes-accent2));
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* Layout */
+    .notes-body {
+      display: flex;
+      margin-top: var(--notes-topbar-h);
+      min-height: calc(100vh - var(--notes-topbar-h));
+    }
+
+    .notes-sidebar {
+      width: var(--notes-sidebar-w);
+      border-right: 1px solid var(--notes-border);
+      background: var(--notes-surface);
+      padding: 16px 10px;
+    }
+
+    .notes-sidebar-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--notes-muted);
+      padding: 4px 10px 6px;
+    }
+
+    .notes-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--notes-txt);
+      border: 1px solid transparent;
+    }
+    .notes-nav-item span.icon {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+    }
+    .notes-nav-item:hover {
+      background: rgba(148,163,184,.12);
+    }
+    .notes-nav-item.active {
+      background: rgba(59,130,246,.08);
+      border-color: rgba(59,130,246,.4);
+      color: var(--notes-accent);
+      font-weight: 600;
+    }
+
+    .notes-main {
+      flex: 1;
+      padding: 20px 24px;
+      min-width: 0;
+    }
+
+    .notes-main-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .notes-main-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .notes-main-sub {
+      font-size: 12px;
+      color: var(--notes-muted);
+    }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .notes-card {
+      background: var(--notes-surface);
+      border-radius: 12px;
+      border: 1px solid var(--notes-border);
+      padding: 12px 12px 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: box-shadow .15s, transform .15s, border-color .15s;
+    }
+    .notes-card:hover {
+      box-shadow: 0 10px 30px rgba(15,23,42,.12);
+      transform: translateY(-1px);
+      border-color: rgba(59,130,246,.5);
+    }
+    .notes-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.4;
+      max-height: 2.8em;
+      overflow: hidden;
+    }
+    .notes-card-snippet {
+      font-size: 12px;
+      color: var(--notes-muted);
+      max-height: 3.6em;
+      overflow: hidden;
+      white-space: pre-wrap;
+    }
+    .notes-card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--notes-muted);
+      margin-top: 4px;
+    }
+
+    .notes-empty {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--notes-muted);
+      font-size: 13px;
+    }
+
+    /* Modal – document style */
+    .notes-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,.55);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+      z-index: 80;
+    }
+    .notes-modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .notes-modal {
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      background: var(--notes-doc-bg);
+      border-radius: 18px;
+      border: 1px solid var(--notes-border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .notes-modal-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--notes-surface);
+      border-bottom: 1px solid var(--notes-border);
+    }
+    .notes-modal-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+    .notes-modal-toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .notes-pill-btn {
+      border-radius: 999px;
+      border: 1px solid var(--notes-border);
+      background: #fff;
+      padding: 4px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--notes-muted);
+    }
+    .notes-pill-btn:hover {
+      border-color: var(--notes-accent);
+      color: var(--notes-accent);
+    }
+    .notes-pill-btn.primary {
+      background: linear-gradient(120deg, var(--notes-accent), var(--notes-accent2));
+      border-color: transparent;
+      color: #fff;
+    }
+
+    .notes-modal-body {
+      padding: 18px 40px 24px;
+      overflow-y: auto;
+    }
+
+    .notes-title-input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      outline: none;
+      color: var(--notes-txt);
+    }
+    .notes-meta-line {
+      font-size: 12px;
+      color: var(--notes-muted);
+      margin-bottom: 16px;
+    }
+
+    .notes-mode-toggle {
+      display: inline-flex;
+      border-radius: 999px;
+      border: 1px solid var(--notes-border);
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .notes-mode-toggle button {
+      border: none;
+      background: none;
+      padding: 4px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      color: var(--notes-muted);
+    }
+    .notes-mode-toggle button.active {
+      background: rgba(59,130,246,.08);
+      color: var(--notes-accent);
+      font-weight: 600;
+    }
+
+    .notes-body-textarea {
+      width: 100%;
+      min-height: 260px;
+      border: none;
+      resize: vertical;
+      padding: 10px 0;
+      font-size: 14px;
+      line-height: 1.6;
+      background: transparent;
+      outline: none;
+      color: var(--notes-txt);
+      font-family: inherit;
+      white-space: pre-wrap;
+    }
+
+    .notes-preview-box {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px dashed var(--notes-border);
+      background: #ffffff;
+      font-size: 14px;
+      line-height: 1.6;
+      max-height: 260px;
+      overflow: auto;
+    }
+    body.dark .notes-preview-box {
+      background: #020617;
+    }
+
+    .notes-status {
+      font-size: 11px;
+      color: var(--notes-muted);
+      margin-top: 6px;
+    }
+
+    .notes-toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #111827;
+      color: #e5e7eb;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: all .25s;
+      z-index: 100;
+      white-space: nowrap;
+    }
+    .notes-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 900px) {
+      .notes-sidebar {
+        display: none;
+      }
+      .notes-main {
+        padding: 16px;
+      }
+      .notes-modal-body {
+        padding: 14px 16px 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="cursor-dot"></div>
+  <div class="cursor-trail"></div>
+  <div class="cursor-crosshair"></div>
+  <div class="cursor-blob"></div>
+
+  <div class="notes-root">
+    <header class="notes-topbar">
+      <div class="notes-topbar-left">
+        <button class="notes-pill-btn" onclick="window.location.href='apps.html'">← Apps</button>
+        <div class="notes-logo">
+          <span class="notes-logo-main">360</span>
+          <span>|</span>
+          <span class="notes-logo-main">Notes</span>
+          <span class="notes-logo-sub">lightweight docs</span>
+        </div>
+      </div>
+
+      <div class="notes-topbar-center">
+        <div class="notes-search">
+          <input id="notesSearch" type="text" placeholder="Search your notes…" autocomplete="off" />
+          <button id="notesSearchBtn">🔍</button>
+        </div>
+      </div>
+
+      <div class="notes-topbar-right">
+    <button id="signInBtn"  class="auth-btn">Sign In</button>
+    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
+    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+
+        <button class="notes-btn-primary" id="newNoteBtn">
+          <span>＋</span> New note
+        </button>
+        <div class="notes-avatar" id="notesAvatar" title="Account">?</div>
+      </div>
+    </header>
+
+    <div class="notes-body">
+      <aside class="notes-sidebar">
+        <div class="notes-sidebar-section-label">Notes</div>
+        <div class="notes-nav-item active" data-view="all">
+          <span class="icon">📄</span>
+          <span>All notes</span>
+        </div>
+        <div class="notes-nav-item" data-view="favorites">
+          <span class="icon">⭐</span>
+          <span>Favorites</span>
+        </div>
+        <div class="notes-nav-item" data-view="recent">
+          <span class="icon">🕒</span>
+          <span>Recently edited</span>
+        </div>
+
+        <div class="notes-sidebar-section-label" style="margin-top:10px;">Other</div>
+        <div class="notes-nav-item" data-view="trash">
+          <span class="icon">🗑️</span>
+          <span>Trash (future)</span>
+        </div>
+      </aside>
+
+      <main class="notes-main">
+        <div class="notes-main-header">
+          <div>
+            <div class="notes-main-title">Your notes</div>
+            <div class="notes-main-sub" id="notesCountLabel">Loading…</div>
+          </div>
+        </div>
+
+        <div class="notes-grid" id="notesGrid">
+          <!-- cards injected here -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="notes-modal-overlay" id="notesModalOverlay">
+    <div class="notes-modal">
+      <div class="notes-modal-toolbar">
+        <div class="notes-modal-toolbar-left">
+          <button class="notes-pill-btn" id="closeModalBtn">← Back</button>
+          <span style="font-size:12px;color:var(--notes-muted);" id="docStatusLabel">Editing note</span>
+        </div>
+        <div class="notes-modal-toolbar-right">
+          <button class="notes-pill-btn" id="previewToggleBtn">👁 Preview</button>
+          <button class="notes-pill-btn" id="deleteNoteBtn">🗑 Delete</button>
+          <button class="notes-pill-btn primary" id="saveNoteBtn">💾 Save</button>
+        </div>
+      </div>
+      <div class="notes-modal-body">
+        <input id="noteTitleInput" class="notes-title-input" placeholder="Untitled note" maxlength="200" />
+
+        <div class="notes-meta-line" id="noteMetaLine">New note · not yet saved</div>
+
+        <div class="notes-mode-toggle">
+          <button id="modeTextBtn" class="active">Text</button>
+          <button id="modeHtmlBtn">HTML</button>
+        </div>
+
+        <textarea id="noteBodyInput" class="notes-body-textarea" placeholder="Start writing…"></textarea>
+
+        <div id="htmlPreviewBox" class="notes-preview-box" style="display:none;"></div>
+
+        <div class="notes-status" id="notesStatus">Not saved yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes-toast" id="notesToast"></div>
+
+  <audio id="clickSound" src="click-sound.mp3" preload="auto"></audio>
+  <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/wide.js"></script>
+  <script src="/assets/js/gallium.js"></script>
+  <script src="/assets/js/cookie.js"></script>
+  <script src="/assets/js/cursor.js"></script>
+
+  <script>
+    // --- Supabase client (same project as 360Music) ---
+    const SUPABASE_URL  = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    let currentUser = null;
+    let allNotes = [];
+    let activeView = 'all';
+    let searchQuery = '';
+    let currentNote = null;
+    let isHtmlMode = false;
+    let autoSaveTimer = null;
+
+    const notesAvatar = document.getElementById('notesAvatar');
+    const notesGrid = document.getElementById('notesGrid');
+    const notesCountLabel = document.getElementById('notesCountLabel');
+    const notesToast = document.getElementById('notesToast');
+
+    const notesModalOverlay = document.getElementById('notesModalOverlay');
+    const noteTitleInput = document.getElementById('noteTitleInput');
+    const noteBodyInput = document.getElementById('noteBodyInput');
+    const noteMetaLine = document.getElementById('noteMetaLine');
+    const notesStatus = document.getElementById('notesStatus');
+    const previewBox = document.getElementById('htmlPreviewBox');
+    const previewToggleBtn = document.getElementById('previewToggleBtn');
+    const modeTextBtn = document.getElementById('modeTextBtn');
+    const modeHtmlBtn = document.getElementById('modeHtmlBtn');
+    const docStatusLabel = document.getElementById('docStatusLabel');
+
+    function showToast(msg, dur = 2600) {
+      notesToast.textContent = msg;
+      notesToast.classList.add('show');
+      setTimeout(() => notesToast.classList.remove('show'), dur);
+    }
+
+    async function initAuth() {
+      const { data: { session } } = await sb.auth.getSession();
+      currentUser = session?.user ?? null;
+      updateAvatar();
+    }
+
+    function updateAvatar() {
+      if (currentUser) {
+        const initials = (currentUser.email || 'U')[0].toUpperCase();
+        notesAvatar.textContent = initials;
+        notesAvatar.title = currentUser.email;
+      } else {
+        notesAvatar.textContent = '?';
+        notesAvatar.title = 'Not signed in';
+      }
+    }
+
+    notesAvatar.addEventListener('click', () => {
+      const popup = document.getElementById('auth-popup');
+      if (popup) popup.classList.remove('hidden');
+      else showToast('Sign in via 360 account popup.');
+    });
+
+    sb.auth.onAuthStateChange((_e, session) => {
+      currentUser = session?.user ?? null;
+      updateAvatar();
+      fetchNotes();
+    });
+
+    function escHtml(str) {
+      return String(str || '')
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;');
+    }
+
+    function timeAgo(ts) {
+      if (!ts) return '';
+      const diff = Date.now() - new Date(ts).getTime();
+      const m = Math.floor(diff / 60000);
+      if (m < 1) return 'just now';
+      if (m < 60) return m + 'm ago';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + 'h ago';
+      const d = Math.floor(h / 24);
+      if (d < 30) return d + 'd ago';
+      const mo = Math.floor(d / 30);
+      if (mo < 12) return mo + 'mo ago';
+      return Math.floor(mo / 12) + 'y ago';
+    }
+
+    function renderNotes() {
+      let notes = [...allNotes];
+
+      if (activeView === 'favorites') {
+        notes = notes.filter(n => n.is_favorite);
+      } else if (activeView === 'recent') {
+        notes = notes.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at));
+      }
+
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        notes = notes.filter(n =>
+          (n.title || '').toLowerCase().includes(q) ||
+          (n.body || '').toLowerCase().includes(q)
+        );
+      }
+
+      notesCountLabel.textContent = notes.length
+        ? `${notes.length} note${notes.length === 1 ? '' : 's'}`
+        : 'No notes yet';
+
+      if (!notes.length) {
+        notesGrid.innerHTML = `
+          <div class="notes-empty">
+            <div style="font-size:40px;margin-bottom:8px;">📝</div>
+            <div>No notes yet.</div>
+            <div style="margin-top:4px;">Click “New note” to start writing.</div>
+          </div>`;
+        return;
+      }
+
+      notesGrid.innerHTML = notes.map(n => noteCard(n)).join('');
+      notesGrid.querySelectorAll('.notes-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (e.target.dataset.star) return; // handled below
+          const id = card.dataset.id;
+          const note = allNotes.find(nn => nn.id === id);
+          if (note) openNote(note);
+        });
+      });
+      notesGrid.querySelectorAll('[data-star]').forEach(star => {
+        star.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = star.dataset.star;
+          const note = allNotes.find(nn => nn.id === id);
+          if (!note) return;
+          const is_favorite = !note.is_favorite;
+          const { error } = await sb.from('notes').update({ is_favorite }).eq('id', id);
+          if (error) { showToast('⚠️ Could not update favorite.'); return; }
+          note.is_favorite = is_favorite;
+          renderNotes();
+        });
+      });
+    }
+
+    function noteCard(n) {
+      const snippet = (n.body || '').slice(0, 160);
+      return `
+        <div class="notes-card" data-id="${n.id}">
+          <div class="notes-card-title">
+            ${escHtml(n.title || 'Untitled')}
+            <span class="notes-card-star" data-star="${n.id}" title="${n.is_favorite ? 'Unfavorite' : 'Favorite'}" style="float:right;cursor:pointer;opacity:${n.is_favorite ? '1' : '.35'};">★</span>
+          </div>
+          <div class="notes-card-snippet">
+            ${escHtml(snippet)}${n.body && n.body.length > 160 ? '…' : ''}
+          </div>
+          <div class="notes-card-meta">
+            <span>${timeAgo(n.updated_at)}</span>
+            <span>${n.is_html ? 'HTML' : 'Text'}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    async function fetchNotes() {
+      if (!currentUser) {
+        allNotes = [];
+        renderNotes();
+        return;
+      }
+
+      const { data, error } = await sb
+        .from('notes')
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.log(error);
+        showToast('⚠️ Failed to load notes.');
+        return;
+      }
+
+      allNotes = data || [];
+      renderNotes();
+    }
+
+    function openModal() {
+      notesModalOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      notesModalOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+      currentNote = null;
+      noteTitleInput.value = '';
+      noteBodyInput.value = '';
+      previewBox.style.display = 'none';
+      previewBox.innerHTML = '';
+      isHtmlMode = false;
+      modeTextBtn.classList.add('active');
+      modeHtmlBtn.classList.remove('active');
+      notesStatus.textContent = 'Not saved yet.';
+      noteMetaLine.textContent = 'New note · not yet saved';
+      docStatusLabel.textContent = 'Editing note';
+    }
+
+    function openNote(note) {
+      currentNote = note;
+      noteTitleInput.value = note.title || '';
+      noteBodyInput.value = note.body || '';
+      isHtmlMode = !!note.is_html;
+      modeTextBtn.classList.toggle('active', !isHtmlMode);
+      modeHtmlBtn.classList.toggle('active', isHtmlMode);
+      noteMetaLine.textContent = `Last edited ${timeAgo(note.updated_at)} · ${note.is_html ? 'HTML' : 'Text'} mode`;
+      notesStatus.textContent = 'Loaded.';
+      docStatusLabel.textContent = 'Editing note';
+      previewBox.style.display = 'none';
+      previewBox.innerHTML = '';
+      openModal();
+    }
+
+    function newNote() {
+      if (!currentUser) {
+        showToast('Sign in to create notes.');
+        return;
+      }
+      currentNote = null;
+      noteTitleInput.value = '';
+      noteBodyInput.value = '';
+      isHtmlMode = false;
+      modeTextBtn.classList.add('active');
+      modeHtmlBtn.classList.remove('active');
+      noteMetaLine.textContent = 'New note · not yet saved';
+      notesStatus.textContent = 'Not saved yet.';
+      docStatusLabel.textContent = 'New note';
+      previewBox.style.display = 'none';
+      previewBox.innerHTML = '';
+      openModal();
+    }
+
+    async function saveNote(manual = false) {
+      if (!currentUser) {
+        showToast('Sign in to save notes.');
+        return;
+      }
+
+      const title = noteTitleInput.value.trim() || 'Untitled';
+      const body = noteBodyInput.value;
+      const is_html = isHtmlMode;
+
+      notesStatus.textContent = manual ? 'Saving…' : 'Auto-saving…';
+
+      if (!currentNote) {
+        const { data, error } = await sb
+          .from('notes')
+          .insert({
+            user_id: currentUser.id,
+            title,
+            body,
+            is_html
+          })
+          .select('*')
+          .single();
+
+        if (error) {
+          console.log(error);
+          notesStatus.textContent = '⚠️ Failed to save.';
+          showToast('⚠️ Failed to save note.');
+          return;
+        }
+
+        currentNote = data;
+        allNotes.unshift(data);
+        noteMetaLine.textContent = `Last edited just now · ${is_html ? 'HTML' : 'Text'} mode`;
+        notesStatus.textContent = manual ? 'Saved.' : 'Auto-saved.';
+        renderNotes();
+        return;
+      }
+
+      const { data, error } = await sb
+        .from('notes')
+        .update({
+          title,
+          body,
+          is_html,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentNote.id)
+        .select('*')
+        .single();
+
+      if (error) {
+        console.log(error);
+        notesStatus.textContent = '⚠️ Failed to save.';
+        showToast('⚠️ Failed to save note.');
+        return;
+      }
+
+      currentNote = data;
+      const idx = allNotes.findIndex(n => n.id === data.id);
+      if (idx > -1) allNotes[idx] = data;
+      noteMetaLine.textContent = `Last edited just now · ${is_html ? 'HTML' : 'Text'} mode`;
+      notesStatus.textContent = manual ? 'Saved.' : 'Auto-saved.';
+      renderNotes();
+    }
+
+    async function deleteNote() {
+      if (!currentNote) {
+        closeModal();
+        return;
+      }
+      if (!confirm('Delete this note?')) return;
+
+      const id = currentNote.id;
+      const { error } = await sb.from('notes').delete().eq('id', id);
+      if (error) {
+        console.log(error);
+        showToast('⚠️ Failed to delete note.');
+        return;
+      }
+
+      allNotes = allNotes.filter(n => n.id !== id);
+      showToast('🗑 Note deleted.');
+      closeModal();
+      renderNotes();
+    }
+
+    function updatePreview() {
+      if (!isHtmlMode) {
+        previewBox.style.display = 'none';
+        previewBox.innerHTML = '';
+        return;
+      }
+      previewBox.style.display = 'block';
+      previewBox.innerHTML = noteBodyInput.value;
+    }
+
+    // Events
+    document.getElementById('newNoteBtn').addEventListener('click', newNote);
+    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+    document.getElementById('deleteNoteBtn').addEventListener('click', deleteNote);
+    document.getElementById('saveNoteBtn').addEventListener('click', () => saveNote(true));
+
+    previewToggleBtn.addEventListener('click', () => {
+      if (!isHtmlMode) {
+        showToast('Switch to HTML mode to preview.');
+        return;
+      }
+      if (previewBox.style.display === 'none' || !previewBox.style.display) {
+        updatePreview();
+      } else {
+        previewBox.style.display = 'none';
+      }
+    });
+
+    modeTextBtn.addEventListener('click', () => {
+      isHtmlMode = false;
+      modeTextBtn.classList.add('active');
+      modeHtmlBtn.classList.remove('active');
+      previewBox.style.display = 'none';
+      previewBox.innerHTML = '';
+      noteMetaLine.textContent = (currentNote
+        ? `Last edited ${timeAgo(currentNote.updated_at)} · Text mode`
+        : 'New note · Text mode');
+    });
+
+    modeHtmlBtn.addEventListener('click', () => {
+      isHtmlMode = true;
+      modeTextBtn.classList.remove('active');
+      modeHtmlBtn.classList.add('active');
+      noteMetaLine.textContent = (currentNote
+        ? `Last edited ${timeAgo(currentNote.updated_at)} · HTML mode`
+        : 'New note · HTML mode');
+      updatePreview();
+    });
+
+    noteTitleInput.addEventListener('input', () => {
+      scheduleAutoSave();
+    });
+    noteBodyInput.addEventListener('input', () => {
+      scheduleAutoSave();
+      if (isHtmlMode && previewBox.style.display !== 'none') {
+        updatePreview();
+      }
+    });
+
+    function scheduleAutoSave() {
+      if (!currentUser) return;
+      notesStatus.textContent = 'Changes not saved.';
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(() => saveNote(false), 1200);
+    }
+
+    // Sidebar view switching
+    document.querySelectorAll('.notes-nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.notes-nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        activeView = item.dataset.view;
+        renderNotes();
+      });
+    });
+
+    // Search
+    let searchTimer;
+    const searchInput = document.getElementById('notesSearch');
+    const searchBtn = document.getElementById('notesSearchBtn');
+
+    searchInput.addEventListener('input', e => {
+      clearTimeout(searchTimer);
+      searchQuery = e.target.value.trim();
+      searchTimer = setTimeout(renderNotes, 300);
+    });
+    searchBtn.addEventListener('click', () => {
+      searchQuery = searchInput.value.trim();
+      renderNotes();
+    });
+    searchInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        searchQuery = searchInput.value.trim();
+        renderNotes();
+      }
+    });
+
+    // Init
+    (async () => {
+      await initAuth();
+      await fetchNotes();
+    })();
+  </script>
+</body>
+</html>

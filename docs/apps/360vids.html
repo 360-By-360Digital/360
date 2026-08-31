@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>360Vids</title>
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/wide.css" />
+  <link rel="stylesheet" href="/assets/css/gallium.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+  <link rel="stylesheet" href="/assets/css/cursor.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* ── Native cross-document transitions (Vids ↔ Music ↔ Studio) ──
+       Chrome/Edge 126+ animate this automatically on same-origin link
+       navigation; other browsers just navigate normally, no error. */
+    @view-transition { navigation: auto; }
+    ::view-transition-old(root) { animation: vt-out .28s cubic-bezier(.4,0,.2,1) both; }
+    ::view-transition-new(root) { animation: vt-in .32s cubic-bezier(.2,0,.2,1) both; }
+    @keyframes vt-out { to { opacity: 0; transform: scale(.98) translateY(6px); } }
+    @keyframes vt-in { from { opacity: 0; transform: scale(1.02) translateY(-6px); } }
+
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --vid-bg: #f8fafc;
+      --vid-card: #ffffff;
+      --vid-border: rgba(0,0,0,.08);
+      --vid-txt: #0f172a;
+      --vid-mut: #64748b;
+      --vid-accent: #3b82f6;
+      --vid-accent2: #06b6d4;
+      --vid-hover: rgba(59,130,246,.06);
+      --vid-sidebar-w: 220px;
+      --vid-topbar-h: 58px;
+    }
+    body.dark {
+      --vid-bg: #0a0f1e;
+      --vid-card: #111827;
+      --vid-border: rgba(255,255,255,.07);
+      --vid-txt: #f1f5f9;
+      --vid-mut: #94a3b8;
+      --vid-hover: rgba(59,130,246,.1);
+    }
+
+    /* ── Layout ── */
+    .vids-root {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background: var(--vid-bg);
+      color: var(--vid-txt);
+      font-family: inherit;
+    }
+
+    /* ── Top Bar ── */
+    .vids-topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: var(--vid-topbar-h);
+      background: var(--vid-card);
+      border-bottom: 1px solid var(--vid-border);
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 16px;
+      backdrop-filter: blur(12px);
+    }
+    .vids-topbar-left { display: flex; align-items: center; gap: 10px; }
+    .vids-logo {
+      font-size: 18px; font-weight: 800; letter-spacing: -.5px;
+      background: linear-gradient(120deg, var(--vid-accent), var(--vid-accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      white-space: nowrap;
+    }
+    .vids-logo span { -webkit-text-fill-color: var(--vid-txt); opacity: .4; font-weight: 400; }
+
+    .vids-search-wrap {
+      flex: 1; max-width: 560px; margin: 0 auto;
+      display: flex; align-items: center;
+      background: var(--vid-bg);
+      border: 1px solid var(--vid-border);
+      border-radius: 999px; overflow: hidden;
+    }
+    .vids-search-wrap:focus-within {
+      border-color: var(--vid-accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+    }
+    #vids-search {
+      flex: 1; border: none; background: transparent;
+      padding: 9px 16px; font-size: 14px; color: var(--vid-txt);
+      outline: none;
+    }
+    #vids-search::placeholder { color: var(--vid-mut); }
+    .vids-search-btn {
+      padding: 9px 18px; border: none; background: none;
+      color: var(--vid-mut); font-size: 16px; cursor: pointer;
+      border-left: 1px solid var(--vid-border);
+      transition: color .15s;
+    }
+    .vids-search-btn:hover { color: var(--vid-accent); }
+
+    .vids-topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .vids-upload-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 999px; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600;
+      background: linear-gradient(110deg, var(--vid-accent), var(--vid-accent2));
+      color: #fff; transition: opacity .15s;
+    }
+    .vids-upload-btn:hover { opacity: .85; }
+    .vids-avatar-btn {
+      width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--vid-accent);
+      background: linear-gradient(135deg, var(--vid-accent), var(--vid-accent2));
+      color: #fff; font-size: 13px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .vids-back-btn {
+      padding: 6px 12px; border-radius: 8px; border: 1px solid var(--vid-border);
+      background: none; color: var(--vid-mut); font-size: 13px; cursor: pointer;
+      transition: .15s; white-space: nowrap;
+    }
+    .vids-back-btn:hover { border-color: var(--vid-accent); color: var(--vid-accent); }
+
+    /* ── Body Layout ── */
+    .vids-body {
+      display: flex;
+      margin-top: var(--vid-topbar-h);
+      min-height: calc(100vh - var(--vid-topbar-h));
+    }
+
+    /* ── Sidebar ── */
+    .vids-sidebar {
+      width: var(--vid-sidebar-w);
+      position: fixed; top: var(--vid-topbar-h); left: 0; bottom: 0;
+      overflow-y: auto; background: var(--vid-card);
+      border-right: 1px solid var(--vid-border);
+      padding: 16px 0; z-index: 50;
+      transition: transform .25s;
+    }
+    .vids-sidebar::-webkit-scrollbar { width: 4px; }
+    .vids-sidebar::-webkit-scrollbar-thumb { background: var(--vid-border); border-radius: 4px; }
+
+    .vids-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; font-size: 13px; font-weight: 500;
+      color: var(--vid-txt); cursor: pointer; border-radius: 8px; margin: 0 6px;
+      transition: .15s; user-select: none;
+    }
+    .vids-nav-item:hover, .vids-nav-item.active {
+      background: var(--vid-hover);
+      color: var(--vid-accent);
+    }
+    .vids-nav-item.active { font-weight: 700; }
+    .vids-nav-icon { font-size: 17px; min-width: 22px; text-align: center; }
+    .vids-nav-divider {
+      height: 1px; background: var(--vid-border);
+      margin: 10px 16px;
+    }
+    .vids-nav-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--vid-mut);
+      padding: 8px 22px 4px;
+    }
+
+    /* ── Main Content ── */
+    .vids-main {
+      margin-left: var(--vid-sidebar-w);
+      flex: 1; padding: 24px;
+      min-width: 0;
+    }
+
+    /* ── Filter Chips ── */
+    .vids-chips {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px;
+    }
+    .vids-chip {
+      padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      border: 1px solid var(--vid-border); background: var(--vid-card);
+      color: var(--vid-txt); cursor: pointer; transition: .15s;
+      white-space: nowrap;
+    }
+    .vids-chip:hover { border-color: var(--vid-accent); color: var(--vid-accent); }
+    .vids-chip.active {
+      background: var(--vid-accent); border-color: var(--vid-accent);
+      color: #fff;
+    }
+
+    /* ── Video Grid ── */
+    .vids-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .vids-card {
+      background: var(--vid-card);
+      border: 1px solid var(--vid-border);
+      border-radius: 12px; overflow: hidden;
+      cursor: pointer; transition: .2s;
+      text-decoration: none; color: inherit;
+    }
+    .vids-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(59,130,246,.14);
+      border-color: var(--vid-accent);
+    }
+    .vids-thumb {
+      width: 100%; aspect-ratio: 16/9;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      position: relative; overflow: hidden;
+    }
+    .vids-thumb img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform .3s;
+    }
+    .vids-card:hover .vids-thumb img { transform: scale(1.03); }
+    .vids-card:hover .vids-hide-btn { opacity: 1; }
+    .vids-hide-btn:hover { background: rgba(220,38,38,.85) !important; }
+    .vids-thumb-placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px; background: linear-gradient(135deg, #1e3a5f, #0c4a6e);
+    }
+    .vids-duration {
+      position: absolute; bottom: 6px; right: 8px;
+      background: rgba(0,0,0,.8); color: #fff;
+      font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px;
+    }
+    .vids-card-body { padding: 12px 14px 14px; }
+    .vids-card-title {
+      font-size: 14px; font-weight: 700; line-height: 1.4;
+      color: var(--vid-txt); margin-bottom: 6px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .vids-card-meta {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--vid-mut);
+    }
+    .vids-card-avatar {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--vid-accent), var(--vid-accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .vids-card-dot { color: var(--vid-border); }
+
+    /* ── Empty State ── */
+    .vids-empty {
+      grid-column: 1/-1;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 12px; padding: 80px 20px;
+      color: var(--vid-mut); text-align: center;
+    }
+    .vids-empty-icon { font-size: 52px; }
+    .vids-empty h3 { font-size: 18px; font-weight: 700; color: var(--vid-txt); }
+    .vids-empty p { font-size: 13px; max-width: 300px; line-height: 1.6; }
+
+    /* ── Loading Skeletons ── */
+    .vids-skeleton { animation: skel-pulse 1.4s ease-in-out infinite; }
+    @keyframes skel-pulse {
+      0%,100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+    .skel-thumb {
+      width: 100%; aspect-ratio: 16/9;
+      background: var(--vid-border); border-radius: 8px 8px 0 0;
+    }
+    .skel-line {
+      height: 12px; background: var(--vid-border); border-radius: 6px; margin-bottom: 8px;
+    }
+    .skel-line.short { width: 60%; }
+
+    /* ── Upload Modal ── */
+    .vids-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.6);
+      backdrop-filter: blur(4px); z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .vids-modal-overlay.open { opacity: 1; pointer-events: all; }
+    .vids-modal {
+      background: var(--vid-card); border: 1px solid var(--vid-border);
+      border-radius: 18px; padding: 28px; width: 100%; max-width: 500px;
+      max-height: 90vh; overflow-y: auto;
+      transform: translateY(16px); transition: transform .2s;
+    }
+    .vids-modal-overlay.open .vids-modal { transform: translateY(0); }
+    .vids-modal h2 {
+      font-size: 18px; font-weight: 800; margin-bottom: 20px;
+      background: linear-gradient(120deg, var(--vid-accent), var(--vid-accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .vids-field { margin-bottom: 16px; }
+    .vids-field label {
+      display: block; font-size: 12px; font-weight: 700;
+      color: var(--vid-mut); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em;
+    }
+    .vids-field input, .vids-field textarea, .vids-field select {
+      width: 100%; padding: 10px 14px; border-radius: 10px;
+      border: 1px solid var(--vid-border); background: var(--vid-bg);
+      color: var(--vid-txt); font-size: 14px; font-family: inherit; outline: none;
+      transition: border-color .15s;
+    }
+    .vids-field input:focus, .vids-field textarea:focus, .vids-field select:focus {
+      border-color: var(--vid-accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+    }
+    .vids-field textarea { resize: vertical; min-height: 80px; }
+
+    /* Drop zone */
+    .vids-dropzone {
+      border: 2px dashed var(--vid-border); border-radius: 12px;
+      padding: 32px 20px; text-align: center; cursor: pointer;
+      transition: .2s; position: relative;
+    }
+    .vids-dropzone:hover, .vids-dropzone.drag-over {
+      border-color: var(--vid-accent);
+      background: var(--vid-hover);
+    }
+    .vids-dropzone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .vids-dropzone-icon { font-size: 36px; margin-bottom: 8px; }
+    .vids-dropzone p { font-size: 13px; color: var(--vid-mut); }
+    .vids-dropzone strong { color: var(--vid-accent); }
+    .vids-file-chosen {
+      margin-top: 8px; font-size: 12px; font-weight: 600;
+      color: var(--vid-accent); display: none;
+    }
+
+    /* Progress bar */
+    .vids-progress-wrap {
+      height: 6px; background: var(--vid-border); border-radius: 999px;
+      margin-top: 12px; overflow: hidden; display: none;
+    }
+    .vids-progress-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--vid-accent), var(--vid-accent2));
+      border-radius: 999px; transition: width .3s;
+    }
+
+    .vids-modal-actions {
+      display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;
+    }
+    .vids-btn {
+      padding: 9px 20px; border-radius: 10px; font-size: 13px;
+      font-weight: 700; cursor: pointer; border: none; transition: .15s;
+    }
+    .vids-btn.primary {
+      background: linear-gradient(110deg, var(--vid-accent), var(--vid-accent2));
+      color: #fff;
+    }
+    .vids-btn.primary:hover { opacity: .85; }
+    .vids-btn.primary:disabled { opacity: .5; cursor: not-allowed; }
+    .vids-btn.ghost {
+      background: none; border: 1px solid var(--vid-border); color: var(--vid-mut);
+    }
+    .vids-btn.ghost:hover { border-color: var(--vid-accent); color: var(--vid-accent); }
+    .vids-upload-status {
+      font-size: 12px; color: var(--vid-mut); margin-top: 8px; text-align: center;
+    }
+    .vids-upload-status.error { color: #ef4444; }
+    .vids-upload-status.success { color: #22c55e; }
+
+    /* ── Watch Modal ── */
+    .vids-watch-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.85);
+      backdrop-filter: blur(6px); z-index: 300;
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: 20px; overflow-y: auto;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .vids-watch-overlay.open { opacity: 1; pointer-events: all; }
+    .vids-watch-box {
+      width: 100%; max-width: 900px;
+      background: var(--vid-card); border-radius: 16px;
+      overflow: hidden; margin-top: 10px;
+      transform: translateY(16px); transition: transform .2s;
+    }
+    .vids-watch-overlay.open .vids-watch-box { transform: translateY(0); }
+    .vids-player-wrap {
+      width: 100%; background: #000; position: relative;
+      aspect-ratio: 16/9;
+    }
+    .vids-player-wrap video {
+      width: 100%; height: 100%; object-fit: contain;
+    }
+    .vids-player-wrap:fullscreen video,
+    .vids-player-wrap:-webkit-full-screen video { object-fit: contain; background: #000; }
+    .vids-player-wrap:fullscreen,
+    .vids-player-wrap:-webkit-full-screen { aspect-ratio: unset; height: 100%; }
+
+    /* ── Custom player controls ── */
+    .vp-controls {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      padding: 10px 12px 8px;
+      background: linear-gradient(to top, rgba(0,0,0,.85), rgba(0,0,0,0));
+      opacity: 1; transition: opacity .25s ease;
+      pointer-events: all;
+    }
+    .vids-player-wrap.vp-idle .vp-controls { opacity: 0; pointer-events: none; }
+    .vids-player-wrap.vp-idle { cursor: none; }
+
+    .vp-seek {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+      border-radius: 999px; margin-bottom: 8px; cursor: pointer;
+      background: linear-gradient(to right, var(--vid-accent) var(--vp-progress, 0%), rgba(255,255,255,.35) var(--vp-progress, 0%));
+    }
+    .vp-seek::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+      background: var(--vid-accent); cursor: pointer; margin-top: -4px;
+      box-shadow: 0 0 0 3px rgba(59,130,246,.25);
+      transition: transform .12s ease;
+    }
+    .vp-seek:hover::-webkit-slider-thumb { transform: scale(1.25); }
+    .vp-seek::-moz-range-thumb {
+      width: 12px; height: 12px; border-radius: 50%; border: none;
+      background: var(--vid-accent); cursor: pointer;
+    }
+
+    .vp-row { display: flex; align-items: center; gap: 8px; }
+    .vp-btn {
+      background: none; border: none; color: #fff; font-size: 16px; cursor: pointer;
+      padding: 4px 6px; border-radius: 6px; transition: transform .12s ease, background .15s ease;
+      line-height: 1;
+    }
+    .vp-btn:hover { background: rgba(255,255,255,.14); }
+    .vp-btn:active { transform: scale(.88); }
+    .vp-volume {
+      width: 70px; height: 3px; accent-color: var(--vid-accent); cursor: pointer;
+    }
+    .vp-time {
+      color: #fff; font-size: 12px; font-variant-numeric: tabular-nums; opacity: .9;
+      white-space: nowrap;
+    }
+    .vp-spacer { flex: 1; }
+    .vp-speed {
+      background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.2);
+      border-radius: 6px; font-size: 11px; padding: 3px 4px; cursor: pointer;
+    }
+    .vp-speed option { color: #000; }
+
+    .vids-watch-info { padding: 20px 24px; }
+    .vids-watch-title {
+      font-size: 18px; font-weight: 800; color: var(--vid-txt);
+      margin-bottom: 8px; line-height: 1.3;
+    }
+    .vids-watch-meta {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 13px; color: var(--vid-mut); margin-bottom: 14px;
+    }
+    .vids-watch-actions {
+      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;
+    }
+    .vids-action-btn {
+      display: flex; align-items: center; gap: 5px;
+      padding: 7px 14px; border-radius: 999px;
+      border: 1px solid var(--vid-border); background: var(--vid-bg);
+      color: var(--vid-txt); font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: .15s;
+    }
+    .vids-action-btn:hover { border-color: var(--vid-accent); color: var(--vid-accent); }
+    .vids-action-btn.liked { border-color: var(--vid-accent); color: var(--vid-accent); background: var(--vid-hover); }
+    .vids-watch-desc {
+      font-size: 13px; color: var(--vid-mut); line-height: 1.7;
+      background: var(--vid-bg); padding: 12px 16px; border-radius: 10px;
+      white-space: pre-wrap;
+    }
+    .vids-watch-close {
+      position: absolute; top: 14px; right: 14px;
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(0,0,0,.5); border: none; color: #fff;
+      font-size: 16px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; z-index: 10;
+      transition: background .15s;
+    }
+    .vids-watch-close:hover { background: rgba(0,0,0,.8); }
+
+    /* ── Auth Gate ── */
+    .vids-auth-gate {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 10px; padding: 60px 20px;
+      text-align: center; color: var(--vid-mut);
+    }
+    .vids-auth-gate h3 { font-size: 16px; font-weight: 700; color: var(--vid-txt); }
+    .vids-auth-gate p { font-size: 13px; }
+
+    /* ── Toast ── */
+    .vids-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #1e293b; color: #f1f5f9;
+      padding: 10px 20px; border-radius: 999px; font-size: 13px; font-weight: 600;
+      z-index: 999; opacity: 0; transition: all .3s; white-space: nowrap;
+      pointer-events: none;
+    }
+    .vids-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .vids-sidebar { transform: translateX(-100%); }
+      .vids-sidebar.open { transform: translateX(0); }
+      .vids-main { margin-left: 0; padding: 16px; }
+      .vids-grid { grid-template-columns: 1fr; }
+      :root { --vid-sidebar-w: 220px; }
+      .vids-search-wrap { max-width: 100%; }
+      .vids-topbar { gap: 8px; }
+    }
+    @media (max-width: 480px) {
+      .vids-grid { grid-template-columns: 1fr; }
+      .vids-watch-info { padding: 14px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor-dot"></div>
+  <div class="cursor-trail"></div>
+  <div class="cursor-crosshair"></div>
+  <div class="cursor-blob"></div>
+
+  <!-- ══ TOP BAR ══ -->
+  <div class="vids-topbar">
+    <div class="vids-topbar-left">
+      <button class="vids-back-btn" onclick="window.location.href='apps.html'">← Apps</button>
+      <div class="vids-logo">360<span>|</span>Vids</div>
+      <a href="/apps/360Music.html" class="vids-back-btn" style="text-decoration:none;">🎵 Music</a>
+      <a href="/apps/360Studio.html" class="vids-back-btn" style="text-decoration:none;">🎛️ Studio</a>
+    </div>
+
+    <div class="vids-search-wrap">
+      <input type="text" id="vids-search" placeholder="Search videos…" autocomplete="off" />
+      <button class="vids-search-btn" id="vids-search-btn" title="Search">🔍</button>
+    </div>
+
+    <div class="vids-topbar-right">
+    <button id="signInBtn"  class="auth-btn">Sign In</button>
+    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
+    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+
+      <button class="vids-upload-btn" id="openUploadBtn">
+        <span>＋</span> Upload
+      </button>
+      <div class="vids-avatar-btn" id="vids-avatar" title="Account">?</div>
+    </div>
+  </div>
+
+  <!-- ══ BODY ══ -->
+  <div class="vids-body">
+
+    <!-- Sidebar -->
+    <aside class="vids-sidebar" id="vidsSidebar">
+      <div class="vids-nav-item active" data-view="home">
+        <span class="vids-nav-icon">🏠</span> Home
+      </div>
+      <div class="vids-nav-item" data-view="trending">
+        <span class="vids-nav-icon">🔥</span> Trending
+      </div>
+      <div class="vids-nav-item" data-view="subscriptions">
+        <span class="vids-nav-icon">📺</span> Subscriptions
+      </div>
+      <div class="vids-nav-divider"></div>
+      <div class="vids-nav-label">Library</div>
+      <div class="vids-nav-item" data-view="liked">
+        <span class="vids-nav-icon">👍</span> Liked Videos
+      </div>
+      <div class="vids-nav-item" data-view="uploads">
+        <span class="vids-nav-icon">🎬</span> Your Videos
+      </div>
+      <div class="vids-nav-divider"></div>
+      <div class="vids-nav-label">Browse</div>
+      <div class="vids-nav-item" data-view="cat-gaming">
+        <span class="vids-nav-icon">🎮</span> Gaming
+      </div>
+      <div class="vids-nav-item" data-view="cat-music">
+        <span class="vids-nav-icon">🎵</span> Music
+      </div>
+      <div class="vids-nav-item" data-view="cat-tech">
+        <span class="vids-nav-icon">💻</span> Tech
+      </div>
+      <div class="vids-nav-item" data-view="cat-education">
+        <span class="vids-nav-icon">📚</span> Education
+      </div>
+      <div class="vids-nav-item" data-view="cat-entertainment">
+        <span class="vids-nav-icon">🎭</span> Entertainment
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="vids-main" id="vidsMain">
+
+      <!-- Filter Chips -->
+      <div class="vids-chips" id="vidsChips">
+        <div class="vids-chip active" data-filter="all">All</div>
+        <div class="vids-chip" data-filter="Gaming">Gaming</div>
+        <div class="vids-chip" data-filter="Music">Music</div>
+        <div class="vids-chip" data-filter="Tech">Tech</div>
+        <div class="vids-chip" data-filter="Education">Education</div>
+        <div class="vids-chip" data-filter="Entertainment">Entertainment</div>
+        <div class="vids-chip" data-filter="Other">Other</div>
+      </div>
+
+      <!-- Grid -->
+      <div class="vids-grid" id="vidsGrid">
+        <!-- Skeleton loaders -->
+        <div class="vids-card vids-skeleton">
+          <div class="skel-thumb"></div>
+          <div class="vids-card-body">
+            <div class="skel-line" style="width:90%"></div>
+            <div class="skel-line short"></div>
+          </div>
+        </div>
+        <div class="vids-card vids-skeleton">
+          <div class="skel-thumb"></div>
+          <div class="vids-card-body">
+            <div class="skel-line" style="width:75%"></div>
+            <div class="skel-line short"></div>
+          </div>
+        </div>
+        <div class="vids-card vids-skeleton">
+          <div class="skel-thumb"></div>
+          <div class="vids-card-body">
+            <div class="skel-line" style="width:85%"></div>
+            <div class="skel-line short"></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══ UPLOAD MODAL ══ -->
+  <div class="vids-modal-overlay" id="uploadOverlay">
+    <div class="vids-modal">
+      <h2>🎬 Upload Video</h2>
+
+      <div class="vids-field">
+        <label>Video File</label>
+        <div class="vids-dropzone" id="dropzone">
+          <input type="file" id="videoFile" accept="video/*" />
+          <div class="vids-dropzone-icon">📁</div>
+          <p>Drag & drop or <strong>browse</strong> to choose a video</p>
+          <p style="font-size:11px;margin-top:4px;">MP4, WebM, MOV — max 500MB</p>
+          <div class="vids-file-chosen" id="fileChosen"></div>
+        </div>
+        <div class="vids-progress-wrap" id="progressWrap">
+          <div class="vids-progress-bar" id="progressBar"></div>
+        </div>
+      </div>
+
+      <div class="vids-field">
+        <label>Title *</label>
+        <input type="text" id="vidTitle" placeholder="Give your video a title…" maxlength="100" />
+      </div>
+
+      <div class="vids-field">
+        <label>Description</label>
+        <textarea id="vidDesc" placeholder="Tell viewers about your video…" maxlength="500"></textarea>
+      </div>
+
+      <div class="vids-field">
+        <label>Category</label>
+        <select id="vidCategory">
+          <option value="Other">Other</option>
+          <option value="Gaming">Gaming</option>
+          <option value="Music">Music</option>
+          <option value="Tech">Tech</option>
+          <option value="Education">Education</option>
+          <option value="Entertainment">Entertainment</option>
+        </select>
+      </div>
+
+      <div class="vids-upload-status" id="uploadStatus"></div>
+
+      <div class="vids-modal-actions">
+        <button class="vids-btn ghost" id="cancelUploadBtn">Cancel</button>
+        <button class="vids-btn primary" id="submitUploadBtn">Upload Video</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ WATCH MODAL ══ -->
+  <div class="vids-watch-overlay" id="watchOverlay">
+    <div class="vids-watch-box">
+      <div class="vids-player-wrap" id="vidsPlayerWrap">
+        <button class="vids-watch-close" id="watchCloseBtn">✕</button>
+        <video id="vidsPlayer" preload="metadata" playsinline></video>
+
+        <div class="vp-controls" id="vpControls">
+          <input type="range" id="vpSeek" class="vp-seek" min="0" max="100" value="0" step="0.1" />
+          <div class="vp-row">
+            <button class="vp-btn" id="vpPlayPause" title="Play/Pause (space)">▶️</button>
+            <button class="vp-btn" id="vpMute" title="Mute (m)">🔊</button>
+            <input type="range" id="vpVolume" class="vp-volume" min="0" max="1" step="0.01" value="1" />
+            <span class="vp-time" id="vpTime">0:00 / 0:00</span>
+            <div class="vp-spacer"></div>
+            <select id="vpSpeed" class="vp-speed" title="Playback speed">
+              <option value="0.5">0.5x</option>
+              <option value="0.75">0.75x</option>
+              <option value="1" selected>1x</option>
+              <option value="1.25">1.25x</option>
+              <option value="1.5">1.5x</option>
+              <option value="2">2x</option>
+            </select>
+            <button class="vp-btn" id="vpPip" title="Picture in picture (p)">⧉</button>
+            <button class="vp-btn" id="vpFullscreen" title="Fullscreen (f)">⛶</button>
+          </div>
+        </div>
+      </div>
+      <div class="vids-watch-info">
+        <div class="vids-watch-title" id="watchTitle"></div>
+        <div class="vids-watch-meta" id="watchMeta"></div>
+        <div class="vids-watch-actions">
+          <button class="vids-action-btn" id="likeBtn">👍 <span id="likeCount">0</span></button>
+          <button class="vids-action-btn" id="dislikeBtn">👎 <span id="dislikeCount">0</span></button>
+          <button class="vids-action-btn" id="followBtn">＋ Follow</button>
+          <button class="vids-action-btn" id="shareBtn">🔗 Share</button>
+        </div>
+        <div class="vids-watch-desc" id="watchDesc"></div>
+
+        <div id="commentsSection" style="margin-top:14px;">
+          <h4 style="font-size:14px;font-weight:700;margin:0 0 6px;">Comments</h4>
+          <div id="commentsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+          <div id="commentForm" style="display:flex;gap:8px;">
+            <input
+              type="text"
+              id="commentInput"
+              placeholder="Add a comment…"
+              style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--vid-border);font-size:13px;"
+              maxlength="300"
+            />
+            <button class="vids-action-btn" id="commentSubmitBtn">Post</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TOAST ══ -->
+  <div class="vids-toast" id="vidsToast"></div>
+
+  <audio id="clickSound" src="click-sound.mp3" preload="auto"></audio>
+  <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/wide.js"></script>
+  <script src="/assets/js/gallium.js"></script>
+  <script src="/assets/js/cookie.js"></script>
+  <script src="/assets/js/cursor.js"></script>
+
+  <script>
+    // ══════════════════════════════════════════════
+    //  360Vids — Core Logic
+    //  Supabase Storage bucket: "videos"
+    //  Supabase table: "vids" (public schema)
+    //
+    //  Table schema (run in Supabase SQL editor):
+    //  -------------------------------------------
+    //  create table vids (
+    //    id          uuid primary key default gen_random_uuid(),
+    //    user_id     uuid references auth.users(id) on delete cascade,
+    //    username    text,
+    //    title       text not null,
+    //    description text,
+    //    category    text default 'Other',
+    //    video_url   text not null,
+    //    views       integer default 0,
+    //    likes       uuid[] default '{}',
+    //    duration    text,
+    //    created_at  timestamptz default now()
+    //  );
+    //  alter table vids enable row level security;
+    //  create policy "Public read" on vids for select using (true);
+    //  create policy "Auth insert" on vids for insert with check (auth.uid() = user_id);
+    //  create policy "Owner update" on vids for update using (auth.uid() = user_id);
+    //  create policy "Owner delete" on vids for delete using (auth.uid() = user_id);
+    //
+    //  Storage bucket "videos": set to public
+    // ══════════════════════════════════════════════
+
+    const SUPABASE_URL  = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    // ── State ──
+    let currentUser  = null;
+    let allVideos    = [];
+    let currentVideo = null;
+    let activeFilter = 'all';
+    let activeView   = 'home';
+    let channelUserId = null, channelUsername = '';
+    function viewChannel(uid, uname) {
+      closeWatch();
+      channelUserId = uid; channelUsername = uname;
+      activeView = 'channel';
+      document.querySelectorAll('.vids-nav-item').forEach(i => i.classList.remove('active'));
+      fetchVideos();
+    }
+    let searchQuery  = '';
+    let selectedVideoFile = null;
+
+    // ── DOM ──
+    const grid         = document.getElementById('vidsGrid');
+    const uploadOverlay= document.getElementById('uploadOverlay');
+    const watchOverlay = document.getElementById('watchOverlay');
+    const commentsList = document.getElementById('commentsList');
+    const commentInput = document.getElementById('commentInput');
+    const commentSubmit = document.getElementById('commentSubmitBtn');
+    const player       = document.getElementById('vidsPlayer');
+    const toast        = document.getElementById('vidsToast');
+    const avatarBtn    = document.getElementById('vids-avatar');
+    const progressWrap = document.getElementById('progressWrap');
+    const progressBar  = document.getElementById('progressBar');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const fileChosen   = document.getElementById('fileChosen');
+    const submitBtn    = document.getElementById('submitUploadBtn');
+
+    // ── Custom video player (replaces native <video controls>) ──
+    const playerWrap  = document.getElementById('vidsPlayerWrap');
+    const vpControls  = document.getElementById('vpControls');
+    const vpPlayPause = document.getElementById('vpPlayPause');
+    const vpSeek      = document.getElementById('vpSeek');
+    const vpMute      = document.getElementById('vpMute');
+    const vpVolume    = document.getElementById('vpVolume');
+    const vpTime      = document.getElementById('vpTime');
+    const vpSpeed     = document.getElementById('vpSpeed');
+    const vpPip       = document.getElementById('vpPip');
+    const vpFullscreen = document.getElementById('vpFullscreen');
+
+    function fmtTime(s) {
+      if (!isFinite(s) || s < 0) s = 0;
+      const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+      return `${m}:${String(sec).padStart(2, '0')}`;
+    }
+
+    function updateSeekFill() {
+      const pct = player.duration ? (player.currentTime / player.duration) * 100 : 0;
+      vpSeek.style.setProperty('--vp-progress', pct + '%');
+    }
+
+    vpPlayPause.addEventListener('click', () => player.paused ? player.play() : player.pause());
+    player.addEventListener('play', () => { vpPlayPause.textContent = '⏸️'; });
+    player.addEventListener('pause', () => { vpPlayPause.textContent = '▶️'; });
+    player.addEventListener('ended', () => { vpPlayPause.textContent = '▶️'; });
+
+    player.addEventListener('loadedmetadata', () => {
+      vpSeek.max = player.duration || 0;
+      vpTime.textContent = `${fmtTime(0)} / ${fmtTime(player.duration)}`;
+    });
+    player.addEventListener('timeupdate', () => {
+      if (!seeking) vpSeek.value = player.currentTime;
+      vpTime.textContent = `${fmtTime(player.currentTime)} / ${fmtTime(player.duration)}`;
+      updateSeekFill();
+    });
+
+    let seeking = false;
+    vpSeek.addEventListener('input', () => { seeking = true; player.currentTime = +vpSeek.value; updateSeekFill(); });
+    vpSeek.addEventListener('change', () => { seeking = false; });
+
+    vpVolume.addEventListener('input', () => {
+      player.volume = +vpVolume.value;
+      player.muted = player.volume === 0;
+      vpMute.textContent = player.muted ? '🔇' : (player.volume < 0.5 ? '🔉' : '🔊');
+    });
+    vpMute.addEventListener('click', () => {
+      player.muted = !player.muted;
+      vpMute.textContent = player.muted ? '🔇' : (player.volume < 0.5 ? '🔉' : '🔊');
+    });
+
+    vpSpeed.addEventListener('change', () => { player.playbackRate = +vpSpeed.value; });
+
+    // Picture-in-picture -- hide the button entirely if unsupported instead
+    // of shipping a button that errors when clicked.
+    if (!document.pictureInPictureEnabled || player.disablePictureInPicture) {
+      vpPip.style.display = 'none';
+    } else {
+      vpPip.addEventListener('click', async () => {
+        try {
+          if (document.pictureInPictureElement) await document.exitPictureInPicture();
+          else await player.requestPictureInPicture();
+        } catch (e) { showToast('⚠️ Picture-in-picture unavailable.'); }
+      });
+    }
+
+    vpFullscreen.addEventListener('click', () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else if (playerWrap.requestFullscreen) {
+        playerWrap.requestFullscreen();
+      }
+    });
+    document.addEventListener('fullscreenchange', () => {
+      vpFullscreen.textContent = document.fullscreenElement ? '⤢' : '⛶';
+    });
+
+    // Auto-hide controls after inactivity while playing.
+    let hideTimer = null;
+    function showControlsTemporarily() {
+      playerWrap.classList.remove('vp-idle');
+      clearTimeout(hideTimer);
+      if (!player.paused) hideTimer = setTimeout(() => playerWrap.classList.add('vp-idle'), 2600);
+    }
+    playerWrap.addEventListener('mousemove', showControlsTemporarily);
+    playerWrap.addEventListener('mouseleave', () => { if (!player.paused) playerWrap.classList.add('vp-idle'); });
+    player.addEventListener('play', showControlsTemporarily);
+    player.addEventListener('pause', () => { playerWrap.classList.remove('vp-idle'); clearTimeout(hideTimer); });
+
+    // Keyboard shortcuts, only while the watch overlay is actually open so
+    // they don't hijack typing elsewhere on the page (e.g. the comment box).
+    window.addEventListener('keydown', (e) => {
+      if (!watchOverlay.classList.contains('open')) return;
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.code === 'Space') { e.preventDefault(); player.paused ? player.play() : player.pause(); }
+      else if (e.code === 'ArrowLeft') { player.currentTime = Math.max(0, player.currentTime - 5); }
+      else if (e.code === 'ArrowRight') { player.currentTime = Math.min(player.duration || 0, player.currentTime + 5); }
+      else if (e.code === 'ArrowUp') { e.preventDefault(); player.volume = Math.min(1, player.volume + 0.1); vpVolume.value = player.volume; }
+      else if (e.code === 'ArrowDown') { e.preventDefault(); player.volume = Math.max(0, player.volume - 0.1); vpVolume.value = player.volume; }
+      else if (e.key === 'f' || e.key === 'F') vpFullscreen.click();
+      else if (e.key === 'm' || e.key === 'M') vpMute.click();
+      else if (e.key === 'p' || e.key === 'P') vpPip.click();
+      showControlsTemporarily();
+    });
+
+    // ── Toast helper ──
+    function showToast(msg, dur = 2800) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), dur);
+    }
+
+    // ── Auth ──
+    async function initAuth() {
+      const { data: { session } } = await sb.auth.getSession();
+      currentUser = session?.user ?? null;
+      updateAvatar();
+    }
+
+    function updateAvatar() {
+      if (currentUser) {
+        const initials = (currentUser.email || 'U')[0].toUpperCase();
+        avatarBtn.textContent = initials;
+        avatarBtn.title = currentUser.email;
+      } else {
+        avatarBtn.textContent = '?';
+        avatarBtn.title = 'Not signed in';
+      }
+    }
+
+    avatarBtn.addEventListener('click', () => {
+      // Delegate to main.js auth popup if it exists
+      const popup = document.getElementById('auth-popup');
+      if (popup) {
+        popup.classList.remove('hidden');
+      } else {
+        showToast('Sign in via 360 account popup.');
+      }
+    });
+
+    sb.auth.onAuthStateChange((_e, session) => {
+      currentUser = session?.user ?? null;
+      updateAvatar();
+    });
+
+    // ── Fetch Videos ──
+    async function fetchVideos() {
+      showSkeletons();
+      let query = sb.from('vids').select('*').order('created_at', { ascending: false });
+
+      if (activeView.startsWith('cat-')) {
+        const cat = activeView.replace('cat-', '');
+        const catMap = { gaming:'Gaming', music:'Music', tech:'Tech', education:'Education', entertainment:'Entertainment' };
+        query = query.eq('category', catMap[cat] || cat);
+      } else if (activeView === 'liked') {
+        if (!currentUser) { renderAuthGate('like videos'); return; }
+        query = query.contains('likes', [currentUser.id]);
+      } else if (activeView === 'uploads') {
+        if (!currentUser) { renderAuthGate('view your videos'); return; }
+        query = query.eq('user_id', currentUser.id);
+      } else if (activeView === 'trending') {
+        query = sb.from('vids').select('*').order('views', { ascending: false }).limit(30);
+      } else if (activeView === 'subscriptions') {
+        if (!currentUser) { renderAuthGate('see videos from creators you follow'); return; }
+        const { data: f } = await sb.from('follows').select('creator_id').eq('follower_id', currentUser.id);
+        const ids = (f || []).map(r => r.creator_id);
+        if (!ids.length) { allVideos = []; grid.innerHTML = `<div class="vids-empty"><div class="vids-empty-icon">🎧</div><h3>No subscriptions yet</h3><p>Follow creators to see their videos here.</p></div>`; return; }
+        query = query.in('user_id', ids);
+      } else if (activeView === 'channel' && channelUserId) {
+        query = query.eq('user_id', channelUserId);
+      }
+
+      if (searchQuery) {
+        query = query.ilike('title', `%${searchQuery}%`);
+      }
+
+      const { data, error } = await query;
+      if (error) { showToast('⚠️ Failed to load videos.'); grid.innerHTML = '<div class="vids-empty"><div class="vids-empty-icon">⚠️</div><h3>Error loading videos</h3><p>'+error.message+'</p></div>'; return; }
+
+      allVideos = data || [];
+      if (currentUser) {
+        const { data: hidden } = await sb.from('hidden_content').select('content_id').eq('user_id', currentUser.id).eq('kind', 'video');
+        const hiddenIds = new Set((hidden || []).map(h => h.content_id));
+        allVideos = allVideos.filter(v => !hiddenIds.has(v.id));
+      }
+      renderVideos();
+    }
+
+    async function hideVideo(id, cardEl) {
+      if (!currentUser) { showToast('Sign in to hide videos.'); return; }
+      const { error } = await sb.from('hidden_content').insert({ user_id: currentUser.id, kind: 'video', content_id: id });
+      if (error && error.code !== '23505') { showToast('⚠️ Could not hide.'); return; }
+      allVideos = allVideos.filter(v => v.id !== id);
+      cardEl?.remove();
+      showToast('🚫 Hidden — you won\'t see this again.');
+    }
+
+    // ── Filter ──
+    function filteredVideos() {
+      if (activeFilter === 'all') return allVideos;
+      return allVideos.filter(v => v.category === activeFilter);
+    }
+
+    // ── Render Videos ──
+    function wireChannelBanner() {
+      const btn = document.getElementById('channelFollowBtn');
+      if (!btn) return;
+      (async () => {
+        if (currentUser && btn.dataset.uid === currentUser.id) { btn.style.display = 'none'; return; }
+        const { count } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('creator_id', btn.dataset.uid);
+        let iFollow = false;
+        if (currentUser) {
+          const { data: f } = await sb.from('follows').select('creator_id').eq('follower_id', currentUser.id).eq('creator_id', btn.dataset.uid).maybeSingle();
+          iFollow = !!f;
+        }
+        btn.textContent = iFollow ? `✓ Following (${count||0})` : `＋ Follow (${count||0})`;
+        btn.className = 'vids-action-btn' + (iFollow ? ' liked' : '');
+      })();
+      btn.addEventListener('click', async () => {
+        if (!currentUser) { showToast('Sign in to follow creators.'); return; }
+        const { data: nowFollowing, error } = await sb.rpc('toggle_follow', { p_creator_id: btn.dataset.uid });
+        if (error) { showToast('⚠️ ' + error.message); return; }
+        showToast(nowFollowing ? '✓ Followed!' : 'Unfollowed');
+        wireChannelBanner();
+      });
+    }
+
+    function renderVideos() {
+      const vids = filteredVideos();
+      const banner = activeView === 'channel' && channelUserId
+        ? `<div class="vids-channel-banner" style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-bottom:8px;background:var(--vid-card,#111827);border-radius:12px;">
+             <div style="font-size:16px;font-weight:700;">📺 ${escHtml(channelUsername)}'s channel</div>
+             <button class="vids-action-btn" id="channelFollowBtn" data-uid="${escHtml(channelUserId)}">＋ Follow</button>
+           </div>` : '';
+      if (!vids.length) {
+        grid.innerHTML = banner + `
+          <div class="vids-empty">
+            <div class="vids-empty-icon">🎬</div>
+            <h3>No videos here yet</h3>
+            <p>Be the first to upload something!</p>
+          </div>`;
+        wireChannelBanner();
+        return;
+      }
+      grid.innerHTML = banner + vids.map(v => videoCard(v)).join('');
+      wireChannelBanner();
+      grid.querySelectorAll('.vids-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.vids-hide-btn')) return;
+          openWatch(card.dataset.id);
+        });
+      });
+      grid.querySelectorAll('.vids-hide-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          hideVideo(btn.dataset.hideId, btn.closest('.vids-card'));
+        });
+      });
+    }
+
+    function showSkeletons() {
+      grid.innerHTML = Array(6).fill(0).map(() => `
+        <div class="vids-card vids-skeleton">
+          <div class="skel-thumb"></div>
+          <div class="vids-card-body">
+            <div class="skel-line" style="width:${70+Math.random()*20|0}%"></div>
+            <div class="skel-line short"></div>
+          </div>
+        </div>`).join('');
+    }
+
+    function renderAuthGate(action) {
+      grid.innerHTML = `
+        <div class="vids-auth-gate" style="grid-column:1/-1">
+          <div style="font-size:48px">🔐</div>
+          <h3>Sign in to ${action}</h3>
+          <p>Create a 360 account to access this feature.</p>
+          <button class="vids-btn primary" onclick="document.getElementById('auth-popup')?.classList.remove('hidden')">Sign In</button>
+        </div>`;
+    }
+
+    function videoCard(v) {
+      const ago = timeAgo(v.created_at);
+      const user = v.username || 'Anonymous';
+      const initials = user[0].toUpperCase();
+      const views = formatNum(v.views || 0);
+      const likes = (v.likes || []).length;
+      return `
+        <div class="vids-card" data-id="${v.id}">
+          <div class="vids-thumb">
+            ${v.thumbnail_url
+              ? `<img src="${escHtml(v.thumbnail_url)}" alt="${escHtml(v.title)}" loading="lazy" />`
+              : `<div class="vids-thumb-placeholder">🎬</div>`}
+            ${v.duration ? `<div class="vids-duration">${escHtml(v.duration)}</div>` : ''}
+            <button class="vids-hide-btn" data-hide-id="${v.id}" title="Not interested" style="position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:12px;cursor:pointer;opacity:0;transition:opacity .15s;">🚫</button>
+          </div>
+          <div class="vids-card-body">
+            <div class="vids-card-title">${escHtml(v.title)}</div>
+            <div class="vids-card-meta">
+              <div class="vids-card-avatar">${initials}</div>
+              <span>${escHtml(user)}</span>
+              <span class="vids-card-dot">·</span>
+              <span>${views} views</span>
+              <span class="vids-card-dot">·</span>
+              <span>${ago}</span>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // ── Watch ──
+    async function openWatch(id) {
+      const video = allVideos.find(v => v.id === id);
+      if (!video) return;
+      currentVideo = video;
+
+      document.getElementById('watchTitle').textContent = video.title;
+      document.getElementById('watchDesc').textContent = video.description || 'No description.';
+
+      const ago = timeAgo(video.created_at);
+      const user = video.username || 'Anonymous';
+      const views = formatNum((video.views || 0) + 1);
+      document.getElementById('watchMeta').innerHTML =
+        `<span class="vids-channel-link" data-uid="${escHtml(video.user_id)}" data-uname="${escHtml(user)}" style="cursor:pointer;text-decoration:underline;">${escHtml(user)}</span><span>·</span><span>${views} views</span><span>·</span><span>${ago}</span><span>·</span><span>${escHtml(video.category||'Other')}</span>`;
+      document.querySelector('.vids-channel-link')?.addEventListener('click', (e) => {
+        viewChannel(e.currentTarget.dataset.uid, e.currentTarget.dataset.uname);
+      });
+
+      const likedByMe = currentUser && (video.likes||[]).includes(currentUser.id);
+      const likeBtn = document.getElementById('likeBtn');
+      likeBtn.className = 'vids-action-btn' + (likedByMe ? ' liked' : '');
+      document.getElementById('likeCount').textContent = (video.likes||[]).length;
+
+      const dislikedByMe = currentUser && (video.dislikes||[]).includes(currentUser.id);
+      const dislikeBtn = document.getElementById('dislikeBtn');
+      dislikeBtn.className = 'vids-action-btn' + (dislikedByMe ? ' liked' : '');
+      document.getElementById('dislikeCount').textContent = (video.dislikes||[]).length;
+
+      const followBtn = document.getElementById('followBtn');
+      if (currentUser && video.user_id === currentUser.id) {
+        followBtn.style.display = 'none';
+      } else {
+        followBtn.style.display = '';
+        const { count } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('creator_id', video.user_id);
+        let iFollow = false;
+        if (currentUser) {
+          const { data: f } = await sb.from('follows').select('creator_id').eq('follower_id', currentUser.id).eq('creator_id', video.user_id).maybeSingle();
+          iFollow = !!f;
+        }
+        followBtn.textContent = iFollow ? `✓ Following (${count||0})` : `＋ Follow (${count||0})`;
+        followBtn.className = 'vids-action-btn' + (iFollow ? ' liked' : '');
+        followBtn.dataset.creatorId = video.user_id;
+      }
+
+      player.src = video.video_url;
+      player.load();
+      player.playbackRate = 1;
+      vpSpeed.value = '1';
+      vpPlayPause.textContent = '▶️';
+      vpSeek.value = 0;
+      vpSeek.style.setProperty('--vp-progress', '0%');
+      playerWrap.classList.remove('vp-idle');
+
+      watchOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+
+      // Increment view count (fire and forget) -- atomic on the server now,
+      // so concurrent viewers can't clobber each other's count.
+      sb.rpc('increment_video_views', { p_id: id });
+
+      commentSubmit.disabled = true;
+      await loadComments(id);
+      commentSubmit.disabled = false;
+    }
+
+    async function loadComments(videoId) {
+      commentsList.innerHTML = '<span style="font-size:12px;color:var(--vid-mut);">Loading comments…</span>';
+      const { data, error } = await sb
+        .from('comments').select('*').eq('video_id', videoId)
+        .order('created_at', { ascending: true });
+
+      if (error) { commentsList.innerHTML = '<span style="font-size:12px;color:#ef4444;">Failed to load.</span>'; return; }
+      if (!data.length) { commentsList.innerHTML = '<span style="font-size:12px;color:var(--vid-mut);">No comments yet. Be the first!</span>'; return; }
+
+      commentsList.innerHTML = data.map(c => `
+        <div style="font-size:13px;">
+          <strong>${escHtml(c.username||'User')}</strong>
+          <span style="color:var(--vid-mut);font-size:11px;"> · ${timeAgo(c.created_at)}</span>
+          <div>${escHtml(c.comment_text)}</div>
+        </div>`).join('');
+    }
+
+    commentSubmit.addEventListener('click', async () => {
+      if (!currentUser) { showToast('Sign in to comment.'); return; }
+      if (!currentVideo?.id) return;
+      const text = commentInput.value.trim();
+      if (!text) return;
+      commentSubmit.disabled = true;
+      const username = currentUser.email?.split('@')[0] || 'Anonymous';
+      const { error } = await sb.from('comments').insert({
+        video_id: currentVideo.id, user_id: currentUser.id, username, comment_text: text
+      });
+      if (error) { showToast('⚠️ Failed to post comment.'); commentSubmit.disabled = false; return; }
+      commentInput.value = '';
+      await loadComments(currentVideo.id);
+      commentSubmit.disabled = false;
+    });
+
+    function closeWatch() {
+      watchOverlay.classList.remove('open');
+      player.pause();
+      player.src = '';
+      currentVideo = null;
+      document.body.style.overflow = '';
+      clearTimeout(hideTimer);
+      playerWrap.classList.remove('vp-idle');
+      if (document.pictureInPictureElement === player) document.exitPictureInPicture().catch(() => {});
+      if (document.fullscreenElement === playerWrap) document.exitFullscreen().catch(() => {});
+    }
+
+    document.getElementById('watchCloseBtn').addEventListener('click', closeWatch);
+    watchOverlay.addEventListener('click', e => { if (e.target === watchOverlay) closeWatch(); });
+
+    // Like
+    document.getElementById('likeBtn').addEventListener('click', async () => {
+      if (!currentUser) { showToast('Sign in to like videos.'); return; }
+      if (!currentVideo) return;
+
+      // Atomic on the server -- no lost updates if two people like around
+      // the same time.
+      const { data: likes, error } = await sb.rpc('toggle_video_like', { p_id: currentVideo.id });
+      if (error) { showToast('⚠️ Could not update like.'); return; }
+      await refreshLikeDislikeUI();
+    });
+
+    document.getElementById('dislikeBtn').addEventListener('click', async () => {
+      if (!currentUser) { showToast('Sign in to react.'); return; }
+      if (!currentVideo) return;
+      const { error } = await sb.rpc('toggle_video_dislike', { p_id: currentVideo.id });
+      if (error) { showToast('⚠️ Could not update.'); return; }
+      await refreshLikeDislikeUI();
+    });
+
+    async function refreshLikeDislikeUI() {
+      const { data: fresh } = await sb.from('vids').select('likes,dislikes').eq('id', currentVideo.id).maybeSingle();
+      if (!fresh) return;
+      currentVideo.likes = fresh.likes; currentVideo.dislikes = fresh.dislikes;
+      const likedByMe = (fresh.likes || []).includes(currentUser.id);
+      const dislikedByMe = (fresh.dislikes || []).includes(currentUser.id);
+      document.getElementById('likeBtn').className = 'vids-action-btn' + (likedByMe ? ' liked' : '');
+      document.getElementById('likeCount').textContent = (fresh.likes || []).length;
+      document.getElementById('dislikeBtn').className = 'vids-action-btn' + (dislikedByMe ? ' liked' : '');
+      document.getElementById('dislikeCount').textContent = (fresh.dislikes || []).length;
+      const v = allVideos.find(v => v.id === currentVideo.id);
+      if (v) { v.likes = fresh.likes; v.dislikes = fresh.dislikes; }
+    }
+
+    document.getElementById('followBtn').addEventListener('click', async (e) => {
+      if (!currentUser) { showToast('Sign in to follow creators.'); return; }
+      const creatorId = e.currentTarget.dataset.creatorId;
+      if (!creatorId) return;
+      const { data: nowFollowing, error } = await sb.rpc('toggle_follow', { p_creator_id: creatorId });
+      if (error) { showToast('⚠️ ' + error.message); return; }
+      const { count } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('creator_id', creatorId);
+      e.currentTarget.textContent = nowFollowing ? `✓ Following (${count||0})` : `＋ Follow (${count||0})`;
+      e.currentTarget.className = 'vids-action-btn' + (nowFollowing ? ' liked' : '');
+      showToast(nowFollowing ? '✓ Followed!' : 'Unfollowed');
+    });
+
+    // Share
+    document.getElementById('shareBtn').addEventListener('click', () => {
+      if (!currentVideo) return;
+      const url = `${location.origin}${location.pathname}?v=${currentVideo.id}`;
+      navigator.clipboard.writeText(url).then(() => showToast('🔗 Link copied!')).catch(() => showToast('Share: ' + url));
+    });
+
+    // ── Upload ──
+    document.getElementById('openUploadBtn').addEventListener('click', () => {
+      if (!currentUser) { showToast('Sign in to upload videos.'); return; }
+      uploadOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
+
+    document.getElementById('cancelUploadBtn').addEventListener('click', closeUpload);
+    uploadOverlay.addEventListener('click', e => { if (e.target === uploadOverlay) closeUpload(); });
+
+    function closeUpload() {
+      uploadOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+      resetUploadForm();
+    }
+
+    function resetUploadForm() {
+      document.getElementById('videoFile').value = '';
+      selectedVideoFile = null;
+      document.getElementById('vidTitle').value = '';
+      document.getElementById('vidDesc').value = '';
+      document.getElementById('vidCategory').value = 'Other';
+      fileChosen.style.display = 'none';
+      fileChosen.textContent = '';
+      progressWrap.style.display = 'none';
+      progressBar.style.width = '0%';
+      setUploadStatus('', '');
+      submitBtn.disabled = false;
+    }
+
+    function setUploadStatus(msg, type = '') {
+      uploadStatus.textContent = msg;
+      uploadStatus.className = 'vids-upload-status' + (type ? ' ' + type : '');
+    }
+
+    // Dropzone drag events
+    const dropzone = document.getElementById('dropzone');
+    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault(); dropzone.classList.remove('drag-over');
+      const file = e.dataTransfer?.files[0];
+      if (file) handleFileSelected(file);
+    });
+
+    document.getElementById('videoFile').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) handleFileSelected(file);
+    });
+
+    function handleFileSelected(file) {
+      if (!file.type.startsWith('video/')) { showToast('⚠️ Please select a video file.'); return; }
+      if (file.size > 500 * 1024 * 1024) { showToast('⚠️ Max file size is 500MB.'); return; }
+      selectedVideoFile = file; // ✅ FIX
+      fileChosen.textContent = `✅ ${file.name} (${(file.size/1024/1024).toFixed(1)}MB)`;
+      fileChosen.style.display = 'block';
+    
+      // Auto-fill title if empty
+      const titleInput = document.getElementById('vidTitle');
+      if (!titleInput.value) {
+        titleInput.value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+      }
+    }
+
+    document.getElementById('submitUploadBtn').addEventListener('click', async () => {
+      if (!currentUser) { showToast('Sign in first.'); return; }
+
+      const inputFile = document.getElementById('videoFile').files[0];
+      const file = selectedVideoFile || inputFile;
+      const title    = document.getElementById('vidTitle').value.trim();
+      const desc     = document.getElementById('vidDesc').value.trim();
+      const category = document.getElementById('vidCategory').value;
+
+      if (!file)  { setUploadStatus('⚠️ Please select a video file.', 'error'); return; }
+      if (!title) { setUploadStatus('⚠️ Title is required.', 'error'); return; }
+
+      submitBtn.disabled = true;
+      progressWrap.style.display = 'block';
+      setUploadStatus('Uploading video…');
+
+      // Get video duration
+      let duration = null;
+      try {
+        const url = URL.createObjectURL(file);
+        const vid = document.createElement('video');
+        vid.preload = 'metadata';
+        await new Promise(res => { vid.onloadedmetadata = res; vid.src = url; });
+        const secs = Math.round(vid.duration);
+        const m = Math.floor(secs / 60), s = secs % 60;
+        duration = `${m}:${s.toString().padStart(2,'0')}`;
+        URL.revokeObjectURL(url);
+      } catch {}
+
+      // Upload to Supabase Storage
+      const fileName = `${currentUser.id}/${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
+      const { error: upErr } = await sb.storage.from('videos').upload(fileName, file, {
+        cacheControl: '3600', upsert: false,
+        onUploadProgress: (e) => {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.width = pct + '%';
+          setUploadStatus(`Uploading… ${pct}%`);
+        }
+      });
+
+      if (upErr) {
+        setUploadStatus('⚠️ Upload failed: ' + upErr.message, 'error');
+        submitBtn.disabled = false;
+        return;
+      }
+
+      progressBar.style.width = '100%';
+      setUploadStatus('Saving video info…');
+
+      // Get public URL
+      const { data: urlData } = sb.storage.from('videos').getPublicUrl(fileName);
+      const video_url = urlData.publicUrl;
+
+      // Insert row
+      const username = currentUser.email?.split('@')[0] || 'Anonymous';
+      const { error: insErr } = await sb.from('vids').insert({
+        user_id: currentUser.id, username, title, description: desc,
+        category, video_url, duration, views: 0, likes: []
+      });
+
+      if (insErr) {
+        setUploadStatus('⚠️ Failed to save: ' + insErr.message, 'error');
+        submitBtn.disabled = false;
+        return;
+      }
+
+      setUploadStatus('✅ Video uploaded!', 'success');
+      showToast('🎬 Video uploaded successfully!');
+      setTimeout(() => { closeUpload(); fetchVideos(); }, 1200);
+    });
+
+    // ── Chips ──
+    document.getElementById('vidsChips').addEventListener('click', e => {
+      const chip = e.target.closest('.vids-chip');
+      if (!chip) return;
+      document.querySelectorAll('.vids-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderVideos();
+    });
+
+    // ── Sidebar Nav ──
+    document.getElementById('vidsSidebar').addEventListener('click', e => {
+      const item = e.target.closest('.vids-nav-item');
+      if (!item) return;
+      document.querySelectorAll('.vids-nav-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      activeView = item.dataset.view;
+      searchQuery = '';
+      document.getElementById('vids-search').value = '';
+      fetchVideos();
+    });
+
+    // ── Search ──
+    let searchTimer;
+    document.getElementById('vids-search').addEventListener('input', e => {
+      clearTimeout(searchTimer);
+      searchQuery = e.target.value.trim();
+      searchTimer = setTimeout(fetchVideos, 400);
+    });
+    document.getElementById('vids-search-btn').addEventListener('click', fetchVideos);
+    document.getElementById('vids-search').addEventListener('keydown', e => {
+      if (e.key === 'Enter') fetchVideos();
+    });
+
+    // ── Deep link ?v=id ──
+    async function checkDeepLink() {
+      const params = new URLSearchParams(location.search);
+      const vid = params.get('v');
+      if (vid && allVideos.length) {
+        const found = allVideos.find(v => v.id === vid);
+        if (found) openWatch(found.id);
+      }
+    }
+
+    // ── Utilities ──
+    function timeAgo(ts) {
+      const diff = Date.now() - new Date(ts).getTime();
+      const m = Math.floor(diff / 60000);
+      if (m < 1)   return 'just now';
+      if (m < 60)  return `${m}m ago`;
+      const h = Math.floor(m / 60);
+      if (h < 24)  return `${h}h ago`;
+      const d = Math.floor(h / 24);
+      if (d < 30)  return `${d}d ago`;
+      const mo = Math.floor(d / 30);
+      if (mo < 12) return `${mo}mo ago`;
+      return `${Math.floor(mo/12)}y ago`;
+    }
+
+    function formatNum(n) {
+      if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+      if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+      if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+      return String(n);
+    }
+
+    function escHtml(str) {
+      return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Init ──
+    (async () => {
+      await initAuth();
+      await fetchVideos();
+      await checkDeepLink();
+    })();
+  </script>
+</body>
+</html>

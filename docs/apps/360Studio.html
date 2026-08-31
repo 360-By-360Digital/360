@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>360Studio</title>
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/wide.css" />
+  <link rel="stylesheet" href="/assets/css/gallium.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+  <link rel="stylesheet" href="/assets/css/cursor.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    @view-transition { navigation: auto; }
+    ::view-transition-old(root) { animation: vt-out .28s cubic-bezier(.4,0,.2,1) both; }
+    ::view-transition-new(root) { animation: vt-in .32s cubic-bezier(.2,0,.2,1) both; }
+    @keyframes vt-out { to { opacity: 0; transform: scale(.98) translateY(6px); } }
+    @keyframes vt-in { from { opacity: 0; transform: scale(1.02) translateY(-6px); } }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --vid-bg: #f8fafc;
+      --vid-card: #ffffff;
+      --vid-border: rgba(0,0,0,.08);
+      --vid-txt: #0f172a;
+      --vid-mut: #64748b;
+      --vid-accent: #3b82f6;
+      --vid-accent2: #06b6d4;
+      --vid-hover: rgba(59,130,246,.06);
+      --vid-topbar-h: 58px;
+    }
+    body.dark {
+      --vid-bg: #0a0f1e;
+      --vid-card: #111827;
+      --vid-border: rgba(255,255,255,.07);
+      --vid-txt: #f1f5f9;
+      --vid-mut: #94a3b8;
+      --vid-hover: rgba(59,130,246,.1);
+    }
+
+    .st-root {
+      display: flex; flex-direction: column; min-height: 100vh;
+      background: var(--vid-bg); color: var(--vid-txt); font-family: inherit;
+    }
+
+    .st-topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: var(--vid-topbar-h);
+      background: var(--vid-card);
+      border-bottom: 1px solid var(--vid-border);
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 16px;
+      backdrop-filter: blur(12px);
+    }
+    .st-logo { font-weight: 800; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+    .st-logo-badge {
+      width: 30px; height: 30px; border-radius: 9px;
+      background: linear-gradient(135deg, var(--vid-accent), var(--vid-accent2));
+      display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px;
+    }
+    .st-spacer { flex: 1; }
+    .st-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--vid-accent); color: #fff; border: none;
+      font-weight: 700; cursor: pointer; font-size: 13px;
+    }
+    .st-home-link {
+      color: var(--vid-mut); text-decoration: none; font-size: 13px; font-weight: 600;
+      padding: 6px 10px; border-radius: 8px;
+    }
+    .st-home-link:hover { background: var(--vid-hover); }
+
+    .st-main {
+      margin-top: var(--vid-topbar-h);
+      padding: 24px 28px 60px;
+      max-width: 1100px; width: 100%; margin-left: auto; margin-right: auto;
+    }
+
+    .st-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 8px; }
+    .st-header h1 { font-size: 22px; font-weight: 800; }
+    .st-header p { color: var(--vid-mut); font-size: 13px; }
+
+    @keyframes st-fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .st-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .st-stat {
+      background: var(--vid-card); border: 1px solid var(--vid-border); border-radius: 12px;
+      padding: 14px 16px; animation: st-fade-up .35s ease both;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .st-stat:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0,0,0,.12); }
+    .st-stat-num { font-size: 22px; font-weight: 800; }
+    .st-stat-label { font-size: 12px; color: var(--vid-mut); margin-top: 2px; }
+
+    .st-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--vid-border); margin-bottom: 16px; position: relative; }
+    .st-tab-indicator {
+      position: absolute; bottom: -1px; height: 2px; background: var(--vid-accent);
+      border-radius: 2px 2px 0 0;
+      transition: transform .28s cubic-bezier(.4,0,.2,1), width .28s cubic-bezier(.4,0,.2,1);
+    }
+    .st-tab {
+      padding: 10px 16px; font-size: 13px; font-weight: 700; color: var(--vid-mut);
+      cursor: pointer; user-select: none;
+      transition: color .15s ease;
+    }
+    .st-tab.active { color: var(--vid-accent); }
+
+    .st-list { display: flex; flex-direction: column; gap: 10px; }
+    .st-row {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--vid-card); border: 1px solid var(--vid-border); border-radius: 12px;
+      padding: 10px 14px; animation: st-fade-up .3s ease both;
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    }
+    .st-row:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0,0,0,.14); border-color: var(--vid-accent); }
+    .st-row-sparkline { flex-shrink: 0; opacity: .85; }
+    .st-row-thumb {
+      width: 84px; height: 48px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--vid-accent), var(--vid-accent2));
+      display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px;
+      overflow: hidden;
+    }
+    .st-row-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .st-row-body { flex: 1; min-width: 0; }
+    .st-row-title { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .st-row-meta { font-size: 12px; color: var(--vid-mut); margin-top: 2px; }
+    .st-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .st-btn {
+      border: 1px solid var(--vid-border); background: transparent; color: var(--vid-txt);
+      border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: transform .12s ease, background .15s ease;
+    }
+    .st-btn:hover { background: var(--vid-hover); }
+    .st-btn:active { transform: scale(.94); }
+    .st-btn.danger { color: #ef4444; border-color: rgba(239,68,68,.35); }
+    .st-btn.danger:hover { background: rgba(239,68,68,.08); }
+
+    .st-empty { text-align: center; padding: 60px 20px; color: var(--vid-mut); }
+    .st-empty-icon { font-size: 40px; margin-bottom: 10px; }
+    .st-gate { text-align: center; padding: 100px 20px; }
+    .st-gate h2 { margin-bottom: 8px; }
+    .st-gate p { color: var(--vid-mut); margin-bottom: 16px; }
+
+    /* Edit modal */
+    .st-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 300;
+      display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    .st-modal-overlay.open { display: flex; }
+    .st-modal {
+      background: var(--vid-card); border-radius: 14px; padding: 20px; width: 100%; max-width: 440px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .st-modal h3 { font-size: 16px; }
+    .st-field label { display: block; font-size: 12px; font-weight: 700; color: var(--vid-mut); margin-bottom: 4px; }
+    .st-field input, .st-field textarea, .st-field select {
+      width: 100%; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--vid-border);
+      background: var(--vid-bg); color: var(--vid-txt); font-size: 13px; font-family: inherit;
+    }
+    .st-field textarea { resize: vertical; min-height: 70px; }
+    .st-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+    .st-primary-btn {
+      background: var(--vid-accent); color: #fff; border: none; border-radius: 8px;
+      padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+
+    .st-toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--vid-txt); color: var(--vid-bg); padding: 10px 18px; border-radius: 10px;
+      font-size: 13px; opacity: 0; pointer-events: none; transition: .25s; z-index: 400;
+    }
+    .st-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+  <div class="st-root">
+    <div class="st-topbar">
+      <div class="st-logo"><span class="st-logo-badge">🎛️</span> 360Studio</div>
+      <div class="st-spacer"></div>
+      <a class="st-home-link" href="/apps/360vids.html">Vids</a>
+      <a class="st-home-link" href="/apps/360Music.html">Music</a>
+      <button class="st-avatar" id="stAvatar">?</button>
+    </div>
+
+    <div class="st-main">
+      <!-- Signed-out gate -->
+      <div class="st-gate" id="stGate" style="display:none;">
+        <h2>Sign in to manage your content</h2>
+        <p>360Studio shows the videos and tracks tied to your account.</p>
+      </div>
+
+      <!-- Signed-in content -->
+      <div id="stContent" style="display:none;">
+        <div class="st-header">
+          <div>
+            <h1>Your content</h1>
+            <p>Manage everything you've uploaded to 360Vids and 360Music in one place.</p>
+          </div>
+        </div>
+
+        <div class="st-stats" id="stStats"></div>
+
+        <div class="st-tabs" id="stTabs">
+          <div class="st-tab active" data-tab="videos">🎬 Videos</div>
+          <div class="st-tab" data-tab="music">🎵 Music</div>
+          <span class="st-tab-indicator" id="stTabIndicator"></span>
+        </div>
+
+        <div class="st-list" id="stList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit modal -->
+  <div class="st-modal-overlay" id="stModalOverlay">
+    <div class="st-modal">
+      <h3 id="stModalTitle">Edit</h3>
+      <div class="st-field">
+        <label>Thumbnail</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div id="stEditThumbPreview" style="width:110px;height:62px;border-radius:8px;background:linear-gradient(135deg,var(--vid-accent),var(--vid-accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;overflow:hidden;flex-shrink:0;"></div>
+          <div>
+            <button class="st-btn" id="stEditThumbBtn" type="button">Change thumbnail</button>
+            <input type="file" id="stEditThumbFile" accept="image/*" style="display:none;" />
+            <div style="font-size:11px;color:var(--vid-mut);margin-top:4px;">JPG or PNG, up to a few MB.</div>
+          </div>
+        </div>
+      </div>
+      <div class="st-field">
+        <label>Title</label>
+        <input type="text" id="stEditTitle" maxlength="120" />
+      </div>
+      <div class="st-field">
+        <label>Description</label>
+        <textarea id="stEditDesc" maxlength="1000"></textarea>
+      </div>
+      <div class="st-field">
+        <label>Category</label>
+        <select id="stEditCategory">
+          <option>Gaming</option>
+          <option>Music</option>
+          <option>Tech</option>
+          <option>Education</option>
+          <option>Entertainment</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="st-modal-actions">
+        <button class="st-btn" id="stEditCancel">Cancel</button>
+        <button class="st-primary-btn" id="stEditSave">Save changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="st-toast" id="stToast"></div>
+
+  <script>
+    const SUPABASE_URL  = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    let currentUser = null;
+    let activeTab = 'videos';
+    let myVideos = [];
+    let myTracks = [];
+    let editing = null; // { kind: 'videos'|'music', row }
+
+    const gate      = document.getElementById('stGate');
+    const content    = document.getElementById('stContent');
+    const statsEl    = document.getElementById('stStats');
+    const listEl     = document.getElementById('stList');
+    const avatarBtn  = document.getElementById('stAvatar');
+    const toast      = document.getElementById('stToast');
+    const modalOverlay = document.getElementById('stModalOverlay');
+    const modalTitle   = document.getElementById('stModalTitle');
+    const editTitle     = document.getElementById('stEditTitle');
+    const editDesc       = document.getElementById('stEditDesc');
+    const editCategory   = document.getElementById('stEditCategory');
+    const editThumbPreview = document.getElementById('stEditThumbPreview');
+    const editThumbBtn     = document.getElementById('stEditThumbBtn');
+    const editThumbFile    = document.getElementById('stEditThumbFile');
+    let pendingThumbFile = null;
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function escHtml(str) {
+      return (str ?? '').toString()
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+    function formatNum(n) {
+      n = n || 0;
+      if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+      if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+      return String(n);
+    }
+    function timeAgo(ts) {
+      if (!ts) return '';
+      const s = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+      if (s < 60) return 'just now';
+      const units = [[31536000,'y'],[2592000,'mo'],[86400,'d'],[3600,'h'],[60,'m']];
+      for (const [secs, label] of units) {
+        const v = Math.floor(s / secs);
+        if (v >= 1) return `${v}${label} ago`;
+      }
+      return 'just now';
+    }
+
+    // Extracts the storage object path from a Supabase public URL so we can
+    // best-effort delete the underlying file alongside its DB row.
+    function pathFromPublicUrl(url, bucket) {
+      if (!url) return null;
+      const marker = `/object/public/${bucket}/`;
+      const idx = url.indexOf(marker);
+      if (idx === -1) return null;
+      return decodeURIComponent(url.slice(idx + marker.length));
+    }
+
+    async function initAuth() {
+      const { data: { session } } = await sb.auth.getSession();
+      currentUser = session?.user ?? null;
+      updateAvatar();
+      render();
+    }
+    function updateAvatar() {
+      if (currentUser) {
+        avatarBtn.textContent = (currentUser.email || 'U')[0].toUpperCase();
+        avatarBtn.title = currentUser.email;
+      } else {
+        avatarBtn.textContent = '?';
+        avatarBtn.title = 'Not signed in';
+      }
+    }
+    avatarBtn.addEventListener('click', () => {
+      const popup = document.getElementById('auth-popup');
+      if (popup) popup.classList.remove('hidden');
+      else showToast('Sign in via the 360 account popup.');
+    });
+    sb.auth.onAuthStateChange((_e, session) => {
+      currentUser = session?.user ?? null;
+      updateAvatar();
+      render();
+    });
+
+    async function render() {
+      if (!currentUser) {
+        gate.style.display = 'block';
+        content.style.display = 'none';
+        return;
+      }
+      gate.style.display = 'none';
+      content.style.display = 'block';
+      await loadData();
+      renderStats();
+      renderList();
+    }
+
+    async function loadData() {
+      const [videosRes, tracksRes] = await Promise.all([
+        sb.from('vids').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
+        sb.from('music_files').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false })
+      ]);
+      myVideos = videosRes.data || [];
+      myTracks = tracksRes.data || [];
+    }
+
+    function renderStats() {
+      const totalViews = myVideos.reduce((a, v) => a + (v.views || 0), 0);
+      const totalPlays  = myTracks.reduce((a, t) => a + (t.views || 0), 0);
+      const totalLikes = myVideos.reduce((a, v) => a + (v.likes || []).length, 0)
+                        + myTracks.reduce((a, t) => a + (t.likes || []).length, 0);
+      statsEl.innerHTML = `
+        <div class="st-stat"><div class="st-stat-num">${myVideos.length}</div><div class="st-stat-label">Videos</div></div>
+        <div class="st-stat"><div class="st-stat-num">${formatNum(totalViews)}</div><div class="st-stat-label">Video views</div></div>
+        <div class="st-stat"><div class="st-stat-num">${myTracks.length}</div><div class="st-stat-label">Tracks</div></div>
+        <div class="st-stat"><div class="st-stat-num">${formatNum(totalPlays)}</div><div class="st-stat-label">Track plays</div></div>
+        <div class="st-stat"><div class="st-stat-num">${formatNum(totalLikes)}</div><div class="st-stat-label">Total likes</div></div>
+      `;
+    }
+
+    function renderList() {
+      const items = activeTab === 'videos' ? myVideos : myTracks;
+      const kind  = activeTab === 'videos' ? 'video' : 'track';
+
+      if (!items.length) {
+        listEl.innerHTML = `
+          <div class="st-empty">
+            <div class="st-empty-icon">${activeTab === 'videos' ? '🎬' : '🎵'}</div>
+            <div>No ${activeTab} yet.</div>
+          </div>`;
+        return;
+      }
+
+      listEl.innerHTML = items.map((item, i) => {
+        const plays = formatNum(item.views || 0);
+        const likes = (item.likes || []).length;
+        const thumb = item.thumbnail_url
+          ? `<img src="${escHtml(item.thumbnail_url)}" alt="" />`
+          : (activeTab === 'videos' ? '🎬' : '🎵');
+        return `
+          <div class="st-row" data-id="${item.id}" style="animation-delay:${Math.min(i * 40, 400)}ms;">
+            <div class="st-row-thumb">${thumb}</div>
+            <div class="st-row-body">
+              <div class="st-row-title">${escHtml(item.title)}</div>
+              <div class="st-row-meta">${escHtml(item.category || 'Other')} · ${plays} ${activeTab === 'videos' ? 'views' : 'plays'} · ${likes} likes · ${timeAgo(item.created_at)}</div>
+            </div>
+            <div class="st-row-sparkline" id="spark-${item.id}"></div>
+            <div class="st-row-actions">
+              <button class="st-btn" data-action="edit" data-id="${item.id}">Edit</button>
+              <button class="st-btn danger" data-action="delete" data-id="${item.id}">Delete</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      loadSparklines(items, kind === 'video' ? 'video' : 'music');
+    }
+
+    // Real 14-day view trend per item, backed by the content_views log table
+    // (not a decorative fake chart -- empty history just renders a flat line).
+    async function loadSparklines(items, kind) {
+      for (const item of items) {
+        const { data, error } = await sb.rpc('get_view_trend', { p_kind: kind, p_id: item.id, p_days: 14 });
+        const el = document.getElementById(`spark-${item.id}`);
+        if (!el) continue;
+        if (error || !data || !data.length) { el.innerHTML = ''; continue; }
+        el.innerHTML = sparklineSvg(data.map(d => d.views));
+      }
+    }
+
+    function sparklineSvg(values) {
+      const w = 70, h = 26, pad = 2;
+      const max = Math.max(1, ...values);
+      const stepX = (w - pad * 2) / Math.max(1, values.length - 1);
+      const pts = values.map((v, i) => {
+        const x = pad + i * stepX;
+        const y = h - pad - (v / max) * (h - pad * 2);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      const total = values.reduce((a, b) => a + b, 0);
+      const trendColor = total > 0 ? 'var(--vid-accent)' : 'var(--vid-mut)';
+      return `
+        <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+          <polyline points="${pts}" fill="none" stroke="${trendColor}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+        </svg>`;
+    }
+
+    const stTabIndicator = document.getElementById('stTabIndicator');
+    function moveTabIndicator() {
+      const active = document.querySelector('.st-tab.active');
+      const tabs = document.getElementById('stTabs');
+      if (!active || !tabs) return;
+      const tabRect = active.getBoundingClientRect();
+      const wrapRect = tabs.getBoundingClientRect();
+      stTabIndicator.style.width = tabRect.width + 'px';
+      stTabIndicator.style.transform = `translateX(${tabRect.left - wrapRect.left}px)`;
+    }
+
+    document.querySelectorAll('.st-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.st-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        activeTab = tab.dataset.tab;
+        moveTabIndicator();
+        renderList();
+      });
+    });
+    window.addEventListener('resize', moveTabIndicator);
+    requestAnimationFrame(moveTabIndicator);
+
+    listEl.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const kind = activeTab === 'videos' ? 'videos' : 'music';
+      const source = activeTab === 'videos' ? myVideos : myTracks;
+      const row = source.find(r => r.id === id);
+      if (!row) return;
+
+      if (btn.dataset.action === 'edit') openEdit(kind, row);
+      if (btn.dataset.action === 'delete') deleteItem(kind, row);
+    });
+
+    function openEdit(kind, row) {
+      editing = { kind, row };
+      pendingThumbFile = null;
+      modalTitle.textContent = `Edit ${kind === 'videos' ? 'video' : 'track'}`;
+      editTitle.value = row.title || '';
+      editDesc.value = row.description || '';
+      editCategory.value = row.category || 'Other';
+      editThumbPreview.innerHTML = row.thumbnail_url
+        ? `<img src="${escHtml(row.thumbnail_url)}" style="width:100%;height:100%;object-fit:cover;" />`
+        : (kind === 'videos' ? '🎬' : '🎵');
+      modalOverlay.classList.add('open');
+    }
+    document.getElementById('stEditCancel').addEventListener('click', () => modalOverlay.classList.remove('open'));
+    modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) modalOverlay.classList.remove('open'); });
+
+    editThumbBtn.addEventListener('click', () => editThumbFile.click());
+    editThumbFile.addEventListener('change', () => {
+      const file = editThumbFile.files[0];
+      if (!file) return;
+      pendingThumbFile = file;
+      editThumbPreview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="width:100%;height:100%;object-fit:cover;" />`;
+    });
+
+    document.getElementById('stEditSave').addEventListener('click', async () => {
+      if (!editing) return;
+      const title = editTitle.value.trim();
+      if (!title) { showToast('Title is required.'); return; }
+      const table = editing.kind === 'videos' ? 'vids' : 'music_files';
+      const payload = { title, description: editDesc.value.trim(), category: editCategory.value };
+
+      if (pendingThumbFile) {
+        const ext = pendingThumbFile.name.split('.').pop() || 'png';
+        const path = `${currentUser.id}/thumb_${Date.now()}.${ext}`;
+        const { data: tData, error: tErr } = await sb.storage
+          .from('thumbnails')
+          .upload(path, pendingThumbFile, { cacheControl: '3600', upsert: false });
+        if (tErr) { showToast('⚠️ Thumbnail upload failed: ' + tErr.message); return; }
+        payload.thumbnail_url = sb.storage.from('thumbnails').getPublicUrl(tData.path).data.publicUrl;
+      }
+
+      const { error } = await sb.from(table)
+        .update(payload)
+        .eq('id', editing.row.id)
+        .eq('user_id', currentUser.id); // belt-and-suspenders; RLS already enforces this
+      if (error) { showToast('⚠️ Could not save changes.'); return; }
+      showToast('✅ Saved.');
+      modalOverlay.classList.remove('open');
+      pendingThumbFile = null;
+      await loadData();
+      renderStats();
+      renderList();
+    });
+
+    async function deleteItem(kind, row) {
+      const label = kind === 'videos' ? 'video' : 'track';
+      if (!confirm(`Delete this ${label}? This can't be undone.`)) return;
+
+      const table  = kind === 'videos' ? 'vids' : 'music_files';
+      const bucket = kind === 'videos' ? 'videos' : 'music';
+      const urlField = kind === 'videos' ? 'video_url' : 'audio_url';
+
+      const { error } = await sb.from(table).delete().eq('id', row.id).eq('user_id', currentUser.id);
+      if (error) { showToast(`⚠️ Could not delete: ${error.message}`); return; }
+
+      // Best-effort storage cleanup -- the DB row is already gone either way.
+      const path = pathFromPublicUrl(row[urlField], bucket);
+      if (path) sb.storage.from(bucket).remove([path]).catch(() => {});
+
+      showToast(`🗑️ ${label[0].toUpperCase() + label.slice(1)} deleted.`);
+      await loadData();
+      renderStats();
+      renderList();
+    }
+
+    initAuth();
+  </script>
+  <script src="/assets/js/cursor.js"></script>
+</body>
+</html>

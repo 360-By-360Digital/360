@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anchor — Manage your site on 360</title>
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/js/360-settings.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      --ms-card: #ffffff;
+      --ms-border: rgba(15,23,42,.09);
+      --ms-hover: rgba(59,130,246,.06);
+      --ms-danger: #ef4444;
+      --ms-good: #10b981;
+      --ms-warn: #f59e0b;
+      --ms-sidebar-w: 230px;
+    }
+    body.dark {
+      --ms-card: #111827;
+      --ms-border: rgba(255,255,255,.08);
+      --ms-hover: rgba(59,130,246,.1);
+    }
+
+    body { min-height: 100vh; }
+
+    .ms-root { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ── Topbar ── */
+    .ms-topbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--ms-border);
+      position: sticky; top: 0; z-index: 20;
+      background: var(--bg);
+    }
+    body.dark .ms-topbar { background: var(--bgd); }
+    .ms-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+    .ms-logo-mark {
+      width: 32px; height: 32px; border-radius: 9px;
+      background: linear-gradient(135deg, var(--a), var(--a2));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 14px; flex-shrink: 0;
+    }
+    .ms-logo-text { font-weight: 700; font-size: 16px; }
+    .ms-logo-sub { font-size: 11px; color: var(--mut); font-weight: 400; }
+    body.dark .ms-logo-sub { color: var(--mutd); }
+    .ms-topbar-spacer { flex: 1; }
+    .ms-icon-btn {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      background: transparent; border: 1px solid var(--ms-border);
+      color: var(--txt); cursor: pointer; transition: background .15s;
+    }
+    body.dark .ms-icon-btn { color: var(--txtd); }
+    .ms-icon-btn:hover { background: var(--ms-hover); }
+    .ms-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--a), var(--a2));
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px; cursor: pointer; border: none;
+    }
+    .ms-signin-btn {
+      padding: 8px 16px; border-radius: 10px; border: none;
+      background: linear-gradient(120deg, var(--a), var(--a2)); color: #fff;
+      font-family: inherit; font-weight: 700; font-size: 13px; cursor: pointer;
+      text-decoration: none; display: inline-block;
+    }
+
+    /* ── Body layout ── */
+    .ms-body { flex: 1; display: flex; }
+    .ms-sidebar {
+      width: var(--ms-sidebar-w); flex-shrink: 0;
+      padding: 18px 12px; border-right: 1px solid var(--ms-border);
+    }
+    .ms-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px; margin-bottom: 4px;
+      color: var(--mut); font-size: 13.5px; font-weight: 600;
+      cursor: pointer; transition: background .15s, color .15s; user-select: none;
+    }
+    body.dark .ms-nav-item { color: var(--mutd); }
+    .ms-nav-item:hover { background: var(--ms-hover); color: var(--txt); }
+    body.dark .ms-nav-item:hover { color: var(--txtd); }
+    .ms-nav-item.active { background: var(--ms-hover); color: var(--a); }
+    .ms-nav-item svg { flex-shrink: 0; }
+
+    .ms-main { flex: 1; padding: 28px 32px; max-width: 980px; }
+
+    /* ── Sign-in gate ── */
+    .ms-gate {
+      max-width: 460px; margin: 12vh auto; text-align: center;
+      padding: 36px 28px; border-radius: 20px;
+      background: var(--ms-card); border: 1px solid var(--ms-border);
+    }
+    .ms-gate .ms-logo-mark { margin: 0 auto 16px; width: 52px; height: 52px; border-radius: 14px; font-size: 20px; }
+    .ms-gate h1 { font-size: 20px; margin-bottom: 8px; }
+    .ms-gate p { color: var(--mut); font-size: 14px; line-height: 1.6; margin-bottom: 22px; }
+    body.dark .ms-gate p { color: var(--mutd); }
+
+    /* ── Page header ── */
+    .ms-page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; gap: 12px; flex-wrap: wrap; }
+    .ms-page-head h1 { font-size: 21px; }
+    .ms-page-head p { color: var(--mut); font-size: 13px; margin-top: 4px; }
+    body.dark .ms-page-head p { color: var(--mutd); }
+
+    .ms-btn {
+      padding: 9px 16px; border-radius: 10px; border: none;
+      background: linear-gradient(120deg, var(--a), var(--a2)); color: #fff;
+      font-family: inherit; font-weight: 700; font-size: 13px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .ms-btn:disabled { opacity: .55; cursor: default; }
+    .ms-btn-outline {
+      padding: 9px 16px; border-radius: 10px; cursor: pointer;
+      background: transparent; border: 1px solid var(--ms-border); color: var(--txt);
+      font-family: inherit; font-weight: 700; font-size: 13px;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    body.dark .ms-btn-outline { color: var(--txtd); }
+    .ms-btn-outline:hover { background: var(--ms-hover); }
+    .ms-btn-danger { color: var(--ms-danger); border-color: rgba(239,68,68,.35); }
+
+    /* ── Site cards ── */
+    .ms-sites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+    .ms-site-card {
+      padding: 16px; border-radius: 16px; cursor: pointer;
+      background: var(--ms-card); border: 1px solid var(--ms-border);
+      transition: transform .12s, box-shadow .12s;
+    }
+    .ms-site-card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0,0,0,.08); }
+    .ms-site-domain { font-weight: 700; font-size: 15px; margin-bottom: 6px; word-break: break-all; }
+    .ms-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    }
+    .ms-badge-verified { background: rgba(16,185,129,.12); color: var(--ms-good); }
+    .ms-badge-unverified { background: rgba(245,158,11,.12); color: var(--ms-warn); }
+    .ms-badge-crawling { background: rgba(59,130,246,.12); color: var(--a); }
+    .ms-site-meta { margin-top: 10px; font-size: 12px; color: var(--mut); }
+    body.dark .ms-site-meta { color: var(--mutd); }
+
+    /* ── Empty state ── */
+    .ms-empty { text-align: center; padding: 60px 20px; color: var(--mut); }
+    body.dark .ms-empty { color: var(--mutd); }
+    .ms-empty .big { font-size: 40px; margin-bottom: 10px; }
+
+    /* ── Modal ── */
+    .ms-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+      padding: 20px;
+    }
+    .ms-modal {
+      width: 100%; max-width: 420px; border-radius: 18px;
+      background: var(--ms-card); padding: 22px;
+    }
+    .ms-modal h2 { font-size: 17px; margin-bottom: 14px; }
+    .ms-field { margin-bottom: 14px; }
+    .ms-field label { display: block; font-size: 12px; font-weight: 700; color: var(--mut); margin-bottom: 6px; }
+    body.dark .ms-field label { color: var(--mutd); }
+    .ms-field input {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--ms-border); background: var(--bg); color: var(--txt);
+      font-family: inherit; font-size: 13.5px;
+    }
+    body.dark .ms-field input { background: var(--bgd); color: var(--txtd); }
+    .ms-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+    .ms-modal-err { color: var(--ms-danger); font-size: 12.5px; margin-top: 8px; }
+
+    /* ── Detail view ── */
+    .ms-back { display: inline-flex; align-items: center; gap: 6px; color: var(--mut); font-size: 13px; cursor: pointer; margin-bottom: 14px; }
+    body.dark .ms-back { color: var(--mutd); }
+    .ms-back:hover { color: var(--a); }
+    .ms-section {
+      padding: 18px 20px; border-radius: 16px; margin-bottom: 16px;
+      background: var(--ms-card); border: 1px solid var(--ms-border);
+    }
+    .ms-section h3 { font-size: 14px; margin-bottom: 12px; }
+    .ms-section-sub { font-size: 12.5px; color: var(--mut); margin-bottom: 14px; line-height: 1.6; }
+    body.dark .ms-section-sub { color: var(--mutd); }
+    .ms-code-box {
+      font-family: ui-monospace, "SF Mono", monospace; font-size: 12.5px;
+      background: var(--bg); border: 1px solid var(--ms-border); border-radius: 10px;
+      padding: 10px 12px; word-break: break-all; display: flex; align-items: center; gap: 8px;
+    }
+    body.dark .ms-code-box { background: var(--bgd); }
+    .ms-copy-btn { flex-shrink: 0; background: none; border: none; color: var(--a); cursor: pointer; font-size: 11px; font-weight: 700; }
+    .ms-verify-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+    .ms-verify-tab {
+      padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+      background: var(--ms-hover); color: var(--mut); cursor: pointer; border: none; font-family: inherit;
+    }
+    .ms-verify-tab.active { background: linear-gradient(120deg, var(--a), var(--a2)); color: #fff; }
+
+    .ms-stat-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .ms-stat {
+      flex: 1; min-width: 110px; padding: 14px; border-radius: 12px;
+      background: var(--bg); border: 1px solid var(--ms-border); text-align: center;
+    }
+    body.dark .ms-stat { background: var(--bgd); }
+    .ms-stat b { display: block; font-size: 21px; }
+    .ms-stat span { font-size: 11px; color: var(--mut); }
+    body.dark .ms-stat span { color: var(--mutd); }
+
+    .ms-inline-form { display: flex; gap: 8px; flex-wrap: wrap; }
+    .ms-inline-form input {
+      flex: 1; min-width: 200px; padding: 9px 12px; border-radius: 10px;
+      border: 1px solid var(--ms-border); background: var(--bg); color: var(--txt); font-family: inherit; font-size: 13px;
+    }
+    body.dark .ms-inline-form input { background: var(--bgd); color: var(--txtd); }
+
+    table.ms-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    table.ms-table th { text-align: left; color: var(--mut); font-weight: 700; padding: 6px 8px; border-bottom: 1px solid var(--ms-border); }
+    body.dark table.ms-table th { color: var(--mutd); }
+    table.ms-table td { padding: 8px; border-bottom: 1px solid var(--ms-border); vertical-align: top; }
+    table.ms-table a { color: var(--a); text-decoration: none; }
+    .ms-status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+    .ms-status-ok { background: var(--ms-good); }
+    .ms-status-error { background: var(--ms-danger); }
+
+    /* ── Linked content ── */
+    .ms-content-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px; border-radius: 12px; border: 1px solid var(--ms-border); margin-bottom: 8px;
+    }
+    .ms-content-thumb { width: 54px; height: 34px; border-radius: 6px; object-fit: cover; background: var(--bg); flex-shrink: 0; }
+    .ms-content-title { font-size: 13px; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ms-content-meta { font-size: 11px; color: var(--mut); }
+    body.dark .ms-content-meta { color: var(--mutd); }
+
+    .ms-switch { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+    .ms-switch input { opacity: 0; width: 0; height: 0; }
+    .ms-switch-track {
+      position: absolute; inset: 0; border-radius: 999px; background: var(--ms-border);
+      cursor: pointer; transition: background .15s;
+    }
+    .ms-switch-track::before {
+      content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px;
+      background: #fff; border-radius: 50%; transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+    }
+    .ms-switch input:checked + .ms-switch-track { background: linear-gradient(120deg, var(--a), var(--a2)); }
+    .ms-switch input:checked + .ms-switch-track::before { transform: translateX(16px); }
+
+    .ms-toast {
+      position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+      background: #111827; color: #fff; padding: 10px 18px; border-radius: 10px;
+      font-size: 13px; z-index: 200; opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .ms-toast.show { opacity: 1; }
+
+    .ms-spin { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: msspin .7s linear infinite; }
+    @keyframes msspin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 760px) {
+      .ms-sidebar { display: none; }
+      .ms-main { padding: 20px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ms-root">
+    <div class="ms-topbar">
+      <a href="/apps.html" class="ms-logo">
+        <div class="ms-logo-mark">360</div>
+        <div>
+          <div class="ms-logo-text">Anchor/div>
+          <div class="ms-logo-sub">Manage your site on 360 Search</div>
+        </div>
+      </a>
+      <div class="ms-topbar-spacer"></div>
+      <button class="ms-icon-btn" id="theme-toggle" title="Toggle theme">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+      </button>
+      <div id="auth-slot"></div>
+    </div>
+
+    <div class="ms-body" id="app-body">
+      <!-- Filled by JS -->
+    </div>
+  </div>
+
+  <div id="toast" class="ms-toast"></div>
+
+  <script>
+    const SUPABASE_URL  = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    const FN_URL = `${SUPABASE_URL}/functions/v1/site-manager`;
+
+    let currentUser = null;
+    let currentSession = null;
+    let sites = [];
+    let view = 'sites';       // 'sites' | 'detail' | 'linked'
+    let activeSiteId = null;
+
+    const appBody = document.getElementById('app-body');
+    const authSlot = document.getElementById('auth-slot');
+
+    /* ── Theme ── */
+    function applyTheme(t) { document.body.classList.toggle('dark', t === 'dark'); }
+    let theme = localStorage.getItem('360_theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    applyTheme(theme); // instant, no flash — reconciled against the account below
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      theme = theme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('360_theme', theme);
+      Settings360.set('theme', theme);
+      applyTheme(theme);
+    });
+
+    /* ── Toast ── */
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove('show'), 3200);
+    }
+
+    function escHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function timeAgo(iso) {
+      if (!iso) return '—';
+      const s = (Date.now() - new Date(iso).getTime()) / 1000;
+      if (s < 60) return 'just now';
+      if (s < 3600) return Math.floor(s/60) + 'm ago';
+      if (s < 86400) return Math.floor(s/3600) + 'h ago';
+      return Math.floor(s/86400) + 'd ago';
+    }
+
+    /* ── API helper ── */
+    async function callFn(action, payload = {}) {
+      if (!currentSession) throw new Error('Not signed in');
+      const res = await fetch(FN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentSession.access_token}` },
+        body: JSON.stringify({ action, ...payload }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+      return data;
+    }
+
+    /* ── Auth ── */
+    async function initAuth() {
+      const { data: { session } } = await sb.auth.getSession();
+      currentSession = session;
+      currentUser = session?.user ?? null;
+      renderAuthSlot();
+      render();
+      if (currentUser) loadSites();
+
+      await Settings360.init(sb);
+      const remoteTheme = Settings360.get('theme');
+      if (remoteTheme && remoteTheme !== theme) {
+        theme = remoteTheme;
+        localStorage.setItem('360_theme', theme);
+        applyTheme(theme);
+      }
+    }
+    sb.auth.onAuthStateChange((_e, session) => {
+      currentSession = session;
+      currentUser = session?.user ?? null;
+      renderAuthSlot();
+      render();
+      if (currentUser) loadSites();
+    });
+
+    function renderAuthSlot() {
+      if (currentUser) {
+        authSlot.innerHTML = `<button class="ms-avatar" title="${escHtml(currentUser.email||'')} — sign out" id="signout-btn">${(currentUser.email||'U')[0].toUpperCase()}</button>`;
+        document.getElementById('signout-btn').addEventListener('click', async () => {
+          await sb.auth.signOut();
+          toast('Signed out');
+        });
+      } else {
+        authSlot.innerHTML = `<a class="ms-signin-btn" href="/signin.html?from=${encodeURIComponent(location.pathname)}">Sign in</a>`;
+      }
+    }
+
+    /* ── Data loading ── */
+    async function loadSites() {
+      const { data, error } = await sb.from('site_submissions').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+      if (!error) sites = data || [];
+      render();
+    }
+
+    /* ── Router / render ── */
+    function render() {
+      if (!currentUser) { renderGate(); return; }
+      renderShell();
+    }
+
+    function renderGate() {
+      appBody.innerHTML = `
+        <div class="ms-main" style="max-width:none;width:100%;">
+          <div class="ms-gate">
+            <div class="ms-logo-mark">360</div>
+            <h1>Sign in to manage your sites</h1>
+            <p>Anchor lets you verify domain ownership, submit sitemaps, request re-crawls, and see how your site shows up in 360 Search — plus decide which of your Pulse/Vids uploads are eligible to surface in search.</p>
+            <a class="ms-signin-btn" href="/signin.html?from=${encodeURIComponent(location.pathname)}">Sign in to continue</a>
+          </div>
+        </div>`;
+    }
+
+    function renderShell() {
+      appBody.innerHTML = `
+        <div class="ms-sidebar">
+          <div class="ms-nav-item ${view==='sites'||view==='detail' ? 'active':''}" data-nav="sites">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            My Sites
+          </div>
+          <div class="ms-nav-item ${view==='linked' ? 'active':''}" data-nav="linked">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Linked Content
+          </div>
+        </div>
+        <div class="ms-main" id="ms-main"></div>`;
+      appBody.querySelectorAll('.ms-nav-item').forEach(el => {
+        el.addEventListener('click', () => { view = el.dataset.nav; activeSiteId = null; render(); });
+      });
+      if (view === 'linked') renderLinkedContent();
+      else if (view === 'detail' && activeSiteId) renderSiteDetail();
+      else renderSitesList();
+    }
+
+    /* ── Sites list ── */
+    function renderSitesList() {
+      const main = document.getElementById('ms-main');
+      main.innerHTML = `
+        <div class="ms-page-head">
+          <div>
+            <h1>My Sites</h1>
+            <p>Verify ownership, then 360 Search can crawl and index your pages.</p>
+          </div>
+          <button class="ms-btn" id="add-site-btn">+ Add a site</button>
+        </div>
+        <div id="sites-container"></div>`;
+      document.getElementById('add-site-btn').addEventListener('click', openAddSiteModal);
+      const container = document.getElementById('sites-container');
+      if (!sites.length) {
+        container.innerHTML = `<div class="ms-empty"><div class="big">🌐</div><p>No sites yet. Add one to get started.</p></div>`;
+        return;
+      }
+      container.innerHTML = `<div class="ms-sites-grid">${sites.map(siteCardHtml).join('')}</div>`;
+      container.querySelectorAll('.ms-site-card').forEach(el => {
+        el.addEventListener('click', () => { activeSiteId = el.dataset.id; view = 'detail'; render(); });
+      });
+    }
+
+    function siteCardHtml(s) {
+      const badge = s.verified
+        ? `<span class="ms-badge ms-badge-verified">✓ Verified</span>`
+        : `<span class="ms-badge ms-badge-unverified">Unverified</span>`;
+      return `
+        <div class="ms-site-card" data-id="${s.id}">
+          <div class="ms-site-domain">${escHtml(s.domain)}</div>
+          ${badge}
+          <div class="ms-site-meta">Added ${timeAgo(s.created_at)}${s.verified ? ` · Verified ${timeAgo(s.verified_at)}` : ''}</div>
+        </div>`;
+    }
+
+    /* ── Add site modal ── */
+    function openAddSiteModal() {
+      const overlay = document.createElement('div');
+      overlay.className = 'ms-modal-overlay';
+      overlay.innerHTML = `
+        <div class="ms-modal">
+          <h2>Add a site</h2>
+          <div class="ms-field">
+            <label>Domain</label>
+            <input type="text" id="new-domain" placeholder="example.com" autofocus />
+          </div>
+          <div class="ms-modal-err" id="add-site-err"></div>
+          <div class="ms-modal-actions">
+            <button class="ms-btn-outline" id="cancel-add">Cancel</button>
+            <button class="ms-btn" id="confirm-add">Add site</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      const close = () => overlay.remove();
+      overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+      document.getElementById('cancel-add').addEventListener('click', close);
+      const input = document.getElementById('new-domain');
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') confirmAdd(); });
+      document.getElementById('confirm-add').addEventListener('click', confirmAdd);
+
+      async function confirmAdd() {
+        const domain = input.value.trim();
+        const errEl = document.getElementById('add-site-err');
+        const btn = document.getElementById('confirm-add');
+        if (!domain) { errEl.textContent = 'Enter a domain.'; return; }
+        btn.disabled = true; btn.innerHTML = '<span class="ms-spin"></span>';
+        try {
+          const data = await callFn('add_site', { domain });
+          sites.unshift(data.site);
+          close();
+          activeSiteId = data.site.id;
+          view = 'detail';
+          render();
+          if (data.auto_verified) toast('Subdomain of a verified site — auto-verified 🎉');
+        } catch (e) {
+          errEl.textContent = e.message;
+          btn.disabled = false; btn.textContent = 'Add site';
+        }
+      }
+    }
+
+    /* ── Site detail ── */
+    let verifyTab = 'dns';
+    async function renderSiteDetail() {
+      const site = sites.find(s => s.id === activeSiteId);
+      const main = document.getElementById('ms-main');
+      if (!site) { view = 'sites'; render(); return; }
+
+      main.innerHTML = `
+        <div class="ms-back" id="back-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          All sites
+        </div>
+        <div class="ms-page-head">
+          <div>
+            <h1>${escHtml(site.domain)}</h1>
+            <p>${site.verified ? `Verified ${timeAgo(site.verified_at)}` : 'Not verified yet'}</p>
+          </div>
+          <button class="ms-btn-outline ms-btn-danger" id="remove-site-btn">Remove site</button>
+        </div>
+        <div id="detail-content"></div>`;
+
+      document.getElementById('back-btn').addEventListener('click', () => { view = 'sites'; render(); });
+      document.getElementById('remove-site-btn').addEventListener('click', () => removeSite(site));
+
+      const detail = document.getElementById('detail-content');
+      if (!site.verified) {
+        detail.innerHTML = verificationSectionHtml(site) + ownersSectionHtml(site);
+        wireVerificationSection(site);
+        wireOwnersSection(site);
+        loadOwners(site);
+      } else {
+        detail.innerHTML = `<div id="coverage-stats" class="ms-section"><h3>Coverage</h3><div class="ms-section-sub">Loading…</div></div>` +
+          indexingToolsHtml(site) +
+          `<div id="recent-pages" class="ms-section"><h3>Recently crawled pages</h3><div class="ms-section-sub">Loading…</div></div>` +
+          `<div id="dns-records" class="ms-section"><h3>DNS records</h3><div class="ms-section-sub">Loading…</div></div>` +
+          ownersSectionHtml(site);
+        wireIndexingTools(site);
+        loadCoverageStats(site);
+        loadRecentPages(site);
+        wireOwnersSection(site);
+        loadOwners(site);
+        loadDnsRecords(site);
+      }
+    }
+
+    function verificationSectionHtml(site) {
+      return `
+        <div class="ms-section">
+          <h3>Verify domain ownership</h3>
+          <p class="ms-section-sub">Prove you control ${escHtml(site.domain)} before 360 Search will crawl it. Pick one method below, then hit Verify.</p>
+          <div class="ms-verify-tabs">
+            <button class="ms-verify-tab ${verifyTab==='dns'?'active':''}" data-tab="dns">DNS TXT record</button>
+            <button class="ms-verify-tab ${verifyTab==='meta'?'active':''}" data-tab="meta">HTML meta tag</button>
+          </div>
+          <div id="verify-method-body"></div>
+          <div class="ms-modal-err" id="verify-err"></div>
+          <div style="margin-top:14px;">
+            <button class="ms-btn" id="verify-now-btn">Verify now</button>
+          </div>
+        </div>`;
+    }
+
+    function verifyMethodBodyHtml(site) {
+      if (verifyTab === 'dns') {
+        return `
+          <p class="ms-section-sub">Add this as a TXT record on ${escHtml(site.domain)} (or on the <code>@</code> / root of your DNS zone):</p>
+          <div class="ms-code-box"><span style="flex:1;">360-site-verification=${site.verification_token}</span><button class="ms-copy-btn" data-copy="360-site-verification=${site.verification_token}">Copy</button></div>
+          <p class="ms-section-sub" style="margin-top:10px;">DNS changes can take a few minutes to propagate.</p>`;
+      }
+      return `
+        <p class="ms-section-sub">Add this meta tag to the <code>&lt;head&gt;</code> of your homepage (${escHtml(site.homepage_url || 'https://'+site.domain+'/')}):</p>
+        <div class="ms-code-box"><span style="flex:1;">&lt;meta name="360-site-verification" content="${site.verification_token}"&gt;</span><button class="ms-copy-btn" data-copy='<meta name="360-site-verification" content="${site.verification_token}">'>Copy</button></div>`;
+    }
+
+    function wireVerificationSection(site) {
+      const body = document.getElementById('verify-method-body');
+      function paint() {
+        body.innerHTML = verifyMethodBodyHtml(site);
+        body.querySelectorAll('.ms-copy-btn').forEach(b => {
+          b.addEventListener('click', () => { navigator.clipboard.writeText(b.dataset.copy); toast('Copied'); });
+        });
+      }
+      paint();
+      document.querySelectorAll('.ms-verify-tab').forEach(t => {
+        t.addEventListener('click', () => { verifyTab = t.dataset.tab; document.querySelectorAll('.ms-verify-tab').forEach(x=>x.classList.toggle('active', x===t)); paint(); });
+      });
+      document.getElementById('verify-now-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('verify-now-btn');
+        const errEl = document.getElementById('verify-err');
+        errEl.textContent = '';
+        btn.disabled = true; btn.innerHTML = '<span class="ms-spin"></span> Checking…';
+        try {
+          const data = await callFn(verifyTab === 'dns' ? 'verify_dns' : 'verify_meta', { site_id: site.id });
+          if (data.verified) {
+            toast('Domain verified! 🎉');
+            site.verified = true; site.verified_at = new Date().toISOString(); site.status = 'verified';
+            renderSiteDetail();
+          } else {
+            errEl.textContent = data.reason || "Couldn't verify yet — double check the record/tag and try again.";
+            btn.disabled = false; btn.textContent = 'Verify now';
+          }
+        } catch (e) {
+          errEl.textContent = e.message;
+          btn.disabled = false; btn.textContent = 'Verify now';
+        }
+      });
+    }
+
+    function indexingToolsHtml(site) {
+      return `
+        <div class="ms-section">
+          <h3>Request indexing</h3>
+          <p class="ms-section-sub">Ask 360 Search to (re)crawl a specific page on your site.</p>
+          <div class="ms-inline-form">
+            <input type="text" id="index-url" placeholder="https://${escHtml(site.domain)}/some-page" />
+            <button class="ms-btn" id="index-url-btn">Request</button>
+          </div>
+          <div class="ms-modal-err" id="index-url-err"></div>
+        </div>
+        <div class="ms-section">
+          <h3>Submit a sitemap</h3>
+          <p class="ms-section-sub">Point us at your sitemap.xml and we'll queue every URL on ${escHtml(site.domain)} (up to 200 per submission).</p>
+          <div class="ms-inline-form">
+            <input type="text" id="sitemap-url" placeholder="https://${escHtml(site.domain)}/sitemap.xml" value="${escHtml(site.sitemap_url || '')}" />
+            <button class="ms-btn" id="sitemap-btn">Submit</button>
+          </div>
+          <div class="ms-modal-err" id="sitemap-err"></div>
+        </div>`;
+    }
+
+    function wireIndexingTools(site) {
+      document.getElementById('index-url-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('index-url-btn');
+        const errEl = document.getElementById('index-url-err');
+        const url = document.getElementById('index-url').value.trim();
+        errEl.textContent = '';
+        if (!url) { errEl.textContent = 'Enter a URL.'; return; }
+        btn.disabled = true; btn.innerHTML = '<span class="ms-spin"></span>';
+        try {
+          const data = await callFn('request_index', { site_id: site.id, url });
+          if (data.queued) { toast('Queued for crawling'); loadCoverageStats(site); }
+          else errEl.textContent = data.error || 'Could not queue that URL.';
+        } catch (e) { errEl.textContent = e.message; }
+        btn.disabled = false; btn.textContent = 'Request';
+      });
+      document.getElementById('sitemap-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('sitemap-btn');
+        const errEl = document.getElementById('sitemap-err');
+        const url = document.getElementById('sitemap-url').value.trim();
+        errEl.textContent = '';
+        if (!url) { errEl.textContent = 'Enter a sitemap URL.'; return; }
+        btn.disabled = true; btn.innerHTML = '<span class="ms-spin"></span>';
+        try {
+          const data = await callFn('submit_sitemap', { site_id: site.id, sitemap_url: url });
+          if (data.queued) { toast(`Queued ${data.queued} URLs`); loadCoverageStats(site); }
+          else errEl.textContent = data.error || 'Could not read that sitemap.';
+        } catch (e) { errEl.textContent = e.message; }
+        btn.disabled = false; btn.textContent = 'Submit';
+      });
+    }
+
+    async function loadCoverageStats(site) {
+      const box = document.getElementById('coverage-stats');
+      if (!box) return;
+      const [{ count: indexed }, { data: lastRow }, { count: errors }, queueData] = await Promise.all([
+        sb.from('crawled_pages').select('id', { count: 'exact', head: true }).eq('domain', site.domain),
+        sb.from('crawled_pages').select('crawled_at').eq('domain', site.domain).order('crawled_at', { ascending: false }).limit(1).maybeSingle(),
+        sb.from('crawled_pages').select('id', { count: 'exact', head: true }).eq('domain', site.domain).eq('status', 'error'),
+        callFn('queue_status', { site_id: site.id }).catch(() => ({ counts: { pending: 0, processing: 0 } })),
+      ]);
+      const pending = (queueData.counts?.pending || 0) + (queueData.counts?.processing || 0);
+      box.innerHTML = `
+        <h3>Coverage</h3>
+        <div class="ms-stat-row">
+          <div class="ms-stat"><b>${indexed ?? 0}</b><span>Pages indexed</span></div>
+          <div class="ms-stat"><b>${pending}</b><span>In crawl queue</span></div>
+          <div class="ms-stat"><b>${errors ?? 0}</b><span>Crawl errors</span></div>
+          <div class="ms-stat"><b style="font-size:14px;">${lastRow?.crawled_at ? timeAgo(lastRow.crawled_at) : '—'}</b><span>Last crawled</span></div>
+        </div>`;
+    }
+
+    async function loadRecentPages(site) {
+      const box = document.getElementById('recent-pages');
+      if (!box) return;
+      const { data } = await sb.from('crawled_pages').select('url,title,status,crawled_at').eq('domain', site.domain).order('crawled_at', { ascending: false }).limit(20);
+      if (!data || !data.length) {
+        box.innerHTML = `<h3>Recently crawled pages</h3><div class="ms-section-sub">Nothing crawled yet — request indexing or submit a sitemap above.</div>`;
+        return;
+      }
+      box.innerHTML = `<h3>Recently crawled pages</h3>
+        <table class="ms-table">
+          <thead><tr><th>Page</th><th>Status</th><th>Crawled</th></tr></thead>
+          <tbody>
+            ${data.map(r => `<tr>
+              <td><a href="${escHtml(r.url)}" target="_blank" rel="noopener noreferrer">${escHtml(r.title || r.url)}</a></td>
+              <td><span class="ms-status-dot ${r.status==='ok'?'ms-status-ok':'ms-status-error'}"></span>${escHtml(r.status)}</td>
+              <td>${timeAgo(r.crawled_at)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    /* ── DNS records (verified sites only) ── */
+    const DNS_TYPES = ['A', 'AAAA', 'CNAME', 'TXT', 'MX', 'NS'];
+    async function loadDnsRecords(site) {
+      const box = document.getElementById('dns-records');
+      if (!box) return;
+      const { data, error } = await sb.from('dns_records').select('*').eq('site_id', site.id).order('created_at', { ascending: true });
+      renderDnsRecords(site, data || []);
+    }
+
+    function renderDnsRecords(site, records) {
+      const box = document.getElementById('dns-records');
+      if (!box) return;
+      box.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h3 style="margin:0;">DNS records</h3>
+          <button class="ms-btn-outline" id="add-dns-btn">+ Add record</button>
+        </div>
+        <p class="ms-section-sub">Records you plan to (or already) have set at your registrar. 360 doesn't host DNS for you — this just tracks what should be there and checks it live against the real internet.</p>
+        ${records.length ? `<table class="ms-table">
+          <thead><tr><th>Type</th><th>Name</th><th>Value</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            ${records.map(r => `<tr>
+              <td>${escHtml(r.record_type)}</td>
+              <td>${escHtml(r.name)}</td>
+              <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(r.value)}</td>
+              <td><span class="ms-status-dot ${r.status==='live'?'ms-status-ok':'ms-status-error'}"></span>${escHtml(r.status)}${r.last_checked_at ? ` · ${timeAgo(r.last_checked_at)}` : ''}</td>
+              <td style="white-space:nowrap;">
+                <button class="ms-copy-btn" data-check="${r.id}">Check</button>
+                &nbsp;
+                <button class="ms-copy-btn" style="color:var(--ms-danger);" data-del="${r.id}">Remove</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>` : `<div class="ms-section-sub">No DNS records tracked yet.</div>`}`;
+
+      document.getElementById('add-dns-btn').addEventListener('click', () => openAddDnsModal(site));
+      box.querySelectorAll('[data-check]').forEach(b => b.addEventListener('click', async () => {
+        b.textContent = '…';
+        try {
+          const data = await callFn('check_dns_record', { site_id: site.id, record_id: b.dataset.check });
+          toast(data.status === 'live' ? '✓ Record is live' : `Status: ${data.status}`);
+        } catch (e) { toast(e.message); }
+        loadDnsRecords(site);
+      }));
+      box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
+        if (!confirm('Remove this DNS record from tracking?')) return;
+        await sb.from('dns_records').delete().eq('id', b.dataset.del);
+        loadDnsRecords(site);
+      }));
+    }
+
+    function openAddDnsModal(site) {
+      const overlay = document.createElement('div');
+      overlay.className = 'ms-modal-overlay';
+      overlay.innerHTML = `
+        <div class="ms-modal">
+          <h2>Add DNS record</h2>
+          <div class="ms-field">
+            <label>Type</label>
+            <select id="dns-type" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--ms-border);background:var(--bg);color:var(--txt);font-family:inherit;font-size:13.5px;">
+              ${DNS_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
+            </select>
+          </div>
+          <div class="ms-field">
+            <label>Name (subdomain label — use @ for root)</label>
+            <input type="text" id="dns-name" placeholder="@ or www or mail" value="@" />
+          </div>
+          <div class="ms-field">
+            <label>Value</label>
+            <input type="text" id="dns-value" placeholder="e.g. 192.0.2.1 or target.example.com" />
+          </div>
+          <div class="ms-modal-err" id="add-dns-err"></div>
+          <div class="ms-modal-actions">
+            <button class="ms-btn-outline" id="cancel-dns">Cancel</button>
+            <button class="ms-btn" id="confirm-dns">Add record</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      const close = () => overlay.remove();
+      overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+      document.getElementById('cancel-dns').addEventListener('click', close);
+      document.getElementById('confirm-dns').addEventListener('click', async () => {
+        const errEl = document.getElementById('add-dns-err');
+        const record_type = document.getElementById('dns-type').value;
+        const name = document.getElementById('dns-name').value.trim() || '@';
+        const value = document.getElementById('dns-value').value.trim();
+        if (!value) { errEl.textContent = 'Enter a value.'; return; }
+        const { error } = await sb.from('dns_records').insert({ site_id: site.id, record_type, name, value, created_by: currentUser.id });
+        if (error) { errEl.textContent = error.message; return; }
+        close();
+        loadDnsRecords(site);
+      });
+    }
+
+    /* ── Owners ── */
+    function ownersSectionHtml(site) {
+      const isPrimary = site.user_id === currentUser.id;
+      return `<div class="ms-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h3 style="margin:0;">Owners</h3>
+          ${isPrimary ? `<button class="ms-btn-outline" id="add-owner-btn">+ Add owner</button>` : ''}
+        </div>
+        <p class="ms-section-sub">Co-owners can verify, manage DNS, and request crawls without proving domain ownership again.</p>
+        <div id="owners-list" class="ms-section-sub">Loading…</div>
+      </div>`;
+    }
+
+    function wireOwnersSection(site) {
+      const btn = document.getElementById('add-owner-btn');
+      if (btn) btn.addEventListener('click', () => openAddOwnerModal(site));
+    }
+
+    async function loadOwners(site) {
+      const box = document.getElementById('owners-list');
+      if (!box) return;
+      const { data: rows } = await sb.from('site_owners').select('id,user_id,added_at').eq('site_id', site.id);
+      const ids = [site.user_id, ...(rows || []).map(r => r.user_id)];
+      const { data: profiles } = await sb.from('profiles').select('id,username,email').in('id', ids);
+      const byId = Object.fromEntries((profiles || []).map(p => [p.id, p]));
+      const isPrimary = site.user_id === currentUser.id;
+
+      const primary = byId[site.user_id];
+      let html = `<div class="ms-content-row"><div style="flex:1;">
+        <div class="ms-content-title">${escHtml(primary?.username || primary?.email || 'You')} <span class="ms-badge ms-badge-verified" style="margin-left:6px;">Primary owner</span></div>
+      </div></div>`;
+      (rows || []).forEach(r => {
+        const p = byId[r.user_id];
+        html += `<div class="ms-content-row"><div style="flex:1;">
+          <div class="ms-content-title">${escHtml(p?.username || p?.email || 'Unknown user')}</div>
+          <div class="ms-content-meta">Added ${timeAgo(r.added_at)}</div>
+        </div>${isPrimary ? `<button class="ms-copy-btn" style="color:var(--ms-danger);" data-remove-owner="${r.user_id}">Remove</button>` : ''}</div>`;
+      });
+      box.innerHTML = html;
+      box.querySelectorAll('[data-remove-owner]').forEach(b => b.addEventListener('click', async () => {
+        try { await callFn('remove_owner', { site_id: site.id, owner_user_id: b.dataset.removeOwner }); toast('Owner removed'); loadOwners(site); }
+        catch (e) { toast(e.message); }
+      }));
+    }
+
+    function openAddOwnerModal(site) {
+      const overlay = document.createElement('div');
+      overlay.className = 'ms-modal-overlay';
+      overlay.innerHTML = `
+        <div class="ms-modal">
+          <h2>Add an owner</h2>
+          <div class="ms-field">
+            <label>Their 360 account email</label>
+            <input type="email" id="owner-email" placeholder="friend@example.com" autofocus />
+          </div>
+          <div class="ms-modal-err" id="add-owner-err"></div>
+          <div class="ms-modal-actions">
+            <button class="ms-btn-outline" id="cancel-owner">Cancel</button>
+            <button class="ms-btn" id="confirm-owner">Add</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      const close = () => overlay.remove();
+      overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+      document.getElementById('cancel-owner').addEventListener('click', close);
+      document.getElementById('confirm-owner').addEventListener('click', async () => {
+        const errEl = document.getElementById('add-owner-err');
+        const email = document.getElementById('owner-email').value.trim();
+        if (!email) { errEl.textContent = 'Enter an email.'; return; }
+        try {
+          await callFn('add_owner', { site_id: site.id, email });
+          toast('Owner added');
+          close();
+          loadOwners(site);
+        } catch (e) { errEl.textContent = e.message; }
+      });
+    }
+
+    async function removeSite(site) {
+      if (!confirm(`Remove ${site.domain}? This only removes it from your dashboard — already-indexed pages stay in Search.`)) return;
+      const { error } = await sb.from('site_submissions').delete().eq('id', site.id);
+      if (error) { toast(error.message); return; }
+      sites = sites.filter(s => s.id !== site.id);
+      view = 'sites'; activeSiteId = null;
+      render();
+      toast('Site removed');
+    }
+
+    /* ── Linked content ── */
+    async function renderLinkedContent() {
+      const main = document.getElementById('ms-main');
+      main.innerHTML = `
+        <div class="ms-page-head">
+          <div>
+            <h1>Linked Content</h1>
+            <p>Flag your own 360Vids and 360Music uploads as eligible to surface in 360 Search results.</p>
+          </div>
+        </div>
+        <div class="ms-section">
+          <h3>Your 360Vids</h3>
+          <div id="linked-vids" class="ms-section-sub">Loading…</div>
+        </div>
+        <div class="ms-section">
+          <h3>Your 360Music tracks</h3>
+          <div id="linked-music" class="ms-section-sub">Loading…</div>
+        </div>`;
+
+      const [{ data: vids }, { data: tracks }] = await Promise.all([
+        sb.from('vids').select('id,title,thumbnail_url,views,featured_in_search').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
+        sb.from('music_files').select('id,title,thumbnail_url,views,featured_in_search').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
+      ]);
+
+      renderLinkedList('linked-vids', vids || [], 'vids', '🎬 No videos uploaded yet — upload one in 360Vids first.');
+      renderLinkedList('linked-music', tracks || [], 'music_files', '🎵 No tracks uploaded yet — upload one in 360Music first.');
+    }
+
+    function renderLinkedList(containerId, items, table, emptyMsg) {
+      const box = document.getElementById(containerId);
+      if (!items.length) { box.innerHTML = `<div class="ms-empty" style="padding:24px;">${emptyMsg}</div>`; return; }
+      box.innerHTML = items.map(item => `
+        <div class="ms-content-row">
+          <img class="ms-content-thumb" src="${escHtml(item.thumbnail_url || '')}" onerror="this.style.visibility='hidden'" alt="" />
+          <div style="flex:1;min-width:0;">
+            <div class="ms-content-title">${escHtml(item.title)}</div>
+            <div class="ms-content-meta">${item.views || 0} views</div>
+          </div>
+          <label class="ms-switch">
+            <input type="checkbox" data-id="${item.id}" data-table="${table}" ${item.featured_in_search ? 'checked' : ''}/>
+            <span class="ms-switch-track"></span>
+          </label>
+        </div>`).join('');
+      box.querySelectorAll('input[type=checkbox]').forEach(cb => {
+        cb.addEventListener('change', async () => {
+          const { error } = await sb.from(cb.dataset.table).update({ featured_in_search: cb.checked }).eq('id', cb.dataset.id);
+          if (error) { toast(error.message); cb.checked = !cb.checked; }
+          else toast(cb.checked ? 'Marked for search' : 'Removed from search');
+        });
+      });
+    }
+
+    initAuth();
+  </script>
+</body>
+</html>
