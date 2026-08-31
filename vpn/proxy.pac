@@ -1,6 +1,5 @@
-// 360VPN — Proxy Auto-Config
-// 360Digital Co. — https://360-search.com/vpn/vpn
-// This file is also served dynamically by the Cloudflare Worker at /vpn/proxy.pac
+// Proxy Auto-Config
+// Served dynamically by the Cloudflare Worker at /vpn/proxy.pac
 
 function FindProxyForURL(url, host) {
   // Always go direct for 360-search.com itself
@@ -13,7 +12,7 @@ function FindProxyForURL(url, host) {
     return "DIRECT";
   }
 
-  // Route everything else through 360VPN via Cloudflare edge
+  // Route everything else through the configured proxy endpoint
   // Falls back to DIRECT if the proxy is unreachable
   return "HTTPS 360-search.com:443; DIRECT";
 }
