@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>360 — What's New</title>
+    <link>https://360-search.com/</link>
+    <description>Updates and releases from 360Digital, Co.</description>
+    <language>en-us</language>
+    <atom:link href="https://360-search.com/rss.xml" rel="self" type="application/rss+xml" />
+
+    <item>
+      <title>360 v3.6.0</title>
+      <link>https://360-search.com/CHANGELOG.html</link>
+      <guid isPermaLink="false">360-release-3.6.0</guid>
+      <pubDate>Mon, 31 Aug 2026 00:00:00 +0000</pubDate>
+      <description>August 2026 release with new chat features, desktop apps, server discovery, 360 Music improvements, Maps incident reporting, Search improvements, News features, and security updates.</description>
+    </item>
+
+    <item>
+      <title>360 v3.0.0</title>
+      <link>https://360-search.com/CHANGELOG.html</link>
+      <guid isPermaLink="false">360-release-3.0.0</guid>
+      <pubDate>Mon, 20 Jul 2026 00:00:00 +0000</pubDate>
+      <description>Complete UI redesign across all products, new search providers for improved metasearch, and a refactored AI assistant.</description>
+    </item>
+
+    <item>
+      <title>360 v2.0.3</title>
+      <link>https://360-search.com/CHANGELOG.html</link>
+      <guid isPermaLink="false">360-release-2.0.3</guid>
+      <description>Release v2.0.3 for 360.</description>
+    </item>
+  </channel>
+</rss>
