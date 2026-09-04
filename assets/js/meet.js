@@ -1532,9 +1532,11 @@ window.Meet = (function () {
           body { margin:0; background:#05070d; font-family:sans-serif; overflow:hidden; }
           video { width:100%; height:100%; object-fit:cover; display:block; background:#000; }
           .meet-pip-label { position:fixed; top:6px; left:8px; color:#e5e9f2; font-size:10px; background:rgba(0,0,0,.45); padding:2px 8px; border-radius:999px; }
-          .meet-pip-bar { position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:center; gap:8px; padding:6px; background:rgba(0,0,0,.4); }
-          .meet-pip-bar button { min-width:32px; height:32px; padding:0 10px; border-radius:16px; border:none; cursor:pointer; background:rgba(255,255,255,.16); color:#fff; font-size:11px; font-weight:600; }
+          .meet-pip-bar { position:fixed; bottom:0; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:8px; padding:6px; background:rgba(0,0,0,.45); }
+          .meet-pip-bar button { min-width:32px; height:32px; padding:0 10px; border-radius:16px; border:none; cursor:pointer; background:rgba(255,255,255,.16); color:#fff; font-size:11px; font-weight:600; white-space:nowrap; }
           .meet-pip-bar button.leave { background:#ef4444; }
+          .meet-pip-bar button.off { background:#ef4444; }
+          .meet-pip-bar span.confirm-label { color:#fff; font-size:11px; margin-right:2px; }
         `;
         pipWindow.document.head.appendChild(style);
 
@@ -1551,16 +1553,57 @@ window.Meet = (function () {
 
         const bar = pipWindow.document.createElement('div');
         bar.className = 'meet-pip-bar';
-        const micBtn = pipWindow.document.createElement('button');
-        micBtn.textContent = micOn ? 'Mute' : 'Unmute';
-        micBtn.onclick = () => { toggleMic(); micBtn.textContent = micOn ? 'Mute' : 'Unmute'; };
-        const leaveBtn = pipWindow.document.createElement('button');
-        leaveBtn.className = 'leave';
-        leaveBtn.textContent = 'Leave';
-        leaveBtn.onclick = () => { closeLeaveTabPopup(); confirmLeave(); };
-        bar.appendChild(micBtn);
-        bar.appendChild(leaveBtn);
         pipWindow.document.body.appendChild(bar);
+
+        // Rebuilds the normal control row (mic / camera / leave) — also
+        // used to restore the bar after the person cancels out of the
+        // leave confirmation below.
+        function buildPipControls() {
+          bar.innerHTML = '';
+
+          const micBtn = pipWindow.document.createElement('button');
+          micBtn.textContent = micOn ? 'Mute' : 'Unmute';
+          micBtn.classList.toggle('off', !micOn);
+          micBtn.onclick = () => { toggleMic(); micBtn.textContent = micOn ? 'Mute' : 'Unmute'; micBtn.classList.toggle('off', !micOn); };
+          bar.appendChild(micBtn);
+
+          if (mode === 'video') {
+            const camBtn = pipWindow.document.createElement('button');
+            camBtn.textContent = camOn ? 'Video off' : 'Video on';
+            camBtn.classList.toggle('off', !camOn);
+            camBtn.onclick = () => { toggleCam(); camBtn.textContent = camOn ? 'Video off' : 'Video on'; camBtn.classList.toggle('off', !camOn); };
+            bar.appendChild(camBtn);
+          }
+
+          const leaveBtn = pipWindow.document.createElement('button');
+          leaveBtn.className = 'leave';
+          leaveBtn.textContent = 'Leave';
+          leaveBtn.onclick = showPipLeaveConfirm;
+          bar.appendChild(leaveBtn);
+        }
+
+        // A real confirmation shown INSIDE the popup itself — the main
+        // tab's own confirm dialog isn't something the person can see
+        // while they're looking at this floating window instead of the
+        // tab, so the confirmation has to live here too.
+        function showPipLeaveConfirm() {
+          bar.innerHTML = '';
+          const label = pipWindow.document.createElement('span');
+          label.className = 'confirm-label';
+          label.textContent = 'Leave meeting?';
+          const cancelBtn = pipWindow.document.createElement('button');
+          cancelBtn.textContent = 'Cancel';
+          cancelBtn.onclick = buildPipControls;
+          const confirmBtn = pipWindow.document.createElement('button');
+          confirmBtn.className = 'leave';
+          confirmBtn.textContent = 'Leave';
+          confirmBtn.onclick = () => { closeLeaveTabPopup(); leaveCall(false); };
+          bar.appendChild(label);
+          bar.appendChild(cancelBtn);
+          bar.appendChild(confirmBtn);
+        }
+
+        buildPipControls();
 
         pipWindow.addEventListener('pagehide', () => { pipWindow = null; pipActive = false; }, { once: true });
       } catch (e) {
