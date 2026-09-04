@@ -103,6 +103,8 @@
     .credit-name:hover { color: var(--a,#3b82f6); text-decoration: underline; }
     .credit-alias { color: var(--mut); font-size: 12px; }
     .credits-divider { height: 1px; background: var(--br); margin: 2px 0; }
+    .credit-commits { color: var(--mut); font-size: 12px; margin-left: 6px; white-space: nowrap; }
+    .credit-commits.loading { opacity: .65; }
 
     /* PAGE LAYOUT */
     .page-wrap {
@@ -751,14 +753,14 @@
 
         <!-- Credits -->
         <div class="st-card"><div class="st-card-title">Credits</div><div class="credits-list">
-          <div class="credit-person"><img class="credit-pfp" src="https://github.com/Zakii360.png?size=72" alt="Zakii360"><div class="credit-info"><div class="credit-role">Lead Developer &amp; Founder</div><a class="credit-name" href="https://github.com/Zakii360" target="_blank" rel="noopener noreferrer">Zakii360</a></div></div><div class="credits-divider"></div>
-          <div class="credit-person"><img class="credit-pfp" src="https://github.com/mingzew2.png?size=72" alt="mingzew2"><div class="credit-info"><div class="credit-role">Lead Developer &amp; Founder</div><a class="credit-name" href="https://github.com/mingzew2" target="_blank" rel="noopener noreferrer">mingzew2</a> <span class="credit-alias">(also known as <a href="https://github.com/MingzeMC" target="_blank" rel="noopener noreferrer">MingzeMC</a>)</span></div></div><div class="credits-divider"></div>
-          <div class="credit-person"><img class="credit-pfp" src="https://github.com/GreatesSoup.png?size=72" alt="GreatesSoup"><div class="credit-info"><div class="credit-role">Analytics Advisor &amp; Feature Designer</div><a class="credit-name" href="https://github.com/GreatesSoup" target="_blank" rel="noopener noreferrer">GreatesSoup</a></div></div><div class="credits-divider"></div>
-          <div class="credit-person"><img class="credit-pfp" src="https://github.com/UntitledAngel.png?size=72" alt="UntitledAngel"><div class="credit-info"><div class="credit-role">Lead Games Developer</div><a class="credit-name" href="https://github.com/UntitledAngel" target="_blank" rel="noopener noreferrer">UntitledAngel</a> <span class="credit-alias">(also known as <a href="https://github.com/TheAngelV1" target="_blank" rel="noopener noreferrer">TheAngelV1</a>)</span></div></div>
+          <div class="credit-person"><img class="credit-pfp" src="https://github.com/Zakii360.png?size=72" alt="Zakii360"><div class="credit-info"><div class="credit-role">Lead Developer &amp; Founder</div><a class="credit-name" id="credit-Zakii360" href="https://github.com/Zakii360" target="_blank" rel="noopener noreferrer">Zakii360</a><span class="credit-commits loading" id="commits-Zakii360">Loading commits...</span></div></div><div class="credits-divider"></div>
+          <div class="credit-person"><img class="credit-pfp" src="https://github.com/mingzew2.png?size=72" alt="mingzew2"><div class="credit-info"><div class="credit-role">Lead Developer &amp; Founder</div><a class="credit-name" id="credit-mingzew2" href="https://github.com/mingzew2" target="_blank" rel="noopener noreferrer">mingzew2</a><span class="credit-commits loading" id="commits-mingzew2">Loading commits...</span> <span class="credit-alias">(also known as <a href="https://github.com/MingzeMC" target="_blank" rel="noopener noreferrer">MingzeMC</a>)</span></div></div><div class="credits-divider"></div>
+          <div class="credit-person"><img class="credit-pfp" src="https://github.com/GreatesSoup.png?size=72" alt="GreatesSoup"><div class="credit-info"><div class="credit-role">Analytics Advisor &amp; Feature Designer</div><a class="credit-name" id="credit-GreatesSoup" href="https://github.com/GreatesSoup" target="_blank" rel="noopener noreferrer">GreatesSoup</a><span class="credit-commits loading" id="commits-GreatesSoup">Loading commits...</span></div></div><div class="credits-divider"></div>
+          <div class="credit-person"><img class="credit-pfp" src="https://github.com/UntitledAngel.png?size=72" alt="UntitledAngel"><div class="credit-info"><div class="credit-role">Lead Games Developer</div><a class="credit-name" id="credit-UntitledAngel" href="https://github.com/UntitledAngel" target="_blank" rel="noopener noreferrer">UntitledAngel</a><span class="credit-commits loading" id="commits-UntitledAngel">Loading commits...</span> <span class="credit-alias">(also known as <a href="https://github.com/TheAngelV1" target="_blank" rel="noopener noreferrer">TheAngelV1</a>)</span></div></div>
         </div></div>
 
         <!-- Repository -->
-        <div class="st-card"><div class="st-card-title">Repository</div><div class="project-meta" style="margin-top:0;"><div class="project-meta-row"><span class="project-meta-key">GitHub</span><span class="project-meta-val"><a href="https://github.com/360DigitalCo/360" target="_blank" rel="noopener noreferrer">360DigitalCo/360</a></span></div><div class="project-meta-row"><span class="project-meta-key">Stars</span><span class="project-meta-val" id="repo-star-count">—</span></div><div class="project-meta-row"><span class="project-meta-key">Forks</span><span class="project-meta-val" id="repo-fork-count">—</span></div><div class="project-meta-row"><span class="project-meta-key">Open Issues</span><span class="project-meta-val" id="repo-issue-count">—</span></div></div></div>
+        <div class="st-card"><div class="st-card-title">Repository</div><div class="project-meta" style="margin-top:0;"><div class="project-meta-row"><span class="project-meta-key">GitHub</span><span class="project-meta-val"><a href="https://github.com/360DigitalCo/360" target="_blank" rel="noopener noreferrer">360DigitalCo/360</a></span></div><div class="project-meta-row"><span class="project-meta-key">Stars</span><span class="project-meta-val" id="repo-star-count">—</span></div><div class="project-meta-row"><span class="project-meta-key">Forks</span><span class="project-meta-val" id="repo-fork-count">—</span></div><div class="project-meta-row"><span class="project-meta-key">Open Issues</span><span class="project-meta-val" id="repo-issue-count">—</span></div><div class="project-meta-row"><span class="project-meta-key">Total Commits</span><span class="project-meta-val" id="repo-commit-count">—</span></div></div></div>
 
         <!-- About -->
         <div class="st-card">
@@ -867,7 +869,52 @@
   setInterval(updateGitHubStars, 60000);
 
 
-  async function updateRepositoryStats(){const s=document.getElementById('repo-star-count'),f=document.getElementById('repo-fork-count'),i=document.getElementById('repo-issue-count');if(!s&&!f&&!i)return;try{const r=await fetch('https://api.github.com/repos/360DigitalCo/360');if(!r.ok)throw new Error(`GitHub API returned ${r.status}`);const repo=await r.json();if(s)s.textContent=Number(repo.stargazers_count||0).toLocaleString();if(f)f.textContent=Number(repo.forks_count||0).toLocaleString();if(i)i.textContent=Number(repo.open_issues_count||0).toLocaleString()}catch(e){console.warn('Unable to fetch GitHub repository stats:',e)}}updateRepositoryStats();setInterval(updateRepositoryStats,60000);
+  async function updateRepositoryStats(){
+    const s=document.getElementById('repo-star-count'),f=document.getElementById('repo-fork-count'),i=document.getElementById('repo-issue-count'),c=document.getElementById('repo-commit-count');
+    if(!s&&!f&&!i&&!c)return;
+    try{
+      const r=await fetch('https://api.github.com/repos/360DigitalCo/360');
+      if(!r.ok)throw new Error(`GitHub API returned ${r.status}`);
+      const repo=await r.json();
+      if(s)s.textContent=Number(repo.stargazers_count||0).toLocaleString();
+      if(f)f.textContent=Number(repo.forks_count||0).toLocaleString();
+      if(i)i.textContent=Number(repo.open_issues_count||0).toLocaleString();
+      if(c){
+        const cr=await fetch('https://api.github.com/repos/360DigitalCo/360/commits?per_page=1');
+        if(cr.ok){
+          const link=cr.headers.get('Link')||'';
+          const match=link.match(/[?&]page=(\d+)>; rel="last"/);
+          c.textContent=match?Number(match[1]).toLocaleString():'Unavailable';
+        } else c.textContent='Unavailable';
+      }
+    }catch(e){console.warn('Unable to fetch GitHub repository stats:',e);if(c)c.textContent='Unavailable'}
+  }
+  updateRepositoryStats();
+  setInterval(updateRepositoryStats,60000);
+
+  async function updateContributorCommits(){
+    const ids={Zakii360:'commits-Zakii360',mingzew2:'commits-mingzew2',GreatesSoup:'commits-GreatesSoup',UntitledAngel:'commits-UntitledAngel'};
+    try{
+      const r=await fetch('https://api.github.com/repos/360DigitalCo/360/contributors?per_page=100');
+      if(!r.ok)throw new Error(`GitHub API returned ${r.status}`);
+      const contributors=await r.json();
+      const counts={};
+      contributors.forEach(person=>counts[person.login]=Number(person.contributions||0));
+      counts.Zakii360=Math.max(0,(counts.Zakii360||0)-1);
+      counts.GreatesSoup=(counts.GreatesSoup||0)+1;
+      Object.entries(ids).forEach(([login,id])=>{
+        const el=document.getElementById(id);
+        if(!el)return;
+        el.classList.remove('loading');
+        el.textContent=`${(counts[login]||0).toLocaleString()} commits`;
+      });
+    }catch(e){
+      console.warn('Unable to fetch GitHub contributor stats:',e);
+      Object.values(ids).forEach(id=>{const el=document.getElementById(id);if(el){el.classList.remove('loading');el.textContent='Commits unavailable'}});
+    }
+  }
+  updateContributorCommits();
+  setInterval(updateContributorCommits,60000);
 
   // ────────────────────────────────────────
   // TAB ROUTING
