@@ -53,31 +53,31 @@ Unlike many modern browsers and search platforms, 360 is designed to give users 
 
 ## Features
 
-- 🔍 **Search** — Private, fast search | <em>Other search engines create a profile for you and sell your data for targeted ads. Even DuckDuckGo has a partnership with Microsoft for parts of its search results.</em>
+- 🔍 **[Search](https://360-search.com/search?q=360)** — Private, fast search | <em>Other search engines create a profile for you and sell your data for targeted ads. Even DuckDuckGo has a partnership with Microsoft for parts of its search results.</em>
 
-- 🤖 **AI** — Built-in AI assistant with conversation history and file uploads. | <em>An AI that's fast and can actually do things.</em>
+- 🤖 **[AI](https://360-search.com/ai)** — Built-in AI assistant with conversation history and file uploads. | <em>An AI that's fast and can actually do things.</em>
 
-- 💬 **Chat** — Real-time global chat with communities, DMs, reactions and moderation | <em>A fully moderated chat with privacy. **TEENS AND ABOVE!!**</em>
+- 💬 **[Chat](https://360-search.com/chat)** — Real-time global chat with communities, DMs, reactions and moderation | <em>A fully moderated chat with privacy. **TEENS AND ABOVE!!**</em> (Uses age verification with math, purposely bypassing may result in a ban. For more, please read the [Terms of Service](https://360-search.com/tos))
 
-- 📰 **News** — Live news feed across multiple categories | <em>News that actually loads instantly.</em>
+- 📰 **[News](https://360-search.com/news)** — Live news feed across multiple categories | <em>News that actually loads instantly.</em>
 
-- 🎮 **Games** — Built-in games including Space Glider, StarBlasted and NYC Dream | <em>High-quality games built by the 360 development team.</em>
+- 🎮 **[Games](https://360-search.com/games)** — Built-in games including Space Glider, StarBlasted and NYC Dream | <em>High-quality games built by the 360 development team.</em>
 
-- 🌦️ **Weather** — Live weather with map view | <em>Fast, detailed weather information whenever you need it.</em>
+- 🌦️ **[Weather](https://360-search.com/weather)** — Live weather with map view | <em>Fast, detailed weather information whenever you need it.</em>
 
-- 📈 **Stocks** — Real-time stock quotes | <em>Real stocks, cryptocurrencies, and market data in real time.</em>
+- 📈 **[Stocks](https://360-search.com/stocks)** — Real-time stock quotes | <em>Real stocks, cryptocurrencies, and market data in real time.</em>
 
-- 🌍 **Translator** — Translate between 80+ languages | <em>Instant translation when you need it most.</em>
+- 🌍 **[Translator](https://360-search.com/translator)** — Translate between 80+ languages | <em>Instant translation when you need it most.</em>
 
-- 🔗 **URL Shortener** — Shorten any link instantly | <em>Create short links in seconds.</em>
+- 🔗 **[URL Shortener](https://360-search.com/url-shortener)** — Shorten any link instantly | <em>Create short links in seconds.</em>
 
-- 🎨 **Themes** — 6 color themes, dark mode, and custom cursor styles | <em>Personalize 360 to match your style.</em>
+- 🎨 **[Themes](https://360-search.com/settings?tab=preference)** — 6 color themes, dark mode, and custom cursor styles | <em>Personalize 360 to match your style.</em>
 
-- 🖥️ **Desktop App** — Native app for Windows and Linux | <em>Enjoy the full 360 experience outside your browser.</em>
+- 🖥️ **[Desktop App](https://github.com/360DigitalCo/360/releases)** — Native app for Windows and Linux | <em>Enjoy the full 360 experience outside your browser.</em>
 
 ---
 
-## APPS TOO!
+## [APPS TOO!](https://360-search.com/apps)
 
 <img width="978" height="862" alt="image" src="https://github.com/user-attachments/assets/871b6255-f4a9-4b86-a8dc-cbc0aeed2c40" />
 
@@ -89,7 +89,7 @@ Explore 360 and work efficiently in the 360Suite!
 - Draw anything you want.
 - Write documents and share them with friends.
 - Have 360 remember your tasks.
-- Send emails through 360Mail with enhanced privacy and spam detection.
+- Send emails through Postmark with enhanced privacy and spam detection and E2EE!
 - Deploy and manage sites.
 
 ## All through 360!
