@@ -3,7 +3,7 @@
       ____    __   ___  
      |___ \  / /  / _ \ 
        __) |/ /_ | | | |
-      |__ <| '_ \| | | |
+      |__ <| '_ \| | | |   so tuff TT
       ___) | (_) | |_| |
      |____/ \___/ \___/ 
    ============================================================ */
@@ -46,7 +46,7 @@ function escapeHtml(value) {
    ============================================================ */
 
 function getStyleString(styles) {
-  let str = "";
+  let str = "";                                                // & IS BROKEN!!!!!!!!!
   if (styles.color) str += `color:${styles.color};`;
   if (styles.bold) str += `font-weight:bold;`;
   if (styles.italic) str += `font-style:italic;`;
@@ -507,7 +507,10 @@ const PINNED_APP_CATALOG = [
   { label: "360Studio", href: "/apps/360Studio", icon: "🎛️" },
   { label: "Anchor", href: "/apps/360MySite", icon: "🌐" },
   { label: "360Canvas", href: "/apps/360Canvas", icon: "🎨" },
-  { label: "Gather", href: "/apps/360Meet", icon: "👥" }
+  { label: "Gather", href: "/apps/360Meet", icon: "👥" },
+{ label: "360VPN", href: "/vpn/360vpn", icon: "🛜" },
+{ label: "Maps", href: "/apps/360Maps", icon: "🗺️" },         // please always leave a comma on last item in case we add a new app ty :)
+
 ];
 
 function safeParseJSON(raw, fallback) {
@@ -589,8 +592,8 @@ function renderSidebar() {
     ${position === "top" ? pinnedSectionHtml : ""}
     <nav class="nav-list">${navHtml}</nav>
     ${position === "bottom" ? pinnedSectionHtml : ""}
-    <div class="sidebar-footer"><span id="sidebar-ver">Loading...</span></div>
-  `;
+    <div class="sidebar-footer"><span id="sidebar-ver"></span></div>                        
+  `; //                                             removed loading for now, find a better way to insert version variable
 
   //CHANGES THE FOOTER IN ALL PAGES!!
   const _sidebarVer = document.getElementById("sidebar-ver");
