@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════
-   Gather v3 — sign-in required, optional passcode, prepare
+   360Meet v3 — sign-in required, optional passcode, prepare
    room, Zoom-style call chamber, profile-picture avatars,
    and host-approved screen sharing for non-host participants.
    Requires: supabaseClient + getGravatarUrl (globals from main.js)
@@ -138,7 +138,7 @@ window.Meet = (function () {
   async function init() {
     const sb = getSb();
     if (!sb) {
-      console.error('Gather: supabaseClient not found — check that main.js loaded before meet.js.');
+      console.error('360Meet: supabaseClient not found — check that main.js loaded before meet.js.');
       renderGate(false);
       showScreen('meet-gate');
       return;
@@ -198,7 +198,7 @@ window.Meet = (function () {
     const el = $('#meet-action-select');
     if (!el) return;
     el.innerHTML = `
-      <h2 class="meet-title">Gather</h2>
+      <h2 class="meet-title">360Meet</h2>
       <p class="meet-subtitle">Start a video call, start a voice chat, or join an existing meeting.</p>
       <div class="meet-action-grid">
         <div class="meet-card meet-action-card" id="meet-card-video">
@@ -953,6 +953,7 @@ window.Meet = (function () {
     updateParticipantCount();
     startTimer();
     window.addEventListener('beforeunload', onBeforeUnload);
+    setupLeaveTabWatcher();
   }
 
   function currentHostId() {
@@ -1482,6 +1483,116 @@ window.Meet = (function () {
     navigator.clipboard?.writeText(url).then(() => toast('Invite link copied')).catch(() => toast(url));
   }
 
+  /* ── "Left the tab" floating mini window ──────────────
+     When the person switches away from this browser tab during a call,
+     show a small popup — bottom-right, positioned by the browser itself —
+     so they can still keep an eye on the meeting. Uses the real Document
+     Picture-in-Picture API where available (Chrome/Edge) for a richer
+     mini view with mute/leave buttons; falls back to the standard
+     <video> Picture-in-Picture API (Firefox/Safari too), which floats
+     just the video, still bottom-right by default in every major
+     browser. Returning to the tab closes the popup automatically. */
+  let pipWindow = null;
+  let pipActive = false;
+  let fallbackPipVideoEl = null;
+
+  function setupLeaveTabWatcher() {
+    document.addEventListener('visibilitychange', onTabVisibilityChange);
+  }
+  function teardownLeaveTabWatcher() {
+    document.removeEventListener('visibilitychange', onTabVisibilityChange);
+    closeLeaveTabPopup();
+  }
+
+  function onTabVisibilityChange() {
+    if (!inCall) return;
+    if (document.hidden) openLeaveTabPopup();
+    else closeLeaveTabPopup();
+  }
+
+  function pickFeaturedVideo() {
+    // Whatever's currently on the main stage (host camera, or the shared
+    // screen) is the most useful thing to keep visible; fall back to the
+    // person's own camera if the main stage has nothing yet.
+    const mainVideo = document.querySelector('#meet-stage-main video');
+    if (mainVideo && mainVideo.srcObject) return mainVideo;
+    return document.querySelector(`#meet-tile-${myPeerId} video`);
+  }
+
+  async function openLeaveTabPopup() {
+    if (pipActive) return;
+    pipActive = true;
+
+    if ('documentPictureInPicture' in window) {
+      try {
+        pipWindow = await window.documentPictureInPicture.requestWindow({ width: 300, height: 200 });
+
+        const style = pipWindow.document.createElement('style');
+        style.textContent = `
+          body { margin:0; background:#05070d; font-family:sans-serif; overflow:hidden; }
+          video { width:100%; height:100%; object-fit:cover; display:block; background:#000; }
+          .meet-pip-label { position:fixed; top:6px; left:8px; color:#e5e9f2; font-size:10px; background:rgba(0,0,0,.45); padding:2px 8px; border-radius:999px; }
+          .meet-pip-bar { position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:center; gap:8px; padding:6px; background:rgba(0,0,0,.4); }
+          .meet-pip-bar button { min-width:32px; height:32px; padding:0 10px; border-radius:16px; border:none; cursor:pointer; background:rgba(255,255,255,.16); color:#fff; font-size:11px; font-weight:600; }
+          .meet-pip-bar button.leave { background:#ef4444; }
+        `;
+        pipWindow.document.head.appendChild(style);
+
+        const sourceVideo = pickFeaturedVideo();
+        const video = pipWindow.document.createElement('video');
+        video.autoplay = true; video.playsInline = true; video.muted = true;
+        if (sourceVideo && sourceVideo.srcObject) video.srcObject = sourceVideo.srcObject;
+        pipWindow.document.body.appendChild(video);
+
+        const label = pipWindow.document.createElement('div');
+        label.className = 'meet-pip-label';
+        label.textContent = roomCode ? `360Meet \u00b7 ${roomCode}` : '360Meet';
+        pipWindow.document.body.appendChild(label);
+
+        const bar = pipWindow.document.createElement('div');
+        bar.className = 'meet-pip-bar';
+        const micBtn = pipWindow.document.createElement('button');
+        micBtn.textContent = micOn ? 'Mute' : 'Unmute';
+        micBtn.onclick = () => { toggleMic(); micBtn.textContent = micOn ? 'Mute' : 'Unmute'; };
+        const leaveBtn = pipWindow.document.createElement('button');
+        leaveBtn.className = 'leave';
+        leaveBtn.textContent = 'Leave';
+        leaveBtn.onclick = () => { closeLeaveTabPopup(); confirmLeave(); };
+        bar.appendChild(micBtn);
+        bar.appendChild(leaveBtn);
+        pipWindow.document.body.appendChild(bar);
+
+        pipWindow.addEventListener('pagehide', () => { pipWindow = null; pipActive = false; }, { once: true });
+      } catch (e) {
+        pipWindow = null;
+        openFallbackPip();
+      }
+    } else {
+      openFallbackPip();
+    }
+  }
+
+  function openFallbackPip() {
+    const video = pickFeaturedVideo();
+    if (!video || !video.requestPictureInPicture) { pipActive = false; return; }
+    video.requestPictureInPicture().then(() => {
+      fallbackPipVideoEl = video;
+      video.addEventListener('leavepictureinpicture', () => {
+        fallbackPipVideoEl = null;
+        pipActive = false;
+      }, { once: true });
+    }).catch(() => { pipActive = false; });
+  }
+
+  function closeLeaveTabPopup() {
+    if (pipWindow) { try { pipWindow.close(); } catch (e) {} pipWindow = null; }
+    if (fallbackPipVideoEl && document.pictureInPictureElement) {
+      document.exitPictureInPicture().catch(() => {});
+    }
+    fallbackPipVideoEl = null;
+    pipActive = false;
+  }
+
   /* ── Leave confirmation popup ─────────────────────────
      The End Call button no longer leaves immediately — it opens a
      custom confirmation popup first. Programmatic exits (kicked,
@@ -1531,6 +1642,7 @@ window.Meet = (function () {
     $('#meet-chat-panel')?.classList.remove('open');
     $('#meet-call-room').classList.remove('active');
     window.removeEventListener('beforeunload', onBeforeUnload);
+    teardownLeaveTabWatcher();
     if (!kicked) toast('You left the meeting');
     isHost = false;
     renderActionSelect();
