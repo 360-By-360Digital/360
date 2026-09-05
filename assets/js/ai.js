@@ -61,9 +61,13 @@
       .replace(/"/g, "&quot;");
   }
 
-  function scrollBottom() {
+  function scrollBottom(force = false) {
     if (!aiOutput) return;
-    aiOutput.scrollTop = aiOutput.scrollHeight;
+    // Don't hijack scroll if the user has scrolled up to read earlier content.
+    // "Near bottom" = within 120px of the end, which covers the typical case
+    // where a new chunk arrives before the previous smooth-scroll finishes.
+    const nearBottom = aiOutput.scrollHeight - aiOutput.scrollTop - aiOutput.clientHeight < 120;
+    if (force || nearBottom) aiOutput.scrollTop = aiOutput.scrollHeight;
   }
 
   function hideWelcome() {
@@ -264,7 +268,7 @@
 
     div.innerHTML = inner;
     aiOutput.appendChild(div);
-    scrollBottom();
+    scrollBottom(true);
     return div;
   }
 
@@ -292,7 +296,7 @@
     div.appendChild(avatar);
     div.appendChild(inner);
     aiOutput.appendChild(div);
-    scrollBottom();
+    scrollBottom(true);
 
     return { div, inner };
   }
@@ -329,7 +333,7 @@
     div.appendChild(avatar);
     div.appendChild(inner);
     aiOutput.appendChild(div);
-    scrollBottom();
+    scrollBottom(true);
 
     const thinkingBox = inner.querySelector(".ai-thinking-box");
     const thinkingContent = inner.querySelector(".ai-thinking-content");
@@ -618,6 +622,19 @@
         };
       }
 
+      // Batch DOM updates to one per frame — avoids triggering layout/paint
+      // on every token chunk, which is the main source of UI jank during streaming.
+      let renderPending = false;
+      function scheduleRender() {
+        if (renderPending) return;
+        renderPending = true;
+        requestAnimationFrame(() => {
+          renderPending = false;
+          if (answerContent) answerContent.innerHTML = renderMarkdown(textBuf);
+          scrollBottom();
+        });
+      }
+
       await streamChatEndpoint(body, {
         onThinking(delta) {
           thinkingBuf += delta;
@@ -632,8 +649,7 @@
             if (thinkingBox) { const spinner = thinkingBox.querySelector(".ai-thinking-spinner"); if (spinner) spinner.remove(); }
           }
           textBuf += delta;
-          if (answerContent) answerContent.innerHTML = renderMarkdown(textBuf);
-          scrollBottom();
+          scheduleRender();
         },
       });
 
@@ -948,7 +964,7 @@
         }
       });
 
-    scrollBottom();
+    scrollBottom(true);
     loadConversations();
   }
 
