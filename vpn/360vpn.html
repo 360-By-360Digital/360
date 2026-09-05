@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Network Security Tools</title>
+<title>360 Security Center</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Didact+Gothic&display=swap" rel="stylesheet">
@@ -21,34 +21,36 @@ body.dark{
 }
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;font-family:var(--font);background:var(--bg);color:var(--text)}
-body{transition:background .2s ease,color .2s ease}
+body{transition:background .2s,color .2s}
 a{text-decoration:none;color:inherit}
-button,input,select{font:inherit}
+button,input,select,textarea{font:inherit}
 button{cursor:pointer}
-.topbar{height:58px;border-bottom:1px solid var(--line);background:var(--panel);display:flex;align-items:center;padding:0 22px;position:sticky;top:0;z-index:10}
-.back-apps{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 13px;border-radius:3px;font-size:13px;transition:.18s ease}
+.topbar{height:58px;border-bottom:1px solid var(--line);background:var(--panel);display:flex;align-items:center;padding:0 22px;position:sticky;top:0;z-index:10;gap:12px}
+.back-apps{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 13px;border-radius:3px;font-size:13px;transition:.18s}
 .back-apps:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
-.page{width:min(980px,calc(100% - 32px));margin:0 auto;padding:42px 0 64px}
+.topbar-title{font-size:14px;font-weight:700;color:var(--text)}
+.page{width:min(1020px,calc(100% - 32px));margin:0 auto;padding:42px 0 64px}
 .page-tools{display:flex;justify-content:flex-end;gap:10px;margin-bottom:22px}
-.theme-toggle{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 12px;border-radius:3px;transition:.18s ease}
+.theme-toggle{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 12px;border-radius:3px;transition:.18s}
 .theme-toggle:hover{border-color:var(--accent);color:var(--accent)}
 .hero{margin-bottom:28px}
 .hero-tag{font-size:12px;color:var(--accent);font-weight:700;margin-bottom:5px}
 .hero-title{font-size:36px;line-height:1.1;font-weight:500;margin-bottom:8px}
-.hero-sub{font-size:15px;color:var(--muted);max-width:700px}
+.hero-sub{font-size:15px;color:var(--muted);max-width:760px}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .span2{grid-column:1/-1}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:3px;box-shadow:var(--shadow);overflow:hidden}
-.panel-head{padding:13px 16px;border-bottom:1px solid var(--line);font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.panel-head{padding:13px 16px;border-bottom:1px solid var(--line);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .panel-body{padding:18px 16px}
 .connect-inner{display:grid;grid-template-columns:1.2fr 1fr auto;align-items:center;gap:22px}
 .connect-label,.field-label{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.04em;margin-bottom:3px}
 .connect-val{font-size:25px}
 .connect-sub,.note{font-size:12px;color:var(--muted);margin-top:3px}
-.btn{border:1px solid var(--line);border-radius:3px;padding:9px 13px;background:var(--panel);color:var(--text);font-size:12px;font-weight:700;transition:.18s ease}
+.btn{border:1px solid var(--line);border-radius:3px;padding:9px 13px;background:var(--panel);color:var(--text);font-size:12px;font-weight:700;transition:.18s}
 .btn:hover{transform:translateY(-1px)}
 .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .btn-primary:hover{filter:brightness(.96)}
+.btn-sm{padding:6px 10px;font-size:11px}
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .badge{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:3px;padding:4px 9px;font-size:11px;font-weight:700}
 .badge-good{color:var(--good);background:color-mix(in srgb,var(--good) 10%,transparent);border-color:color-mix(in srgb,var(--good) 35%,var(--line))}
@@ -57,24 +59,18 @@ button{cursor:pointer}
 .log{margin-top:16px;background:var(--panel-soft);border:1px solid var(--line);border-radius:3px;padding:11px;max-height:150px;overflow:auto;font-size:12px}
 .log-line{display:flex;gap:10px;padding:2px 0}
 .log-time{color:var(--muted);min-width:58px}
-.log-msg.ok{color:var(--good)}
-.log-msg.warn{color:var(--warn)}
-.log-msg.err{color:var(--bad)}
-.log-msg.info{color:var(--muted)}
+.log-msg.ok{color:var(--good)}.log-msg.warn{color:var(--warn)}.log-msg.err{color:var(--bad)}.log-msg.info{color:var(--muted)}
 .stat-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
 .stat-row:last-child{border-bottom:0}
 .stat-key{color:var(--muted)}
 .stat-val{color:var(--text);text-align:right;word-break:break-word}
-.stat-val.good{color:var(--good)}
-.stat-val.warn{color:var(--warn)}
-.stat-val.bad{color:var(--bad)}
+.stat-val.good{color:var(--good)}.stat-val.warn{color:var(--warn)}.stat-val.bad{color:var(--bad)}
 .test-input-row{display:flex;gap:8px}
 .test-input{width:100%;background:var(--panel-soft);border:1px solid var(--line);border-radius:3px;padding:9px 11px;color:var(--text);outline:0}
 .test-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.test-result{margin-top:10px;background:var(--panel-soft);border:1px solid var(--line);border-radius:3px;padding:11px;min-height:72px;font-size:12px;color:var(--muted);white-space:pre-wrap;word-break:break-word;font-family:monospace}
+.test-result{margin-top:10px;background:var(--panel-soft);border:1px solid var(--line);border-radius:3px;padding:11px;min-height:60px;font-size:12px;color:var(--muted);white-space:pre-wrap;word-break:break-word;font-family:monospace}
 .dns-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .dns-actions{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
-.dns-note{font-size:11px;color:var(--muted);line-height:1.45}
 .speed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 .speed-metric{border:1px solid var(--line);background:var(--panel-soft);border-radius:3px;padding:15px}
 .speed-metric span{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
@@ -84,49 +80,85 @@ button{cursor:pointer}
 .toggle-row:last-child{border-bottom:0}
 .switch{position:relative;width:44px;height:24px;display:inline-block;flex:none}
 .switch input{opacity:0;width:0;height:0}
-.slider{position:absolute;inset:0;background:#c8d0da;border-radius:3px;transition:.2s ease}
-.slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.2s ease;box-shadow:0 1px 4px rgba(0,0,0,.16)}
-.switch input:checked + .slider{background:var(--accent)}
-.switch input:checked + .slider:before{transform:translateX(20px)}
+.slider{position:absolute;inset:0;background:#c8d0da;border-radius:3px;transition:.2s}
+.slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.16)}
+.switch input:checked+.slider{background:var(--accent)}
+.switch input:checked+.slider:before{transform:translateX(20px)}
 .activity-list{margin-top:12px;max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:3px;background:var(--panel-soft)}
 .activity-item{padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px;display:flex;gap:9px}
 .activity-item:last-child{border-bottom:0}
 .activity-kind{color:var(--accent);min-width:54px;font-weight:700}
-.activity-text{color:var(--muted);word-break:break-word}
-.security-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.activity-text{color:var(--muted);word-break:break-all}
 .security-item{border:1px solid var(--line);background:var(--panel-soft);border-radius:3px;padding:12px}
 .security-item strong{display:block;font-size:13px;margin-bottom:3px}
 .security-item span{font-size:11px;color:var(--muted);line-height:1.45}
+.security-item.pass{border-color:color-mix(in srgb,var(--good) 40%,var(--line))}
 .security-item.pass strong::after{content:' ✓';color:var(--good)}
+.security-item.fail{border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
 .security-item.fail strong::after{content:' ✗';color:var(--bad)}
 .security-item.warn-item strong::after{content:' ⚠';color:var(--warn)}
 .leak-row{display:flex;gap:8px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--line);font-size:12px}
 .leak-row:last-child{border-bottom:0}
-.leak-label{color:var(--muted);min-width:90px}
+.leak-label{color:var(--muted);min-width:100px;flex:none}
 .leak-val{font-family:monospace;word-break:break-all}
 .header-table{width:100%;border-collapse:collapse;font-size:11px;font-family:monospace}
 .header-table td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-all}
-.header-table td:first-child{color:var(--muted);white-space:nowrap;min-width:160px}
-.progress-bar{height:6px;background:var(--line);border-radius:3px;margin-top:6px;overflow:hidden}
-.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .4s ease}
-.scan-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.header-table td:first-child{color:var(--muted);white-space:nowrap;min-width:180px}
+.scan-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
 .scan-item{border:1px solid var(--line);background:var(--panel-soft);border-radius:3px;padding:10px 12px;font-size:12px}
 .scan-item b{display:block;margin-bottom:3px;font-size:11px;color:var(--muted)}
 .scan-item .val{font-weight:700;font-size:13px}
+
+/* PAC Setup styles */
+.os-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.os-tab{border:1px solid var(--line);background:var(--panel-soft);color:var(--muted);padding:7px 14px;border-radius:3px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+.os-tab.active,.os-tab:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.os-steps{display:none}
+.os-steps.active{display:block}
+.step-list{counter-reset:steps;list-style:none;padding:0;margin:0}
+.step-list li{counter-increment:steps;display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;line-height:1.5}
+.step-list li:last-child{border-bottom:0}
+.step-list li::before{content:counter(steps);min-width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+.step-list code{background:var(--panel-soft);border:1px solid var(--line);border-radius:3px;padding:2px 6px;font-family:monospace;font-size:12px;word-break:break-all}
+.pac-url-box{display:flex;gap:8px;align-items:center;background:var(--panel-soft);border:1px solid var(--accent);border-radius:3px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap}
+.pac-url-box code{font-family:monospace;font-size:13px;color:var(--accent);flex:1;word-break:break-all}
+
+/* Ping tool */
+.ping-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.ping-item{border:1px solid var(--line);background:var(--panel-soft);border-radius:3px;padding:10px;text-align:center}
+.ping-item b{display:block;font-size:18px;margin-bottom:2px}
+.ping-item span{font-size:11px;color:var(--muted)}
+
+/* Port checker */
+.port-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.port-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.port-tag{border:1px solid var(--line);border-radius:3px;padding:4px 9px;font-size:11px;cursor:pointer;background:var(--panel-soft)}
+.port-tag:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Password gen */
+.pw-output{font-family:monospace;font-size:15px;letter-spacing:.04em;background:var(--panel-soft);border:1px solid var(--line);border-radius:3px;padding:12px 14px;word-break:break-all;margin-bottom:10px;min-height:44px}
+.pw-opts{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;font-size:12px}
+.pw-opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.pw-strength{height:5px;border-radius:3px;background:var(--line);margin-bottom:10px;overflow:hidden}
+.pw-strength-fill{height:100%;border-radius:3px;transition:width .3s,background .3s}
+
+/* Encoder */
+.encode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+textarea.test-input{resize:vertical;min-height:70px}
+
 .footer{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 @media(max-width:760px){
-  .grid{grid-template-columns:1fr}
-  .span2{grid-column:auto}
-  .connect-inner{grid-template-columns:1fr}
-  .speed-grid,.security-list,.dns-grid,.scan-grid{grid-template-columns:1fr}
-  .page{width:min(100% - 22px,980px);padding-top:28px}
+  .grid{grid-template-columns:1fr}.span2{grid-column:auto}
+  .connect-inner,.speed-grid,.dns-grid,.scan-grid,.encode-grid,.ping-grid{grid-template-columns:1fr}
+  .page{width:min(100% - 22px,1020px);padding-top:28px}
 }
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
 <header class="topbar">
-  <a class="back-apps" href="/apps.html">Back to Apps</a>
+  <a class="back-apps" href="/apps.html">← Apps</a>
+  <span class="topbar-title">360 Security Center</span>
 </header>
 
 <main class="page">
@@ -137,12 +169,12 @@ button{cursor:pointer}
   <section class="hero">
     <div class="hero-tag">Network security</div>
     <h1 class="hero-title">Security Center</h1>
-    <p class="hero-sub">Live browser-based security checks: IP leak detection, DNS leak test, WebRTC leak, header inspection, tracker scan, HTTPS verification, and network diagnostics — all routed through the 360 proxy worker.</p>
+    <p class="hero-sub">IP leak detection, WebRTC &amp; DNS leak tests, header inspection, TLS checks, URL threat scanning, port checker, ping, password generator, encoder — all routed through the 360 proxy worker.</p>
   </section>
 
   <section class="grid">
 
-    <!-- CONNECTION STATUS -->
+    <!-- CONNECTION -->
     <article class="panel span2">
       <div class="panel-head"><span>Connection</span><span class="badge badge-warn" id="proxyBadge">NOT TESTED</span></div>
       <div class="panel-body">
@@ -165,56 +197,46 @@ button{cursor:pointer}
       </div>
     </article>
 
-    <!-- IP LEAK TEST -->
+    <!-- IP LEAK -->
     <article class="panel">
       <div class="panel-head"><span>IP Leak Detection</span><span class="badge badge-warn" id="ipLeakBadge">UNTESTED</span></div>
       <div class="panel-body">
-        <div id="ipLeakResults">
-          <div class="leak-row"><span class="leak-label">Browser IP</span><span class="leak-val" id="ipBrowser">-</span></div>
-          <div class="leak-row"><span class="leak-label">ipify</span><span class="leak-val" id="ipIpify">-</span></div>
-          <div class="leak-row"><span class="leak-label">Cloudflare</span><span class="leak-val" id="ipCloudflare">-</span></div>
-          <div class="leak-row"><span class="leak-label">ipapi.co</span><span class="leak-val" id="ipIpapi">-</span></div>
-          <div class="leak-row"><span class="leak-label">Country</span><span class="leak-val" id="ipCountry">-</span></div>
-          <div class="leak-row"><span class="leak-label">ISP / ASN</span><span class="leak-val" id="ipAsn">-</span></div>
-        </div>
-        <div style="margin-top:12px">
+        <div class="leak-row"><span class="leak-label">Browser IP</span><span class="leak-val" id="ipBrowser">-</span></div>
+        <div class="leak-row"><span class="leak-label">ipify</span><span class="leak-val" id="ipIpify">-</span></div>
+        <div class="leak-row"><span class="leak-label">Cloudflare trace</span><span class="leak-val" id="ipCloudflare">-</span></div>
+        <div class="leak-row"><span class="leak-label">ipapi.co</span><span class="leak-val" id="ipIpapi">-</span></div>
+        <div class="leak-row"><span class="leak-label">Country / Region</span><span class="leak-val" id="ipCountry">-</span></div>
+        <div class="leak-row"><span class="leak-label">ISP / ASN</span><span class="leak-val" id="ipAsn">-</span></div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-primary" id="ipLeakBtn" type="button">Run IP leak test</button>
         </div>
-        <div class="note" style="margin-top:8px" id="ipLeakNote">Compares IPs from multiple sources to detect inconsistencies.</div>
+        <div class="note" style="margin-top:8px" id="ipLeakNote">Compares IPs across multiple sources to detect inconsistencies.</div>
       </div>
     </article>
 
-    <!-- WEBRTC LEAK TEST -->
+    <!-- WEBRTC LEAK -->
     <article class="panel">
       <div class="panel-head"><span>WebRTC Leak Test</span><span class="badge badge-warn" id="webrtcBadge">UNTESTED</span></div>
       <div class="panel-body">
-        <div id="webrtcResults">
-          <div class="leak-row"><span class="leak-label">Status</span><span class="leak-val" id="webrtcAvail">Checking...</span></div>
-          <div class="leak-row"><span class="leak-label">Local IPs</span><span class="leak-val" id="webrtcLocal">-</span></div>
-          <div class="leak-row"><span class="leak-label">Public IPs</span><span class="leak-val" id="webrtcPublic">-</span></div>
-          <div class="leak-row"><span class="leak-label">IPv6 leak</span><span class="leak-val" id="webrtcIPv6">-</span></div>
-        </div>
-        <div style="margin-top:12px">
-          <button class="btn btn-primary" id="webrtcBtn" type="button">Run WebRTC leak test</button>
-        </div>
-        <div class="note" style="margin-top:8px">WebRTC can expose your real IP even through a VPN. This checks what IPs the browser leaks via ICE candidates.</div>
+        <div class="leak-row"><span class="leak-label">Status</span><span class="leak-val" id="webrtcAvail">-</span></div>
+        <div class="leak-row"><span class="leak-label">Local IPs</span><span class="leak-val" id="webrtcLocal">-</span></div>
+        <div class="leak-row"><span class="leak-label">Public IPs</span><span class="leak-val" id="webrtcPublic">-</span></div>
+        <div class="leak-row"><span class="leak-label">IPv6 leak</span><span class="leak-val" id="webrtcIPv6">-</span></div>
+        <div style="margin-top:12px"><button class="btn btn-primary" id="webrtcBtn" type="button">Run WebRTC leak test</button></div>
+        <div class="note" style="margin-top:8px">WebRTC can expose your real IP even through a VPN via ICE candidates.</div>
       </div>
     </article>
 
-    <!-- DNS LEAK TEST -->
+    <!-- DNS LEAK -->
     <article class="panel">
       <div class="panel-head"><span>DNS Leak Test</span><span class="badge badge-warn" id="dnsLeakBadge">UNTESTED</span></div>
       <div class="panel-body">
-        <div id="dnsLeakResults">
-          <div class="leak-row"><span class="leak-label">Cloudflare</span><span class="leak-val" id="dnsLeakCF">-</span></div>
-          <div class="leak-row"><span class="leak-label">Google</span><span class="leak-val" id="dnsLeakGoogle">-</span></div>
-          <div class="leak-row"><span class="leak-label">Quad9</span><span class="leak-val" id="dnsLeakQ9">-</span></div>
-          <div class="leak-row"><span class="leak-label">Consistent?</span><span class="leak-val" id="dnsLeakConsistent">-</span></div>
-        </div>
-        <div style="margin-top:12px">
-          <button class="btn btn-primary" id="dnsLeakBtn" type="button">Run DNS leak test</button>
-        </div>
-        <div class="note" style="margin-top:8px">Resolves the same hostname through multiple DoH resolvers and checks if answers match.</div>
+        <div class="leak-row"><span class="leak-label">Cloudflare</span><span class="leak-val" id="dnsLeakCF">-</span></div>
+        <div class="leak-row"><span class="leak-label">Google</span><span class="leak-val" id="dnsLeakGoogle">-</span></div>
+        <div class="leak-row"><span class="leak-label">Quad9</span><span class="leak-val" id="dnsLeakQ9">-</span></div>
+        <div class="leak-row"><span class="leak-label">Consistent?</span><span class="leak-val" id="dnsLeakConsistent">-</span></div>
+        <div style="margin-top:12px"><button class="btn btn-primary" id="dnsLeakBtn" type="button">Run DNS leak test</button></div>
+        <div class="note" style="margin-top:8px">Resolves the same hostname through three DoH resolvers and checks agreement.</div>
       </div>
     </article>
 
@@ -237,8 +259,8 @@ button{cursor:pointer}
             <input id="dnsHost" class="test-input" value="example.com" placeholder="example.com">
           </div>
         </div>
-        <div>
-          <div class="field-label" style="margin-top:10px">Record type</div>
+        <div style="margin-top:10px">
+          <div class="field-label">Record type</div>
           <select id="dnsType" class="test-input">
             <option value="A">A (IPv4)</option>
             <option value="AAAA">AAAA (IPv6)</option>
@@ -249,7 +271,7 @@ button{cursor:pointer}
           </select>
         </div>
         <div id="customDnsWrap" style="display:none;margin-top:10px">
-          <div class="field-label">Custom DNS-over-HTTPS endpoint</div>
+          <div class="field-label">Custom DoH endpoint</div>
           <input id="customDns" class="test-input" placeholder="https://resolver.example/dns-query">
         </div>
         <div class="dns-actions">
@@ -259,24 +281,79 @@ button{cursor:pointer}
       </div>
     </article>
 
+    <!-- PING / LATENCY -->
+    <article class="panel">
+      <div class="panel-head"><span>Ping / Latency</span><span class="badge badge-warn" id="pingBadge">UNTESTED</span></div>
+      <div class="panel-body">
+        <div class="note" style="margin:0 0 10px">Measures round-trip latency to common endpoints via the worker.</div>
+        <div class="ping-grid" id="pingGrid">
+          <div class="ping-item"><b id="pingCF">-</b><span>Cloudflare</span></div>
+          <div class="ping-item"><b id="pingGoogle">-</b><span>Google</span></div>
+          <div class="ping-item"><b id="pingCDN">-</b><span>Fastly CDN</span></div>
+          <div class="ping-item"><b id="pingWorker">-</b><span>360 Worker</span></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="pingBtn" type="button">Run ping</button>
+          <div style="flex:1">
+            <div class="field-label" style="margin-bottom:3px">Custom host</div>
+            <div style="display:flex;gap:6px">
+              <input class="test-input" id="pingCustomHost" placeholder="https://example.com">
+              <button class="btn btn-sm" id="pingCustomBtn" type="button">Ping</button>
+            </div>
+          </div>
+        </div>
+        <div class="note" style="margin-top:8px" id="pingNote">Latency = time to first byte via proxy.</div>
+      </div>
+    </article>
+
+    <!-- PORT CHECKER -->
+    <article class="panel">
+      <div class="panel-head">Open Port Checker</div>
+      <div class="panel-body">
+        <div class="note" style="margin:0 0 10px">Checks if a TCP port is reachable by attempting an HTTP/S connection through the proxy.</div>
+        <div class="port-row">
+          <div style="flex:1">
+            <div class="field-label">Host</div>
+            <input class="test-input" id="portHost" value="example.com" placeholder="example.com">
+          </div>
+          <div style="width:90px">
+            <div class="field-label">Port</div>
+            <input class="test-input" id="portNum" value="443" placeholder="443" type="number" min="1" max="65535">
+          </div>
+          <button class="btn btn-primary" id="portBtn" type="button" style="white-space:nowrap">Check port</button>
+        </div>
+        <div class="port-tags">
+          <span class="port-tag" data-port="80">HTTP 80</span>
+          <span class="port-tag" data-port="443">HTTPS 443</span>
+          <span class="port-tag" data-port="22">SSH 22</span>
+          <span class="port-tag" data-port="25">SMTP 25</span>
+          <span class="port-tag" data-port="587">SMTP 587</span>
+          <span class="port-tag" data-port="3306">MySQL 3306</span>
+          <span class="port-tag" data-port="5432">PG 5432</span>
+          <span class="port-tag" data-port="6379">Redis 6379</span>
+        </div>
+        <div class="test-result" id="portResult" style="min-height:40px">No check run.</div>
+      </div>
+    </article>
+
     <!-- HEADER INSPECTOR -->
     <article class="panel span2">
       <div class="panel-head">HTTP Header Inspector</div>
       <div class="panel-body">
-        <div class="note" style="margin:0 0 10px">Fetches a URL through the worker and displays what headers the server returned. Useful for checking security headers (HSTS, CSP, X-Frame-Options, etc.)</div>
+        <div class="note" style="margin:0 0 10px">Fetches a URL through the worker and shows response headers + security header audit.</div>
         <div class="test-input-row">
           <input class="test-input" id="headerUrl" value="https://httpbin.org/headers" placeholder="https://example.com">
           <button class="btn btn-primary" id="headerBtn" type="button">Inspect</button>
         </div>
-        <div id="headerResults" class="test-result" style="min-height:80px">No inspection run.</div>
-        <div id="secHeaderScan" style="margin-top:12px;display:none">
-          <div class="field-label" style="margin-bottom:8px">Security headers present</div>
+        <div id="headerResults" class="test-result" style="min-height:60px">No inspection run.</div>
+        <div id="secHeaderScan" style="display:none">
+          <div class="field-label" style="margin:12px 0 8px">Security header audit</div>
           <div class="scan-grid" id="secHeaderGrid"></div>
         </div>
       </div>
     </article>
 
-    <!-- HTTPS / TLS CHECK -->
+    <!-- HTTPS / TLS -->
     <article class="panel">
       <div class="panel-head"><span>HTTPS &amp; TLS Check</span><span class="badge badge-warn" id="tlsBadge">UNTESTED</span></div>
       <div class="panel-body">
@@ -284,45 +361,50 @@ button{cursor:pointer}
           <input class="test-input" id="tlsUrl" value="https://360-search.com" placeholder="https://example.com">
           <button class="btn btn-primary" id="tlsBtn" type="button">Check</button>
         </div>
-        <div id="tlsResults">
-          <div class="leak-row"><span class="leak-label">Protocol</span><span class="leak-val" id="tlsProto">-</span></div>
-          <div class="leak-row"><span class="leak-label">HTTPS</span><span class="leak-val" id="tlsHttps">-</span></div>
-          <div class="leak-row"><span class="leak-label">HTTP→HTTPS</span><span class="leak-val" id="tlsRedirect">-</span></div>
-          <div class="leak-row"><span class="leak-label">HSTS</span><span class="leak-val" id="tlsHsts">-</span></div>
-          <div class="leak-row"><span class="leak-label">Status</span><span class="leak-val" id="tlsStatus">-</span></div>
-        </div>
+        <div class="leak-row"><span class="leak-label">Protocol</span><span class="leak-val" id="tlsProto">-</span></div>
+        <div class="leak-row"><span class="leak-label">HTTPS</span><span class="leak-val" id="tlsHttps">-</span></div>
+        <div class="leak-row"><span class="leak-label">HTTP→HTTPS</span><span class="leak-val" id="tlsRedirect">-</span></div>
+        <div class="leak-row"><span class="leak-label">HSTS</span><span class="leak-val" id="tlsHsts">-</span></div>
+        <div class="leak-row"><span class="leak-label">Status</span><span class="leak-val" id="tlsStatus">-</span></div>
       </div>
     </article>
 
-    <!-- TRACKER / MALWARE SCAN -->
+    <!-- URL SCAN -->
     <article class="panel">
       <div class="panel-head"><span>URL Security Scan</span><span class="badge badge-warn" id="scanBadge">UNTESTED</span></div>
       <div class="panel-body">
-        <div class="note" style="margin:0 0 10px">Checks a URL against known malware, tracker, and ad domains using Cloudflare's DNS threat intelligence.</div>
+        <div class="note" style="margin:0 0 10px">Checks against Cloudflare Security &amp; Family DNS threat intelligence lists.</div>
         <div class="test-input-row" style="margin-bottom:10px">
           <input class="test-input" id="scanUrl" placeholder="https://example.com or domain.com">
           <button class="btn btn-primary" id="scanBtn" type="button">Scan</button>
         </div>
-        <div id="scanResults">
-          <div class="leak-row"><span class="leak-label">Domain</span><span class="leak-val" id="scanDomain">-</span></div>
-          <div class="leak-row"><span class="leak-label">Malware DNS</span><span class="leak-val" id="scanMalware">-</span></div>
-          <div class="leak-row"><span class="leak-label">Adult filter</span><span class="leak-val" id="scanAdult">-</span></div>
-          <div class="leak-row"><span class="leak-label">Gateway block</span><span class="leak-val" id="scanGateway">-</span></div>
-          <div class="leak-row"><span class="leak-label">Verdict</span><span class="leak-val" id="scanVerdict">-</span></div>
-        </div>
+        <div class="leak-row"><span class="leak-label">Domain</span><span class="leak-val" id="scanDomain">-</span></div>
+        <div class="leak-row"><span class="leak-label">Malware DNS</span><span class="leak-val" id="scanMalware">-</span></div>
+        <div class="leak-row"><span class="leak-label">Adult filter</span><span class="leak-val" id="scanAdult">-</span></div>
+        <div class="leak-row"><span class="leak-label">Verdict</span><span class="leak-val" id="scanVerdict">-</span></div>
       </div>
     </article>
 
     <!-- REQUEST TEST -->
     <article class="panel">
-      <div class="panel-head">Request Test</div>
+      <div class="panel-head">Proxy Request Test</div>
       <div class="panel-body">
-        <div class="note" style="margin:0 0 10px">Send a request through the worker proxy and inspect the response.</div>
+        <div class="note" style="margin:0 0 10px">Send any request through the 360 worker proxy.</div>
+        <div style="margin-bottom:8px">
+          <div class="field-label">Method</div>
+          <select class="test-input" id="reqMethod" style="width:auto;margin-bottom:8px">
+            <option>GET</option><option>POST</option><option>HEAD</option><option>PUT</option><option>DELETE</option>
+          </select>
+        </div>
         <div class="test-input-row">
           <input class="test-input" id="testUrl" value="https://httpbin.org/ip" placeholder="https://example.com">
-          <button class="btn" id="testBtn" type="button">Test</button>
+          <button class="btn btn-primary" id="testBtn" type="button">Send</button>
         </div>
-        <div class="test-result" id="testResult">No test run.</div>
+        <div id="reqBodyWrap" style="display:none;margin-top:8px">
+          <div class="field-label">Body (optional)</div>
+          <textarea class="test-input" id="reqBody" rows="3" placeholder='{"key":"value"}'></textarea>
+        </div>
+        <div class="test-result" id="testResult">No request sent.</div>
       </div>
     </article>
 
@@ -342,16 +424,68 @@ button{cursor:pointer}
       </div>
     </article>
 
+    <!-- PASSWORD GENERATOR -->
+    <article class="panel">
+      <div class="panel-head">Password Generator</div>
+      <div class="panel-body">
+        <div class="pw-output" id="pwOutput">Click generate.</div>
+        <div class="pw-strength"><div class="pw-strength-fill" id="pwStrengthFill" style="width:0%"></div></div>
+        <div class="pw-opts">
+          <label><input type="checkbox" id="pwUpper" checked> Uppercase</label>
+          <label><input type="checkbox" id="pwLower" checked> Lowercase</label>
+          <label><input type="checkbox" id="pwNum" checked> Numbers</label>
+          <label><input type="checkbox" id="pwSym" checked> Symbols</label>
+          <label>
+            Length:
+            <input type="number" id="pwLen" value="20" min="8" max="128" style="width:54px;margin-left:4px" class="test-input">
+          </label>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="pwGenBtn" type="button">Generate</button>
+          <button class="btn" id="pwCopyBtn" type="button">Copy</button>
+          <button class="btn" id="pwPassphBtn" type="button">Passphrase</button>
+        </div>
+        <div class="note" style="margin-top:8px" id="pwNote">Generated locally — never sent anywhere.</div>
+      </div>
+    </article>
+
+    <!-- ENCODE / DECODE -->
+    <article class="panel">
+      <div class="panel-head">Encode / Decode</div>
+      <div class="panel-body">
+        <div class="encode-grid">
+          <div>
+            <div class="field-label">Input</div>
+            <textarea class="test-input" id="encodeInput" rows="4" placeholder="Text to encode or decode…"></textarea>
+          </div>
+          <div>
+            <div class="field-label">Output</div>
+            <textarea class="test-input" id="encodeOutput" rows="4" readonly placeholder="Result appears here…"></textarea>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn btn-sm" id="encB64">Base64 encode</button>
+          <button class="btn btn-sm" id="decB64">Base64 decode</button>
+          <button class="btn btn-sm" id="encUrl">URL encode</button>
+          <button class="btn btn-sm" id="decUrl">URL decode</button>
+          <button class="btn btn-sm" id="encHex">→ Hex</button>
+          <button class="btn btn-sm" id="decHex">Hex →</button>
+          <button class="btn btn-sm" id="encMd5">SHA-256 hash</button>
+          <button class="btn btn-sm btn-primary" id="encCopy">Copy output</button>
+        </div>
+      </div>
+    </article>
+
     <!-- PROXY SERVICE -->
     <article class="panel">
       <div class="panel-head">Proxy Service</div>
       <div class="panel-body">
         <div class="stat-row"><span class="stat-key">Worker endpoint</span><span class="stat-val good" id="workerEndpoint">https://360-search.com/vpn/proxy</span></div>
-        <div class="stat-row"><span class="stat-key">PAC file</span><span class="stat-val good" id="pacEndpoint">https://360-search.com/vpn/proxy.pac</span></div>
+        <div class="stat-row"><span class="stat-key">PAC file URL</span><span class="stat-val good" id="pacEndpoint">https://360-search.com/vpn/proxy.pac</span></div>
         <div class="stat-row"><span class="stat-key">Worker status</span><span class="stat-val" id="workerStatus">-</span></div>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
           <button class="btn" id="copyPacBtn" type="button">Copy PAC URL</button>
-          <a class="btn" href="https://360-search.com/vpn/proxy.pac" target="_blank">Open PAC</a>
+          <a class="btn" href="https://360-search.com/vpn/proxy.pac" target="_blank">Open PAC file</a>
         </div>
       </div>
     </article>
@@ -365,15 +499,109 @@ button{cursor:pointer}
         <div class="stat-row"><span class="stat-key">Downlink estimate</span><span class="stat-val" id="connDownlink">-</span></div>
         <div class="stat-row"><span class="stat-key">Save-data mode</span><span class="stat-val" id="saveData">-</span></div>
         <div class="stat-row"><span class="stat-key">Secure context</span><span class="stat-val" id="secureStatus">-</span></div>
+        <div class="stat-row"><span class="stat-key">Detected OS</span><span class="stat-val" id="detectedOs">-</span></div>
         <div class="stat-row"><span class="stat-key">User agent</span><span class="stat-val" id="userAgent" style="font-size:10px">-</span></div>
       </div>
     </article>
 
-    <!-- PRIVACY HELPERS -->
+    <!-- PAC SETUP — OS SPECIFIC -->
+    <article class="panel span2">
+      <div class="panel-head"><span>PAC File Setup Guide</span><span class="badge badge-good" id="osDetectedBadge">Detecting OS…</span></div>
+      <div class="panel-body">
+        <div class="pac-url-box">
+          <span style="font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap">PAC URL</span>
+          <code id="pacUrlDisplay">https://360-search.com/vpn/proxy.pac</code>
+          <button class="btn btn-sm" id="copyPacBtn2" type="button">Copy</button>
+        </div>
+        <div class="os-tabs">
+          <button class="os-tab" data-os="windows">Windows</button>
+          <button class="os-tab" data-os="macos">macOS</button>
+          <button class="os-tab" data-os="ios">iPhone / iPad</button>
+          <button class="os-tab" data-os="android">Android</button>
+          <button class="os-tab" data-os="linux">Linux</button>
+          <button class="os-tab" data-os="chrome">ChromeOS</button>
+          <button class="os-tab" data-os="firefox">Firefox</button>
+        </div>
+
+        <div class="os-steps" id="steps-windows">
+          <ol class="step-list">
+            <li>Press <code>Win + I</code> to open <strong>Settings</strong>, then go to <strong>Network &amp; Internet → Proxy</strong>.</li>
+            <li>Scroll to <strong>"Use setup script"</strong> and toggle it <strong>On</strong>.</li>
+            <li>Paste the PAC URL into the <strong>Script address</strong> field: <code>https://360-search.com/vpn/proxy.pac</code></li>
+            <li>Click <strong>Save</strong>. The setting applies immediately to all apps that use the system proxy.</li>
+            <li>To verify: open a browser, visit <code>http://httpbin.org/ip</code> — the IP shown should match your worker's egress.</li>
+          </ol>
+        </div>
+
+        <div class="os-steps" id="steps-macos">
+          <ol class="step-list">
+            <li>Open <strong>System Settings</strong> → <strong>Network</strong> → select your active interface (Wi-Fi or Ethernet) → click <strong>Details…</strong></li>
+            <li>Go to the <strong>Proxies</strong> tab.</li>
+            <li>Check <strong>"Automatic Proxy Configuration"</strong>.</li>
+            <li>Enter the PAC URL: <code>https://360-search.com/vpn/proxy.pac</code></li>
+            <li>Click <strong>OK</strong> then <strong>Apply</strong>. Repeat for other interfaces if needed.</li>
+            <li>macOS caches PAC files aggressively. To flush: run <code>sudo killall -HUP mDNSResponder</code> in Terminal.</li>
+          </ol>
+        </div>
+
+        <div class="os-steps" id="steps-ios">
+          <ol class="step-list">
+            <li>Open <strong>Settings</strong> → <strong>Wi-Fi</strong> → tap the <strong>ⓘ</strong> next to your network.</li>
+            <li>Scroll down to <strong>HTTP Proxy</strong> → tap <strong>Configure Proxy</strong>.</li>
+            <li>Select <strong>Automatic</strong>.</li>
+            <li>Enter the PAC URL: <code>https://360-search.com/vpn/proxy.pac</code></li>
+            <li>Tap <strong>Save</strong>. This applies only to the selected Wi-Fi network. Repeat for other networks.</li>
+            <li>Note: iOS does not support PAC on cellular data — only Wi-Fi.</li>
+          </ol>
+        </div>
+
+        <div class="os-steps" id="steps-android">
+          <ol class="step-list">
+            <li>Open <strong>Settings</strong> → <strong>Wi-Fi</strong> → long-press your network → <strong>Modify network</strong>.</li>
+            <li>Tap <strong>Advanced options</strong> → set <strong>Proxy</strong> to <strong>Proxy Auto-Config</strong>.</li>
+            <li>Enter the PAC URL: <code>https://360-search.com/vpn/proxy.pac</code></li>
+            <li>Tap <strong>Save</strong>. Android applies the PAC only to that Wi-Fi network.</li>
+            <li>On newer Android/Samsung you may see <strong>PAC URL</strong> directly — paste the URL there.</li>
+          </ol>
+        </div>
+
+        <div class="os-steps" id="steps-linux">
+          <ol class="step-list">
+            <li><strong>GNOME:</strong> Settings → Network → Network Proxy → set Method to <strong>Automatic</strong> → enter the PAC URL.</li>
+            <li><strong>KDE:</strong> System Settings → Network → Proxy → select <strong>Use proxy auto-configuration URL</strong> → enter the PAC URL.</li>
+            <li><strong>System-wide / CLI:</strong> Add to <code>/etc/environment</code>: <code>auto_proxy=https://360-search.com/vpn/proxy.pac</code></li>
+            <li>For <strong>curl / apt / wget</strong>, set <code>https_proxy</code> instead — PAC files are not supported natively by these tools. Use the proxy endpoint directly: <code>https://360-search.com/vpn/proxy</code></li>
+            <li>Restart the network manager or log out and back in for changes to take effect.</li>
+          </ol>
+        </div>
+
+        <div class="os-steps" id="steps-chrome">
+          <ol class="step-list">
+            <li>Click the system tray clock → <strong>Settings</strong> → <strong>Network</strong> → click your Wi-Fi or Ethernet connection.</li>
+            <li>Click the <strong>gear icon</strong> next to the network name.</li>
+            <li>Go to the <strong>Proxy</strong> tab → select <strong>Automatic proxy configuration</strong>.</li>
+            <li>Enter the PAC URL: <code>https://360-search.com/vpn/proxy.pac</code></li>
+            <li>Click <strong>Save</strong>. ChromeOS applies the proxy to all network traffic on that connection.</li>
+          </ol>
+        </div>
+
+        <div class="os-steps" id="steps-firefox">
+          <ol class="step-list">
+            <li>In Firefox, open <code>about:preferences</code> → scroll to <strong>Network Settings</strong> → click <strong>Settings…</strong></li>
+            <li>Select <strong>"Automatic proxy configuration URL"</strong>.</li>
+            <li>Paste: <code>https://360-search.com/vpn/proxy.pac</code></li>
+            <li>Click <strong>OK</strong>. Firefox uses its own proxy settings independently from the OS.</li>
+            <li>To force reload: open <code>about:config</code> → search <code>network.proxy.autoconfig_url</code> → confirm the URL is correct.</li>
+          </ol>
+        </div>
+      </div>
+    </article>
+
+    <!-- BROWSER PRIVACY SIGNALS -->
     <article class="panel">
       <div class="panel-head">Browser Privacy Signals</div>
       <div class="panel-body">
-        <div class="security-list" style="grid-template-columns:1fr">
+        <div style="display:grid;grid-template-columns:1fr;gap:8px">
           <div class="security-item" id="siWebrtc"><strong>WebRTC</strong><span id="webrtcStatus">Checking...</span></div>
           <div class="security-item" id="siHttps"><strong>Secure page</strong><span id="httpStatus">-</span></div>
           <div class="security-item" id="siCookies"><strong>Cookies</strong><span id="cookieStatus">-</span></div>
@@ -381,9 +609,9 @@ button{cursor:pointer}
           <div class="security-item" id="siDoNotTrack"><strong>Do Not Track</strong><span id="dntStatus">-</span></div>
           <div class="security-item" id="siGpc"><strong>Global Privacy Control</strong><span id="gpcStatus">-</span></div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">
           <button class="btn" id="macBtn" type="button">Generate random MAC</button>
-          <span class="note" id="macResult">For manual system config.</span>
+          <span class="note" id="macResult">For manual OS configuration.</span>
         </div>
       </div>
     </article>
@@ -393,10 +621,12 @@ button{cursor:pointer}
       <div class="panel-head">Activity Log</div>
       <div class="panel-body">
         <div class="toggle-row">
-          <div><strong>Log requests</strong><div class="note">Only requests from this page.</div></div>
+          <div><strong>Log requests</strong><div class="note">Only requests made by this page.</div></div>
           <label class="switch"><input type="checkbox" id="activityToggle"><span class="slider"></span></label>
         </div>
-        <div class="activity-list" id="activityList"><div class="activity-item"><span class="activity-kind">INFO</span><span class="activity-text">Logging off.</span></div></div>
+        <div class="activity-list" id="activityList">
+          <div class="activity-item"><span class="activity-kind">INFO</span><span class="activity-text">Logging is off.</span></div>
+        </div>
         <div style="margin-top:10px"><button class="btn" id="clearActivity" type="button">Clear log</button></div>
       </div>
     </article>
@@ -404,7 +634,7 @@ button{cursor:pointer}
   </section>
 
   <footer class="footer">
-    <span>360 Network Security Tools</span>
+    <span>360 Security Center</span>
     <a href="/apps.html">Back to Apps</a>
   </footer>
 </main>
@@ -414,10 +644,8 @@ button{cursor:pointer}
   const $ = id => document.getElementById(id);
   const state = { dark: localStorage.getItem('network-theme') === 'dark', activity: false };
 
-  // Always route worker calls to the Cloudflare Worker, not GitHub Pages
   const WORKER_BASE = 'https://360-search.com';
   const WORKER_PROXY = WORKER_BASE + '/vpn/proxy';
-  const WORKER_HEALTH = WORKER_BASE + '/vpn';
   const PAC_URL = WORKER_BASE + '/vpn/proxy.pac';
 
   const resolvers = {
@@ -432,482 +660,532 @@ button{cursor:pointer}
     $('themeToggle').textContent = state.dark ? 'Light mode' : 'Dark mode';
   }
 
-  // ── Logging ────────────────────────────────────────────────
+  // ── Log ───────────────────────────────────────────────────
   function now() { return new Date().toLocaleTimeString([], { hour12: false }); }
-
-  function log(message, type = 'info') {
+  function log(msg, type = 'info') {
     const wrap = $('log');
     const line = document.createElement('div'); line.className = 'log-line';
     const t = document.createElement('span'); t.className = 'log-time'; t.textContent = now();
-    const m = document.createElement('span'); m.className = 'log-msg ' + type; m.textContent = message;
+    const m = document.createElement('span'); m.className = 'log-msg ' + type; m.textContent = msg;
     line.append(t, m); wrap.appendChild(line); wrap.scrollTop = wrap.scrollHeight;
-    while (wrap.children.length > 50) wrap.removeChild(wrap.firstChild);
-    if (state.activity) activity(type.toUpperCase(), message);
+    while (wrap.children.length > 60) wrap.removeChild(wrap.firstChild);
+    if (state.activity) {
+      const list = $('activityList');
+      const item = document.createElement('div'); item.className = 'activity-item';
+      item.innerHTML = `<span class="activity-kind">${type.toUpperCase()}</span><span class="activity-text">${msg}</span>`;
+      list.appendChild(item); list.scrollTop = list.scrollHeight;
+    }
   }
 
-  function activity(kind, text) {
-    const list = $('activityList');
-    const item = document.createElement('div'); item.className = 'activity-item';
-    item.innerHTML = `<span class="activity-kind">${kind}</span><span class="activity-text">${text}</span>`;
-    list.appendChild(item); list.scrollTop = list.scrollHeight;
+  // ── Proxy fetch ───────────────────────────────────────────
+  async function pf(url, opts = {}) {
+    const u = WORKER_PROXY + '?url=' + encodeURIComponent(url);
+    return fetch(u, { method: opts.method || 'GET', headers: opts.headers, body: opts.body, cache: 'no-store' });
   }
 
-  // ── Core proxy fetch ───────────────────────────────────────
-  async function proxyFetch(targetUrl, options = {}) {
-    const workerUrl = WORKER_PROXY + '?url=' + encodeURIComponent(targetUrl);
-    const res = await fetch(workerUrl, {
-      method: options.method || 'GET',
-      headers: options.headers,
-      body: options.body,
-      cache: 'no-store'
-    });
-    return res;
+  // ── OS detection ──────────────────────────────────────────
+  function detectOs() {
+    const ua = navigator.userAgent;
+    if (/iPhone|iPad|iPod/.test(ua)) return 'ios';
+    if (/Android/.test(ua)) return 'android';
+    if (/CrOS/.test(ua)) return 'chrome';
+    if (/Mac/.test(ua)) return 'macos';
+    if (/Win/.test(ua)) return 'windows';
+    if (/Linux/.test(ua)) return 'linux';
+    return 'windows';
   }
 
-  async function workerJson(path = '/vpn') {
-    const start = performance.now();
-    const res = await fetch(WORKER_BASE + path, { cache: 'no-store' });
-    const data = await res.json();
-    return { res, data, ms: Math.round(performance.now() - start) };
+  function activateOs(os) {
+    document.querySelectorAll('.os-steps').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.os-tab').forEach(el => el.classList.remove('active'));
+    const steps = $('steps-' + os);
+    if (steps) steps.classList.add('active');
+    const tab = document.querySelector(`.os-tab[data-os="${os}"]`);
+    if (tab) tab.classList.add('active');
+    const labels = { windows:'Windows', macos:'macOS', ios:'iOS', android:'Android', linux:'Linux', chrome:'ChromeOS', firefox:'Firefox' };
+    $('osDetectedBadge').textContent = labels[os] || os;
   }
 
-  // ── Connection check ───────────────────────────────────────
+  // ── Connection check ──────────────────────────────────────
   async function checkConnection() {
     const btn = $('checkBtn'); btn.disabled = true; btn.textContent = 'Checking...';
     try {
       const start = performance.now();
-      const health = await workerJson('/vpn');
+      const res = await fetch(WORKER_BASE + '/vpn', { cache: 'no-store' });
+      const data = await res.json();
       const ms = Math.round(performance.now() - start);
-      if (!health.res.ok || health.data.status !== 'online') throw new Error('Worker offline');
+      if (!res.ok || data.status !== 'online') throw new Error('Worker offline');
       $('proxyBadge').className = 'badge badge-good'; $('proxyBadge').textContent = 'WORKER ONLINE';
       $('proxyNote').textContent = 'Worker responded in ' + ms + ' ms';
       $('statLatency').textContent = ms + ' ms';
-      $('workerStatus').textContent = 'Online';
+      $('workerStatus').textContent = 'Online — ' + ms + ' ms';
       log('Worker online in ' + ms + ' ms', 'ok');
     } catch (err) {
       $('proxyBadge').className = 'badge badge-bad'; $('proxyBadge').textContent = 'WORKER OFFLINE';
-      $('proxyNote').textContent = err.message;
-      $('workerStatus').textContent = 'Offline';
+      $('proxyNote').textContent = err.message; $('workerStatus').textContent = 'Offline';
       log('Worker check failed: ' + err.message, 'err');
     } finally { btn.disabled = false; btn.textContent = 'Check connection'; }
   }
 
-  // ── IP check (on load) ─────────────────────────────────────
+  // ── IP on load ────────────────────────────────────────────
   async function fetchIp() {
     try {
-      const start = performance.now();
-      const res = await proxyFetch('https://api64.ipify.org?format=json&ts=' + Date.now());
-      const data = await res.json();
-      const ms = Math.round(performance.now() - start);
-      $('realIp').textContent = data.ip || 'Unavailable';
+      const res = await pf('https://api64.ipify.org?format=json&ts=' + Date.now());
+      const d = await res.json();
+      $('realIp').textContent = d.ip || 'Unavailable';
       $('realLoc').textContent = 'Public address visible to this browser';
-      $('statLatency').textContent = ms + ' ms';
-      log('Public IP: ' + data.ip + ' (' + ms + ' ms)', 'info');
-    } catch {
-      $('realIp').textContent = 'Unavailable';
-      $('realLoc').textContent = 'Could not determine public address';
-    }
+      log('Public IP: ' + d.ip, 'info');
+    } catch { $('realIp').textContent = 'Unavailable'; $('realLoc').textContent = 'Could not determine'; }
   }
 
-  // ── IP Leak Detection ──────────────────────────────────────
+  // ── IP Leak ───────────────────────────────────────────────
   async function runIpLeakTest() {
     const btn = $('ipLeakBtn'); btn.disabled = true; btn.textContent = 'Testing...';
-    $('ipLeakNote').textContent = 'Querying multiple IP sources...';
-    log('Running IP leak test...', 'info');
-
-    const sources = [
-      { id: 'ipIpify', url: 'https://api64.ipify.org?format=json', parse: d => d.ip },
-      { id: 'ipCloudflare', url: 'https://1.1.1.1/cdn-cgi/trace', parse: text => {
-        const m = text.match(/ip=(.+)/); return m ? m[1].trim() : '?';
-      }, raw: true },
-      { id: 'ipIpapi', url: 'https://ipapi.co/json/', parse: d => d.ip + (d.org ? ' / ' + d.org : ''), extra: d => {
-        $('ipCountry').textContent = (d.country_name || '-') + (d.region ? ', ' + d.region : '');
+    const ips = [];
+    const src = [
+      { id:'ipIpify', url:'https://api64.ipify.org?format=json', parse: d => d.ip },
+      { id:'ipCloudflare', url:'https://1.1.1.1/cdn-cgi/trace', raw:true, parse: t => (t.match(/ip=(.+)/)||[])[1]?.trim() },
+      { id:'ipIpapi', url:'https://ipapi.co/json/', parse: d => {
+        $('ipCountry').textContent = (d.country_name||'-') + (d.region?', '+d.region:'');
         $('ipAsn').textContent = d.org || '-';
+        return d.ip;
       }}
     ];
-
-    const ips = [];
-    for (const src of sources) {
+    for (const s of src) {
       try {
-        const res = await proxyFetch(src.url);
-        const val = src.raw ? src.parse(await res.text()) : src.parse(await res.json().then(d => { src.extra && src.extra(d); return d; }));
-        $(src.id).textContent = val;
-        ips.push(val.split(' ')[0]);
-      } catch { $(src.id).textContent = 'Error'; }
+        const res = await pf(s.url);
+        const val = s.raw ? s.parse(await res.text()) : s.parse(await res.json());
+        $(s.id).textContent = val; ips.push(val);
+      } catch { $(s.id).textContent = 'Error'; }
     }
-
     $('ipBrowser').textContent = $('realIp').textContent;
     ips.push($('realIp').textContent);
-
-    const unique = [...new Set(ips.filter(ip => ip && ip !== '-' && ip !== 'Error' && ip !== 'Checking...'))];
-    const consistent = unique.length <= 1;
-    $('ipLeakBadge').className = 'badge ' + (consistent ? 'badge-good' : 'badge-bad');
-    $('ipLeakBadge').textContent = consistent ? 'NO LEAK' : 'LEAK DETECTED';
-    $('ipLeakNote').textContent = consistent
-      ? 'All sources agree: ' + unique[0]
-      : 'Inconsistent IPs detected — possible proxy/VPN bypass: ' + unique.join(' vs ');
-    log('IP leak test: ' + (consistent ? 'No leak' : 'LEAK — ' + unique.join(' vs ')), consistent ? 'ok' : 'err');
+    const unique = [...new Set(ips.filter(ip => ip && ip !== '-' && ip !== 'Error'))];
+    const ok = unique.length <= 1;
+    $('ipLeakBadge').className = 'badge ' + (ok ? 'badge-good' : 'badge-bad');
+    $('ipLeakBadge').textContent = ok ? 'NO LEAK' : 'LEAK DETECTED';
+    $('ipLeakNote').textContent = ok ? 'All sources agree: ' + unique[0] : 'IPs differ — possible bypass: ' + unique.join(' vs ');
+    log('IP leak: ' + (ok ? 'Clean' : 'LEAK — ' + unique.join(' vs ')), ok ? 'ok' : 'err');
     btn.disabled = false; btn.textContent = 'Run IP leak test';
   }
 
-  // ── WebRTC Leak Test ───────────────────────────────────────
+  // ── WebRTC Leak ───────────────────────────────────────────
   async function runWebRtcTest() {
     const btn = $('webrtcBtn'); btn.disabled = true; btn.textContent = 'Testing...';
-    log('Running WebRTC leak test...', 'info');
-
     if (!window.RTCPeerConnection) {
-      $('webrtcAvail').textContent = 'WebRTC not available in this browser';
-      $('webrtcBadge').className = 'badge badge-good'; $('webrtcBadge').textContent = 'NO WEBRTC';
-      btn.disabled = false; btn.textContent = 'Run WebRTC leak test'; return;
+      $('webrtcAvail').textContent = 'Not available'; $('webrtcBadge').className = 'badge badge-good';
+      $('webrtcBadge').textContent = 'NO WEBRTC'; btn.disabled = false; btn.textContent = 'Run WebRTC leak test'; return;
     }
-
-    $('webrtcAvail').textContent = 'WebRTC available — probing...';
-
-    const localIPs = new Set(), publicIPs = new Set(), ipv6IPs = new Set();
-
-    try {
-      await new Promise((resolve) => {
-        const pc = new RTCPeerConnection({ iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]});
-        pc.createDataChannel('');
-        pc.onicecandidate = e => {
-          if (!e.candidate) { pc.close(); resolve(); return; }
-          const ip = e.candidate.candidate.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[a-f0-9:]+:[a-f0-9:]+)/i);
-          if (!ip) return;
-          const addr = ip[1];
-          if (/^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|fd|fc)/.test(addr)) {
-            localIPs.add(addr);
-          } else if (addr.includes(':')) {
-            ipv6IPs.add(addr);
-            publicIPs.add(addr);
-          } else {
-            publicIPs.add(addr);
-          }
-        };
-        pc.createOffer().then(o => pc.setLocalDescription(o));
-        setTimeout(resolve, 4000);
-      });
-    } catch (err) {
-      $('webrtcAvail').textContent = 'Probe error: ' + err.message;
-    }
-
+    $('webrtcAvail').textContent = 'Probing...';
+    const local = new Set(), pub = new Set(), v6 = new Set();
+    await new Promise(resolve => {
+      const pc = new RTCPeerConnection({ iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}] });
+      pc.createDataChannel('');
+      pc.onicecandidate = e => {
+        if (!e.candidate) { pc.close(); resolve(); return; }
+        const m = e.candidate.candidate.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[a-f0-9:]+:[a-f0-9:]+)/i);
+        if (!m) return;
+        const a = m[1];
+        if (/^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|fd|fc)/.test(a)) local.add(a);
+        else if (a.includes(':')) { v6.add(a); pub.add(a); }
+        else pub.add(a);
+      };
+      pc.createOffer().then(o => pc.setLocalDescription(o));
+      setTimeout(resolve, 4000);
+    });
     $('webrtcAvail').textContent = 'WebRTC supported';
-    $('webrtcLocal').textContent = localIPs.size ? [...localIPs].join(', ') : 'None detected';
-    $('webrtcPublic').textContent = publicIPs.size ? [...publicIPs].join(', ') : 'None detected';
-    $('webrtcIPv6').textContent = ipv6IPs.size ? [...ipv6IPs].join(', ') : 'None detected';
-
-    const leaked = publicIPs.size > 0;
+    $('webrtcLocal').textContent = local.size ? [...local].join(', ') : 'None';
+    $('webrtcPublic').textContent = pub.size ? [...pub].join(', ') : 'None';
+    $('webrtcIPv6').textContent = v6.size ? [...v6].join(', ') : 'None';
+    const leaked = pub.size > 0;
     $('webrtcBadge').className = 'badge ' + (leaked ? 'badge-warn' : 'badge-good');
     $('webrtcBadge').textContent = leaked ? 'LEAKING' : 'NO LEAK';
-    log('WebRTC: ' + (leaked ? 'Public IPs exposed — ' + [...publicIPs].join(', ') : 'No public IP leak'), leaked ? 'warn' : 'ok');
+    log('WebRTC: ' + (leaked ? 'Leaking — ' + [...pub].join(', ') : 'No leak'), leaked ? 'warn' : 'ok');
     btn.disabled = false; btn.textContent = 'Run WebRTC leak test';
   }
 
-  // ── DNS Leak Test ──────────────────────────────────────────
+  // ── DNS Leak ──────────────────────────────────────────────
   async function runDnsLeakTest() {
     const btn = $('dnsLeakBtn'); btn.disabled = true; btn.textContent = 'Testing...';
-    log('Running DNS leak test...', 'info');
-    const hostname = 'example.com';
     const checks = [
-      { id: 'dnsLeakCF', resolver: resolvers.cloudflare, name: 'Cloudflare' },
-      { id: 'dnsLeakGoogle', resolver: resolvers.google, name: 'Google' },
-      { id: 'dnsLeakQ9', resolver: resolvers.quad9, name: 'Quad9' }
+      {id:'dnsLeakCF', r:resolvers.cloudflare},
+      {id:'dnsLeakGoogle', r:resolvers.google},
+      {id:'dnsLeakQ9', r:resolvers.quad9}
     ];
-    const answers = [];
-    for (const check of checks) {
+    const ans = [];
+    for (const c of checks) {
       try {
-        const url = check.resolver + '?name=' + encodeURIComponent(hostname) + '&type=A';
-        const res = await proxyFetch(url, { headers: { 'Accept': 'application/dns-json' } });
-        const data = await res.json();
-        const ips = (data.Answer || []).filter(r => r.type === 1).map(r => r.data);
-        $(check.id).textContent = ips.length ? ips.join(', ') : 'No records';
-        answers.push(ips.sort().join(','));
-      } catch { $(check.id).textContent = 'Error'; }
+        const res = await pf(c.r + '?name=example.com&type=A', {headers:{Accept:'application/dns-json'}});
+        const d = await res.json();
+        const ips = (d.Answer||[]).filter(r=>r.type===1).map(r=>r.data);
+        $(c.id).textContent = ips.length ? ips.join(', ') : 'No records';
+        ans.push(ips.sort().join(','));
+      } catch { $(c.id).textContent = 'Error'; }
     }
-    const unique = [...new Set(answers.filter(Boolean))];
-    const consistent = unique.length <= 1;
-    $('dnsLeakConsistent').textContent = consistent ? 'Yes — all resolvers agree' : 'No — resolvers disagree';
-    $('dnsLeakBadge').className = 'badge ' + (consistent ? 'badge-good' : 'badge-warn');
-    $('dnsLeakBadge').textContent = consistent ? 'CONSISTENT' : 'INCONSISTENT';
-    log('DNS leak test: ' + (consistent ? 'Consistent' : 'Inconsistent results'), consistent ? 'ok' : 'warn');
+    const unique = [...new Set(ans.filter(Boolean))];
+    const ok = unique.length <= 1;
+    $('dnsLeakConsistent').textContent = ok ? '✓ All resolvers agree' : '✗ Resolvers disagree';
+    $('dnsLeakBadge').className = 'badge ' + (ok ? 'badge-good' : 'badge-warn');
+    $('dnsLeakBadge').textContent = ok ? 'CONSISTENT' : 'INCONSISTENT';
+    log('DNS leak: ' + (ok ? 'Consistent' : 'Inconsistent'), ok ? 'ok' : 'warn');
     btn.disabled = false; btn.textContent = 'Run DNS leak test';
   }
 
-  // ── DNS Resolver ───────────────────────────────────────────
+  // ── DNS Resolver ──────────────────────────────────────────
   async function resolveDns() {
-    const mode = $('dnsMode').value;
-    const host = $('dnsHost').value.trim();
-    const type = $('dnsType').value;
+    const mode = $('dnsMode').value, host = $('dnsHost').value.trim(), type = $('dnsType').value;
     const out = $('dnsResult');
     if (!host) { out.textContent = 'Enter a hostname.'; return; }
     out.textContent = 'Resolving ' + type + ' for ' + host + '...';
-    let endpoint = resolvers[mode] || $('customDns').value.trim();
-    if (!endpoint) { out.textContent = 'Enter a DoH endpoint.'; return; }
+    const endpoint = resolvers[mode] || $('customDns').value.trim();
     try {
-      const url = endpoint + (endpoint.includes('?') ? '&' : '?') + 'name=' + encodeURIComponent(host) + '&type=' + type;
-      const res = await proxyFetch(url, { headers: { 'Accept': 'application/dns-json' } });
-      const data = await res.json();
-      const answers = data.Answer || [];
-      if (!answers.length) { out.textContent = 'No records returned.'; return; }
-      out.textContent = answers.map(r => `${r.name.padEnd(40)} ${r.TTL}s\t${r.type}\t${r.data}`).join('\n');
-      log('DNS ' + type + ' for ' + host + ': ' + answers.length + ' records', 'ok');
-    } catch (err) {
-      out.textContent = 'Error: ' + err.message;
-      log('DNS lookup failed: ' + err.message, 'err');
+      const res = await pf(endpoint + '?name=' + encodeURIComponent(host) + '&type=' + type, {headers:{Accept:'application/dns-json'}});
+      const d = await res.json();
+      const answers = d.Answer || [];
+      out.textContent = answers.length ? answers.map(r => `${r.name.padEnd(36)} TTL:${r.TTL}\t${r.type}\t${r.data}`).join('\n') : 'No records returned.';
+      log('DNS ' + type + ' ' + host + ': ' + answers.length + ' records', 'ok');
+    } catch (e) { out.textContent = 'Error: ' + e.message; }
+  }
+
+  // ── Ping ─────────────────────────────────────────────────
+  async function ping(url, id) {
+    try {
+      const s = performance.now();
+      await pf(url + '?_=' + Date.now());
+      const ms = Math.round(performance.now() - s);
+      $(id).textContent = ms + ' ms';
+      $(id).style.color = ms < 100 ? 'var(--good)' : ms < 300 ? 'var(--warn)' : 'var(--bad)';
+      return ms;
+    } catch { $(id).textContent = 'Error'; $(id).style.color = 'var(--bad)'; return null; }
+  }
+
+  async function runPing() {
+    const btn = $('pingBtn'); btn.disabled = true; btn.textContent = 'Pinging...';
+    $('pingBadge').className = 'badge badge-warn'; $('pingBadge').textContent = 'RUNNING';
+    const targets = [
+      {url:'https://1.1.1.1/cdn-cgi/trace', id:'pingCF'},
+      {url:'https://www.google.com/generate_204', id:'pingGoogle'},
+      {url:'https://httpbin.org/get', id:'pingCDN'},
+      {url:WORKER_BASE+'/vpn', id:'pingWorker'}
+    ];
+    const results = await Promise.all(targets.map(t => ping(t.url, t.id)));
+    const valid = results.filter(Boolean);
+    const avg = valid.length ? Math.round(valid.reduce((a,b)=>a+b,0)/valid.length) : null;
+    $('pingNote').textContent = avg ? 'Average: ' + avg + ' ms' : 'Some pings failed.';
+    $('pingBadge').className = 'badge ' + (!avg ? 'badge-bad' : avg < 150 ? 'badge-good' : avg < 400 ? 'badge-warn' : 'badge-bad');
+    $('pingBadge').textContent = avg ? avg + ' ms avg' : 'FAILED';
+    log('Ping complete — avg ' + avg + ' ms', 'ok');
+    btn.disabled = false; btn.textContent = 'Run ping';
+  }
+
+  async function pingCustom() {
+    let url = $('pingCustomHost').value.trim();
+    if (!url) return;
+    if (!url.startsWith('http')) url = 'https://' + url;
+    $('pingNote').textContent = 'Pinging ' + url + '...';
+    const ms = await ping(url, 'pingWorker');
+    $('pingNote').textContent = ms ? url + ' responded in ' + ms + ' ms' : url + ' unreachable';
+  }
+
+  // ── Port Checker ─────────────────────────────────────────
+  async function checkPort() {
+    const host = $('portHost').value.trim();
+    const port = parseInt($('portNum').value, 10);
+    const out = $('portResult');
+    if (!host || !port) return;
+    out.textContent = 'Checking ' + host + ':' + port + '...';
+    const proto = port === 443 || port === 8443 ? 'https' : 'http';
+    const url = proto + '://' + host + ':' + port + '/';
+    try {
+      const s = performance.now();
+      const res = await pf(url);
+      const ms = Math.round(performance.now() - s);
+      out.textContent = '✓ Port ' + port + ' is OPEN on ' + host + '\nHTTP ' + res.status + ' in ' + ms + ' ms';
+      out.style.color = 'var(--good)';
+      log('Port ' + host + ':' + port + ' open — HTTP ' + res.status, 'ok');
+    } catch (e) {
+      const msg = e.message.toLowerCase();
+      const closed = msg.includes('failed') || msg.includes('refused') || msg.includes('upstream');
+      out.textContent = (closed ? '✗ Port ' + port + ' appears CLOSED or filtered on ' : '? Port ' + port + ' — unclear: ') + host + '\n' + e.message;
+      out.style.color = closed ? 'var(--bad)' : 'var(--warn)';
+      log('Port ' + host + ':' + port + (closed ? ' closed' : ' unclear'), closed ? 'warn' : 'info');
     }
   }
 
-  // ── Header Inspector ───────────────────────────────────────
+  // ── Header Inspector ──────────────────────────────────────
   const SEC_HEADERS = [
-    'strict-transport-security', 'content-security-policy', 'x-frame-options',
-    'x-content-type-options', 'referrer-policy', 'permissions-policy',
-    'cross-origin-opener-policy', 'cross-origin-resource-policy', 'x-xss-protection'
+    'strict-transport-security','content-security-policy','x-frame-options',
+    'x-content-type-options','referrer-policy','permissions-policy',
+    'cross-origin-opener-policy','cross-origin-resource-policy','x-xss-protection'
   ];
-
   async function inspectHeaders() {
-    const url = $('headerUrl').value.trim();
-    if (!url) return;
-    const out = $('headerResults');
-    out.textContent = 'Fetching headers...';
+    const url = $('headerUrl').value.trim(); if (!url) return;
+    const out = $('headerResults'); out.textContent = 'Fetching...';
     $('secHeaderScan').style.display = 'none';
     try {
-      const res = await proxyFetch(url);
-      const headers = {};
-      res.headers.forEach((v, k) => { headers[k] = v; });
-      const table = document.createElement('table');
-      table.className = 'header-table';
-      for (const [k, v] of Object.entries(headers).sort((a, b) => a[0].localeCompare(b[0]))) {
-        const row = table.insertRow();
-        row.insertCell().textContent = k;
-        row.insertCell().textContent = v;
+      const res = await pf(url);
+      const hdrs = {}; res.headers.forEach((v,k) => hdrs[k] = v);
+      const table = document.createElement('table'); table.className = 'header-table';
+      for (const [k,v] of Object.entries(hdrs).sort((a,b)=>a[0].localeCompare(b[0]))) {
+        const row = table.insertRow(); row.insertCell().textContent = k; row.insertCell().textContent = v;
       }
-      out.textContent = '';
-      out.appendChild(table);
-
-      // Security header grid
+      out.textContent = ''; out.appendChild(table);
       const grid = $('secHeaderGrid'); grid.innerHTML = '';
       for (const h of SEC_HEADERS) {
-        const present = h in headers;
+        const present = h in hdrs;
         const item = document.createElement('div'); item.className = 'scan-item';
-        item.innerHTML = `<b>${h}</b><span class="val" style="color:var(--${present ? 'good' : 'bad'})">${present ? '✓ Present' : '✗ Missing'}</span>`;
+        item.innerHTML = `<b>${h}</b><span class="val" style="color:var(--${present?'good':'bad'})">${present?'✓ Present':'✗ Missing'}</span>`;
         grid.appendChild(item);
       }
       $('secHeaderScan').style.display = 'block';
-      log('Headers fetched for ' + url + ' — ' + Object.keys(headers).length + ' headers', 'ok');
-    } catch (err) {
-      out.textContent = 'Error: ' + err.message;
-      log('Header inspect failed: ' + err.message, 'err');
-    }
+      log('Headers for ' + url + ': ' + Object.keys(hdrs).length + ' total', 'ok');
+    } catch (e) { out.textContent = 'Error: ' + e.message; }
   }
 
-  // ── HTTPS / TLS Check ──────────────────────────────────────
+  // ── TLS Check ─────────────────────────────────────────────
   async function checkTls() {
-    const input = $('tlsUrl').value.trim();
-    if (!input) return;
+    const input = $('tlsUrl').value.trim(); if (!input) return;
     const btn = $('tlsBtn'); btn.disabled = true; btn.textContent = 'Checking...';
     try {
-      let url;
-      try { url = new URL(input.includes('://') ? input : 'https://' + input); } catch { $('tlsProto').textContent = 'Invalid URL'; return; }
-
+      let url; try { url = new URL(input.includes('://') ? input : 'https://'+input); } catch { $('tlsProto').textContent='Invalid URL'; return; }
       $('tlsProto').textContent = url.protocol;
       $('tlsHttps').textContent = url.protocol === 'https:' ? '✓ Yes' : '✗ No';
-
-      // Check if HTTP redirects to HTTPS
       if (url.protocol === 'https:') {
-        const httpUrl = 'http://' + url.hostname + url.pathname;
         try {
-          const res = await proxyFetch(httpUrl);
-          const wasRedirected = res.url.startsWith('https://');
-          $('tlsRedirect').textContent = wasRedirected ? '✓ Yes — redirects to HTTPS' : '✗ No redirect';
+          const r = await pf('http://'+url.hostname+url.pathname);
+          $('tlsRedirect').textContent = r.url?.startsWith('https') ? '✓ Redirects to HTTPS' : '✗ No redirect';
         } catch { $('tlsRedirect').textContent = 'Could not test'; }
-      } else {
-        $('tlsRedirect').textContent = 'N/A (already HTTP)';
-      }
-
-      // Check HSTS header
-      const res = await proxyFetch(url.toString());
-      const hsts = res.headers.get('strict-transport-security');
+      } else { $('tlsRedirect').textContent = 'N/A'; }
+      const r2 = await pf(url.toString());
+      const hsts = r2.headers.get('strict-transport-security');
       $('tlsHsts').textContent = hsts ? '✓ ' + hsts : '✗ Not set';
-      $('tlsStatus').textContent = 'HTTP ' + res.status + ' ' + res.statusText;
-
+      $('tlsStatus').textContent = 'HTTP ' + r2.status;
       const good = url.protocol === 'https:' && hsts;
       $('tlsBadge').className = 'badge ' + (good ? 'badge-good' : url.protocol === 'https:' ? 'badge-warn' : 'badge-bad');
       $('tlsBadge').textContent = good ? 'SECURE' : url.protocol === 'https:' ? 'PARTIAL' : 'INSECURE';
-      log('TLS check for ' + url.hostname + ': ' + (good ? 'Secure' : 'Issues found'), good ? 'ok' : 'warn');
-    } catch (err) {
-      $('tlsStatus').textContent = 'Error: ' + err.message;
-      log('TLS check failed: ' + err.message, 'err');
-    } finally { btn.disabled = false; btn.textContent = 'Check'; }
+      log('TLS ' + url.hostname + ': ' + (good ? 'Secure' : 'Issues found'), good ? 'ok' : 'warn');
+    } catch (e) { $('tlsStatus').textContent = 'Error: ' + e.message; }
+    finally { btn.disabled = false; btn.textContent = 'Check'; }
   }
 
-  // ── URL Security Scan (Cloudflare DNS threat intel) ────────
+  // ── URL Scan ─────────────────────────────────────────────
   async function scanUrl() {
-    const input = $('scanUrl').value.trim();
-    if (!input) return;
+    const input = $('scanUrl').value.trim(); if (!input) return;
     const btn = $('scanBtn'); btn.disabled = true; btn.textContent = 'Scanning...';
     let domain;
-    try { domain = new URL(input.includes('://') ? input : 'https://' + input).hostname; } catch { domain = input; }
+    try { domain = new URL(input.includes('://') ? input : 'https://'+input).hostname; } catch { domain = input; }
     $('scanDomain').textContent = domain;
-    $('scanVerdict').textContent = 'Scanning...';
-    log('URL scan for ' + domain, 'info');
-
-    try {
-      // Cloudflare Security DNS — malware blocked domains return NXDOMAIN / 0.0.0.0
-      const cfSec = 'https://security.cloudflare-dns.com/dns-query?name=' + encodeURIComponent(domain) + '&type=A';
-      const cfFam = 'https://family.cloudflare-dns.com/dns-query?name=' + encodeURIComponent(domain) + '&type=A';
-      const cfGw = 'https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent(domain) + '&type=A';
-
-      async function dnsCheck(url) {
-        try {
-          const r = await proxyFetch(url, { headers: { Accept: 'application/dns-json' } });
-          const d = await r.json();
-          if (d.Status === 3) return 'BLOCKED (NXDOMAIN)';
-          const ips = (d.Answer || []).filter(a => a.type === 1).map(a => a.data);
-          if (ips.includes('0.0.0.0') || ips.includes('0.0.0.1')) return 'BLOCKED';
-          return ips.length ? 'Allowed (' + ips[0] + ')' : 'No records';
-        } catch { return 'Error'; }
-      }
-
-      const [sec, fam, gw] = await Promise.all([
-        dnsCheck(cfSec), dnsCheck(cfFam), dnsCheck(cfGw)
-      ]);
-
-      $('scanMalware').textContent = sec;
-      $('scanAdult').textContent = fam;
-      $('scanGateway').textContent = gw;
-
-      const blocked = sec.includes('BLOCKED');
-      const warn = fam.includes('BLOCKED');
-      $('scanBadge').className = 'badge ' + (blocked ? 'badge-bad' : warn ? 'badge-warn' : 'badge-good');
-      $('scanBadge').textContent = blocked ? 'THREAT' : warn ? 'FLAGGED' : 'CLEAN';
-      $('scanVerdict').textContent = blocked ? '⚠ Blocked by Cloudflare Security DNS' : warn ? 'Flagged by family filter' : '✓ Not on Cloudflare threat lists';
-      log('Scan ' + domain + ': ' + (blocked ? 'THREAT' : warn ? 'FLAGGED' : 'Clean'), blocked ? 'err' : warn ? 'warn' : 'ok');
-    } catch (err) {
-      $('scanVerdict').textContent = 'Error: ' + err.message;
-    } finally { btn.disabled = false; btn.textContent = 'Scan'; }
+    async function dnsCheck(ep) {
+      try {
+        const r = await pf(ep + '?name=' + encodeURIComponent(domain) + '&type=A', {headers:{Accept:'application/dns-json'}});
+        const d = await r.json();
+        if (d.Status === 3) return 'BLOCKED';
+        const ips = (d.Answer||[]).filter(a=>a.type===1).map(a=>a.data);
+        if (ips.includes('0.0.0.0')||ips.includes('0.0.0.1')) return 'BLOCKED';
+        return ips.length ? '✓ Allowed ('+ips[0]+')' : 'No records';
+      } catch { return 'Error'; }
+    }
+    const [sec, fam] = await Promise.all([
+      dnsCheck('https://security.cloudflare-dns.com/dns-query'),
+      dnsCheck('https://family.cloudflare-dns.com/dns-query')
+    ]);
+    $('scanMalware').textContent = sec;
+    $('scanAdult').textContent = fam;
+    const blocked = sec.includes('BLOCKED'), warn = fam.includes('BLOCKED');
+    $('scanBadge').className = 'badge '+(blocked?'badge-bad':warn?'badge-warn':'badge-good');
+    $('scanBadge').textContent = blocked?'THREAT':warn?'FLAGGED':'CLEAN';
+    $('scanVerdict').textContent = blocked?'⚠ Blocked by Cloudflare Security DNS':warn?'Flagged by family filter':'✓ Not on threat lists';
+    log('Scan '+domain+': '+(blocked?'THREAT':warn?'FLAGGED':'Clean'), blocked?'err':warn?'warn':'ok');
+    btn.disabled=false; btn.textContent='Scan';
   }
 
-  // ── Request Test ───────────────────────────────────────────
+  // ── Request Test ─────────────────────────────────────────
   async function testRequest() {
     const url = $('testUrl').value.trim(); if (!url) return;
-    const out = $('testResult'); out.textContent = 'Testing...';
+    const method = $('reqMethod').value;
+    const out = $('testResult'); out.textContent = 'Sending ' + method + '...';
     try {
-      const start = performance.now();
-      const res = await proxyFetch(url);
-      const ms = Math.round(performance.now() - start);
+      const s = performance.now();
+      const opts = { method };
+      if (['POST','PUT'].includes(method)) {
+        const body = $('reqBody').value.trim();
+        if (body) { opts.body = body; opts.headers = {'Content-Type':'application/json'}; }
+      }
+      const res = await pf(url, opts);
+      const ms = Math.round(performance.now() - s);
       const text = await res.text();
-      out.textContent = 'HTTP ' + res.status + ' in ' + ms + ' ms\n\n' + text.slice(0, 900);
-      log('Request to ' + url + ': HTTP ' + res.status + ' in ' + ms + ' ms', 'ok');
-    } catch (err) {
-      out.textContent = 'Error: ' + err.message;
-      log('Request failed: ' + err.message, 'err');
-    }
+      out.textContent = method + ' ' + url + '\nHTTP ' + res.status + ' in ' + ms + ' ms\n\n' + text.slice(0, 1200);
+      out.style.color = '';
+      log('Request ' + url + ' → HTTP ' + res.status + ' in ' + ms + ' ms', 'ok');
+    } catch (e) { out.textContent = 'Error: ' + e.message; out.style.color = 'var(--bad)'; }
   }
 
-  // ── Speed Test ─────────────────────────────────────────────
+  // ── Speed Test ────────────────────────────────────────────
   async function runSpeedTest() {
-    const btn = $('speedBtn'); btn.disabled = true; btn.textContent = 'Testing...';
-    $('speedDownload').textContent = '-'; $('speedUpload').textContent = '-'; $('speedLatency').textContent = '-';
-    $('speedNote').textContent = 'Running...';
+    const btn = $('speedBtn'); btn.disabled=true; btn.textContent='Testing...';
+    $('speedDownload').textContent=$('speedUpload').textContent=$('speedLatency').textContent='-';
+    $('speedNote').textContent='Running...';
     try {
       const lp = performance.now();
-      await proxyFetch('https://1.1.1.1/cdn-cgi/trace?ts=' + Date.now());
-      $('speedLatency').textContent = Math.max(1, Math.round(performance.now() - lp)) + ' ms';
-
+      await pf('https://1.1.1.1/cdn-cgi/trace?ts='+Date.now());
+      $('speedLatency').textContent = Math.max(1,Math.round(performance.now()-lp))+' ms';
       const ds = performance.now();
-      const res = await proxyFetch('https://speed.cloudflare.com/__down?bytes=1500000&ts=' + Date.now());
-      const buf = await res.arrayBuffer();
-      const sec = Math.max((performance.now() - ds) / 1000, .001);
-      $('speedDownload').textContent = ((buf.byteLength * 8 / sec) / 1e6).toFixed(1) + ' Mbps';
-
+      const r = await pf('https://speed.cloudflare.com/__down?bytes=1500000&ts='+Date.now());
+      const buf = await r.arrayBuffer();
+      $('speedDownload').textContent = ((buf.byteLength*8/Math.max((performance.now()-ds)/1000,.001))/1e6).toFixed(1)+' Mbps';
       const payload = new Uint8Array(350000);
       const us = performance.now();
-      const up = await proxyFetch('https://httpbin.org/post?ts=' + Date.now(), {
-        method: 'POST', body: payload, headers: { 'Content-Type': 'application/octet-stream' }
-      });
-      if (!up.ok) throw new Error('Upload HTTP ' + up.status);
-      const usec = Math.max((performance.now() - us) / 1000, .001);
-      $('speedUpload').textContent = ((payload.byteLength * 8 / usec) / 1e6).toFixed(1) + ' Mbps';
-      $('speedNote').textContent = 'Estimate via worker proxy.';
-      log('Speed test complete', 'ok');
-    } catch (err) {
-      $('speedNote').textContent = 'Test failed: ' + err.message;
-      log('Speed test failed: ' + err.message, 'err');
-    } finally { btn.disabled = false; btn.textContent = 'Run test'; }
+      await pf('https://httpbin.org/post?ts='+Date.now(),{method:'POST',body:payload,headers:{'Content-Type':'application/octet-stream'}});
+      $('speedUpload').textContent = ((payload.byteLength*8/Math.max((performance.now()-us)/1000,.001))/1e6).toFixed(1)+' Mbps';
+      $('speedNote').textContent='Estimate via worker proxy.';
+      log('Speed test complete','ok');
+    } catch(e){ $('speedNote').textContent='Failed: '+e.message; }
+    finally{ btn.disabled=false; btn.textContent='Run test'; }
   }
 
-  // ── Browser privacy signals ────────────────────────────────
+  // ── Password Generator ────────────────────────────────────
+  const WORDS = ['ocean','storm','ember','frost','blade','shadow','cipher','delta','forge','nexus','prism','vault','zenith','atlas','comet','drift','echo','flint','glare','helix','ionic','jewel','krypton','lunar','mango','noble','onyx','pulse','quartz','ridge','steel','titan','ultra','vapor','wolf','xenon','yield','zeal'];
+
+  function pwStrength(pw) {
+    let score = 0;
+    if (pw.length >= 12) score++;
+    if (pw.length >= 16) score++;
+    if (pw.length >= 20) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[a-z]/.test(pw)) score++;
+    if (/\d/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    return Math.min(score, 5);
+  }
+
+  function genPassword() {
+    const upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ', lower='abcdefghijklmnopqrstuvwxyz';
+    const nums='0123456789', syms='!@#$%^&*()_+-=[]{}|;:,.<>?';
+    let chars = '';
+    if ($('pwUpper').checked) chars += upper;
+    if ($('pwLower').checked) chars += lower;
+    if ($('pwNum').checked) chars += nums;
+    if ($('pwSym').checked) chars += syms;
+    if (!chars) chars = lower + nums;
+    const len = Math.min(Math.max(parseInt($('pwLen').value)||20, 8), 128);
+    const arr = new Uint8Array(len);
+    crypto.getRandomValues(arr);
+    const pw = [...arr].map(b => chars[b % chars.length]).join('');
+    $('pwOutput').textContent = pw;
+    const s = pwStrength(pw);
+    const colors = ['var(--bad)','var(--bad)','var(--warn)','var(--warn)','var(--good)','var(--good)'];
+    $('pwStrengthFill').style.width = (s/5*100)+'%';
+    $('pwStrengthFill').style.background = colors[s];
+    $('pwNote').textContent = ['Very weak','Weak','Fair','Good','Strong','Very strong'][s] + ' — generated locally, never transmitted.';
+  }
+
+  function genPassphrase() {
+    const arr = new Uint32Array(4);
+    crypto.getRandomValues(arr);
+    const words = [...arr].map(n => WORDS[n % WORDS.length]);
+    const num = (new Uint8Array(1)[0], crypto.getRandomValues(new Uint8Array(1))[0] % 99 + 1);
+    const pw = words.join('-') + '-' + num;
+    $('pwOutput').textContent = pw;
+    $('pwStrengthFill').style.width = '80%'; $('pwStrengthFill').style.background = 'var(--good)';
+    $('pwNote').textContent = 'Strong passphrase — generated locally, never transmitted.';
+  }
+
+  // ── Encoder / Decoder ─────────────────────────────────────
+  function encodeOp(fn) {
+    try { $('encodeOutput').value = fn($('encodeInput').value); }
+    catch(e) { $('encodeOutput').value = 'Error: ' + e.message; }
+  }
+
+  async function sha256(text) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+
+  function toHex(str) { return [...new TextEncoder().encode(str)].map(b=>b.toString(16).padStart(2,'0')).join(' '); }
+  function fromHex(str) { const bytes=str.trim().split(/\s+/); return new TextDecoder().decode(new Uint8Array(bytes.map(b=>parseInt(b,16)))); }
+
+  // ── Browser privacy ───────────────────────────────────────
   function checkBrowserPrivacy() {
-    const secure = location.protocol === 'https:' || location.hostname === 'localhost';
-    $('httpStatus').textContent = secure ? 'Served over HTTPS' : 'Not HTTPS — connection is unencrypted';
-    $('siHttps').className = 'security-item ' + (secure ? 'pass' : 'fail');
-
-    const hasWebRTC = 'RTCPeerConnection' in window;
-    $('webrtcStatus').textContent = hasWebRTC ? 'Available — run the WebRTC leak test above to check for leaks' : 'WebRTC unavailable in this browser';
-    $('siWebrtc').className = 'security-item ' + (hasWebRTC ? 'warn-item' : 'pass');
-
-    const cookiesOk = navigator.cookieEnabled;
-    $('cookieStatus').textContent = cookiesOk ? 'Enabled' : 'Disabled';
-    $('siCookies').className = 'security-item';
-
-    try { localStorage.setItem('_t', '1'); localStorage.removeItem('_t'); $('storageStatus').textContent = 'Available'; }
-    catch { $('storageStatus').textContent = 'Blocked'; }
-
+    const secure = location.protocol==='https:'||location.hostname==='localhost';
+    $('httpStatus').textContent = secure ? 'Served over HTTPS' : 'Not HTTPS — unencrypted';
+    $('siHttps').className = 'security-item '+(secure?'pass':'fail');
+    const hasRTC = 'RTCPeerConnection' in window;
+    $('webrtcStatus').textContent = hasRTC ? 'Available — run WebRTC leak test above' : 'Not available in this browser';
+    $('siWebrtc').className = 'security-item '+(hasRTC?'warn-item':'pass');
+    $('cookieStatus').textContent = navigator.cookieEnabled ? 'Enabled' : 'Disabled';
+    try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); $('storageStatus').textContent='Available'; }
+    catch { $('storageStatus').textContent='Blocked'; }
     const dnt = navigator.doNotTrack;
-    $('dntStatus').textContent = dnt === '1' ? '✓ Enabled (sent to servers)' : dnt === '0' ? 'Disabled' : 'Not set';
-    $('siDoNotTrack').className = 'security-item ' + (dnt === '1' ? 'pass' : '');
-
+    $('dntStatus').textContent = dnt==='1'?'✓ Enabled':dnt==='0'?'Disabled':'Not set';
+    $('siDoNotTrack').className='security-item '+(dnt==='1'?'pass':'');
     const gpc = navigator.globalPrivacyControl;
-    $('gpcStatus').textContent = gpc === true ? '✓ Enabled' : gpc === false ? 'Disabled' : 'Not supported';
-    $('siGpc').className = 'security-item ' + (gpc === true ? 'pass' : '');
-
-    $('secureStatus').textContent = secure ? 'Secure context' : 'Insecure context';
+    $('gpcStatus').textContent = gpc===true?'✓ Enabled':gpc===false?'Disabled':'Not supported';
+    $('siGpc').className='security-item '+(gpc===true?'pass':'');
+    $('secureStatus').textContent = secure?'Secure context':'Insecure context';
     $('userAgent').textContent = navigator.userAgent;
   }
 
   function connectionInfo() {
-    $('onlineState').textContent = navigator.onLine ? 'Online' : 'Offline';
-    const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-    $('connType').textContent = c?.effectiveType || c?.type || 'Unavailable';
-    $('connDownlink').textContent = Number.isFinite(c?.downlink) ? c.downlink + ' Mbps' : 'Unavailable';
-    $('saveData').textContent = c?.saveData ? 'On' : 'Off';
+    $('onlineState').textContent = navigator.onLine?'Online':'Offline';
+    const c = navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+    $('connType').textContent = c?.effectiveType||c?.type||'Unavailable';
+    $('connDownlink').textContent = Number.isFinite(c?.downlink)?c.downlink+' Mbps':'Unavailable';
+    $('saveData').textContent = c?.saveData?'On':'Off';
   }
 
   function randomMac() {
-    const b = new Uint8Array(6); crypto.getRandomValues(b); b[0] = (b[0] & 0xfe) | 0x02;
-    $('macResult').textContent = [...b].map(x => x.toString(16).padStart(2, '0')).join(':').toUpperCase();
+    const b = new Uint8Array(6); crypto.getRandomValues(b); b[0]=(b[0]&0xfe)|0x02;
+    $('macResult').textContent = [...b].map(x=>x.toString(16).padStart(2,'0')).join(':').toUpperCase();
   }
 
-  // ── Wire events ────────────────────────────────────────────
-  $('themeToggle').addEventListener('click', () => { state.dark = !state.dark; localStorage.setItem('network-theme', state.dark ? 'dark' : 'light'); applyTheme(); });
+  // ── Wire events ───────────────────────────────────────────
+  $('themeToggle').addEventListener('click',()=>{ state.dark=!state.dark; localStorage.setItem('network-theme',state.dark?'dark':'light'); applyTheme(); });
   $('checkBtn').addEventListener('click', checkConnection);
   $('ipLeakBtn').addEventListener('click', runIpLeakTest);
   $('webrtcBtn').addEventListener('click', runWebRtcTest);
   $('dnsLeakBtn').addEventListener('click', runDnsLeakTest);
   $('dnsBtn').addEventListener('click', resolveDns);
-  $('dnsMode').addEventListener('change', () => { $('customDnsWrap').style.display = $('dnsMode').value === 'custom' ? 'block' : 'none'; });
+  $('dnsMode').addEventListener('change',()=>{ $('customDnsWrap').style.display=$('dnsMode').value==='custom'?'block':'none'; });
+  $('pingBtn').addEventListener('click', runPing);
+  $('pingCustomBtn').addEventListener('click', pingCustom);
+  $('portBtn').addEventListener('click', checkPort);
+  document.querySelectorAll('.port-tag').forEach(tag => tag.addEventListener('click',()=>{ $('portNum').value=tag.dataset.port; checkPort(); }));
   $('headerBtn').addEventListener('click', inspectHeaders);
   $('tlsBtn').addEventListener('click', checkTls);
   $('scanBtn').addEventListener('click', scanUrl);
+  $('reqMethod').addEventListener('change',()=>{ $('reqBodyWrap').style.display=['POST','PUT'].includes($('reqMethod').value)?'block':'none'; });
   $('testBtn').addEventListener('click', testRequest);
   $('speedBtn').addEventListener('click', runSpeedTest);
+  $('pwGenBtn').addEventListener('click', genPassword);
+  $('pwPassphBtn').addEventListener('click', genPassphrase);
+  $('pwCopyBtn').addEventListener('click',()=>{ navigator.clipboard.writeText($('pwOutput').textContent).catch(()=>{}); $('pwNote').textContent='Copied!'; });
+  $('encB64').addEventListener('click',()=>encodeOp(t=>btoa(unescape(encodeURIComponent(t)))));
+  $('decB64').addEventListener('click',()=>encodeOp(t=>decodeURIComponent(escape(atob(t)))));
+  $('encUrl').addEventListener('click',()=>encodeOp(encodeURIComponent));
+  $('decUrl').addEventListener('click',()=>encodeOp(decodeURIComponent));
+  $('encHex').addEventListener('click',()=>encodeOp(toHex));
+  $('decHex').addEventListener('click',()=>encodeOp(fromHex));
+  $('encMd5').addEventListener('click',()=>{ sha256($('encodeInput').value).then(h=>{ $('encodeOutput').value=h; }); });
+  $('encCopy').addEventListener('click',()=>{ navigator.clipboard.writeText($('encodeOutput').value).catch(()=>{}); });
   $('macBtn').addEventListener('click', randomMac);
-  $('copyPacBtn').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(PAC_URL); log('PAC URL copied', 'ok'); }
-    catch { log('Could not copy PAC URL', 'warn'); }
-  });
-  $('clearActivity').addEventListener('click', () => { $('activityList').innerHTML = '<div class="activity-item"><span class="activity-kind">INFO</span><span class="activity-text">Log cleared.</span></div>'; });
+  $('copyPacBtn').addEventListener('click',()=>{ navigator.clipboard.writeText(PAC_URL).then(()=>log('PAC URL copied','ok')).catch(()=>{}); });
+  $('copyPacBtn2').addEventListener('click',()=>{ navigator.clipboard.writeText(PAC_URL).then(()=>{ $('copyPacBtn2').textContent='Copied!'; setTimeout(()=>$('copyPacBtn2').textContent='Copy',1800); }).catch(()=>{}); });
+  $('clearActivity').addEventListener('click',()=>{ $('activityList').innerHTML='<div class="activity-item"><span class="activity-kind">INFO</span><span class="activity-text">Log cleared.</span></div>'; });
   $('activityToggle').addEventListener('change', e => { state.activity = e.target.checked; });
+  document.querySelectorAll('.os-tab').forEach(tab => tab.addEventListener('click',()=>activateOs(tab.dataset.os)));
   window.addEventListener('online', connectionInfo);
   window.addEventListener('offline', connectionInfo);
 
-  // ── Init ───────────────────────────────────────────────────
+  // ── Init ─────────────────────────────────────────────────
   applyTheme();
   connectionInfo();
   checkBrowserPrivacy();
   fetchIp();
+  genPassword();
+
+  const os = detectOs();
+  $('detectedOs').textContent = {windows:'Windows',macos:'macOS',ios:'iOS / iPadOS',android:'Android',linux:'Linux',chrome:'ChromeOS',firefox:'Firefox'}[os] || os;
+  activateOs(os);
 })();
 </script>
 </body>
