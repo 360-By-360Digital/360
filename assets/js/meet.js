@@ -1544,6 +1544,12 @@ window.Meet = (function () {
         const video = pipWindow.document.createElement('video');
         video.autoplay = true; video.playsInline = true; video.muted = true;
         if (sourceVideo && sourceVideo.srcObject) video.srcObject = sourceVideo.srcObject;
+        // Match the main page: camera feeds are mirrored, screen shares
+        // never are (this is what was still showing reversed before —
+        // this popup renders in a totally separate document with its own
+        // stylesheet, so the main page's mirror rule didn't carry over).
+        const isScreenShare = !!sourceVideo && !!sourceVideo.closest('.screen');
+        if (!isScreenShare) video.style.transform = 'scaleX(-1)';
         pipWindow.document.body.appendChild(video);
 
         const label = pipWindow.document.createElement('div');
