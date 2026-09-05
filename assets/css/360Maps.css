@@ -677,3 +677,82 @@ body.dark .maps-modal-select { color: var(--txtd); border-color: rgba(255,255,25
   .maps-fab-stack { right: 12px; bottom: 96px; }
   .maps-measure-readout { left: 12px; right: 12px; transform: none; flex-wrap: wrap; justify-content: center; }
 }
+
+/* ============================================================
+   AI TOGGLE + BADGE
+   ============================================================ */
+
+/* Button sits at the end of the search row */
+.maps-ai-toggle-btn {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid var(--br);
+  background: transparent;
+  color: var(--mut);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+  position: relative;
+}
+body.dark .maps-ai-toggle-btn { color: var(--mutd); }
+
+.maps-ai-toggle-btn.active {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.18);
+}
+.maps-ai-toggle-btn:not(.active):hover {
+  background: rgba(99,102,241,.10);
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+/* Pulsing ring when AI is active and generating */
+.maps-ai-toggle-btn.active.loading::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid #6366f1;
+  animation: maps-ai-pulse 1.2s ease-out infinite;
+}
+@keyframes maps-ai-pulse {
+  0%   { opacity: .8; transform: scale(1); }
+  100% { opacity: 0;  transform: scale(1.6); }
+}
+
+/* "✦ AI" badge appended inside the description */
+.maps-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  vertical-align: middle;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+
+/* Skeleton shimmer while detail is loading */
+.maps-skeleton {
+  height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(90deg, rgba(120,120,120,.12) 25%, rgba(120,120,120,.22) 50%, rgba(120,120,120,.12) 75%);
+  background-size: 200% 100%;
+  animation: maps-shimmer 1.4s infinite;
+  margin-bottom: 6px;
+}
+@keyframes maps-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
