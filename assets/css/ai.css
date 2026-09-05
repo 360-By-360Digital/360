@@ -1150,3 +1150,60 @@ body:not(.dark) .ai-input-area {
     font-size: 29px;
   }
 }
+
+/* ── 360 AI identity + live work state ── */
+.ai-logo-svg { display:block; }
+.ai-brand-mark .ai-logo-svg { filter: drop-shadow(0 4px 10px rgba(109,124,255,.28)); }
+
+.ai-work-state {
+  display:flex;
+  align-items:center;
+  gap:11px;
+  min-height:42px;
+  padding:8px 11px;
+  margin:2px 0 10px;
+  width:max-content;
+  max-width:100%;
+  border:1px solid var(--ai-line, var(--br));
+  background:var(--ai-soft, var(--surface-soft));
+  border-radius:14px;
+  overflow:hidden;
+  animation: aiWorkIn .24s ease both;
+}
+@keyframes aiWorkIn { from { opacity:0; transform:translateY(5px) scale(.98); } to { opacity:1; transform:none; } }
+
+.ai-work-orb {
+  position:relative;
+  width:28px;height:28px;flex:0 0 28px;
+  border-radius:50%;
+  background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0 7%, rgba(109,124,255,.9) 8% 20%, transparent 21%);
+  box-shadow:0 0 0 1px rgba(109,124,255,.22), 0 0 22px rgba(109,124,255,.22);
+}
+.ai-work-orb:before,.ai-work-orb:after,.ai-work-orb span {
+  content:""; position:absolute; inset:3px; border:1.5px solid rgba(109,124,255,.58);
+  border-radius:50%; animation:aiOrbit 1.5s linear infinite;
+}
+.ai-work-orb:after { inset:7px; animation-duration:1s; animation-direction:reverse; opacity:.75; }
+.ai-work-orb span { inset:0; border-style:dashed; animation-duration:2.2s; opacity:.45; }
+@keyframes aiOrbit { to { transform:rotate(360deg); } }
+
+.ai-work-copy { min-width:105px; }
+.ai-work-label { font-size:12px; font-weight:700; line-height:1.15; letter-spacing:.01em; }
+.ai-work-detail { margin-top:3px; font-size:11px; opacity:.52; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px; }
+
+.ai-work-signal { display:flex; align-items:center; gap:2px; height:20px; margin-left:3px; opacity:.65; }
+.ai-work-signal span { width:2px; height:7px; border-radius:99px; background:currentColor; animation:aiSignal .85s ease-in-out infinite; }
+.ai-work-signal span:nth-child(2){animation-delay:.12s}.ai-work-signal span:nth-child(3){animation-delay:.24s}.ai-work-signal span:nth-child(4){animation-delay:.36s}.ai-work-signal span:nth-child(5){animation-delay:.48s}
+@keyframes aiSignal { 0%,100%{height:5px;opacity:.35} 50%{height:17px;opacity:1} }
+
+.ai-work-state.done .ai-work-orb:before,.ai-work-state.done .ai-work-orb:after,.ai-work-state.done .ai-work-orb span,
+.ai-work-state.done .ai-work-signal span { animation-play-state:paused; }
+.ai-work-state.done .ai-work-signal { opacity:.3; }
+.ai-work-state.done .ai-work-label { opacity:.7; }
+
+.ai-work-state.tool { border-color:rgba(109,124,255,.28); box-shadow:0 8px 28px rgba(109,124,255,.08); }
+
+@media (max-width:760px) {
+  .ai-work-state { width:auto; }
+  .ai-work-detail { max-width:150px; }
+}
