@@ -1,14 +1,12 @@
-
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Network Tools</title>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Didact+Gothic&amp;display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Didact+Gothic&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#f6f8fb;
@@ -130,165 +128,178 @@ button{cursor:pointer}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
 </style>
-<meta content="Explore 360 network tools for connectivity, privacy and web access." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="Network Tools" property="og:title"/><meta content="Explore 360 network tools for connectivity, privacy and web access." property="og:description"/><meta content="https://360-search.com/vpn/360vpn.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="Network Tools" name="twitter:title"/><meta content="Explore 360 network tools for connectivity, privacy and web access." name="twitter:description"/><link href="https://360-search.com/vpn/360vpn.html" rel="canonical"/></head>
+</head>
 <body>
 <header class="topbar">
-<a class="back-apps" href="apps.html">Back to Apps</a>
+  <a class="back-apps" href="apps.html">Back to Apps</a>
 </header>
+
 <main class="page">
-<div class="page-tools">
-<button class="theme-toggle" id="themeToggle" type="button">Dark mode</button>
-</div>
-<section class="hero">
-<div class="hero-tag">Network tools</div>
-<h1 class="hero-title">Connection</h1>
-<p class="hero-sub">A small set of browser tools for checking connectivity, measuring performance, testing DNS resolvers, and reviewing local network privacy signals.</p>
-</section>
-<section class="grid">
-<article class="panel span2">
-<div class="panel-head"><span>Connection</span><span class="badge badge-warn" id="proxyBadge">NOT TESTED</span></div>
-<div class="panel-body">
-<div class="connect-inner">
-<div>
-<div class="connect-label">Public IP</div>
-<div class="connect-val" id="realIp">Checking...</div>
-<div class="connect-sub" id="realLoc">Checking the public address visible to this browser</div>
-</div>
-<div>
-<div class="connect-label">Response time</div>
-<div class="connect-val" id="statLatency">-</div>
-<div class="connect-sub" id="proxyNote">Run a connection check below</div>
-</div>
-<button class="btn btn-primary" id="checkBtn" type="button">Check connection</button>
-</div>
-<div class="log" id="log">
-<div class="log-line"><span class="log-time">--:--:--</span><span class="log-msg info">Ready.</span></div>
-</div>
-</div>
-</article>
-<article class="panel">
-<div class="panel-head">Proxy service</div>
-<div class="panel-body">
-<div class="stat-row"><span class="stat-key">Worker endpoint</span><span class="stat-val good" id="workerEndpoint">/vpn/proxy</span></div>
-<div class="stat-row"><span class="stat-key">PAC file</span><span class="stat-val good" id="pacEndpoint">/vpn/proxy.pac</span></div>
-<div class="stat-row"><span class="stat-key">Routing</span><span class="stat-val">Browser requests can be tested through the Worker</span></div>
-<div class="copy-row" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-<button class="btn" id="copyPacBtn" type="button">Copy PAC URL</button>
-<a class="btn" href="/vpn/proxy.pac">Open PAC</a>
-</div>
-</div>
-</article>
-<article class="panel">
-<div class="panel-head">Network details</div>
-<div class="panel-body">
-<div class="stat-row"><span class="stat-key">Online</span><span class="stat-val" id="onlineState">-</span></div>
-<div class="stat-row"><span class="stat-key">Connection type</span><span class="stat-val" id="connType">-</span></div>
-<div class="stat-row"><span class="stat-key">Downlink estimate</span><span class="stat-val" id="connDownlink">-</span></div>
-<div class="stat-row"><span class="stat-key">Save-data mode</span><span class="stat-val" id="saveData">-</span></div>
-</div>
-</article>
-<article class="panel">
-<div class="panel-head">Request test</div>
-<div class="panel-body">
-<div class="note" style="margin:0 0 10px">Measure a request to a CORS-enabled URL from this browser.</div>
-<div class="test-input-row">
-<input class="test-input" id="testUrl" placeholder="https://example.com" value="https://httpbin.org/ip"/>
-<button class="btn" id="testBtn" type="button">Test</button>
-</div>
-<div class="test-result" id="testResult">No test has been run.</div>
-</div>
-</article>
-<article class="panel">
-<div class="panel-head">DNS</div>
-<div class="panel-body">
-<div class="dns-grid">
-<div>
-<div class="field-label">Resolver</div>
-<select class="test-input" id="dnsMode">
-<option value="system">Browser default</option>
-<option value="cloudflare">Cloudflare</option>
-<option value="google">Google</option>
-<option value="quad9">Quad9</option>
-<option value="custom">Custom DoH URL</option>
-</select>
-</div>
-<div>
-<div class="field-label">Hostname</div>
-<input class="test-input" id="dnsHost" placeholder="example.com" value="example.com"/>
-</div>
-</div>
-<div id="customDnsWrap" style="display:none;margin-top:10px">
-<div class="field-label">Custom DNS-over-HTTPS endpoint</div>
-<input class="test-input" id="customDns" placeholder="https://resolver.example/dns-query"/>
-</div>
-<div class="dns-actions">
-<button class="btn btn-primary" id="dnsBtn" type="button">Resolve</button>
-<span class="dns-note" id="dnsResult">A browser page can test a resolver through DNS-over-HTTPS, but it cannot replace your operating system's DNS configuration.</span>
-</div>
-</div>
-</article>
-<article class="panel span2">
-<div class="panel-head">Speed test</div>
-<div class="panel-body">
-<div class="speed-grid">
-<div class="speed-metric"><span>Download</span><strong id="speedDownload">-</strong></div>
-<div class="speed-metric"><span>Upload</span><strong id="speedUpload">-</strong></div>
-<div class="speed-metric"><span>Latency</span><strong id="speedLatency">-</strong></div>
-</div>
-<div class="speed-actions">
-<button class="btn btn-primary" id="speedBtn" type="button">Run quick test</button>
-<span class="note" id="speedNote">Uses small browser transfers, so this is an estimate rather than a full benchmark.</span>
-</div>
-</div>
-</article>
-<article class="panel">
-<div class="panel-head">Local activity log</div>
-<div class="panel-body">
-<div class="toggle-row">
-<div><strong>Log app requests</strong><div class="note">Only requests started by this page are recorded.</div></div>
-<label class="switch"><input id="activityToggle" type="checkbox"/><span class="slider"></span></label>
-</div>
-<div class="toggle-row">
-<div><strong>Keep local log</strong><div class="note">Leave this off if you do not want request history kept in this tab.</div></div>
-<label class="switch"><input id="activityPersist" type="checkbox"/><span class="slider"></span></label>
-</div>
-<div class="activity-list" id="activityList"><div class="activity-item"><span class="activity-kind">INFO</span><span class="activity-text">Activity logging is off.</span></div></div>
-<div style="margin-top:10px"><button class="btn" id="clearActivity" type="button">Clear log</button></div>
-</div>
-</article>
-<article class="panel">
-<div class="panel-head">Privacy helpers</div>
-<div class="panel-body">
-<div class="security-list" style="grid-template-columns:1fr">
-<div class="security-item"><strong>WebRTC visibility</strong><span id="webrtcStatus">Checking browser support...</span></div>
-<div class="security-item"><strong>Secure page</strong><span id="secureStatus">Checking...</span></div>
-<div class="security-item"><strong>MAC address</strong><span>A normal web page cannot change your device MAC address. You can generate a random value for manual system configuration.</span></div>
-</div>
-<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
-<button class="btn" id="macBtn" type="button">Generate random MAC</button>
-<span class="note" id="macResult">No value generated.</span>
-</div>
-</div>
-</article>
-<article class="panel span2">
-<div class="panel-head">Network protection checks</div>
-<div class="panel-body">
-<div class="security-list">
-<div class="security-item"><strong>Connection check</strong><span>Confirms that this page can reach its own origin.</span></div>
-<div class="security-item"><strong>DNS resolver test</strong><span>Lets you compare browser-visible DNS answers through supported DoH endpoints.</span></div>
-<div class="security-item"><strong>Request logging</strong><span>Local and opt-in. The page cannot see unrelated browser traffic.</span></div>
-<div class="security-item"><strong>DDoS protection</strong><span>Real protection needs to run at the server, reverse proxy, CDN, firewall, or network edge. A webpage cannot add that protection to the whole device.</span></div>
-<div class="security-item"><strong>IP masking</strong><span>Actual public-IP masking requires a proxy or another network gateway. This page can only report the address visible to the browser.</span></div>
-<div class="security-item"><strong>MAC randomisation</strong><span>MAC randomisation is an operating-system or Wi-Fi stack feature, not something JavaScript in a webpage can switch on.</span></div>
-</div>
-</div>
-</article>
-</section>
-<footer class="footer">
-<span>Network tools</span>
-<a href="apps.html">Back to Apps</a>
-</footer>
+  <div class="page-tools">
+    <button class="theme-toggle" id="themeToggle" type="button">Dark mode</button>
+  </div>
+
+  <section class="hero">
+    <div class="hero-tag">Network tools</div>
+    <h1 class="hero-title">Connection</h1>
+    <p class="hero-sub">A small set of browser tools for checking connectivity, measuring performance, testing DNS resolvers, and reviewing local network privacy signals.</p>
+  </section>
+
+  <section class="grid">
+    <article class="panel span2">
+      <div class="panel-head"><span>Connection</span><span class="badge badge-warn" id="proxyBadge">NOT TESTED</span></div>
+      <div class="panel-body">
+        <div class="connect-inner">
+          <div>
+            <div class="connect-label">Public IP</div>
+            <div class="connect-val" id="realIp">Checking...</div>
+            <div class="connect-sub" id="realLoc">Checking the public address visible to this browser</div>
+          </div>
+          <div>
+            <div class="connect-label">Response time</div>
+            <div class="connect-val" id="statLatency">-</div>
+            <div class="connect-sub" id="proxyNote">Run a connection check below</div>
+          </div>
+          <button class="btn btn-primary" id="checkBtn" type="button">Check connection</button>
+        </div>
+        <div class="log" id="log">
+          <div class="log-line"><span class="log-time">--:--:--</span><span class="log-msg info">Ready.</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">Proxy service</div>
+      <div class="panel-body">
+        <div class="stat-row"><span class="stat-key">Worker endpoint</span><span class="stat-val good" id="workerEndpoint">/vpn/proxy</span></div>
+        <div class="stat-row"><span class="stat-key">PAC file</span><span class="stat-val good" id="pacEndpoint">/vpn/proxy.pac</span></div>
+        <div class="stat-row"><span class="stat-key">Routing</span><span class="stat-val">Browser requests can be tested through the Worker</span></div>
+        <div class="copy-row" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn" id="copyPacBtn" type="button">Copy PAC URL</button>
+          <a class="btn" href="/vpn/proxy.pac">Open PAC</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">Network details</div>
+      <div class="panel-body">
+        <div class="stat-row"><span class="stat-key">Online</span><span class="stat-val" id="onlineState">-</span></div>
+        <div class="stat-row"><span class="stat-key">Connection type</span><span class="stat-val" id="connType">-</span></div>
+        <div class="stat-row"><span class="stat-key">Downlink estimate</span><span class="stat-val" id="connDownlink">-</span></div>
+        <div class="stat-row"><span class="stat-key">Save-data mode</span><span class="stat-val" id="saveData">-</span></div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">Request test</div>
+      <div class="panel-body">
+        <div class="note" style="margin:0 0 10px">Measure a request to a CORS-enabled URL from this browser.</div>
+        <div class="test-input-row">
+          <input class="test-input" id="testUrl" value="https://httpbin.org/ip" placeholder="https://example.com">
+          <button class="btn" id="testBtn" type="button">Test</button>
+        </div>
+        <div class="test-result" id="testResult">No test has been run.</div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">DNS</div>
+      <div class="panel-body">
+        <div class="dns-grid">
+          <div>
+            <div class="field-label">Resolver</div>
+            <select id="dnsMode" class="test-input">
+              <option value="system">Browser default</option>
+              <option value="cloudflare">Cloudflare</option>
+              <option value="google">Google</option>
+              <option value="quad9">Quad9</option>
+              <option value="custom">Custom DoH URL</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-label">Hostname</div>
+            <input id="dnsHost" class="test-input" value="example.com" placeholder="example.com">
+          </div>
+        </div>
+        <div id="customDnsWrap" style="display:none;margin-top:10px">
+          <div class="field-label">Custom DNS-over-HTTPS endpoint</div>
+          <input id="customDns" class="test-input" placeholder="https://resolver.example/dns-query">
+        </div>
+        <div class="dns-actions">
+          <button class="btn btn-primary" id="dnsBtn" type="button">Resolve</button>
+          <span class="dns-note" id="dnsResult">A browser page can test a resolver through DNS-over-HTTPS, but it cannot replace your operating system's DNS configuration.</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel span2">
+      <div class="panel-head">Speed test</div>
+      <div class="panel-body">
+        <div class="speed-grid">
+          <div class="speed-metric"><span>Download</span><strong id="speedDownload">-</strong></div>
+          <div class="speed-metric"><span>Upload</span><strong id="speedUpload">-</strong></div>
+          <div class="speed-metric"><span>Latency</span><strong id="speedLatency">-</strong></div>
+        </div>
+        <div class="speed-actions">
+          <button class="btn btn-primary" id="speedBtn" type="button">Run quick test</button>
+          <span class="note" id="speedNote">Uses small browser transfers, so this is an estimate rather than a full benchmark.</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">Local activity log</div>
+      <div class="panel-body">
+        <div class="toggle-row">
+          <div><strong>Log app requests</strong><div class="note">Only requests started by this page are recorded.</div></div>
+          <label class="switch"><input type="checkbox" id="activityToggle"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div><strong>Keep local log</strong><div class="note">Leave this off if you do not want request history kept in this tab.</div></div>
+          <label class="switch"><input type="checkbox" id="activityPersist"><span class="slider"></span></label>
+        </div>
+        <div class="activity-list" id="activityList"><div class="activity-item"><span class="activity-kind">INFO</span><span class="activity-text">Activity logging is off.</span></div></div>
+        <div style="margin-top:10px"><button class="btn" id="clearActivity" type="button">Clear log</button></div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">Privacy helpers</div>
+      <div class="panel-body">
+        <div class="security-list" style="grid-template-columns:1fr">
+          <div class="security-item"><strong>WebRTC visibility</strong><span id="webrtcStatus">Checking browser support...</span></div>
+          <div class="security-item"><strong>Secure page</strong><span id="secureStatus">Checking...</span></div>
+          <div class="security-item"><strong>MAC address</strong><span>A normal web page cannot change your device MAC address. You can generate a random value for manual system configuration.</span></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
+          <button class="btn" id="macBtn" type="button">Generate random MAC</button>
+          <span class="note" id="macResult">No value generated.</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel span2">
+      <div class="panel-head">Network protection checks</div>
+      <div class="panel-body">
+        <div class="security-list">
+          <div class="security-item"><strong>Connection check</strong><span>Confirms that this page can reach its own origin.</span></div>
+          <div class="security-item"><strong>DNS resolver test</strong><span>Lets you compare browser-visible DNS answers through supported DoH endpoints.</span></div>
+          <div class="security-item"><strong>Request logging</strong><span>Local and opt-in. The page cannot see unrelated browser traffic.</span></div>
+          <div class="security-item"><strong>DDoS protection</strong><span>Real protection needs to run at the server, reverse proxy, CDN, firewall, or network edge. A webpage cannot add that protection to the whole device.</span></div>
+          <div class="security-item"><strong>IP masking</strong><span>Actual public-IP masking requires a proxy or another network gateway. This page can only report the address visible to the browser.</span></div>
+          <div class="security-item"><strong>MAC randomisation</strong><span>MAC randomisation is an operating-system or Wi-Fi stack feature, not something JavaScript in a webpage can switch on.</span></div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <footer class="footer">
+    <span>Network tools</span>
+    <a href="apps.html">Back to Apps</a>
+  </footer>
 </main>
+
 <script>
 (() => {
   const $ = id => document.getElementById(id);
@@ -298,7 +309,9 @@ button{cursor:pointer}
     persist: false
   };
 
-  const WORKER_BASE = location.origin;
+  // Always route worker calls to the Cloudflare Worker domain,
+  // not location.origin (which may be GitHub Pages and returns HTML 404s).
+  const WORKER_BASE = 'https://360-search.com';
   const WORKER_PROXY = WORKER_BASE + '/vpn/proxy';
   const WORKER_HEALTH = WORKER_BASE + '/vpn';
   const PAC_URL = WORKER_BASE + '/vpn/proxy.pac';
@@ -477,7 +490,7 @@ button{cursor:pointer}
     $('speedNote').textContent='Running a small browser-based estimate...';
     try{
       const lp=performance.now();
-      await fetchThroughWorker(location.origin + '/favicon.ico?latency=' + Date.now());
+      await fetchThroughWorker('https://1.1.1.1/cdn-cgi/trace?ts=' + Date.now());
       $('speedLatency').textContent=Math.max(1,Math.round(performance.now()-lp))+' ms';
 
       const downBytes=1500000;
