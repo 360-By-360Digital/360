@@ -509,7 +509,8 @@ const PINNED_APP_CATALOG = [
   { label: "360Canvas", href: "/apps/360Canvas", icon: "🎨" },
   { label: "Gather", href: "/apps/360Meet", icon: "👥" },
 { label: "360VPN", href: "/vpn/360vpn", icon: "🛜" },
-{ label: "Maps", href: "/apps/360Maps", icon: "🗺️" },         // please always leave a comma on last item in case we add a new app ty :)
+{ label: "Maps", href: "/apps/360Maps", icon: "🗺️" },
+    { label: "Pomodoro", href: "/apps/Pomodoro", icon: "🕥" }, // please always leave a comma on last item in case we add a new app ty :)
 
 ];
 
