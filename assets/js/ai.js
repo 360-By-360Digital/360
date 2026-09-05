@@ -31,7 +31,7 @@
   // start collapsed there so it doesn't block the chat on first load.
   if (aiSidebar && window.innerWidth <= 760) {
     aiSidebar.classList.add("collapsed");
-    aiShell?.classList.add("sidebar-collapsed");
+    if (aiShell) aiShell.classList.add("sidebar-collapsed");
   }
   const newChatBtn = document.getElementById("new-chat-btn");
   const convTitleBar = document.getElementById("conv-title-bar");
@@ -68,12 +68,12 @@
 
   function hideWelcome() {
     if (welcome) welcome.style.display = "none";
-    convTitleBar?.classList.add("show");
+    if (convTitleBar) convTitleBar.classList.add("show");
   }
 
   function showWelcome() {
     if (welcome) welcome.style.display = "flex";
-    convTitleBar?.classList.remove("show");
+    if (convTitleBar) convTitleBar.classList.remove("show");
   }
 
   function setTitle(title, { save = false } = {}) {
@@ -97,7 +97,7 @@
     if (!convList) return;
     const item = [...convList.querySelectorAll(".conv-item")]
       .find(el => el.dataset.convId === String(id));
-    const span = item?.querySelector(".conv-item-title");
+    const span = item ? item.querySelector(".conv-item-title") : null;
     if (span) span.textContent = title;
   }
 
@@ -111,7 +111,7 @@
   }
 
   function safeFocus(el) {
-    try { el?.focus(); } catch (_) {}
+    try { if (el) el.focus(); } catch (_) {}
   }
 
   function setInputHeight() {
@@ -137,14 +137,14 @@
       // bump can't silently turn code blocks into "[object Object]".
       let codeText, lang;
       if (codeArg && typeof codeArg === "object") {
-        codeText = codeArg.text ?? "";
-        lang = codeArg.lang ?? "";
+        codeText = codeArg.text != null ? codeArg.text : "";
+        lang = codeArg.lang != null ? codeArg.lang : "";
       } else {
         codeText = codeArg;
         lang = langArg;
       }
 
-      const safeCode = String(codeText ?? "")
+      const safeCode = String(codeText != null ? codeText : "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
@@ -177,7 +177,7 @@
   };
 
   on(document, "click", (e) => {
-    const btn = e.target.closest?.(".code-download-btn");
+    const btn = e.target && typeof e.target.closest === "function" ? e.target.closest(".code-download-btn") : null;
     if (!btn) return;
     const id = btn.getAttribute("data-copy-target");
     const el = id && document.getElementById(id);
@@ -214,7 +214,7 @@
 
   /* delegated copy buttons */
   on(document, "click", async (e) => {
-    const btn = e.target.closest?.(".code-copy-btn");
+    const btn = e.target && typeof e.target.closest === "function" ? e.target.closest(".code-copy-btn") : null;
     if (!btn) return;
 
     const id = btn.getAttribute("data-copy-target");
@@ -243,7 +243,7 @@
 
     let inner = "";
 
-    if (file?.previewUrl && file.mimeType?.startsWith("image/")) {
+    if (file && file.previewUrl && file.mimeType && file.mimeType.startsWith("image/")) {
       inner += `
         <div class="attached-preview">
           <img src="${file.previewUrl}" alt="${escHtml(file.name || "image")}" />
@@ -359,7 +359,7 @@
       return;
     }
 
-    const isImage = fileObj.mimeType?.startsWith("image/");
+    const isImage = !!(fileObj.mimeType && fileObj.mimeType.startsWith("image/"));
 
     if (isImage && fileObj.previewUrl) {
       fpThumb.innerHTML = `<img src="${fileObj.previewUrl}" alt="preview" style="max-height:44px;border-radius:6px;" />`;
@@ -406,7 +406,7 @@
     } else {
       const reader = new FileReader();
       reader.onload = ev => {
-        const result = ev.target?.result;
+        const result = ev.target ? ev.target.result : undefined;
         if (typeof result !== "string" || !result.includes(",")) return;
         pendingFile = { file, name, base64: result.split(",")[1], mimeType, previewUrl: null };
         updateFilePreview(pendingFile);
@@ -415,10 +415,10 @@
     }
   }
 
-  on(attachBtn, "click", () => fileInput?.click());
+  on(attachBtn, "click", () => { if (fileInput) fileInput.click(); });
 
   on(fileInput, "change", e => {
-    const file = e.target?.files?.[0];
+    const file = e.target && e.target.files ? e.target.files[0] : undefined;
     if (file) attachFile(file);
     if (e.target) e.target.value = "";
   });
@@ -426,11 +426,11 @@
   on(fpCancel, "click", clearFile);
 
   on(document, "paste", e => {
-    const items = e.clipboardData?.items;
+    const items = e.clipboardData ? e.clipboardData.items : undefined;
     if (!items) return;
 
     for (const item of items) {
-      if (item.type?.startsWith("image/")) {
+      if (item.type && item.type.startsWith("image/")) {
         e.preventDefault();
         const file = item.getAsFile();
         if (!file) return;
@@ -462,17 +462,17 @@
 
   on(aiMain, "drop", e => {
     e.preventDefault();
-    aiMain?.classList.remove("drag-over");
-    const file = e.dataTransfer?.files?.[0];
+    if (aiMain) aiMain.classList.remove("drag-over");
+    const file = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : undefined;
     if (file) attachFile(file);
   });
 
   /* ── storage upload ──────────────────────────────────────────────── */
 
   async function uploadToStorage(file, name) {
-    if (!sb?.storage || !file) return null;
+    if (!sb || !sb.storage || !file) return null;
 
-    const ext = (name?.split(".").pop() || "bin").replace(/[^\w-]/g, "");
+    const ext = ((name ? name.split(".").pop() : "") || "bin").replace(/[^\w-]/g, "");
     const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
     const { error } = await sb.storage
@@ -481,7 +481,7 @@
 
     if (error) return null;
 
-    return sb.storage.from("ai-uploads").getPublicUrl(path).data?.publicUrl || null;
+    const publicData = sb.storage.from("ai-uploads").getPublicUrl(path).data; return publicData ? (publicData.publicUrl || null) : null;
   }
 
   /* ── talking to the backend ──────────────────────────────────────── */
@@ -495,7 +495,7 @@
   // "All AI providers temporarily unavailable". Stripping down to the
   // plain shape the backend actually expects fixes that for good.
   function apiMemory(hist) {
-    return hist.map(m => ({ role: m.role, content: String(m.content ?? "") }));
+    return hist.map(m => ({ role: m.role, content: String(m.content != null ? m.content : "") }));
   }
 
   const PROVIDERS_DOWN_RE = /all ai providers (are )?temporarily unavailable/i;
@@ -543,7 +543,7 @@
         try { evt = JSON.parse(payload); } catch (_) { continue; }
         if (evt.type === "thinking") { sawAnything = true; handlers.onThinking(evt.delta); }
         else if (evt.type === "text") { sawAnything = true; handlers.onText(evt.delta); }
-        else if (evt.type === "done") { handlers.onDone?.(evt.model); }
+        else if (evt.type === "done") { if (handlers.onDone) handlers.onDone(evt.model); }
         else if (evt.type === "error") { sawError = evt.message; }
       }
     }
@@ -563,7 +563,7 @@
     if (isSending) return;
     if (!aiInput && !pendingFile) return;
 
-    const prompt = aiInput?.value?.trim() || "";
+    const prompt = aiInput && aiInput.value ? aiInput.value.trim() : "";
     if (!prompt && !pendingFile) return;
 
     isSending = true;
@@ -578,7 +578,7 @@
     clearFile();
 
     let storageUrl = null;
-    if (captured?.file) {
+    if (captured && captured.file) {
       storageUrl = await uploadToStorage(captured.file, captured.name).catch(() => null);
     }
 
@@ -629,7 +629,7 @@
           if (firstTextChunk) {
             firstTextChunk = false;
             if (thinkingLabel) thinkingLabel.textContent = "Thought it through";
-            thinkingBox?.querySelector(".ai-thinking-spinner")?.remove();
+            if (thinkingBox) { const spinner = thinkingBox.querySelector(".ai-thinking-spinner"); if (spinner) spinner.remove(); }
           }
           textBuf += delta;
           if (answerContent) answerContent.innerHTML = renderMarkdown(textBuf);
@@ -645,7 +645,7 @@
           reply = reply.slice(0, m.index).trim();
           setTitle(m[1].trim().replace(/["'.]+$/, ""));
         } else {
-          setTitle((prompt || captured?.name || "Chat").slice(0, 50));
+          setTitle((prompt || (captured ? captured.name : "") || "Chat").slice(0, 50));
         }
       }
 
@@ -673,7 +673,7 @@
     } catch (err) {
       if (thinkingBox) thinkingBox.style.display = "none";
       if (answerContent) {
-        answerContent.innerHTML = `<span style="color:#ef4444;">${escHtml(err?.message || "Unknown error")}</span>`;
+        answerContent.innerHTML = `<span style="color:#ef4444;">${escHtml((err && err.message) || "Unknown error")}</span>`;
       }
     } finally {
       isSending = false;
@@ -706,8 +706,8 @@
   });
 
   on(sidebarToggleBtn, "click", () => {
-    aiSidebar?.classList.toggle("collapsed");
-    aiShell?.classList.toggle("sidebar-collapsed", !!aiSidebar?.classList.contains("collapsed"));
+    if (aiSidebar) aiSidebar.classList.toggle("collapsed");
+    if (aiShell) aiShell.classList.toggle("sidebar-collapsed", !!(aiSidebar && aiSidebar.classList.contains("collapsed")));
   });
 
   /* ── autosave ────────────────────────────────────────────────────── */
@@ -723,7 +723,7 @@
     const userMsgs = history.filter(m => m.role === "user");
     if (!userMsgs.length) return;
 
-    const title = (currentTitle || userMsgs[0]?.content || "Chat").slice(0, 80);
+    const title = (currentTitle || (userMsgs[0] ? userMsgs[0].content : "") || "Chat").slice(0, 80);
     const payload = {
       user_id: currentUserId,
       title,
@@ -794,7 +794,7 @@
   let openConvDropdown = null;
 
   function closeConvMenu() {
-    openConvDropdown?.remove();
+    if (openConvDropdown) openConvDropdown.remove();
     openConvDropdown = null;
     document.querySelectorAll(".conv-menu-btn.open").forEach(b => b.classList.remove("open"));
   }
@@ -835,7 +835,7 @@
 
     on(dd, "click", e => {
       e.stopPropagation();
-      const act = e.target.closest(".conv-dropdown-item")?.dataset.act;
+      const actEl = e.target.closest(".conv-dropdown-item"); const act = actEl ? actEl.dataset.act : undefined;
       closeConvMenu();
       if (act === "rename") renameConversation(conv);
       else if (act === "duplicate") duplicateConversation(conv);
@@ -893,7 +893,7 @@
     // save/load/delete — the "glitch" — while this awaited. Building
     // everything first and only touching the DOM once avoids that.
     const frag = document.createDocumentFragment();
-    if (!data?.length) {
+    if (!data || !data.length) {
       const empty = document.createElement("div");
       empty.className = "conv-empty";
       empty.textContent = "No saved chats yet";
@@ -1077,19 +1077,19 @@
   /* ── auth ────────────────────────────────────────────────────────── */
 
   (async () => {
-    if (!sb?.auth) return;
+    if (!sb || !sb.auth) return;
 
     try {
       const { data: { session } } = await sb.auth.getSession();
-      currentUserId = session?.user?.id || null;
+      currentUserId = session && session.user ? session.user.id : null;
       scheduleLoad();
     } catch (_) {}
   })();
 
-  if (sb?.auth) {
+  if (sb && sb.auth) {
     sb.auth.onAuthStateChange((event, session) => {
       if (event === "INITIAL_SESSION") return;
-      currentUserId = session?.user?.id || null;
+      currentUserId = session && session.user ? session.user.id : null;
       scheduleLoad();
     });
   }
