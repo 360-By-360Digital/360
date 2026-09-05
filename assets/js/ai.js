@@ -1,1096 +1,1152 @@
-(() => {
-  /* ── 360 AI — ai.js (scoped + safer) ─────────────────────────────────── */
+/* ============================================================
+   360 AI — ai.css
+   Self-contained styles for /ai.html. Scoped under .ai-shell so
+   nothing here leaks onto other pages, and every selector that
+   also happens to be used by the older, unrelated rules in
+   main.css (#ai-output, .ai-bubble, #ai-input, #ai-send-btn …)
+   is deliberately re-declared in full here so this page renders
+   consistently regardless of load order.
+   ============================================================ */
 
-  // main.js declares `const supabaseClient = supabase.createClient(...)` at
-  // the top level of a classic <script>. That does NOT create a
-  // window.supabaseClient property (only var/function declarations do), so
-  // window.supabaseClient / window.sb were always undefined here and every
-  // Supabase call below silently no-opped — this is why saved chats never
-  // loaded. Classic scripts do share one global lexical scope though, so
-  // the bare `supabaseClient` identifier from main.js is reachable here.
-  const sb = window.supabaseClient || window.sb ||
-    (typeof supabaseClient !== "undefined" ? supabaseClient : null);
+.ai-shell, .ai-shell * , .ai-shell *::before, .ai-shell *::after {
+  box-sizing: border-box;
+}
 
-  const aiInput = document.getElementById("ai-input");
-  const aiSendBtn = document.getElementById("ai-send-btn");
-  const aiOutput = document.getElementById("ai-output");
-  const convList = document.getElementById("conv-list");
-  const fileInput = document.getElementById("ai-file-input");
-  const welcome = document.getElementById("ai-welcome");
-  const aiMain = document.getElementById("ai-main");
+/* Local, theme-aware surface tokens. Everything below reads from
+   these instead of hard-coded rgba() values, so the whole page
+   adapts automatically when body.dark is toggled.
 
-  const attachBtn = document.getElementById("ai-attach-btn");
-  const filePreview = document.getElementById("file-preview");
-  const fpThumb = document.getElementById("fp-thumb");
-  const fpName = document.getElementById("fp-name");
-  const fpCancel = document.getElementById("fp-cancel");
-  const sidebarToggleBtn = document.getElementById("ai-chat-sidebar-toggle");
-  const aiSidebar = document.getElementById("ai-sidebar");
-  const aiShell = document.querySelector(".ai-shell");
-  // Sidebar overlays on mobile (see ai.html's max-width:760px rule) —
-  // start collapsed there so it doesn't block the chat on first load.
-  if (aiSidebar && window.innerWidth <= 760) {
-    aiSidebar.classList.add("collapsed");
-    aiShell?.classList.add("sidebar-collapsed");
+   IMPORTANT: main.css's :root only defines --bg/--txt/--mut once
+   and never redefines them for dark mode — body.dark instead sets
+   the body element's own background/color directly from --bgd/
+   --txtd. That means var(--bg)/var(--txt)/var(--mut) always
+   resolve to the light values anywhere else in the app. We
+   re-declare them locally, scoped to .ai-shell, so this page
+   (and only this page) gets a real light/dark switch. */
+.ai-shell {
+  --bg: #f3f4f7;
+  --txt: #111827;
+  --mut: #6b7280;
+  --surface: rgba(255,255,255,.7);
+  --surface-soft: rgba(17,24,39,.03);
+  --hover: rgba(17,24,39,.06);
+  --code-bg: #f6f8fa;
+  --code-header: rgba(17,24,39,.05);
+}
+body.dark .ai-shell {
+  --bg: #050509;
+  --txt: #e7e7ea;
+  --mut: #a3a7b3;
+  --surface: rgba(20,22,32,.7);
+  --surface-soft: rgba(255,255,255,.05);
+  --hover: rgba(255,255,255,.08);
+  --code-bg: #0d1117;
+  --code-header: rgba(255,255,255,.07);
+}
+
+.ai-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  /* transparent, not var(--bg): lets a custom background image set
+     on <body> (via Settings → Background) show through and be
+     blurred by the glass panels below, instead of being hidden
+     under a flat opaque fill. */
+  background: transparent;
+  color: var(--txt);
+  font-size: 14px;
+}
+
+.ai-shell svg { display: block; }
+
+/* ── Conversation sidebar ── */
+#ai-sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-right: 1px solid var(--br);
+  transition: width .2s ease;
+  overflow: hidden;
+  /* clears the site-wide fixed "☰ Menu" button (top:10px/left:10px,
+     ~30px tall) which floats above everything and would otherwise
+     sit on top of the "Chats / New" row below. */
+  padding-top: 46px;
+}
+#ai-sidebar.collapsed { width: 0; border-right: none; padding-top: 0; }
+
+.sb-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--br);
+  flex-shrink: 0;
+}
+.sb-logo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: .85;
+  white-space: nowrap;
+}
+#new-chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--br);
+  background: transparent;
+  color: var(--txt);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background .15s, border-color .15s;
+}
+#new-chat-btn:hover { background: var(--hover); border-color: var(--a); }
+
+#conv-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.conv-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 9px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--txt);
+  opacity: .75;
+  position: relative;
+}
+.conv-item svg { flex-shrink: 0; opacity: .6; }
+.conv-item:hover { background: var(--hover); opacity: 1; }
+.conv-item.active { background: rgba(59,130,246,.12); opacity: 1; }
+.conv-item.active svg { color: var(--a); opacity: 1; }
+.conv-item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.conv-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--txt);
+  opacity: .5;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  position: relative;
+}
+.conv-item:hover .conv-menu-btn,
+.conv-menu-btn.open { display: flex; }
+.conv-menu-btn:hover, .conv-menu-btn.open { opacity: 1; background: var(--hover); }
+
+.conv-dropdown {
+  position: fixed;
+  min-width: 150px;
+  padding: 5px;
+  border-radius: 10px;
+  background: #f3f4f7;
+  border: 1px solid var(--br);
+  box-shadow: 0 12px 30px rgba(0,0,0,.18);
+  z-index: 200;
+  animation: aiConfirmScaleIn .12s ease;
+}
+body.dark .conv-dropdown { background: #16161f; }
+.conv-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--txt);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.conv-dropdown-item:hover { background: var(--hover); }
+.conv-dropdown-item.danger { color: #ef4444; }
+.conv-dropdown-item.danger:hover { background: rgba(239,68,68,.1); }
+.conv-dropdown-item svg { opacity: .8; flex-shrink: 0; }
+
+.conv-empty { font-size: 12px; opacity: .5; padding: 10px 9px; }
+
+/* ── Main column ── */
+.ai-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: relative;
+}
+
+/* ── Top bar ── */
+.ai-topbar {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  padding-left: 80px; /* reserves room for the fixed global "☰ Menu"
+                          button when the chat sidebar is closed */
+  border-bottom: 1px solid var(--br);
+  background: var(--surface);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  transition: padding-left .2s ease;
+}
+/* Sidebar open: it already occupies that top-left corner, so the
+   topbar no longer needs to reserve space for the fixed button. */
+.ai-shell:not(.sidebar-collapsed) .ai-topbar { padding-left: 20px; }
+@media (max-width: 600px) { .ai-topbar { padding-left: 60px; } }
+
+.ai-topbar-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.ai-topbar-left { justify-content: flex-start; }
+.ai-topbar-right { justify-content: flex-end; }
+
+.ai-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.ai-brand-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--a), #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+.ai-brand-text {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--txt);
+  cursor: pointer;
+  opacity: .6;
+  padding: 6px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  transition: opacity .15s, background .15s;
+}
+.icon-btn:hover { opacity: 1; background: var(--hover); }
+
+.ai-conv-title-bar {
+  display: none;
+  visibility: hidden;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 16px 3px;
+  flex-shrink: 0;
+}
+.ai-conv-title-bar.show { display: flex; }
+.conv-title-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--txt);
+  opacity: .75;
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-topbar-link {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+  color: var(--txt);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--br);
+  opacity: .85;
+  transition: background .15s;
+}
+.ai-topbar-link:hover { background: var(--hover); opacity: 1; }
+
+/* ── Mobile: conversation sidebar overlays instead of squeezing
+   the chat column, and starts collapsed (handled in ai.js). ── */
+@media (max-width: 760px) {
+  #ai-sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 61;
+    width: 250px;
+    box-shadow: 2px 0 24px rgba(0,0,0,.3);
   }
-  const newChatBtn = document.getElementById("new-chat-btn");
-  const convTitleBar = document.getElementById("conv-title-bar");
-  const convTitleLabel = document.getElementById("conv-title-label");
+  #ai-sidebar.collapsed { width: 0; box-shadow: none; }
+  .ai-shell { overflow: visible; }
+}
 
-  const SB_URL = "https://wiswfpfsjiowtrdyqpxy.supabase.co";
+/* ── Messages ── */
+.ai-shell #ai-output {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px 0 0;
+  scroll-behavior: smooth;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  margin-bottom: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
 
-  let history = [];
-  let currentConvId = null;
-  let currentUserId = null;
-  let currentTitle = null;
-  let pendingFile = null;
-  let isSending = false;
-  let autoSaveTimer = null;
-  let loadConvTimer = null;
-  let titleSaveTimer = null;
+.ai-shell .ai-bubble {
+  max-width: 760px;
+  margin: 0 auto 18px;
+  padding: 0 20px;
+  border-radius: 0;
+  line-height: normal;
+  font-size: 14px;
+  animation: aiFadeUp .18s ease;
+}
+@keyframes aiFadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-  function on(el, evt, handler, opts) {
-    if (el) el.addEventListener(evt, handler, opts);
+/* User bubble */
+.ai-shell .ai-bubble.user {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: none;
+  color: inherit;
+  margin-left: auto;
+}
+.ai-bubble.user .bubble-inner {
+  background: rgba(59,130,246,.12);
+  border: 1px solid rgba(59,130,246,.22);
+  border-radius: 0;
+  padding: 10px 14px;
+  font-size: 14px;
+  max-width: 80%;
+  word-break: break-word;
+  white-space: pre-wrap;
+  color: var(--txt);
+}
+.ai-bubble.user .attached-preview {
+  max-width: 260px;
+  border-radius: 0;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.ai-bubble.user .attached-preview img {
+  width: 100%;
+  display: block;
+  border-radius: 0;
+}
+.ai-bubble.user .attached-file-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  background: var(--surface-soft);
+  border: 1px solid var(--br);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  color: var(--a);
+  text-decoration: none;
+}
+
+/* Assistant bubble */
+.ai-shell .ai-bubble.assistant {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: none;
+  color: inherit;
+}
+.ai-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--a), #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+  margin-top: 2px;
+  /* Hidden per request, but visibility (not display:none) keeps its
+     box in the flex layout so the reply text doesn't shift left. */
+  visibility: hidden;
+}
+.ai-bubble.assistant .bubble-inner {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.65;
+  min-width: 0;
+  color: var(--txt);
+}
+
+/* Markdown styling inside assistant bubble */
+.bubble-inner h1, .bubble-inner h2, .bubble-inner h3 {
+  margin: 16px 0 8px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.bubble-inner h1 { font-size: 1.3em; }
+.bubble-inner h2 { font-size: 1.15em; }
+.bubble-inner h3 { font-size: 1.05em; }
+.bubble-inner p { margin: 6px 0; }
+.bubble-inner ul, .bubble-inner ol { padding-left: 20px; margin: 6px 0; }
+.bubble-inner li { margin: 3px 0; }
+.bubble-inner strong { font-weight: 700; }
+.bubble-inner em { font-style: italic; }
+.bubble-inner a { color: var(--a); text-decoration: underline; }
+.bubble-inner hr { border: none; border-top: 1px solid var(--br); margin: 14px 0; }
+.bubble-inner table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
+.bubble-inner th, .bubble-inner td { border: 1px solid var(--br); padding: 6px 10px; text-align: left; }
+.bubble-inner th { background: var(--surface-soft); font-weight: 600; }
+.bubble-inner blockquote { border-left: 3px solid var(--a); margin: 10px 0; padding: 4px 12px; opacity: .8; }
+
+/* Inline code */
+.bubble-inner code:not(pre code) {
+  background: var(--surface-soft);
+  border: 1px solid var(--br);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: .88em;
+  font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+}
+
+/* Code blocks — kept on a fixed dark chrome (like most chat/code
+   UIs) since it matches the syntax-highlight theme in both modes. */
+.code-block-wrap {
+  position: relative;
+  margin: 10px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--br);
+  background: var(--code-bg);
+}
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  background: var(--code-header);
+  font-size: 11px;
+  color: var(--mut);
+}
+body.dark .code-block-header { color: var(--mutd); }
+.code-block-lang { font-family: monospace; letter-spacing: .05em; text-transform: lowercase; }
+.code-copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: .8;
+}
+.code-copy-btn:hover { opacity: 1; background: var(--hover); }
+.code-download-btn {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: .8;
+}
+.code-download-btn:hover { opacity: 1; background: var(--hover); }
+.code-block-wrap pre {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  max-height: 480px;
+  overflow: auto;
+}
+.code-block-wrap pre code { font-size: 13px !important; }
+
+/* Live thinking panel — visible reasoning stream, collapsible */
+.ai-thinking-box {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+body.dark .ai-thinking-box { border-color: var(--border-dark, var(--border)); }
+.ai-thinking-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--mut);
+  text-align: left;
+}
+body.dark .ai-thinking-toggle { color: var(--mutd); }
+.ai-thinking-toggle:hover { background: var(--hover); }
+.ai-thinking-spinner {
+  width: 10px; height: 10px;
+  border: 2px solid var(--border);
+  border-top-color: var(--a);
+  border-radius: 50%;
+  animation: aiThinkSpin .7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes aiThinkSpin { to { transform: rotate(360deg); } }
+.ai-thinking-label { flex: 1; }
+.ai-thinking-arrow { opacity: .6; font-size: 10px; }
+.ai-thinking-content {
+  padding: 0 14px 12px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--mut);
+  white-space: pre-wrap;
+  max-height: 220px;
+  overflow-y: auto;
+}
+body.dark .ai-thinking-content { color: var(--mutd); }
+
+/* Thinking indicator */
+.thinking {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 6px 0;
+  opacity: .55;
+}
+.thinking span {
+  width: 6px; height: 6px;
+  background: var(--a);
+  border-radius: 50%;
+  animation: aiBounce .9s infinite;
+}
+.thinking span:nth-child(2) { animation-delay: .15s; }
+.thinking span:nth-child(3) { animation-delay: .3s; }
+@keyframes aiBounce { 0%,80%,100% { transform: scale(.8); } 40% { transform: scale(1.2); } }
+
+/* Drag & drop image attach */
+.ai-main.drag-over #ai-output::after {
+  content: 'Drop to attach';
+  position: fixed;
+  inset: 0;
+  background: rgba(59,130,246,.1);
+  border: 2px dashed var(--a);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--a);
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* ── Input area ── */
+.ai-input-area {
+  border-top: 1px solid var(--br);
+  padding: 12px 14px 14px;
+  background: var(--surface);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+#file-preview {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(59,130,246,.08);
+  border: 1px solid rgba(59,130,246,.2);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+#file-preview.show { display: flex; }
+#fp-thumb { display: flex; align-items: center; }
+#fp-thumb img { max-height: 40px; border-radius: 6px; display: block; }
+#fp-thumb svg { opacity: .7; }
+#fp-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .8; }
+#fp-cancel {
+  display: flex;
+  border: none;
+  background: transparent;
+  color: var(--txt);
+  opacity: .5;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 5px;
+}
+#fp-cancel:hover { opacity: 1; background: var(--hover); }
+
+.ai-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: 760px;
+  margin: 0 auto;
+  background: var(--surface-soft);
+  border: 1px solid var(--br);
+  border-radius: 16px;
+  padding: 8px 8px 8px 14px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.ai-input-row:focus-within {
+  border-color: rgba(59,130,246,.5);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.1);
+}
+.ai-shell #ai-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--txt);
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  border-radius: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  line-height: 1.5;
+  padding: 6px 0;
+  backdrop-filter: none;
+}
+.ai-input-row::placeholder,
+.ai-shell #ai-input::placeholder { color: var(--mut); opacity: .8; }
+body.dark .ai-shell #ai-input::placeholder { color: var(--mutd); }
+
+.ai-input-btns {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  padding-bottom: 2px;
+}
+#ai-attach-btn {
+  display: flex;
+  border: none;
+  background: transparent;
+  color: var(--txt);
+  opacity: .55;
+  cursor: pointer;
+  padding: 7px;
+  border-radius: 8px;
+}
+#ai-attach-btn:hover { opacity: 1; background: var(--hover); }
+.ai-shell #ai-send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: linear-gradient(135deg, var(--a), #8b5cf6);
+  color: #fff;
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-weight: 400;
+  cursor: pointer;
+  transition: opacity .15s;
+  flex-shrink: 0;
+}
+#ai-send-btn:hover { opacity: .88; }
+#ai-send-btn:disabled { opacity: .35; cursor: default; }
+
+.ai-input-hint {
+  text-align: center;
+  font-size: 11px;
+  opacity: .4;
+  margin-top: 8px;
+}
+
+/* ── Welcome screen ── */
+#ai-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 14px;
+  text-align: center;
+  padding: 24px;
+}
+.wl-logo {
+  width: 52px; height: 52px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, var(--a), #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  margin-bottom: 2px;
+}
+.wl-title { font-size: 21px; font-weight: 700; }
+.wl-sub { font-size: 13.5px; opacity: .6; max-width: 360px; line-height: 1.6; }
+.wl-chips {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  margin-top: 4px; max-width: 480px;
+}
+.wl-chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--br);
+  background: var(--surface-soft);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.wl-chip:hover { background: rgba(59,130,246,.1); border-color: rgba(59,130,246,.35); color: var(--a); }
+
+/* ── Custom confirm / rename modal (replaces window.confirm/prompt) ── */
+.ai-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: aiConfirmFadeIn .15s ease;
+}
+.ai-confirm-box {
+  width: 280px;
+  padding: 20px;
+  border-radius: 14px;
+  text-align: center;
+  background: #f3f4f7;
+  color: #111827;
+  border: 1px solid var(--br);
+  box-shadow: 0 20px 50px rgba(0,0,0,.25);
+  animation: aiConfirmScaleIn .15s ease;
+}
+@keyframes aiConfirmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes aiConfirmScaleIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
+body.dark .ai-confirm-box { background: #101018; color: #e7e7ea; }
+.ai-confirm-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.ai-confirm-msg { font-size: 13px; opacity: .7; margin-bottom: 16px; }
+.ai-confirm-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--br);
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  margin-bottom: 16px;
+  outline: none;
+}
+.ai-confirm-input:focus { border-color: var(--a); }
+.ai-confirm-actions { display: flex; gap: 10px; justify-content: center; }
+.ai-confirm-actions button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ai-confirm-cancel { border: 1px solid var(--br); background: transparent; color: inherit; }
+.ai-confirm-ok { border: none; background: linear-gradient(135deg, var(--a), #8b5cf6); color: #fff; font-weight: 600; }
+
+/* ── Toast ── */
+.ai-toast {
+  position: fixed;
+  bottom: 84px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(17,24,39,.94);
+  color: #f5f5f5;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: 1px solid rgba(255,255,255,.1);
+  pointer-events: none;
+  animation: aiToastIn .2s ease;
+  z-index: 999;
+}
+@keyframes aiToastIn { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+
+/* 360 AI visual refresh */
+.ai-shell {
+  --ai-accent: #6d7cff;
+  --ai-accent-2: #9b7cff;
+  --ai-panel: rgba(12, 14, 22, .72);
+  --ai-panel-strong: rgba(18, 20, 30, .9);
+  --ai-line: rgba(255,255,255,.09);
+  --ai-soft: rgba(255,255,255,.055);
+  --ai-shadow: 0 20px 60px rgba(0,0,0,.28);
+}
+
+body:not(.dark) .ai-shell {
+  --ai-panel: rgba(255,255,255,.78);
+  --ai-panel-strong: rgba(255,255,255,.94);
+  --ai-line: rgba(15,23,42,.09);
+  --ai-soft: rgba(15,23,42,.045);
+  --ai-shadow: 0 20px 60px rgba(15,23,42,.12);
+}
+
+#ai-sidebar {
+  width: 274px;
+  background: var(--ai-panel);
+  border-right: 1px solid var(--ai-line);
+  box-shadow: 8px 0 35px rgba(0,0,0,.08);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+}
+
+.sb-head {
+  height: 62px;
+  padding: 14px 14px;
+  border-bottom: 1px solid var(--ai-line);
+}
+
+.sb-logo {
+  font-size: 14px;
+  letter-spacing: -.01em;
+}
+
+#new-chat-btn {
+  border: 1px solid var(--ai-line);
+  background: var(--ai-soft);
+  border-radius: 10px;
+  padding: 7px 10px;
+}
+
+#new-chat-btn:hover {
+  background: rgba(109,124,255,.12);
+  border-color: rgba(109,124,255,.35);
+}
+
+#conv-list {
+  padding: 12px 9px;
+  gap: 3px;
+}
+
+.conv-item {
+  min-height: 40px;
+  padding: 9px 10px;
+  border-radius: 10px;
+}
+
+.conv-item.active {
+  background: linear-gradient(90deg, rgba(109,124,255,.16), rgba(155,124,255,.07));
+  box-shadow: inset 2px 0 0 var(--ai-accent);
+}
+
+.ai-topbar {
+  height: 60px;
+  padding-right: 22px;
+  border-bottom: 1px solid var(--ai-line);
+  background: rgba(10,12,18,.42);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+}
+
+body:not(.dark) .ai-topbar {
+  background: rgba(255,255,255,.52);
+}
+
+.ai-brand {
+  gap: 9px;
+}
+
+.ai-brand-mark,
+.wl-logo,
+.ai-avatar {
+  background: linear-gradient(135deg, var(--ai-accent), var(--ai-accent-2));
+  box-shadow: 0 8px 24px rgba(109,124,255,.24);
+}
+
+.ai-brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+}
+
+.ai-brand-text {
+  font-size: 15px;
+}
+
+.ai-topbar-link {
+  border-color: var(--ai-line);
+  background: var(--ai-soft);
+  border-radius: 10px;
+  padding: 7px 12px;
+}
+
+.ai-shell #ai-output {
+  padding: 34px 0 120px;
+}
+
+.ai-shell .ai-bubble {
+  max-width: 840px;
+  margin-bottom: 26px;
+  padding: 0 24px;
+}
+
+.ai-shell .ai-bubble.user {
+  align-items: flex-end;
+}
+
+.ai-bubble.user .bubble-inner {
+  background: linear-gradient(135deg, rgba(109,124,255,.18), rgba(155,124,255,.1));
+  border: 1px solid rgba(109,124,255,.22);
+  border-radius: 18px 18px 5px 18px;
+  padding: 12px 15px;
+  max-width: min(78%, 650px);
+  box-shadow: 0 8px 25px rgba(0,0,0,.08);
+}
+
+.ai-shell .ai-bubble.assistant {
+  gap: 13px;
+}
+
+.ai-avatar {
+  visibility: visible;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.ai-bubble.assistant .bubble-inner {
+  font-size: 14.5px;
+  line-height: 1.72;
+}
+
+.ai-input-area {
+  position: relative;
+  border-top: 0;
+  padding: 12px 18px 18px;
+  background: linear-gradient(to top, rgba(5,7,12,.94), rgba(5,7,12,.58), transparent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body:not(.dark) .ai-input-area {
+  background: linear-gradient(to top, rgba(246,247,250,.96), rgba(246,247,250,.62), transparent);
+}
+
+.ai-input-row {
+  max-width: 840px;
+  min-height: 58px;
+  align-items: center;
+  padding: 8px 9px 8px 17px;
+  border: 1px solid var(--ai-line);
+  border-radius: 20px;
+  background: var(--ai-panel-strong);
+  box-shadow: var(--ai-shadow);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+
+.ai-input-row:focus-within {
+  border-color: rgba(109,124,255,.5);
+  box-shadow: 0 0 0 4px rgba(109,124,255,.08), var(--ai-shadow);
+}
+
+.ai-shell #ai-input {
+  font-size: 14.5px;
+  padding: 8px 0;
+}
+
+#ai-attach-btn {
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  opacity: .65;
+}
+
+#ai-attach-btn:hover {
+  background: var(--ai-soft);
+  opacity: 1;
+}
+
+.ai-shell #ai-send-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--ai-accent), var(--ai-accent-2));
+  box-shadow: 0 7px 20px rgba(109,124,255,.3);
+  transition: transform .15s, opacity .15s, box-shadow .15s;
+}
+
+.ai-shell #ai-send-btn:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(109,124,255,.4);
+}
+
+.ai-input-hint {
+  margin-top: 9px;
+  opacity: .32;
+}
+
+#file-preview {
+  max-width: 840px;
+  border-radius: 12px;
+  background: rgba(109,124,255,.09);
+  border-color: rgba(109,124,255,.2);
+}
+
+#ai-welcome {
+  max-width: 780px;
+  margin: 0 auto;
+  gap: 12px;
+  padding: 40px 24px;
+}
+
+.wl-logo {
+  width: 58px;
+  height: 58px;
+  border-radius: 17px;
+  margin-bottom: 7px;
+  box-shadow: 0 14px 35px rgba(109,124,255,.25);
+}
+
+.wl-logo svg {
+  width: 27px;
+  height: 27px;
+}
+
+.wl-title {
+  font-size: clamp(27px, 4vw, 38px);
+  letter-spacing: -.035em;
+  line-height: 1.05;
+}
+
+.wl-sub {
+  max-width: 520px;
+  font-size: 14px;
+  line-height: 1.7;
+  opacity: .58;
+}
+
+.wl-chips {
+  width: min(100%, 620px);
+  max-width: none;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.wl-chip {
+  flex: 1 1 180px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 13px;
+  border-radius: 13px;
+  border-color: var(--ai-line);
+  background: var(--ai-soft);
+  transition: transform .16s, background .16s, border-color .16s, box-shadow .16s;
+}
+
+.wl-chip:hover {
+  transform: translateY(-2px);
+  background: rgba(109,124,255,.1);
+  border-color: rgba(109,124,255,.3);
+  box-shadow: 0 8px 24px rgba(0,0,0,.1);
+}
+
+.ai-shell #ai-output::-webkit-scrollbar,
+#conv-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.ai-shell #ai-output::-webkit-scrollbar-thumb,
+#conv-list::-webkit-scrollbar-thumb {
+  background: rgba(128,128,128,.2);
+  border-radius: 99px;
+}
+
+@media (max-width: 760px) {
+  #ai-sidebar {
+    width: 274px;
   }
 
-  function escHtml(s) {
-    return String(s || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+  .ai-shell #ai-output {
+    padding-top: 22px;
   }
 
-  function scrollBottom() {
-    if (!aiOutput) return;
-    aiOutput.scrollTop = aiOutput.scrollHeight;
+  .ai-shell .ai-bubble {
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
-  function hideWelcome() {
-    if (welcome) welcome.style.display = "none";
-    convTitleBar?.classList.add("show");
+  .ai-bubble.user .bubble-inner {
+    max-width: 88%;
   }
 
-  function showWelcome() {
-    if (welcome) welcome.style.display = "flex";
-    convTitleBar?.classList.remove("show");
+  .ai-input-area {
+    padding: 9px 10px 12px;
   }
 
-  function setTitle(title, { save = false } = {}) {
-    currentTitle = title || null;
-    if (convTitleLabel) convTitleLabel.textContent = currentTitle || "Untitled chat";
-    if (save) saveTitleOnly();
+  .ai-input-row {
+    border-radius: 17px;
   }
 
-  async function saveTitleOnly() {
-    if (!sb || !currentUserId || !currentConvId) return;
-    const title = (currentTitle || "Untitled chat").slice(0, 80);
-    try {
-      await sb.from("ai_conversations").update({ title }).eq("id", currentConvId);
-      updateSidebarTitle(currentConvId, title);
-    } catch (_) {}
+  .wl-title {
+    font-size: 29px;
   }
-
-  function updateSidebarTitle(id, title) {
-    // Patch the sidebar item's text directly instead of re-fetching /
-    // re-rendering the whole list, so renaming doesn't cause a flash.
-    if (!convList) return;
-    const item = [...convList.querySelectorAll(".conv-item")]
-      .find(el => el.dataset.convId === String(id));
-    const span = item?.querySelector(".conv-item-title");
-    if (span) span.textContent = title;
-  }
-
-  function clearMessages() {
-    // Removes rendered bubbles only, instead of wiping #ai-output's
-    // entire innerHTML — that used to permanently delete the
-    // #ai-welcome node from the DOM on the first new/loaded chat,
-    // so showWelcome() silently did nothing ever after.
-    if (!aiOutput) return;
-    aiOutput.querySelectorAll(".ai-bubble").forEach(el => el.remove());
-  }
-
-  function safeFocus(el) {
-    try { el?.focus(); } catch (_) {}
-  }
-
-  function setInputHeight() {
-    if (!aiInput) return;
-    aiInput.style.height = "auto";
-    aiInput.style.height = Math.min(aiInput.scrollHeight, 200) + "px";
-  }
-
-  function fileLooksLikeImage(name = "") {
-    return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name);
-  }
-
-  /* ── markdown ─────────────────────────────────────────────────────── */
-
-  if (window.marked) {
-    marked.setOptions({ breaks: true, gfm: true });
-
-    const renderer = new marked.Renderer();
-    renderer.code = function (codeArg, langArg) {
-      // marked v5+ calls renderer.code(token) with a single
-      // { text, lang, escaped } object; older versions called
-      // renderer.code(code, infostring). Support both so a version
-      // bump can't silently turn code blocks into "[object Object]".
-      let codeText, lang;
-      if (codeArg && typeof codeArg === "object") {
-        codeText = codeArg.text ?? "";
-        lang = codeArg.lang ?? "";
-      } else {
-        codeText = codeArg;
-        lang = langArg;
-      }
-
-      const safeCode = String(codeText ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-
-      const label = (lang || "code").trim().split(/\s+/)[0];
-      const id = "cb-" + Math.random().toString(36).slice(2, 8);
-
-      return `
-        <div class="code-block-wrap">
-          <div class="code-block-header">
-            <span class="code-block-lang">${label}</span>
-            <button class="code-download-btn" data-copy-target="${id}" data-lang="${label}" title="Download as file">⭳</button>
-            <button class="code-copy-btn" data-copy-target="${id}">Copy</button>
-          </div>
-          <pre><code id="${id}" class="language-${label}">${safeCode}</code></pre>
-        </div>
-      `;
-    };
-
-    marked.use({ renderer });
-  }
-
-  /* file extension guess for the code-block download button */
-  const LANG_EXT = {
-    javascript: "js", js: "js", typescript: "ts", ts: "ts", jsx: "jsx", tsx: "tsx",
-    python: "py", py: "py", html: "html", css: "css", json: "json", yaml: "yml", yml: "yml",
-    bash: "sh", sh: "sh", shell: "sh", sql: "sql", java: "java", c: "c", cpp: "cpp", "c++": "cpp",
-    go: "go", rust: "rs", rs: "rs", ruby: "rb", rb: "rb", php: "php", swift: "swift",
-    markdown: "md", md: "md", xml: "xml", text: "txt", plaintext: "txt", code: "txt",
-  };
-
-  on(document, "click", (e) => {
-    const btn = e.target.closest?.(".code-download-btn");
-    if (!btn) return;
-    const id = btn.getAttribute("data-copy-target");
-    const el = id && document.getElementById(id);
-    if (!el) return;
-    const lang = (btn.getAttribute("data-lang") || "txt").toLowerCase();
-    const ext = LANG_EXT[lang] || "txt";
-    const blob = new Blob([el.textContent || ""], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `snippet.${ext}`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  });
-
-  function renderMarkdown(text) {
-    const raw = String(text || "");
-    if (!window.marked) return escHtml(raw).replace(/\n/g, "<br>");
-
-    const html = marked.parse(raw);
-    const wrap = document.createElement("div");
-    wrap.innerHTML = html;
-
-    if (window.hljs) {
-      wrap.querySelectorAll("pre code").forEach(el => {
-        try { hljs.highlightElement(el); } catch (_) {}
-      });
-    }
-
-    return wrap.innerHTML;
-  }
-
-  /* delegated copy buttons */
-  on(document, "click", async (e) => {
-    const btn = e.target.closest?.(".code-copy-btn");
-    if (!btn) return;
-
-    const id = btn.getAttribute("data-copy-target");
-    if (!id || !navigator.clipboard) return;
-
-    const el = document.getElementById(id);
-    if (!el) return;
-
-    try {
-      await navigator.clipboard.writeText(el.textContent || "");
-      const old = btn.textContent;
-      btn.textContent = "Copied!";
-      setTimeout(() => { btn.textContent = old || "Copy"; }, 1800);
-    } catch (_) {}
-  });
-
-  /* ── bubbles ──────────────────────────────────────────────────────── */
-
-  function appendUserBubble(text, file) {
-    if (!aiOutput) return null;
-
-    hideWelcome();
-
-    const div = document.createElement("div");
-    div.className = "ai-bubble user";
-
-    let inner = "";
-
-    if (file?.previewUrl && file.mimeType?.startsWith("image/")) {
-      inner += `
-        <div class="attached-preview">
-          <img src="${file.previewUrl}" alt="${escHtml(file.name || "image")}" />
-        </div>
-      `;
-    } else if (file) {
-      inner += `
-        <a class="attached-file-link" href="${file.previewUrl || "#"}" target="_blank" rel="noopener noreferrer">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-          ${escHtml(file.name || "file")}
-        </a>
-      `;
-    }
-
-    if (text) {
-      inner += `<div class="bubble-inner">${escHtml(text)}</div>`;
-    }
-
-    div.innerHTML = inner;
-    aiOutput.appendChild(div);
-    scrollBottom();
-    return div;
-  }
-
-  function appendAssistantBubble(text, isThinking = false) {
-    if (!aiOutput) return { div: null, inner: null };
-
-    hideWelcome();
-
-    const div = document.createElement("div");
-    div.className = "ai-bubble assistant";
-
-    const avatar = document.createElement("div");
-    avatar.className = "ai-avatar";
-    avatar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9z"/></svg>`;
-
-    const inner = document.createElement("div");
-    inner.className = "bubble-inner";
-
-    if (isThinking) {
-      inner.innerHTML = `<div class="thinking"><span></span><span></span><span></span></div>`;
-    } else {
-      inner.innerHTML = renderMarkdown(text);
-    }
-
-    div.appendChild(avatar);
-    div.appendChild(inner);
-    aiOutput.appendChild(div);
-    scrollBottom();
-
-    return { div, inner };
-  }
-
-  // Streaming variant — a collapsible "Thinking" panel that fills in live as
-  // reasoning tokens arrive, plus a separate answer area below it that fills
-  // in with the final text. Reasoning isn't available from every provider;
-  // the panel just stays hidden if none ever arrives.
-  function appendStreamingBubble() {
-    if (!aiOutput) return {};
-    hideWelcome();
-
-    const div = document.createElement("div");
-    div.className = "ai-bubble assistant";
-
-    const avatar = document.createElement("div");
-    avatar.className = "ai-avatar";
-    avatar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9z"/></svg>`;
-
-    const inner = document.createElement("div");
-    inner.className = "bubble-inner";
-    inner.innerHTML = `
-      <div class="ai-thinking-box" style="display:none;">
-        <button class="ai-thinking-toggle" type="button">
-          <span class="ai-thinking-spinner"></span>
-          <span class="ai-thinking-label">Thinking…</span>
-          <span class="ai-thinking-arrow">▾</span>
-        </button>
-        <div class="ai-thinking-content"></div>
-      </div>
-      <div class="ai-answer-content"><div class="thinking"><span></span><span></span><span></span></div></div>
-    `;
-
-    div.appendChild(avatar);
-    div.appendChild(inner);
-    aiOutput.appendChild(div);
-    scrollBottom();
-
-    const thinkingBox = inner.querySelector(".ai-thinking-box");
-    const thinkingContent = inner.querySelector(".ai-thinking-content");
-    const thinkingLabel = inner.querySelector(".ai-thinking-label");
-    const answerContent = inner.querySelector(".ai-answer-content");
-
-    let expanded = true;
-    on(inner.querySelector(".ai-thinking-toggle"), "click", () => {
-      expanded = !expanded;
-      thinkingContent.style.display = expanded ? "block" : "none";
-      const arrow = inner.querySelector(".ai-thinking-arrow");
-      if (arrow) arrow.textContent = expanded ? "▾" : "▸";
-    });
-
-    return { div, inner, thinkingBox, thinkingContent, thinkingLabel, answerContent };
-  }
-
-  /* ── file handling ───────────────────────────────────────────────── */
-
-  function updateFilePreview(fileObj) {
-    if (!filePreview || !fpThumb || !fpName) return;
-
-    if (!fileObj) {
-      filePreview.classList.remove("show");
-      fpThumb.innerHTML = "";
-      fpName.textContent = "";
-      return;
-    }
-
-    const isImage = fileObj.mimeType?.startsWith("image/");
-
-    if (isImage && fileObj.previewUrl) {
-      fpThumb.innerHTML = `<img src="${fileObj.previewUrl}" alt="preview" style="max-height:44px;border-radius:6px;" />`;
-    } else {
-      fpThumb.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>`;
-    }
-
-    fpName.textContent = fileObj.name || "file";
-    filePreview.classList.add("show");
-  }
-
-  function clearFile() {
-    pendingFile = null;
-    updateFilePreview(null);
-  }
-
-  function attachFile(file) {
-    if (!file) return;
-    const name = file.name || "file";
-    const mimeType = file.type || "application/octet-stream";
-    const isImage = mimeType.startsWith("image/");
-
-    if (isImage) {
-      // Compress to max 1024px / JPEG 0.82 — keeps base64 under ~500KB for OpenRouter
-      const objUrl = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = () => {
-        URL.revokeObjectURL(objUrl);
-        const MAX = 1024;
-        let { naturalWidth: w, naturalHeight: h } = img;
-        if (w > MAX || h > MAX) {
-          if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
-          else        { w = Math.round(w * MAX / h); h = MAX; }
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = w; canvas.height = h;
-        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
-        pendingFile = { file, name, base64: dataUrl.split(",")[1], mimeType: "image/jpeg", previewUrl: dataUrl };
-        updateFilePreview(pendingFile);
-      };
-      img.onerror = () => { URL.revokeObjectURL(objUrl); showToast("Could not read image"); };
-      img.src = objUrl;
-    } else {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const result = ev.target?.result;
-        if (typeof result !== "string" || !result.includes(",")) return;
-        pendingFile = { file, name, base64: result.split(",")[1], mimeType, previewUrl: null };
-        updateFilePreview(pendingFile);
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  on(attachBtn, "click", () => fileInput?.click());
-
-  on(fileInput, "change", e => {
-    const file = e.target?.files?.[0];
-    if (file) attachFile(file);
-    if (e.target) e.target.value = "";
-  });
-
-  on(fpCancel, "click", clearFile);
-
-  on(document, "paste", e => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-
-    for (const item of items) {
-      if (item.type?.startsWith("image/")) {
-        e.preventDefault();
-        const file = item.getAsFile();
-        if (!file) return;
-
-        const named = new File(
-          [file],
-          `pasted-image-${Date.now()}.png`,
-          { type: file.type || "image/png" }
-        );
-
-        attachFile(named);
-        break;
-      }
-    }
-  });
-
-  on(aiMain, "dragover", e => {
-    e.preventDefault();
-    aiMain.classList.add("drag-over");
-  });
-
-  on(aiMain, "dragleave", e => {
-    if (!aiMain) return;
-    const related = e.relatedTarget;
-    if (!related || !aiMain.contains(related)) {
-      aiMain.classList.remove("drag-over");
-    }
-  });
-
-  on(aiMain, "drop", e => {
-    e.preventDefault();
-    aiMain?.classList.remove("drag-over");
-    const file = e.dataTransfer?.files?.[0];
-    if (file) attachFile(file);
-  });
-
-  /* ── storage upload ──────────────────────────────────────────────── */
-
-  async function uploadToStorage(file, name) {
-    if (!sb?.storage || !file) return null;
-
-    const ext = (name?.split(".").pop() || "bin").replace(/[^\w-]/g, "");
-    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-    const { error } = await sb.storage
-      .from("ai-uploads")
-      .upload(path, file, { cacheControl: "3600", upsert: false });
-
-    if (error) return null;
-
-    return sb.storage.from("ai-uploads").getPublicUrl(path).data?.publicUrl || null;
-  }
-
-  /* ── talking to the backend ──────────────────────────────────────── */
-
-  // Only {role, content} is ever sent as conversation memory. Earlier
-  // versions forwarded the full local history objects — which also
-  // carry fileUrl/fileName/etc for our own UI — straight through as
-  // "memory". Once a file message entered history, every subsequent
-  // request re-sent that malformed shape, which every provider on the
-  // backend rejected, permanently breaking the rest of the chat with
-  // "All AI providers temporarily unavailable". Stripping down to the
-  // plain shape the backend actually expects fixes that for good.
-  function apiMemory(hist) {
-    return hist.map(m => ({ role: m.role, content: String(m.content ?? "") }));
-  }
-
-  const PROVIDERS_DOWN_RE = /all ai providers (are )?temporarily unavailable/i;
-
-  // Streams the SSE response, calling handlers.onThinking/onText per chunk
-  // as they arrive instead of waiting for the full reply. Retries on the
-  // specific "all providers down" case, same as the old non-streaming path.
-  async function streamChatEndpoint(body, handlers, attempt = 1) {
-    const MAX_ATTEMPTS = 10;
-
-    const res = await fetch(`${SB_URL}/functions/v1/ai-chatbot`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    if (!res.ok || !res.body) {
-      let data = {};
-      try { data = await res.json(); } catch (_) {}
-      const msg = String(data.error || data.reply || res.statusText || "Request failed");
-      if (PROVIDERS_DOWN_RE.test(msg) && attempt < MAX_ATTEMPTS) {
-        await new Promise(r => setTimeout(r, 400 * attempt));
-        return streamChatEndpoint(body, handlers, attempt + 1);
-      }
-      throw new Error(msg);
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
-    let sawAnything = false;
-    let sawError = null;
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      const lines = buf.split("\n");
-      buf = lines.pop() || "";
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
-        const payload = line.slice(5).trim();
-        if (!payload) continue;
-        let evt;
-        try { evt = JSON.parse(payload); } catch (_) { continue; }
-        if (evt.type === "thinking") { sawAnything = true; handlers.onThinking(evt.delta); }
-        else if (evt.type === "text") { sawAnything = true; handlers.onText(evt.delta); }
-        else if (evt.type === "done") { handlers.onDone?.(evt.model); }
-        else if (evt.type === "error") { sawError = evt.message; }
-      }
-    }
-
-    if (!sawAnything && sawError) {
-      if (PROVIDERS_DOWN_RE.test(sawError) && attempt < MAX_ATTEMPTS) {
-        await new Promise(r => setTimeout(r, 400 * attempt));
-        return streamChatEndpoint(body, handlers, attempt + 1);
-      }
-      throw new Error(sawError);
-    }
-  }
-
-  /* ── send ────────────────────────────────────────────────────────── */
-
-  async function sendAI() {
-    if (isSending) return;
-    if (!aiInput && !pendingFile) return;
-
-    const prompt = aiInput?.value?.trim() || "";
-    if (!prompt && !pendingFile) return;
-
-    isSending = true;
-    if (aiSendBtn) aiSendBtn.disabled = true;
-
-    if (aiInput) {
-      aiInput.value = "";
-      aiInput.style.height = "auto";
-    }
-
-    const captured = pendingFile ? { ...pendingFile } : null;
-    clearFile();
-
-    let storageUrl = null;
-    if (captured?.file) {
-      storageUrl = await uploadToStorage(captured.file, captured.name).catch(() => null);
-    }
-
-    appendUserBubble(
-      prompt,
-      captured ? { ...captured, previewUrl: storageUrl || captured.previewUrl } : null
-    );
-
-    const { thinkingBox, thinkingContent, thinkingLabel, answerContent } = appendStreamingBubble();
-
-    const isFirstMessage = history.length === 0;
-
-    let backendMessage = prompt || "The user attached a file. Please analyze it.";
-    if (isFirstMessage) {
-      backendMessage +=
-        "\n\n(Separately, on a new final line of your reply, output exactly " +
-        "[[TITLE: a concise 3-6 word title for this conversation]] — this " +
-        "line will be extracted and hidden from the user, so do not " +
-        "reference it in your actual answer.)";
-    }
-
-    let thinkingBuf = "";
-    let textBuf = "";
-    let firstTextChunk = true;
-
-    try {
-      const body = {
-        message: backendMessage,
-        memory: apiMemory(history),
-      };
-
-      if (captured) {
-        body.file = {
-          base64: captured.base64,
-          mimeType: captured.mimeType,
-          fileName: captured.name,
-        };
-      }
-
-      await streamChatEndpoint(body, {
-        onThinking(delta) {
-          thinkingBuf += delta;
-          if (thinkingBox) thinkingBox.style.display = "block";
-          if (thinkingContent) thinkingContent.textContent = thinkingBuf;
-          scrollBottom();
-        },
-        onText(delta) {
-          if (firstTextChunk) {
-            firstTextChunk = false;
-            if (thinkingLabel) thinkingLabel.textContent = "Thought it through";
-            thinkingBox?.querySelector(".ai-thinking-spinner")?.remove();
-          }
-          textBuf += delta;
-          if (answerContent) answerContent.innerHTML = renderMarkdown(textBuf);
-          scrollBottom();
-        },
-      });
-
-      let reply = textBuf || "No response.";
-
-      if (isFirstMessage) {
-        const m = reply.match(/\[\[TITLE:\s*(.+?)\]\]\s*$/i);
-        if (m) {
-          reply = reply.slice(0, m.index).trim();
-          setTitle(m[1].trim().replace(/["'.]+$/, ""));
-        } else {
-          setTitle((prompt || captured?.name || "Chat").slice(0, 50));
-        }
-      }
-
-      if (answerContent) {
-        answerContent.innerHTML = renderMarkdown(reply);
-        if (window.hljs) answerContent.querySelectorAll("pre code").forEach(el => { try { hljs.highlightElement(el); } catch (_) {} });
-      }
-
-      scrollBottom();
-
-      const userEntry = {
-        role: "user",
-        content: prompt || "(file attached)",
-      };
-
-      if (storageUrl && captured) {
-        userEntry.fileUrl = storageUrl;
-        userEntry.fileName = captured.name;
-      }
-
-      history.push(userEntry);
-      history.push({ role: "assistant", content: reply });
-
-      scheduleAutoSave();
-    } catch (err) {
-      if (thinkingBox) thinkingBox.style.display = "none";
-      if (answerContent) {
-        answerContent.innerHTML = `<span style="color:#ef4444;">${escHtml(err?.message || "Unknown error")}</span>`;
-      }
-    } finally {
-      isSending = false;
-      if (aiSendBtn) aiSendBtn.disabled = false;
-      safeFocus(aiInput);
-    }
-  }
-
-  /* ── input events ────────────────────────────────────────────────── */
-
-  on(aiInput, "input", setInputHeight);
-
-  on(aiInput, "keydown", e => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendAI();
-    }
-  });
-
-  on(aiSendBtn, "click", sendAI);
-
-  document.querySelectorAll(".wl-chip").forEach(chip => {
-    on(chip, "click", () => {
-      if (!aiInput) return;
-      aiInput.value = chip.dataset.prompt || "";
-      setInputHeight();
-      safeFocus(aiInput);
-      sendAI();
-    });
-  });
-
-  on(sidebarToggleBtn, "click", () => {
-    aiSidebar?.classList.toggle("collapsed");
-    aiShell?.classList.toggle("sidebar-collapsed", !!aiSidebar?.classList.contains("collapsed"));
-  });
-
-  /* ── autosave ────────────────────────────────────────────────────── */
-
-  function scheduleAutoSave() {
-    clearTimeout(autoSaveTimer);
-    autoSaveTimer = setTimeout(() => saveConversation(true), 1800);
-  }
-
-  async function saveConversation(silent = false) {
-    if (!sb || !currentUserId) return;
-
-    const userMsgs = history.filter(m => m.role === "user");
-    if (!userMsgs.length) return;
-
-    const title = (currentTitle || userMsgs[0]?.content || "Chat").slice(0, 80);
-    const payload = {
-      user_id: currentUserId,
-      title,
-      messages: history,
-      updated_at: new Date().toISOString(),
-    };
-
-    try {
-      if (currentConvId) {
-        await sb.from("ai_conversations").update(payload).eq("id", currentConvId);
-      } else {
-        const { data, error } = await sb
-          .from("ai_conversations")
-          .insert(payload)
-          .select()
-          .single();
-
-        if (error) {
-          if (!silent) showToast("Save failed: " + error.message);
-          return;
-        }
-
-        currentConvId = data.id;
-      }
-
-      currentTitle = title;
-      if (convTitleLabel) convTitleLabel.textContent = title;
-
-      if (!silent) showToast("Saved");
-      loadConversations();
-    } catch (_) {
-      if (!silent) showToast("Save failed");
-    }
-  }
-
-  function scheduleLoad() {
-    clearTimeout(loadConvTimer);
-    loadConvTimer = setTimeout(loadConversations, 100);
-  }
-
-  function buildConvItem(conv) {
-    const item = document.createElement("div");
-    item.className = "conv-item" + (conv.id === currentConvId ? " active" : "");
-    item.dataset.convId = String(conv.id);
-    item.innerHTML = `
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-      <span class="conv-item-title">${escHtml(conv.title)}</span>
-      <button class="conv-menu-btn" title="More">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
-      </button>
-    `;
-
-    on(item, "click", e => {
-      if (!e.target.closest(".conv-menu-btn")) {
-        loadConversation(conv.id);
-      }
-    });
-
-    const menuBtn = item.querySelector(".conv-menu-btn");
-    on(menuBtn, "click", e => {
-      e.stopPropagation();
-      openConvMenu(menuBtn, conv);
-    });
-
-    return item;
-  }
-
-  let openConvDropdown = null;
-
-  function closeConvMenu() {
-    openConvDropdown?.remove();
-    openConvDropdown = null;
-    document.querySelectorAll(".conv-menu-btn.open").forEach(b => b.classList.remove("open"));
-  }
-
-  function openConvMenu(btn, conv) {
-    if (openConvDropdown) { closeConvMenu(); return; }
-
-    const rect = btn.getBoundingClientRect();
-    const dd = document.createElement("div");
-    dd.className = "conv-dropdown";
-    dd.innerHTML = `
-      <button class="conv-dropdown-item" data-act="rename">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
-        Rename
-      </button>
-      <button class="conv-dropdown-item" data-act="duplicate">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        Duplicate
-      </button>
-      <button class="conv-dropdown-item danger" data-act="delete">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-        Delete
-      </button>
-    `;
-    document.body.appendChild(dd);
-
-    // Position after measuring so it stays on-screen (flips up if it
-    // would run off the bottom of the viewport).
-    const ddRect = dd.getBoundingClientRect();
-    let top = rect.bottom + 4;
-    if (top + ddRect.height > window.innerHeight - 8) top = rect.top - ddRect.height - 4;
-    let left = Math.min(rect.right - ddRect.width, window.innerWidth - ddRect.width - 8);
-    dd.style.top = Math.max(8, top) + "px";
-    dd.style.left = Math.max(8, left) + "px";
-
-    btn.classList.add("open");
-    openConvDropdown = dd;
-
-    on(dd, "click", e => {
-      e.stopPropagation();
-      const act = e.target.closest(".conv-dropdown-item")?.dataset.act;
-      closeConvMenu();
-      if (act === "rename") renameConversation(conv);
-      else if (act === "duplicate") duplicateConversation(conv);
-      else if (act === "delete") deleteConversation(conv.id);
-    });
-  }
-
-  on(document, "click", closeConvMenu);
-  on(window, "resize", closeConvMenu);
-  on(window, "scroll", closeConvMenu, true);
-
-  async function renameConversation(conv) {
-    const name = await showPrompt("Rename chat", conv.title || "");
-    if (name === null) return;
-    const title = name.trim().slice(0, 80) || "Untitled chat";
-
-    await sb.from("ai_conversations").update({ title }).eq("id", conv.id);
-    updateSidebarTitle(conv.id, title);
-    if (conv.id === currentConvId) setTitle(title);
-  }
-
-  async function duplicateConversation(conv) {
-    if (!sb || !currentUserId) return;
-    const { data } = await sb.from("ai_conversations").select("*").eq("id", conv.id).single();
-    if (!data) return;
-
-    await sb.from("ai_conversations").insert({
-      user_id: currentUserId,
-      title: (data.title || "Chat") + " (copy)",
-      messages: data.messages,
-      updated_at: new Date().toISOString(),
-    });
-
-    loadConversations();
-  }
-
-  async function loadConversations() {
-    if (!convList) return;
-
-    if (!sb || !currentUserId) {
-      convList.innerHTML = `<div class="conv-empty">Sign in to save chats</div>`;
-      return;
-    }
-
-    const { data } = await sb
-      .from("ai_conversations")
-      .select("id,title,updated_at")
-      .eq("user_id", currentUserId)
-      .order("updated_at", { ascending: false })
-      .limit(60);
-
-    // Build the new list off-DOM first, then swap it in in one go.
-    // Clearing convList before this network request resolves (the old
-    // behavior) meant the sidebar rendered empty for a frame on every
-    // save/load/delete — the "glitch" — while this awaited. Building
-    // everything first and only touching the DOM once avoids that.
-    const frag = document.createDocumentFragment();
-    if (!data?.length) {
-      const empty = document.createElement("div");
-      empty.className = "conv-empty";
-      empty.textContent = "No saved chats yet";
-      frag.appendChild(empty);
-    } else {
-      data.forEach(conv => frag.appendChild(buildConvItem(conv)));
-    }
-
-    convList.innerHTML = "";
-    convList.appendChild(frag);
-  }
-
-  async function loadConversation(id) {
-    if (!sb || !id) return;
-
-    const { data } = await sb
-      .from("ai_conversations")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (!data) return;
-
-    currentConvId = data.id;
-    history = Array.isArray(data.messages) ? data.messages : [];
-    setTitle(data.title || null);
-
-    clearMessages();
-    if (!history.length) {
-      showWelcome();
-    } else {
-      hideWelcome();
-    }
-
-    history
-      .filter(m => m.role !== "system")
-      .forEach(m => {
-        if (m.role === "user") {
-          const att = m.fileUrl
-            ? {
-                name: m.fileName || "file",
-                previewUrl: m.fileUrl,
-                mimeType: fileLooksLikeImage(m.fileUrl)
-                  ? "image/jpeg"
-                  : "application/octet-stream",
-              }
-            : null;
-
-          appendUserBubble(m.content, att);
-        } else {
-          appendAssistantBubble(m.content);
-        }
-      });
-
-    scrollBottom();
-    loadConversations();
-  }
-
-  async function deleteConversation(id) {
-    if (!sb || !id) return;
-    const ok = await showConfirm("Delete this chat?", "This can't be undone.");
-    if (!ok) return;
-
-    await sb.from("ai_conversations").delete().eq("id", id);
-
-    if (currentConvId === id) {
-      startNewChat();
-    } else {
-      loadConversations();
-    }
-  }
-
-  function startNewChat() {
-    currentConvId = null;
-    history = [];
-    setTitle(null);
-    clearMessages();
-    showWelcome();
-    clearFile();
-    loadConversations();
-  }
-
-  on(newChatBtn, "click", startNewChat);
-
-  /* ── seed conversation from search.html's "Continue this conversation"
-     handoff link (?q=...&a=...) — makes the AI tab feel like Gemini's
-     "continue in full chat" flow instead of starting over from scratch ── */
-  (() => {
-    const params = new URLSearchParams(location.search);
-    const seedQ = params.get("q");
-    const seedA = params.get("a");
-    if (!seedQ || !seedA) return;
-    try {
-      const decodedA = decodeURIComponent(escape(atob(seedA)));
-      appendUserBubble(seedQ);
-      appendAssistantBubble(decodedA);
-      history.push({ role: "user", content: seedQ });
-      history.push({ role: "assistant", content: decodedA });
-      const url = new URL(location.href);
-      url.searchParams.delete("q");
-      url.searchParams.delete("a");
-      window.history.replaceState(null, "", url.toString());
-    } catch (e) {
-      console.error("Failed to seed conversation from handoff:", e);
-    }
-  })();
-
-  function showToast(msg) {
-    const t = document.createElement("div");
-    t.className = "ai-toast";
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2200);
-  }
-
-  function showConfirm(title, message) {
-    return new Promise(resolve => {
-      const backdrop = document.createElement("div");
-      backdrop.className = "ai-confirm-backdrop";
-      backdrop.innerHTML = `
-        <div class="ai-confirm-box">
-          <div class="ai-confirm-title">${escHtml(title)}</div>
-          <div class="ai-confirm-msg">${escHtml(message || "")}</div>
-          <div class="ai-confirm-actions">
-            <button class="ai-confirm-cancel">Cancel</button>
-            <button class="ai-confirm-ok">Delete</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(backdrop);
-
-      const cleanup = (result) => {
-        backdrop.remove();
-        resolve(result);
-      };
-
-      on(backdrop, "click", e => { if (e.target === backdrop) cleanup(false); });
-      on(backdrop.querySelector(".ai-confirm-cancel"), "click", () => cleanup(false));
-      on(backdrop.querySelector(".ai-confirm-ok"), "click", () => cleanup(true));
-    });
-  }
-
-  // Custom rename popup, replacing window.prompt(). Resolves with the
-  // trimmed text, or null if cancelled.
-  function showPrompt(title, initialValue) {
-    return new Promise(resolve => {
-      const backdrop = document.createElement("div");
-      backdrop.className = "ai-confirm-backdrop";
-      backdrop.innerHTML = `
-        <div class="ai-confirm-box">
-          <div class="ai-confirm-title">${escHtml(title)}</div>
-          <input class="ai-confirm-input" maxlength="80" />
-          <div class="ai-confirm-actions">
-            <button class="ai-confirm-cancel">Cancel</button>
-            <button class="ai-confirm-ok">Save</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(backdrop);
-
-      const input = backdrop.querySelector(".ai-confirm-input");
-      input.value = initialValue || "";
-      input.focus();
-      input.select();
-
-      const cleanup = (result) => {
-        backdrop.remove();
-        resolve(result);
-      };
-
-      on(backdrop, "click", e => { if (e.target === backdrop) cleanup(null); });
-      on(backdrop.querySelector(".ai-confirm-cancel"), "click", () => cleanup(null));
-      on(backdrop.querySelector(".ai-confirm-ok"), "click", () => cleanup(input.value));
-      on(input, "keydown", e => {
-        if (e.key === "Enter") { e.preventDefault(); cleanup(input.value); }
-        if (e.key === "Escape") { e.preventDefault(); cleanup(null); }
-      });
-    });
-  }
-
-  /* ── auth ────────────────────────────────────────────────────────── */
-
-  (async () => {
-    if (!sb?.auth) return;
-
-    try {
-      const { data: { session } } = await sb.auth.getSession();
-      currentUserId = session?.user?.id || null;
-      scheduleLoad();
-    } catch (_) {}
-  })();
-
-  if (sb?.auth) {
-    sb.auth.onAuthStateChange((event, session) => {
-      if (event === "INITIAL_SESSION") return;
-      currentUserId = session?.user?.id || null;
-      scheduleLoad();
-    });
-  }
-})();
+}
