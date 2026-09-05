@@ -282,7 +282,11 @@
 
     const avatar = document.createElement("div");
     avatar.className = "ai-avatar";
-    avatar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9z"/></svg>`;
+    avatar.innerHTML = `<svg class="ai-logo-svg" width="18" height="18" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+  <circle cx="16" cy="16" r="11.5" stroke="currentColor" stroke-width="2.2" stroke-dasharray="17 8" stroke-linecap="round"/>
+  <path d="M10.5 21.2 16 7.5l5.5 13.7-5.5-3.1-5.5 3.1Z" fill="currentColor"/>
+  <circle cx="16" cy="16" r="2.2" fill="currentColor"/>
+</svg>`;
 
     const inner = document.createElement("div");
     inner.className = "bubble-inner";
@@ -314,7 +318,11 @@
 
     const avatar = document.createElement("div");
     avatar.className = "ai-avatar";
-    avatar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9z"/></svg>`;
+    avatar.innerHTML = `<svg class="ai-logo-svg" width="18" height="18" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+  <circle cx="16" cy="16" r="11.5" stroke="currentColor" stroke-width="2.2" stroke-dasharray="17 8" stroke-linecap="round"/>
+  <path d="M10.5 21.2 16 7.5l5.5 13.7-5.5-3.1-5.5 3.1Z" fill="currentColor"/>
+  <circle cx="16" cy="16" r="2.2" fill="currentColor"/>
+</svg>`;
 
     const inner = document.createElement("div");
     inner.className = "bubble-inner";
@@ -327,7 +335,15 @@
         </button>
         <div class="ai-thinking-content"></div>
       </div>
-      <div class="ai-answer-content"><div class="thinking"><span></span><span></span><span></span></div></div>
+      <div class="ai-work-state" aria-live="polite">
+  <div class="ai-work-orb" aria-hidden="true"><span></span><i></i><b></b></div>
+  <div class="ai-work-copy">
+    <div class="ai-work-label">Working</div>
+    <div class="ai-work-detail">Preparing your answer…</div>
+  </div>
+  <div class="ai-work-signal" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+</div>
+<div class="ai-answer-content"></div>
     `;
 
     div.appendChild(avatar);
@@ -339,6 +355,9 @@
     const thinkingContent = inner.querySelector(".ai-thinking-content");
     const thinkingLabel = inner.querySelector(".ai-thinking-label");
     const answerContent = inner.querySelector(".ai-answer-content");
+    const workState = inner.querySelector(".ai-work-state");
+    const workLabel = inner.querySelector(".ai-work-label");
+    const workDetail = inner.querySelector(".ai-work-detail");
 
     let expanded = true;
     on(inner.querySelector(".ai-thinking-toggle"), "click", () => {
@@ -348,7 +367,7 @@
       if (arrow) arrow.textContent = expanded ? "▾" : "▸";
     });
 
-    return { div, inner, thinkingBox, thinkingContent, thinkingLabel, answerContent };
+    return { div, inner, thinkingBox, thinkingContent, thinkingLabel, answerContent, workState, workLabel, workDetail };
   }
 
   /* ── file handling ───────────────────────────────────────────────── */
@@ -546,6 +565,7 @@
         let evt;
         try { evt = JSON.parse(payload); } catch (_) { continue; }
         if (evt.type === "thinking") { sawAnything = true; handlers.onThinking(evt.delta); }
+        else if (evt.type === "tool") { sawAnything = true; if (handlers.onTool) handlers.onTool(evt.name || evt.tool || "tool", evt.status || "running"); }
         else if (evt.type === "text") { sawAnything = true; handlers.onText(evt.delta); }
         else if (evt.type === "done") { if (handlers.onDone) handlers.onDone(evt.model); }
         else if (evt.type === "error") { sawError = evt.message; }
@@ -591,7 +611,7 @@
       captured ? { ...captured, previewUrl: storageUrl || captured.previewUrl } : null
     );
 
-    const { thinkingBox, thinkingContent, thinkingLabel, answerContent } = appendStreamingBubble();
+    const { thinkingBox, thinkingContent, thinkingLabel, answerContent, workState, workLabel, workDetail } = appendStreamingBubble();
 
     const isFirstMessage = history.length === 0;
 
@@ -637,14 +657,23 @@
 
       await streamChatEndpoint(body, {
         onThinking(delta) {
+          if (workLabel) workLabel.textContent = "Thinking";
+          if (workDetail) workDetail.textContent = "Processing context and reasoning…";
           thinkingBuf += delta;
           if (thinkingBox) thinkingBox.style.display = "block";
           if (thinkingContent) thinkingContent.textContent = thinkingBuf;
           scrollBottom();
         },
+        onTool(name, status) {
+          if (workState) workState.classList.toggle("tool", status !== "done");
+          if (workLabel) workLabel.textContent = status === "done" ? "Tool complete" : "Using a tool";
+          if (workDetail) workDetail.textContent = status === "done" ? String(name) + " finished" : "Running " + String(name) + "…";
+        },
         onText(delta) {
           if (firstTextChunk) {
             firstTextChunk = false;
+            if (workLabel) workLabel.textContent = "Writing";
+            if (workDetail) workDetail.textContent = "Generating the response…";
             if (thinkingLabel) thinkingLabel.textContent = "Thought it through";
             if (thinkingBox) { const spinner = thinkingBox.querySelector(".ai-thinking-spinner"); if (spinner) spinner.remove(); }
           }
@@ -663,6 +692,12 @@
         } else {
           setTitle((prompt || (captured ? captured.name : "") || "Chat").slice(0, 50));
         }
+      }
+
+      if (workState) {
+        workState.classList.add("done");
+        if (workLabel) workLabel.textContent = "Done";
+        if (workDetail) workDetail.textContent = "Response ready";
       }
 
       if (answerContent) {
@@ -688,6 +723,11 @@
       scheduleAutoSave();
     } catch (err) {
       if (thinkingBox) thinkingBox.style.display = "none";
+      if (workState) {
+        workState.classList.add("done");
+        if (workLabel) workLabel.textContent = "Couldn’t finish";
+        if (workDetail) workDetail.textContent = "The request returned an error.";
+      }
       if (answerContent) {
         answerContent.innerHTML = `<span style="color:#ef4444;">${escHtml((err && err.message) || "Unknown error")}</span>`;
       }
