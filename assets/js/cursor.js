@@ -8,6 +8,9 @@
 
   const body = document.body;
 
+  let rafId = null;
+  let trailActive = true; // default style uses the trail
+
   /* Inject cursor elements directly into body */
   function inject() {
     ["cursor-dot", "cursor-trail", "cursor-crosshair", "cursor-blob"].forEach(cls => {
@@ -41,9 +44,6 @@
        Only runs when one of those styles is active; pauses automatically
        once the element has caught up so it doesn't burn a frame budget
        doing nothing during AI streaming or heavy rendering. */
-    let rafId = null;
-    let trailActive = false;
-
     function animateTrail() {
       const dx = mx - tx;
       const dy = my - ty;
