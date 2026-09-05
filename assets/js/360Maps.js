@@ -17,9 +17,13 @@
   const OSRM_BIKE = "https://routing.openstreetmap.de/routed-bike";
   const OSRM_FOOT = "https://routing.openstreetmap.de/routed-foot";
 
+  // ── API key placeholders ───────────────────────────────────
+// please add here if new map providers require key
+  const CARTO_KEY = "cb1_2xif_1_12526ce0ebf9b8fcfd34767a";
+
   // ── AI config ──────────────────────────────────────────────
-  // The Supabase Edge Function proxies requests to Anthropic so
-  // no API key is ever exposed in client-side JS.
+  // The Supabase Edge Function (maps-ai) proxies OpenRouter so the
+  // API key is never exposed in client-side JS.
   const AI_EDGE_FN = "https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/maps-ai";
   const AI_PREF_KEY = "360maps_ai_enabled";
   let aiEnabled = (() => { try { return localStorage.getItem(AI_PREF_KEY) !== "false"; } catch { return true; } })();
@@ -135,9 +139,21 @@
     const c = getComputedStyle(document.body).getPropertyValue("--cursor-color").trim();
     return c || "#1a73e8";
   }
-  async function fetchJson(url) {
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
-    if (!res.ok) throw new Error("Request failed");
+  // Nominatim policy requires a descriptive User-Agent — without it requests
+  // are blocked or rate-limited to zero. Accept: application/json is also
+  // required for jsonv2 format to be returned correctly.
+  const NOM_HEADERS = {
+    "User-Agent": "360Maps/4.0 (https://360digital.app; maps@360digital.app)",
+    "Accept": "application/json",
+    "Accept-Language": "en",
+  };
+
+  async function fetchJson(url, options = {}) {
+    const res = await fetch(url, {
+      headers: { "Accept": "application/json", ...options.headers },
+      ...options,
+    });
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`);
     return res.json();
   }
 
@@ -169,10 +185,30 @@
      MAP SETUP
      ============================================================ */
   const TILE_LAYERS = {
-    standard: { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attr: '&copy; OpenStreetMap contributors', maxZoom: 19 },
-    dark:     { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', attr: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19 },
-    satellite:{ url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr: 'Tiles &copy; Esri', maxZoom: 19 },
-    terrain:  { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attr: '&copy; OpenStreetMap, SRTM | &copy; OpenTopoMap', maxZoom: 17 },
+    standard: {
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19,
+    },
+    dark: {
+      // CARTO Basemaps free tier — no API key needed for the CDN endpoint.
+      // If you set CARTO_KEY above, append ?api_key=${CARTO_KEY} to the URL.
+      url: CARTO_KEY
+        ? `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?api_key=${CARTO_KEY}`
+        : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      maxZoom: 19,
+    },
+    satellite: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      attr: 'Tiles &copy; Esri &mdash; Source: Esri, USGS, AeroGRID, IGN',
+      maxZoom: 19,
+    },
+    terrain: {
+      url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, SRTM | &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+      maxZoom: 17,
+    },
   };
   function setTileLayer(style) {
     const cfg = TILE_LAYERS[style] || TILE_LAYERS.standard;
@@ -212,28 +248,38 @@
      GEOCODING (Nominatim) — used for both search and reverse lookup
      ============================================================ */
   async function nominatimSearch(query, limit) {
-    const url = `${NOMINATIM}/search?format=jsonv2&addressdetails=1&extratags=1&namedetails=1&limit=${limit || 5}&q=${encodeURIComponent(query)}`;
-    return fetchJson(url);
+    const url = `${NOMINATIM}/search?format=jsonv2&addressdetails=1&extratags=1&namedetails=1&limit=${limit || 8}&q=${encodeURIComponent(query)}`;
+    return fetchJson(url, { headers: NOM_HEADERS });
   }
   async function nominatimReverse(lat, lon) {
     const url = `${NOMINATIM}/reverse?format=jsonv2&addressdetails=1&extratags=1&lat=${lat}&lon=${lon}`;
-    return fetchJson(url);
+    return fetchJson(url, { headers: NOM_HEADERS });
   }
 
   /* Structured full-address search: tries the raw query, and if that comes
      back empty (common for oddly formatted full addresses), retries with
-     Nominatim's structured "street" style query as a fallback. */
+     the cleaned version as a fallback. Also tries a coordinate parse so
+     pasting "40.7128, -74.0060" directly into the search box works. */
   async function robustSearch(query) {
-    let results = await nominatimSearch(query, 5);
+    // Handle raw coordinate paste: "lat, lon" or "lat lon"
+    const coordMatch = query.match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/);
+    if (coordMatch) {
+      const lat = parseFloat(coordMatch[1]), lon = parseFloat(coordMatch[2]);
+      if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+        const r = await nominatimReverse(lat, lon).catch(() => null);
+        if (r && r.display_name) return [{ ...r, lat: String(lat), lon: String(lon) }];
+      }
+    }
+
+    let results = await nominatimSearch(query, 8);
     if (results && results.length) return results;
 
-    // Fallback: strip extra punctuation / retry without limit narrowing
     const cleaned = query.replace(/[,]{2,}/g, ",").trim();
     if (cleaned !== query) {
-      results = await nominatimSearch(cleaned, 5);
+      results = await nominatimSearch(cleaned, 8);
       if (results && results.length) return results;
     }
-    throw new Error("Couldn't find that place");
+    throw new Error("Couldn't find that place — try a different search term.");
   }
 
   /* ============================================================
@@ -318,7 +364,7 @@
   async function fetchWikiNearby(lat, lon) {
     try {
       const url = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lon}&gsradius=300&gslimit=1&format=json&origin=*`;
-      const data = await fetchJson(url);
+      const data = await fetch(url).then(r => r.json());
       const hit = data.query && data.query.geosearch && data.query.geosearch[0];
       if (!hit) return null;
       return fetchWikiSummary(hit.title, "en");
@@ -1211,44 +1257,73 @@
      low-accuracy so it doesn't hang forever waiting for GPS lock)
      ============================================================ */
   function getPosition(onOk, onFail) {
-    if (!navigator.geolocation) { onFail("Geolocation isn't supported by this browser"); return; }
+    if (!navigator.geolocation) {
+      onFail("Geolocation isn't supported by this browser.");
+      return;
+    }
 
-    let settled = false;
-    const tryLowAccuracy = () => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => { if (!settled) { settled = true; onOk(pos); } },
-        (err) => { if (!settled) { settled = true; onFail(geoErrorMessage(err)); } },
-        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+    // Strategy: try high-accuracy for 7 s, then fall back to low-accuracy
+    // for another 8 s, then give up. Each attempt gets its own ID so we
+    // never have two watches fighting each other.
+    let done = false;
+    let hiId = null;
+    let loId = null;
+
+    function succeed(pos) {
+      if (done) return;
+      done = true;
+      if (hiId !== null) navigator.geolocation.clearWatch(hiId);
+      if (loId !== null) navigator.geolocation.clearWatch(loId);
+      onOk(pos);
+    }
+
+    function tryLow(originalErr) {
+      loId = navigator.geolocation.getCurrentPosition(
+        (pos) => succeed(pos),
+        (err) => {
+          if (done) return;
+          done = true;
+          // Report the more informative of the two errors
+          onFail(geoErrorMessage(err || originalErr));
+        },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 }
       );
-    };
+    }
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { if (!settled) { settled = true; onOk(pos); } },
-      () => { if (!settled) tryLowAccuracy(); },
-      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+    // Kick off the high-accuracy attempt; on failure or timeout, try low
+    hiId = navigator.geolocation.getCurrentPosition(
+      (pos) => succeed(pos),
+      (err) => { if (!done) tryLow(err); },
+      { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 }
     );
   }
 
   function geoErrorMessage(err) {
-    if (!err) return "Couldn't get your location";
+    if (!err) return "Couldn't get your location.";
     switch (err.code) {
-      case 1: return "Location access is blocked for this site. Check your browser's site settings and allow location.";
-      case 2: return "Your device couldn't determine a location right now. Try again in a moment.";
-      case 3: return "Location request timed out. Try again.";
-      default: return "Couldn't get your location - check location permissions";
+      case 1: return "Location access is blocked. Open your browser's site settings and allow location for this site, then try again.";
+      case 2: return "Your device can't determine a location right now. Make sure location services are on, then try again.";
+      case 3: return "Location request timed out. Move to an area with better GPS or Wi-Fi signal and try again.";
+      default: return `Couldn't get your location (error ${err.code}).`;
     }
   }
 
   /* ── My location ── */
   function useMyLocation() {
-    setStatus("Locating...");
+    if (locateBtn) locateBtn.classList.add("active");
+    setStatus("Finding your location…");
     getPosition(
       (pos) => {
         setStatus("");
+        if (locateBtn) locateBtn.classList.remove("active");
         selectRawLatLng(pos.coords.latitude, pos.coords.longitude);
         startWatching();
       },
-      (msg) => { setStatus(""); showError(msg); }
+      (msg) => {
+        setStatus("");
+        if (locateBtn) locateBtn.classList.remove("active");
+        showError(msg);
+      }
     );
   }
 
