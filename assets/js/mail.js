@@ -27,12 +27,15 @@
   const $ = id => document.getElementById(id);
 
   // ── Boot ───────────────────────────────────────────────────
-  (async () => {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { $("mailGate").style.display = "flex"; return; }
-    currentUser = session.user;
+  let appBooted = false;
+
+  async function bootApp(user) {
+    if (appBooted) return;
+    appBooted = true;
+    currentUser = user;
     await loadProfile();
-    $("mailApp").style.display = "flex";
+    $("mailGate").style.display = "none";
+    $("mailApp").style.display  = "flex";
     setupBuiltinFolders();
     setupCompose();
     setupSearch();
@@ -41,14 +44,32 @@
     setupRealtime();
     await loadCategories();
     await loadMail();
-  })();
+  }
 
-  sb.auth.onAuthStateChange((ev) => {
-    if (ev === "SIGNED_OUT") {
+  // onAuthStateChange fires on every tab load with the persisted session,
+  // on token refresh (TOKEN_REFRESHED), and on sign-in/out. Driving boot
+  // from here instead of a one-shot getSession() means the session is
+  // always current and token refreshes are handled automatically.
+  sb.auth.onAuthStateChange((ev, session) => {
+    if (ev === "SIGNED_OUT" || !session) {
+      appBooted = false;
+      currentUser = null; mailAddress = null;
       $("mailGate").style.display = "flex";
       $("mailApp").style.display  = "none";
+      return;
+    }
+    if (ev === "SIGNED_IN" || ev === "TOKEN_REFRESHED" || ev === "INITIAL_SESSION") {
+      bootApp(session.user);
     }
   });
+
+  // Fallback: if onAuthStateChange fires before the DOM event listener
+  // is registered (rare but possible on fast connections), poll once.
+  (async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && !appBooted) bootApp(session.user);
+    else if (!session)         $("mailGate").style.display = "flex";
+  })();
 
   // ── Profile ────────────────────────────────────────────────
   async function loadProfile() {
