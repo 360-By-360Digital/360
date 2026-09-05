@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pomodoro — 360</title>
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/wide.css" />
+  <link rel="stylesheet" href="/assets/css/gallium.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+  <link rel="stylesheet" href="/assets/css/cursor.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    /* ── shell tokens — light/dark, same pattern as ai.css ── */
+    .pm-shell {
+      --pm-bg:      var(--bg);
+      --pm-txt:     var(--txt);
+      --pm-mut:     var(--mut);
+      --pm-br:      var(--br);
+      --pm-surface: rgba(255,255,255,.7);
+      --pm-soft:    rgba(17,24,39,.04);
+      --pm-hover:   rgba(17,24,39,.06);
+      --pm-panel:   rgba(255,255,255,.78);
+      --pm-line:    rgba(15,23,42,.09);
+      --pm-shadow:  0 20px 60px rgba(15,23,42,.12);
+    }
+    body.dark .pm-shell {
+      --pm-bg:      var(--bgd);
+      --pm-txt:     var(--txtd);
+      --pm-mut:     var(--mutd);
+      --pm-br:      rgba(255,255,255,.09);
+      --pm-surface: rgba(20,22,32,.7);
+      --pm-soft:    rgba(255,255,255,.055);
+      --pm-hover:   rgba(255,255,255,.08);
+      --pm-panel:   rgba(12,14,22,.72);
+      --pm-line:    rgba(255,255,255,.09);
+      --pm-shadow:  0 20px 60px rgba(0,0,0,.28);
+    }
+
+    html, body {
+      margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden;
+    }
+
+    .pm-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      background: var(--pm-bg);
+      color: var(--pm-txt);
+      font-size: 14px;
+    }
+    .pm-shell svg { display: block; }
+
+    /* ── topbar — mirrors ai-topbar ── */
+    .pm-topbar {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 16px 0 80px;
+      border-bottom: 1px solid var(--pm-line);
+      background: var(--pm-panel);
+      backdrop-filter: blur(24px) saturate(140%);
+      -webkit-backdrop-filter: blur(24px) saturate(140%);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+    }
+    .pm-topbar-left  { display:flex; align-items:center; gap:8px; flex:1; }
+    .pm-topbar-right { display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+
+    .pm-brand {
+      display: flex; align-items: center; gap: 9px; flex-shrink: 0;
+    }
+    .pm-brand-mark {
+      width: 28px; height: 28px; border-radius: 9px;
+      background: linear-gradient(135deg, var(--a), var(--a2));
+      box-shadow: 0 8px 24px rgba(var(--a-rgb, 59,130,246),.24);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; flex-shrink: 0;
+    }
+    .pm-brand-text { font-size: 15px; font-weight: 700; letter-spacing: .01em; }
+
+    .pm-topbar-link {
+      display: flex; align-items: center; gap: 5px;
+      text-decoration: none; color: var(--pm-txt);
+      font-size: 12px; font-weight: 500;
+      padding: 6px 12px; border-radius: 10px;
+      border: 1px solid var(--pm-line);
+      background: var(--pm-soft);
+      opacity: .85; transition: background .15s;
+    }
+    .pm-topbar-link:hover { background: var(--pm-hover); opacity: 1; }
+
+    /* ── main ── */
+    .pm-main { flex: 1; display: flex; min-height: 0; }
+
+    /* ── sidebar — mirrors #ai-sidebar ── */
+    .pm-sidebar {
+      width: 234px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--pm-panel);
+      backdrop-filter: blur(24px) saturate(140%);
+      -webkit-backdrop-filter: blur(24px) saturate(140%);
+      border-right: 1px solid var(--pm-line);
+      box-shadow: 8px 0 35px rgba(0,0,0,.06);
+      overflow: hidden;
+      padding-top: 46px; /* clear global ☰ button */
+    }
+    .pm-sidebar-inner {
+      flex: 1; overflow-y: auto;
+      padding: 12px 9px;
+      display: flex; flex-direction: column; gap: 18px;
+    }
+
+    .pm-section-title {
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: .08em; opacity: .5;
+      margin-bottom: 6px;
+    }
+
+    /* mode buttons */
+    .pm-mode-btn {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; padding: 9px 10px;
+      border-radius: 10px; border: 1px solid transparent;
+      background: transparent; color: var(--pm-txt);
+      font-size: 13px; font-family: inherit;
+      cursor: pointer; text-align: left; opacity: .75;
+      transition: background .15s, opacity .15s;
+    }
+    .pm-mode-btn:hover { background: var(--pm-hover); opacity: 1; }
+    .pm-mode-btn.active {
+      background: linear-gradient(90deg, rgba(var(--a-rgb,59,130,246),.14), rgba(var(--a-rgb,59,130,246),.05));
+      border-color: rgba(var(--a-rgb,59,130,246),.28);
+      box-shadow: inset 2px 0 0 var(--a);
+      color: var(--a); opacity: 1;
+    }
+    .pm-mode-dur { font-size: 11px; opacity: .6; }
+    .pm-mode-btn.active .pm-mode-dur { opacity: .85; }
+
+    /* settings inputs */
+    .pm-setting {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 8px;
+      padding: 3px 2px;
+    }
+    .pm-setting label { font-size: 12px; opacity: .7; }
+    .pm-setting input[type=number] {
+      width: 52px; padding: 4px 8px;
+      border-radius: 7px;
+      border: 1px solid var(--pm-line);
+      background: var(--pm-soft);
+      color: var(--pm-txt);
+      font-size: 12px; text-align: center;
+      font-family: inherit;
+    }
+    .pm-setting input[type=number]:focus {
+      outline: none; border-color: var(--a);
+    }
+
+    .pm-toggle {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 8px;
+      padding: 3px 2px;
+    }
+    .pm-toggle label { font-size: 12px; opacity: .7; cursor: pointer; }
+    .pm-toggle input[type=checkbox] { accent-color: var(--a); cursor: pointer; }
+
+    /* session log */
+    .pm-log { display: flex; flex-direction: column; gap: 3px; }
+    .pm-log-item {
+      font-size: 11px; padding: 5px 7px;
+      border-radius: 7px;
+      background: var(--pm-soft);
+      color: var(--pm-mut);
+      display: flex; justify-content: space-between; gap: 6px;
+    }
+    .pm-log-item.focus { color: var(--a); }
+    .pm-log-item.break { opacity: .7; }
+    .pm-log-empty { font-size: 11px; opacity: .4; padding: 4px 7px; }
+
+    /* ── center content ── */
+    .pm-content {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      position: relative; padding: 24px;
+      /* subtle radial gradient same as ai page bg */
+      background: transparent;
+    }
+    body.dark .pm-content {
+      background: radial-gradient(circle at 50% 0%, rgba(var(--a-rgb,59,130,246),.04), transparent 60%);
+    }
+
+    .pm-mode-label {
+      font-size: 12px; letter-spacing: .12em;
+      text-transform: uppercase; opacity: .45;
+      margin-bottom: 30px;
+    }
+
+    /* ring */
+    .pm-ring-wrap {
+      position: relative; width: 256px; height: 256px; flex-shrink: 0;
+    }
+    .pm-ring-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .pm-ring-bg  { fill: none; stroke: var(--pm-line); stroke-width: 8; }
+    .pm-ring-fg  {
+      fill: none; stroke: var(--a); stroke-width: 8; stroke-linecap: round;
+      transition: stroke-dashoffset .6s linear, stroke .4s;
+    }
+    .pm-ring-center {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 5px;
+    }
+    .pm-time {
+      font-size: 56px; font-weight: 300;
+      letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1;
+      color: var(--pm-txt);
+    }
+    .pm-rounds { font-size: 11px; opacity: .4; letter-spacing: .07em; text-transform: uppercase; }
+
+    /* controls */
+    .pm-controls { display: flex; align-items: center; gap: 12px; margin-top: 30px; }
+    .pm-ctrl {
+      width: 46px; height: 46px; border-radius: 50%;
+      border: 1px solid var(--pm-line);
+      background: var(--pm-soft);
+      color: var(--pm-txt);
+      font-size: 17px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, border-color .15s;
+    }
+    .pm-ctrl:hover { background: var(--pm-hover); border-color: var(--pm-br); }
+    .pm-ctrl-primary {
+      width: 62px; height: 62px; font-size: 20px;
+      background: linear-gradient(135deg, var(--a), var(--a2));
+      border: none; color: #fff;
+      box-shadow: 0 7px 20px rgba(var(--a-rgb,59,130,246),.3);
+      transition: transform .15s, opacity .15s, box-shadow .15s;
+    }
+    .pm-ctrl-primary:hover {
+      opacity: .92; transform: translateY(-1px);
+      box-shadow: 0 10px 28px rgba(var(--a-rgb,59,130,246),.4);
+    }
+
+    /* task input */
+    .pm-task-wrap { margin-top: 34px; width: 100%; max-width: 380px; }
+    .pm-task-input {
+      width: 100%; padding: 11px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--pm-line);
+      background: var(--pm-panel);
+      backdrop-filter: blur(24px) saturate(140%);
+      -webkit-backdrop-filter: blur(24px) saturate(140%);
+      box-shadow: var(--pm-shadow);
+      color: var(--pm-txt); font-size: 13.5px;
+      font-family: inherit;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .pm-task-input:focus {
+      outline: none;
+      border-color: rgba(var(--a-rgb,59,130,246),.5);
+      box-shadow: 0 0 0 3px rgba(var(--a-rgb,59,130,246),.1), var(--pm-shadow);
+    }
+    .pm-task-input::placeholder { color: var(--pm-mut); opacity: .7; }
+
+    /* stats */
+    .pm-stats {
+      position: absolute; bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; gap: 28px; pointer-events: none;
+    }
+    .pm-stat { text-align: center; }
+    .pm-stat-val { font-size: 19px; font-weight: 500; color: var(--pm-txt); }
+    .pm-stat-lbl {
+      font-size: 10px; opacity: .38;
+      text-transform: uppercase; letter-spacing: .08em; margin-top: 2px;
+    }
+
+    /* toast — same as ai.css */
+    .pm-toast {
+      position: fixed; bottom: 84px; left: 50%;
+      transform: translateX(-50%) translateY(8px);
+      background: rgba(17,24,39,.94); color: #f5f5f5;
+      padding: 8px 18px; border-radius: 999px;
+      font-size: 13px; border: 1px solid rgba(255,255,255,.1);
+      pointer-events: none; opacity: 0;
+      transition: opacity .2s, transform .2s;
+      z-index: 999;
+    }
+    .pm-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 760px) {
+      .pm-sidebar { display: none; }
+      .pm-topbar  { padding-left: 60px; }
+      .pm-time    { font-size: 44px; }
+      .pm-ring-wrap { width: 210px; height: 210px; }
+    }
+  </style>
+</head>
+<body class="dark">
+  <div class="cursor-dot"></div>
+  <div class="cursor-trail"></div>
+  <div class="cursor-crosshair"></div>
+  <div class="cursor-blob"></div>
+
+  <div class="pm-shell">
+    <div class="pm-topbar">
+      <div class="pm-topbar-left">
+        <div class="pm-brand">
+          <div class="pm-brand-mark">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9z"/></svg>
+          </div>
+          <span class="pm-brand-text">Pomodoro</span>
+        </div>
+      </div>
+      <div class="pm-topbar-right">
+        <a class="pm-topbar-link" href="/apps">Apps</a>
+      </div>
+    </div>
+
+    <div class="pm-main">
+      <!-- sidebar -->
+      <div class="pm-sidebar">
+        <div class="pm-sidebar-inner">
+
+          <div>
+            <div class="pm-section-title">Mode</div>
+            <button class="pm-mode-btn active" data-mode="focus">Focus <span class="pm-mode-dur" id="lbl-focus">25m</span></button>
+            <button class="pm-mode-btn" data-mode="short">Short break <span class="pm-mode-dur" id="lbl-short">5m</span></button>
+            <button class="pm-mode-btn" data-mode="long">Long break <span class="pm-mode-dur" id="lbl-long">15m</span></button>
+          </div>
+
+          <div>
+            <div class="pm-section-title">Durations (min)</div>
+            <div class="pm-setting"><label>Focus</label><input type="number" id="set-focus" value="25" min="1" max="90" /></div>
+            <div class="pm-setting"><label>Short break</label><input type="number" id="set-short" value="5" min="1" max="30" /></div>
+            <div class="pm-setting"><label>Long break</label><input type="number" id="set-long" value="15" min="1" max="60" /></div>
+            <div class="pm-setting"><label>Long break after</label><input type="number" id="set-interval" value="4" min="2" max="10" /></div>
+          </div>
+
+          <div>
+            <div class="pm-section-title">Options</div>
+            <div class="pm-toggle"><label for="tog-auto">Auto-start next</label><input type="checkbox" id="tog-auto" /></div>
+            <div class="pm-toggle"><label for="tog-sound">Sound alerts</label><input type="checkbox" id="tog-sound" checked /></div>
+          </div>
+
+          <div style="flex:1">
+            <div class="pm-section-title">Session log</div>
+            <div class="pm-log" id="pm-log"><div class="pm-log-empty">No sessions yet.</div></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- center -->
+      <div class="pm-content">
+        <div class="pm-mode-label" id="pm-mode-label">Focus</div>
+
+        <div class="pm-ring-wrap">
+          <svg class="pm-ring-svg" viewBox="0 0 256 256">
+            <circle class="pm-ring-bg" cx="128" cy="128" r="112" />
+            <circle class="pm-ring-fg" id="pm-ring" cx="128" cy="128" r="112" />
+          </svg>
+          <div class="pm-ring-center">
+            <div class="pm-time" id="pm-time">25:00</div>
+            <div class="pm-rounds" id="pm-rounds">Session 1</div>
+          </div>
+        </div>
+
+        <div class="pm-controls">
+          <button class="pm-ctrl" id="btn-restart" title="Restart">↺</button>
+          <button class="pm-ctrl pm-ctrl-primary" id="btn-play" title="Start">▶</button>
+          <button class="pm-ctrl" id="btn-skip" title="Skip">⏭</button>
+        </div>
+
+        <div class="pm-task-wrap">
+          <input class="pm-task-input" id="pm-task" type="text" placeholder="What are you working on?" maxlength="80" />
+        </div>
+
+        <div class="pm-stats">
+          <div class="pm-stat"><div class="pm-stat-val" id="stat-sessions">0</div><div class="pm-stat-lbl">Sessions</div></div>
+          <div class="pm-stat"><div class="pm-stat-val" id="stat-focus">0m</div><div class="pm-stat-lbl">Focus time</div></div>
+          <div class="pm-stat"><div class="pm-stat-val" id="stat-streak">0</div><div class="pm-stat-lbl">Streak</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pm-toast" id="pm-toast"></div>
+
+  <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/wide.js"></script>
+  <script src="/assets/js/gallium.js"></script>
+  <script src="/assets/js/cookie.js"></script>
+  <script src="/assets/js/cursor.js"></script>
+
+  <script>
+    /* ── settings ── */
+    const setFocus    = document.getElementById('set-focus');
+    const setShort    = document.getElementById('set-short');
+    const setLong     = document.getElementById('set-long');
+    const setInterval = document.getElementById('set-interval');
+    const togAuto     = document.getElementById('tog-auto');
+    const togSound    = document.getElementById('tog-sound');
+
+    function cfg() {
+      return {
+        focus:    Math.max(1, parseInt(setFocus.value)    || 25) * 60,
+        short:    Math.max(1, parseInt(setShort.value)    || 5)  * 60,
+        long:     Math.max(1, parseInt(setLong.value)     || 15) * 60,
+        interval: Math.max(2, parseInt(setInterval.value) || 4),
+      };
+    }
+
+    /* ── state ── */
+    let mode       = 'focus';
+    let running    = false;
+    let remaining  = 0;
+    let total      = 0;
+    let timerId    = null;
+    let focusCount = 0;
+    let todaySessions = 0;
+    let todayFocusMin = 0;
+    let streak     = parseInt(localStorage.getItem('pm_streak') || '0');
+    let lastDate   = localStorage.getItem('pm_last_date') || '';
+
+    const today     = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    if (lastDate && lastDate !== today && lastDate !== yesterday) streak = 0;
+
+    /* ── DOM ── */
+    const timeEl    = document.getElementById('pm-time');
+    const roundsEl  = document.getElementById('pm-rounds');
+    const ringEl    = document.getElementById('pm-ring');
+    const modeLabel = document.getElementById('pm-mode-label');
+    const btnPlay   = document.getElementById('btn-play');
+    const logEl     = document.getElementById('pm-log');
+    const toastEl   = document.getElementById('pm-toast');
+
+    const CIRC = 2 * Math.PI * 112;
+    ringEl.style.strokeDasharray = CIRC;
+
+    const MODE_NAME = { focus: 'Focus', short: 'Short Break', long: 'Long Break' };
+
+    /* ── init mode ── */
+    function initMode(m) {
+      mode = m;
+      remaining = total = cfg()[m];
+      running = false;
+      clearInterval(timerId);
+      btnPlay.innerHTML = '▶';
+      modeLabel.textContent = MODE_NAME[m];
+      document.querySelectorAll('.pm-mode-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.mode === m)
+      );
+      render();
+      document.title = `${fmt(remaining)} · ${MODE_NAME[m]} — Pomodoro`;
+    }
+
+    function render() {
+      timeEl.textContent = fmt(remaining);
+      const session = focusCount + 1;
+      roundsEl.textContent = `Session ${session}`;
+      const frac = total > 0 ? remaining / total : 1;
+      ringEl.style.strokeDashoffset = CIRC * frac;
+      document.title = `${fmt(remaining)} · ${MODE_NAME[mode]} — Pomodoro`;
+    }
+
+    function fmt(s) {
+      const m = Math.floor(s / 60), sec = s % 60;
+      return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    }
+
+    /* ── tick ── */
+    function tick() {
+      if (remaining <= 0) { onComplete(); return; }
+      remaining--;
+      render();
+    }
+
+    function onComplete() {
+      clearInterval(timerId);
+      running = false;
+      btnPlay.innerHTML = '▶';
+      beep();
+
+      if (mode === 'focus') {
+        focusCount++;
+        todaySessions++;
+        todayFocusMin += Math.round(cfg().focus / 60);
+        streak++;
+        localStorage.setItem('pm_streak', streak);
+        localStorage.setItem('pm_last_date', today);
+        logSession('focus', document.getElementById('pm-task').value.trim());
+        updateStats();
+        const next = focusCount % cfg().interval === 0 ? 'long' : 'short';
+        showToast(`Nice work! Time for a ${next === 'long' ? 'long' : 'short'} break.`);
+        if (togAuto.checked) { initMode(next); startTimer(); }
+        else initMode(next);
+      } else {
+        logSession(mode, '');
+        showToast('Break over — ready to focus?');
+        if (togAuto.checked) { initMode('focus'); startTimer(); }
+        else initMode('focus');
+      }
+    }
+
+    function startTimer() {
+      running = true;
+      btnPlay.innerHTML = '⏸';
+      timerId = setInterval(tick, 1000);
+    }
+
+    function pauseTimer() {
+      running = false;
+      btnPlay.innerHTML = '▶';
+      clearInterval(timerId);
+    }
+
+    /* ── controls ── */
+    btnPlay.addEventListener('click', () => {
+      if (running) pauseTimer(); else startTimer();
+    });
+
+    document.getElementById('btn-restart').addEventListener('click', () => {
+      clearInterval(timerId); running = false; initMode(mode);
+    });
+
+    document.getElementById('btn-skip').addEventListener('click', () => {
+      clearInterval(timerId); running = false;
+      if (mode === 'focus') {
+        initMode(focusCount % cfg().interval === 0 ? 'long' : 'short');
+      } else {
+        initMode('focus');
+      }
+    });
+
+    document.querySelectorAll('.pm-mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        clearInterval(timerId); running = false; initMode(btn.dataset.mode);
+      });
+    });
+
+    [setFocus, setShort, setLong, setInterval].forEach(inp => {
+      inp.addEventListener('change', () => {
+        document.getElementById('lbl-focus').textContent = setFocus.value + 'm';
+        document.getElementById('lbl-short').textContent = setShort.value + 'm';
+        document.getElementById('lbl-long').textContent  = setLong.value  + 'm';
+        if (!running) initMode(mode);
+        saveSettings();
+      });
+    });
+
+    /* ── session log ── */
+    const sessions = [];
+    function logSession(type, task) {
+      const label = type === 'focus'
+        ? (task || 'Focus session')
+        : type === 'short' ? 'Short break' : 'Long break';
+      const icon  = type === 'focus' ? '🍅' : type === 'short' ? '☕' : '🛋️';
+      sessions.unshift({ type, label, icon, time: new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) });
+      renderLog();
+    }
+
+    function renderLog() {
+      if (!sessions.length) {
+        logEl.innerHTML = '<div class="pm-log-empty">No sessions yet.</div>';
+        return;
+      }
+      logEl.innerHTML = sessions.slice(0, 30).map(s =>
+        `<div class="pm-log-item ${s.type === 'focus' ? 'focus' : 'break'}">
+          <span>${s.icon} ${s.label}</span>
+          <span style="opacity:.45;flex-shrink:0">${s.time}</span>
+        </div>`
+      ).join('');
+    }
+
+    function updateStats() {
+      document.getElementById('stat-sessions').textContent = todaySessions;
+      document.getElementById('stat-focus').textContent    = todayFocusMin + 'm';
+      document.getElementById('stat-streak').textContent   = streak;
+    }
+
+    /* ── sound ── */
+    function beep() {
+      if (!togSound.checked) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [0, 160, 320].forEach(delay => {
+          const osc  = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.value = 880; osc.type = 'sine';
+          const t = ctx.currentTime + delay / 1000;
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(0.15, t + 0.01);
+          gain.gain.linearRampToValueAtTime(0, t + 0.22);
+          osc.start(t); osc.stop(t + 0.25);
+        });
+      } catch (_) {}
+    }
+
+    /* ── toast ── */
+    let toastTimer;
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2800);
+    }
+
+    /* ── persist settings ── */
+    function saveSettings() {
+      localStorage.setItem('pm_settings', JSON.stringify({
+        focus: setFocus.value, short: setShort.value, long: setLong.value,
+        interval: setInterval.value, auto: togAuto.checked, sound: togSound.checked,
+      }));
+    }
+
+    const saved = JSON.parse(localStorage.getItem('pm_settings') || 'null');
+    if (saved) {
+      if (saved.focus)     setFocus.value    = saved.focus;
+      if (saved.short)     setShort.value    = saved.short;
+      if (saved.long)      setLong.value     = saved.long;
+      if (saved.interval)  setInterval.value = saved.interval;
+      if (saved.auto  != null) togAuto.checked  = saved.auto;
+      if (saved.sound != null) togSound.checked = saved.sound;
+    }
+    [togAuto, togSound].forEach(el => el.addEventListener('change', saveSettings));
+
+    document.getElementById('lbl-focus').textContent = setFocus.value + 'm';
+    document.getElementById('lbl-short').textContent = setShort.value + 'm';
+    document.getElementById('lbl-long').textContent  = setLong.value  + 'm';
+
+    updateStats();
+    initMode('focus');
+  </script>
+</body>
+</html>
