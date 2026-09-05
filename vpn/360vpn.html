@@ -3,39 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Network Tools</title>
+<title>Network Security Tools</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Didact+Gothic&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f6f8fb;
-  --panel:#fff;
-  --panel-soft:#f9fbfd;
-  --line:#dfe5ec;
-  --text:#233044;
-  --muted:#718096;
-  --accent:#00c878;
-  --accent-soft:rgba(0,200,120,.10);
-  --good:#00a86b;
-  --warn:#b7791f;
-  --bad:#d64545;
-  --shadow:0 8px 28px rgba(37,49,66,.06);
-  --font:'Didact Gothic',system-ui,sans-serif;
+  --bg:#f6f8fb;--panel:#fff;--panel-soft:#f9fbfd;--line:#dfe5ec;
+  --text:#233044;--muted:#718096;--accent:#00c878;--accent-soft:rgba(0,200,120,.10);
+  --good:#00a86b;--warn:#b7791f;--bad:#d64545;
+  --shadow:0 8px 28px rgba(37,49,66,.06);--font:'Didact Gothic',system-ui,sans-serif;
 }
 body.dark{
-  --bg:#10151c;
-  --panel:#171d25;
-  --panel-soft:#131922;
-  --line:#293442;
-  --text:#edf2f7;
-  --muted:#9aa8b9;
-  --accent:#7b9cff;
-  --accent-soft:rgba(123,156,255,.12);
-  --good:#55c987;
-  --warn:#e0ad5b;
-  --bad:#ff7777;
-  --shadow:0 12px 34px rgba(0,0,0,.22);
+  --bg:#10151c;--panel:#171d25;--panel-soft:#131922;--line:#293442;
+  --text:#edf2f7;--muted:#9aa8b9;--accent:#7b9cff;--accent-soft:rgba(123,156,255,.12);
+  --good:#55c987;--warn:#e0ad5b;--bad:#ff7777;--shadow:0 12px 34px rgba(0,0,0,.22);
 }
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;font-family:var(--font);background:var(--bg);color:var(--text)}
@@ -89,7 +71,7 @@ button{cursor:pointer}
 .test-input-row{display:flex;gap:8px}
 .test-input{width:100%;background:var(--panel-soft);border:1px solid var(--line);border-radius:3px;padding:9px 11px;color:var(--text);outline:0}
 .test-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.test-result{margin-top:10px;background:var(--panel-soft);border:1px solid var(--line);border-radius:3px;padding:11px;min-height:72px;font-size:12px;color:var(--muted);white-space:pre-wrap;word-break:break-word}
+.test-result{margin-top:10px;background:var(--panel-soft);border:1px solid var(--line);border-radius:3px;padding:11px;min-height:72px;font-size:12px;color:var(--muted);white-space:pre-wrap;word-break:break-word;font-family:monospace}
 .dns-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .dns-actions{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .dns-note{font-size:11px;color:var(--muted);line-height:1.45}
@@ -98,7 +80,6 @@ button{cursor:pointer}
 .speed-metric span{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
 .speed-metric strong{font-size:22px;font-weight:500}
 .speed-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.activity-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
 .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}
 .toggle-row:last-child{border-bottom:0}
 .switch{position:relative;width:44px;height:24px;display:inline-block;flex:none}
@@ -116,14 +97,28 @@ button{cursor:pointer}
 .security-item{border:1px solid var(--line);background:var(--panel-soft);border-radius:3px;padding:12px}
 .security-item strong{display:block;font-size:13px;margin-bottom:3px}
 .security-item span{font-size:11px;color:var(--muted);line-height:1.45}
-.muted-box{padding:11px 12px;border:1px dashed var(--line);border-radius:3px;color:var(--muted);font-size:12px;line-height:1.5}
+.security-item.pass strong::after{content:' ✓';color:var(--good)}
+.security-item.fail strong::after{content:' ✗';color:var(--bad)}
+.security-item.warn-item strong::after{content:' ⚠';color:var(--warn)}
+.leak-row{display:flex;gap:8px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--line);font-size:12px}
+.leak-row:last-child{border-bottom:0}
+.leak-label{color:var(--muted);min-width:90px}
+.leak-val{font-family:monospace;word-break:break-all}
+.header-table{width:100%;border-collapse:collapse;font-size:11px;font-family:monospace}
+.header-table td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-all}
+.header-table td:first-child{color:var(--muted);white-space:nowrap;min-width:160px}
+.progress-bar{height:6px;background:var(--line);border-radius:3px;margin-top:6px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .4s ease}
+.scan-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.scan-item{border:1px solid var(--line);background:var(--panel-soft);border-radius:3px;padding:10px 12px;font-size:12px}
+.scan-item b{display:block;margin-bottom:3px;font-size:11px;color:var(--muted)}
+.scan-item .val{font-weight:700;font-size:13px}
 .footer{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.footer a:hover{color:var(--accent)}
 @media(max-width:760px){
   .grid{grid-template-columns:1fr}
   .span2{grid-column:auto}
   .connect-inner{grid-template-columns:1fr}
-  .speed-grid,.security-list,.dns-grid{grid-template-columns:1fr}
+  .speed-grid,.security-list,.dns-grid,.scan-grid{grid-template-columns:1fr}
   .page{width:min(100% - 22px,980px);padding-top:28px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
@@ -131,7 +126,7 @@ button{cursor:pointer}
 </head>
 <body>
 <header class="topbar">
-  <a class="back-apps" href="apps.html">Back to Apps</a>
+  <a class="back-apps" href="/apps.html">Back to Apps</a>
 </header>
 
 <main class="page">
@@ -140,12 +135,14 @@ button{cursor:pointer}
   </div>
 
   <section class="hero">
-    <div class="hero-tag">Network tools</div>
-    <h1 class="hero-title">Connection</h1>
-    <p class="hero-sub">A small set of browser tools for checking connectivity, measuring performance, testing DNS resolvers, and reviewing local network privacy signals.</p>
+    <div class="hero-tag">Network security</div>
+    <h1 class="hero-title">Security Center</h1>
+    <p class="hero-sub">Live browser-based security checks: IP leak detection, DNS leak test, WebRTC leak, header inspection, tracker scan, HTTPS verification, and network diagnostics — all routed through the 360 proxy worker.</p>
   </section>
 
   <section class="grid">
+
+    <!-- CONNECTION STATUS -->
     <article class="panel span2">
       <div class="panel-head"><span>Connection</span><span class="badge badge-warn" id="proxyBadge">NOT TESTED</span></div>
       <div class="panel-body">
@@ -153,12 +150,12 @@ button{cursor:pointer}
           <div>
             <div class="connect-label">Public IP</div>
             <div class="connect-val" id="realIp">Checking...</div>
-            <div class="connect-sub" id="realLoc">Checking the public address visible to this browser</div>
+            <div class="connect-sub" id="realLoc">Fetching public address</div>
           </div>
           <div>
-            <div class="connect-label">Response time</div>
+            <div class="connect-label">Worker latency</div>
             <div class="connect-val" id="statLatency">-</div>
-            <div class="connect-sub" id="proxyNote">Run a connection check below</div>
+            <div class="connect-sub" id="proxyNote">Run a connection check</div>
           </div>
           <button class="btn btn-primary" id="checkBtn" type="button">Check connection</button>
         </div>
@@ -168,52 +165,70 @@ button{cursor:pointer}
       </div>
     </article>
 
+    <!-- IP LEAK TEST -->
     <article class="panel">
-      <div class="panel-head">Proxy service</div>
+      <div class="panel-head"><span>IP Leak Detection</span><span class="badge badge-warn" id="ipLeakBadge">UNTESTED</span></div>
       <div class="panel-body">
-        <div class="stat-row"><span class="stat-key">Worker endpoint</span><span class="stat-val good" id="workerEndpoint">/vpn/proxy</span></div>
-        <div class="stat-row"><span class="stat-key">PAC file</span><span class="stat-val good" id="pacEndpoint">/vpn/proxy.pac</span></div>
-        <div class="stat-row"><span class="stat-key">Routing</span><span class="stat-val">Browser requests can be tested through the Worker</span></div>
-        <div class="copy-row" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-          <button class="btn" id="copyPacBtn" type="button">Copy PAC URL</button>
-          <a class="btn" href="/vpn/proxy.pac">Open PAC</a>
+        <div id="ipLeakResults">
+          <div class="leak-row"><span class="leak-label">Browser IP</span><span class="leak-val" id="ipBrowser">-</span></div>
+          <div class="leak-row"><span class="leak-label">ipify</span><span class="leak-val" id="ipIpify">-</span></div>
+          <div class="leak-row"><span class="leak-label">Cloudflare</span><span class="leak-val" id="ipCloudflare">-</span></div>
+          <div class="leak-row"><span class="leak-label">ipapi.co</span><span class="leak-val" id="ipIpapi">-</span></div>
+          <div class="leak-row"><span class="leak-label">Country</span><span class="leak-val" id="ipCountry">-</span></div>
+          <div class="leak-row"><span class="leak-label">ISP / ASN</span><span class="leak-val" id="ipAsn">-</span></div>
         </div>
-      </div>
-    </article>
-
-    <article class="panel">
-      <div class="panel-head">Network details</div>
-      <div class="panel-body">
-        <div class="stat-row"><span class="stat-key">Online</span><span class="stat-val" id="onlineState">-</span></div>
-        <div class="stat-row"><span class="stat-key">Connection type</span><span class="stat-val" id="connType">-</span></div>
-        <div class="stat-row"><span class="stat-key">Downlink estimate</span><span class="stat-val" id="connDownlink">-</span></div>
-        <div class="stat-row"><span class="stat-key">Save-data mode</span><span class="stat-val" id="saveData">-</span></div>
-      </div>
-    </article>
-
-    <article class="panel">
-      <div class="panel-head">Request test</div>
-      <div class="panel-body">
-        <div class="note" style="margin:0 0 10px">Measure a request to a CORS-enabled URL from this browser.</div>
-        <div class="test-input-row">
-          <input class="test-input" id="testUrl" value="https://httpbin.org/ip" placeholder="https://example.com">
-          <button class="btn" id="testBtn" type="button">Test</button>
+        <div style="margin-top:12px">
+          <button class="btn btn-primary" id="ipLeakBtn" type="button">Run IP leak test</button>
         </div>
-        <div class="test-result" id="testResult">No test has been run.</div>
+        <div class="note" style="margin-top:8px" id="ipLeakNote">Compares IPs from multiple sources to detect inconsistencies.</div>
       </div>
     </article>
 
+    <!-- WEBRTC LEAK TEST -->
     <article class="panel">
-      <div class="panel-head">DNS</div>
+      <div class="panel-head"><span>WebRTC Leak Test</span><span class="badge badge-warn" id="webrtcBadge">UNTESTED</span></div>
+      <div class="panel-body">
+        <div id="webrtcResults">
+          <div class="leak-row"><span class="leak-label">Status</span><span class="leak-val" id="webrtcAvail">Checking...</span></div>
+          <div class="leak-row"><span class="leak-label">Local IPs</span><span class="leak-val" id="webrtcLocal">-</span></div>
+          <div class="leak-row"><span class="leak-label">Public IPs</span><span class="leak-val" id="webrtcPublic">-</span></div>
+          <div class="leak-row"><span class="leak-label">IPv6 leak</span><span class="leak-val" id="webrtcIPv6">-</span></div>
+        </div>
+        <div style="margin-top:12px">
+          <button class="btn btn-primary" id="webrtcBtn" type="button">Run WebRTC leak test</button>
+        </div>
+        <div class="note" style="margin-top:8px">WebRTC can expose your real IP even through a VPN. This checks what IPs the browser leaks via ICE candidates.</div>
+      </div>
+    </article>
+
+    <!-- DNS LEAK TEST -->
+    <article class="panel">
+      <div class="panel-head"><span>DNS Leak Test</span><span class="badge badge-warn" id="dnsLeakBadge">UNTESTED</span></div>
+      <div class="panel-body">
+        <div id="dnsLeakResults">
+          <div class="leak-row"><span class="leak-label">Cloudflare</span><span class="leak-val" id="dnsLeakCF">-</span></div>
+          <div class="leak-row"><span class="leak-label">Google</span><span class="leak-val" id="dnsLeakGoogle">-</span></div>
+          <div class="leak-row"><span class="leak-label">Quad9</span><span class="leak-val" id="dnsLeakQ9">-</span></div>
+          <div class="leak-row"><span class="leak-label">Consistent?</span><span class="leak-val" id="dnsLeakConsistent">-</span></div>
+        </div>
+        <div style="margin-top:12px">
+          <button class="btn btn-primary" id="dnsLeakBtn" type="button">Run DNS leak test</button>
+        </div>
+        <div class="note" style="margin-top:8px">Resolves the same hostname through multiple DoH resolvers and checks if answers match.</div>
+      </div>
+    </article>
+
+    <!-- DNS RESOLVER -->
+    <article class="panel">
+      <div class="panel-head">DNS Resolver</div>
       <div class="panel-body">
         <div class="dns-grid">
           <div>
             <div class="field-label">Resolver</div>
             <select id="dnsMode" class="test-input">
-              <option value="system">Browser default</option>
-              <option value="cloudflare">Cloudflare</option>
-              <option value="google">Google</option>
-              <option value="quad9">Quad9</option>
+              <option value="cloudflare">Cloudflare (1.1.1.1)</option>
+              <option value="google">Google (8.8.8.8)</option>
+              <option value="quad9">Quad9 (9.9.9.9)</option>
               <option value="custom">Custom DoH URL</option>
             </select>
           </div>
@@ -222,19 +237,98 @@ button{cursor:pointer}
             <input id="dnsHost" class="test-input" value="example.com" placeholder="example.com">
           </div>
         </div>
+        <div>
+          <div class="field-label" style="margin-top:10px">Record type</div>
+          <select id="dnsType" class="test-input">
+            <option value="A">A (IPv4)</option>
+            <option value="AAAA">AAAA (IPv6)</option>
+            <option value="MX">MX (Mail)</option>
+            <option value="TXT">TXT</option>
+            <option value="NS">NS (Nameservers)</option>
+            <option value="CNAME">CNAME</option>
+          </select>
+        </div>
         <div id="customDnsWrap" style="display:none;margin-top:10px">
           <div class="field-label">Custom DNS-over-HTTPS endpoint</div>
           <input id="customDns" class="test-input" placeholder="https://resolver.example/dns-query">
         </div>
         <div class="dns-actions">
           <button class="btn btn-primary" id="dnsBtn" type="button">Resolve</button>
-          <span class="dns-note" id="dnsResult">A browser page can test a resolver through DNS-over-HTTPS, but it cannot replace your operating system's DNS configuration.</span>
+        </div>
+        <div class="test-result" id="dnsResult" style="min-height:50px">No lookup run.</div>
+      </div>
+    </article>
+
+    <!-- HEADER INSPECTOR -->
+    <article class="panel span2">
+      <div class="panel-head">HTTP Header Inspector</div>
+      <div class="panel-body">
+        <div class="note" style="margin:0 0 10px">Fetches a URL through the worker and displays what headers the server returned. Useful for checking security headers (HSTS, CSP, X-Frame-Options, etc.)</div>
+        <div class="test-input-row">
+          <input class="test-input" id="headerUrl" value="https://httpbin.org/headers" placeholder="https://example.com">
+          <button class="btn btn-primary" id="headerBtn" type="button">Inspect</button>
+        </div>
+        <div id="headerResults" class="test-result" style="min-height:80px">No inspection run.</div>
+        <div id="secHeaderScan" style="margin-top:12px;display:none">
+          <div class="field-label" style="margin-bottom:8px">Security headers present</div>
+          <div class="scan-grid" id="secHeaderGrid"></div>
         </div>
       </div>
     </article>
 
-    <article class="panel span2">
-      <div class="panel-head">Speed test</div>
+    <!-- HTTPS / TLS CHECK -->
+    <article class="panel">
+      <div class="panel-head"><span>HTTPS &amp; TLS Check</span><span class="badge badge-warn" id="tlsBadge">UNTESTED</span></div>
+      <div class="panel-body">
+        <div class="test-input-row" style="margin-bottom:10px">
+          <input class="test-input" id="tlsUrl" value="https://360-search.com" placeholder="https://example.com">
+          <button class="btn btn-primary" id="tlsBtn" type="button">Check</button>
+        </div>
+        <div id="tlsResults">
+          <div class="leak-row"><span class="leak-label">Protocol</span><span class="leak-val" id="tlsProto">-</span></div>
+          <div class="leak-row"><span class="leak-label">HTTPS</span><span class="leak-val" id="tlsHttps">-</span></div>
+          <div class="leak-row"><span class="leak-label">HTTP→HTTPS</span><span class="leak-val" id="tlsRedirect">-</span></div>
+          <div class="leak-row"><span class="leak-label">HSTS</span><span class="leak-val" id="tlsHsts">-</span></div>
+          <div class="leak-row"><span class="leak-label">Status</span><span class="leak-val" id="tlsStatus">-</span></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- TRACKER / MALWARE SCAN -->
+    <article class="panel">
+      <div class="panel-head"><span>URL Security Scan</span><span class="badge badge-warn" id="scanBadge">UNTESTED</span></div>
+      <div class="panel-body">
+        <div class="note" style="margin:0 0 10px">Checks a URL against known malware, tracker, and ad domains using Cloudflare's DNS threat intelligence.</div>
+        <div class="test-input-row" style="margin-bottom:10px">
+          <input class="test-input" id="scanUrl" placeholder="https://example.com or domain.com">
+          <button class="btn btn-primary" id="scanBtn" type="button">Scan</button>
+        </div>
+        <div id="scanResults">
+          <div class="leak-row"><span class="leak-label">Domain</span><span class="leak-val" id="scanDomain">-</span></div>
+          <div class="leak-row"><span class="leak-label">Malware DNS</span><span class="leak-val" id="scanMalware">-</span></div>
+          <div class="leak-row"><span class="leak-label">Adult filter</span><span class="leak-val" id="scanAdult">-</span></div>
+          <div class="leak-row"><span class="leak-label">Gateway block</span><span class="leak-val" id="scanGateway">-</span></div>
+          <div class="leak-row"><span class="leak-label">Verdict</span><span class="leak-val" id="scanVerdict">-</span></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- REQUEST TEST -->
+    <article class="panel">
+      <div class="panel-head">Request Test</div>
+      <div class="panel-body">
+        <div class="note" style="margin:0 0 10px">Send a request through the worker proxy and inspect the response.</div>
+        <div class="test-input-row">
+          <input class="test-input" id="testUrl" value="https://httpbin.org/ip" placeholder="https://example.com">
+          <button class="btn" id="testBtn" type="button">Test</button>
+        </div>
+        <div class="test-result" id="testResult">No test run.</div>
+      </div>
+    </article>
+
+    <!-- SPEED TEST -->
+    <article class="panel">
+      <div class="panel-head">Speed Test</div>
       <div class="panel-body">
         <div class="speed-grid">
           <div class="speed-metric"><span>Download</span><strong id="speedDownload">-</strong></div>
@@ -242,75 +336,85 @@ button{cursor:pointer}
           <div class="speed-metric"><span>Latency</span><strong id="speedLatency">-</strong></div>
         </div>
         <div class="speed-actions">
-          <button class="btn btn-primary" id="speedBtn" type="button">Run quick test</button>
-          <span class="note" id="speedNote">Uses small browser transfers, so this is an estimate rather than a full benchmark.</span>
+          <button class="btn btn-primary" id="speedBtn" type="button">Run test</button>
+          <span class="note" id="speedNote">Browser-based estimate via worker proxy.</span>
         </div>
       </div>
     </article>
 
+    <!-- PROXY SERVICE -->
     <article class="panel">
-      <div class="panel-head">Local activity log</div>
+      <div class="panel-head">Proxy Service</div>
+      <div class="panel-body">
+        <div class="stat-row"><span class="stat-key">Worker endpoint</span><span class="stat-val good" id="workerEndpoint">https://360-search.com/vpn/proxy</span></div>
+        <div class="stat-row"><span class="stat-key">PAC file</span><span class="stat-val good" id="pacEndpoint">https://360-search.com/vpn/proxy.pac</span></div>
+        <div class="stat-row"><span class="stat-key">Worker status</span><span class="stat-val" id="workerStatus">-</span></div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn" id="copyPacBtn" type="button">Copy PAC URL</button>
+          <a class="btn" href="https://360-search.com/vpn/proxy.pac" target="_blank">Open PAC</a>
+        </div>
+      </div>
+    </article>
+
+    <!-- NETWORK DETAILS -->
+    <article class="panel">
+      <div class="panel-head">Network Details</div>
+      <div class="panel-body">
+        <div class="stat-row"><span class="stat-key">Online</span><span class="stat-val" id="onlineState">-</span></div>
+        <div class="stat-row"><span class="stat-key">Connection type</span><span class="stat-val" id="connType">-</span></div>
+        <div class="stat-row"><span class="stat-key">Downlink estimate</span><span class="stat-val" id="connDownlink">-</span></div>
+        <div class="stat-row"><span class="stat-key">Save-data mode</span><span class="stat-val" id="saveData">-</span></div>
+        <div class="stat-row"><span class="stat-key">Secure context</span><span class="stat-val" id="secureStatus">-</span></div>
+        <div class="stat-row"><span class="stat-key">User agent</span><span class="stat-val" id="userAgent" style="font-size:10px">-</span></div>
+      </div>
+    </article>
+
+    <!-- PRIVACY HELPERS -->
+    <article class="panel">
+      <div class="panel-head">Browser Privacy Signals</div>
+      <div class="panel-body">
+        <div class="security-list" style="grid-template-columns:1fr">
+          <div class="security-item" id="siWebrtc"><strong>WebRTC</strong><span id="webrtcStatus">Checking...</span></div>
+          <div class="security-item" id="siHttps"><strong>Secure page</strong><span id="httpStatus">-</span></div>
+          <div class="security-item" id="siCookies"><strong>Cookies</strong><span id="cookieStatus">-</span></div>
+          <div class="security-item" id="siStorage"><strong>localStorage</strong><span id="storageStatus">-</span></div>
+          <div class="security-item" id="siDoNotTrack"><strong>Do Not Track</strong><span id="dntStatus">-</span></div>
+          <div class="security-item" id="siGpc"><strong>Global Privacy Control</strong><span id="gpcStatus">-</span></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
+          <button class="btn" id="macBtn" type="button">Generate random MAC</button>
+          <span class="note" id="macResult">For manual system config.</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- ACTIVITY LOG -->
+    <article class="panel">
+      <div class="panel-head">Activity Log</div>
       <div class="panel-body">
         <div class="toggle-row">
-          <div><strong>Log app requests</strong><div class="note">Only requests started by this page are recorded.</div></div>
+          <div><strong>Log requests</strong><div class="note">Only requests from this page.</div></div>
           <label class="switch"><input type="checkbox" id="activityToggle"><span class="slider"></span></label>
         </div>
-        <div class="toggle-row">
-          <div><strong>Keep local log</strong><div class="note">Leave this off if you do not want request history kept in this tab.</div></div>
-          <label class="switch"><input type="checkbox" id="activityPersist"><span class="slider"></span></label>
-        </div>
-        <div class="activity-list" id="activityList"><div class="activity-item"><span class="activity-kind">INFO</span><span class="activity-text">Activity logging is off.</span></div></div>
+        <div class="activity-list" id="activityList"><div class="activity-item"><span class="activity-kind">INFO</span><span class="activity-text">Logging off.</span></div></div>
         <div style="margin-top:10px"><button class="btn" id="clearActivity" type="button">Clear log</button></div>
       </div>
     </article>
 
-    <article class="panel">
-      <div class="panel-head">Privacy helpers</div>
-      <div class="panel-body">
-        <div class="security-list" style="grid-template-columns:1fr">
-          <div class="security-item"><strong>WebRTC visibility</strong><span id="webrtcStatus">Checking browser support...</span></div>
-          <div class="security-item"><strong>Secure page</strong><span id="secureStatus">Checking...</span></div>
-          <div class="security-item"><strong>MAC address</strong><span>A normal web page cannot change your device MAC address. You can generate a random value for manual system configuration.</span></div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
-          <button class="btn" id="macBtn" type="button">Generate random MAC</button>
-          <span class="note" id="macResult">No value generated.</span>
-        </div>
-      </div>
-    </article>
-
-    <article class="panel span2">
-      <div class="panel-head">Network protection checks</div>
-      <div class="panel-body">
-        <div class="security-list">
-          <div class="security-item"><strong>Connection check</strong><span>Confirms that this page can reach its own origin.</span></div>
-          <div class="security-item"><strong>DNS resolver test</strong><span>Lets you compare browser-visible DNS answers through supported DoH endpoints.</span></div>
-          <div class="security-item"><strong>Request logging</strong><span>Local and opt-in. The page cannot see unrelated browser traffic.</span></div>
-          <div class="security-item"><strong>DDoS protection</strong><span>Real protection needs to run at the server, reverse proxy, CDN, firewall, or network edge. A webpage cannot add that protection to the whole device.</span></div>
-          <div class="security-item"><strong>IP masking</strong><span>Actual public-IP masking requires a proxy or another network gateway. This page can only report the address visible to the browser.</span></div>
-          <div class="security-item"><strong>MAC randomisation</strong><span>MAC randomisation is an operating-system or Wi-Fi stack feature, not something JavaScript in a webpage can switch on.</span></div>
-        </div>
-      </div>
-    </article>
   </section>
 
   <footer class="footer">
-    <span>Network tools</span>
-    <a href="apps.html">Back to Apps</a>
+    <span>360 Network Security Tools</span>
+    <a href="/apps.html">Back to Apps</a>
   </footer>
 </main>
 
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const state = {
-    dark: localStorage.getItem('network-theme') === 'dark',
-    activity: false,
-    persist: false
-  };
+  const state = { dark: localStorage.getItem('network-theme') === 'dark', activity: false };
 
-  // Always route worker calls to the Cloudflare Worker domain,
-  // not location.origin (which may be GitHub Pages and returns HTML 404s).
+  // Always route worker calls to the Cloudflare Worker, not GitHub Pages
   const WORKER_BASE = 'https://360-search.com';
   const WORKER_PROXY = WORKER_BASE + '/vpn/proxy';
   const WORKER_HEALTH = WORKER_BASE + '/vpn';
@@ -322,247 +426,488 @@ button{cursor:pointer}
     quad9: 'https://dns.quad9.net/dns-query'
   };
 
-  function applyTheme(){
+  // ── Theme ──────────────────────────────────────────────────
+  function applyTheme() {
     document.body.classList.toggle('dark', state.dark);
     $('themeToggle').textContent = state.dark ? 'Light mode' : 'Dark mode';
   }
 
-  function now(){ return new Date().toLocaleTimeString([], {hour12:false}); }
+  // ── Logging ────────────────────────────────────────────────
+  function now() { return new Date().toLocaleTimeString([], { hour12: false }); }
 
-  function log(message, type='info'){
+  function log(message, type = 'info') {
     const wrap = $('log');
-    const line = document.createElement('div');
-    line.className = 'log-line';
-    const t = document.createElement('span');
-    t.className = 'log-time';
-    t.textContent = now();
-    const m = document.createElement('span');
-    m.className = 'log-msg ' + type;
-    m.textContent = message;
-    line.append(t,m);
-    wrap.appendChild(line);
-    wrap.scrollTop = wrap.scrollHeight;
-    while(wrap.children.length > 40) wrap.removeChild(wrap.firstChild);
+    const line = document.createElement('div'); line.className = 'log-line';
+    const t = document.createElement('span'); t.className = 'log-time'; t.textContent = now();
+    const m = document.createElement('span'); m.className = 'log-msg ' + type; m.textContent = message;
+    line.append(t, m); wrap.appendChild(line); wrap.scrollTop = wrap.scrollHeight;
+    while (wrap.children.length > 50) wrap.removeChild(wrap.firstChild);
+    if (state.activity) activity(type.toUpperCase(), message);
   }
 
-  function activity(kind, text){
-    if(!state.activity) return;
+  function activity(kind, text) {
     const list = $('activityList');
-    const empty = list.querySelector('.activity-item:first-child');
-    if(empty && empty.querySelector('.activity-text')?.textContent === 'Activity logging is off.') empty.remove();
-    const row = document.createElement('div');
-    row.className = 'activity-item';
-    const k = document.createElement('span');
-    k.className = 'activity-kind'; k.textContent = kind;
-    const t = document.createElement('span');
-    t.className = 'activity-text'; t.textContent = now() + '  ' + text;
-    row.append(k,t); list.appendChild(row); list.scrollTop = list.scrollHeight;
-    while(list.children.length > 60) list.removeChild(list.firstChild);
-    if(state.persist){
-      localStorage.setItem('network-activity', list.innerHTML);
-    }
+    const item = document.createElement('div'); item.className = 'activity-item';
+    item.innerHTML = `<span class="activity-kind">${kind}</span><span class="activity-text">${text}</span>`;
+    list.appendChild(item); list.scrollTop = list.scrollHeight;
   }
 
-  async function fetchThroughWorker(targetUrl, options={}){
-    const method = options.method || 'GET';
+  // ── Core proxy fetch ───────────────────────────────────────
+  async function proxyFetch(targetUrl, options = {}) {
     const workerUrl = WORKER_PROXY + '?url=' + encodeURIComponent(targetUrl);
-    activity('REQ', method + ' ' + targetUrl + ' via Worker');
-    const start = performance.now();
-    try{
-      const {headers: customHeaders, ...rest} = options;
-      const headers = new Headers(customHeaders || {});
-      headers.delete('host');
-      headers.delete('content-length');
-      const res = await fetch(workerUrl, {
-        ...rest,
-        method,
-        headers,
-        cache: rest.cache || 'no-store'
-      });
-      activity('RES', res.status + ' ' + targetUrl + ' via Worker (' + Math.round(performance.now()-start) + ' ms)');
-      return res;
-    }catch(err){
-      activity('ERR', targetUrl + ' via Worker (' + err.message + ')');
-      throw err;
-    }
+    const res = await fetch(workerUrl, {
+      method: options.method || 'GET',
+      headers: options.headers,
+      body: options.body,
+      cache: 'no-store'
+    });
+    return res;
   }
 
-  async function workerJson(path='/vpn'){
-    const url = WORKER_BASE + path;
+  async function workerJson(path = '/vpn') {
     const start = performance.now();
-    const res = await fetch(url, {cache:'no-store'});
+    const res = await fetch(WORKER_BASE + path, { cache: 'no-store' });
     const data = await res.json();
-    return {res, data, ms:Math.round(performance.now()-start)};
+    return { res, data, ms: Math.round(performance.now() - start) };
   }
 
-  async function fetchIp(){
-    try{
+  // ── Connection check ───────────────────────────────────────
+  async function checkConnection() {
+    const btn = $('checkBtn'); btn.disabled = true; btn.textContent = 'Checking...';
+    try {
       const start = performance.now();
-      const res = await fetchThroughWorker('https://api64.ipify.org?format=json&ts=' + Date.now());
+      const health = await workerJson('/vpn');
+      const ms = Math.round(performance.now() - start);
+      if (!health.res.ok || health.data.status !== 'online') throw new Error('Worker offline');
+      $('proxyBadge').className = 'badge badge-good'; $('proxyBadge').textContent = 'WORKER ONLINE';
+      $('proxyNote').textContent = 'Worker responded in ' + ms + ' ms';
+      $('statLatency').textContent = ms + ' ms';
+      $('workerStatus').textContent = 'Online';
+      log('Worker online in ' + ms + ' ms', 'ok');
+    } catch (err) {
+      $('proxyBadge').className = 'badge badge-bad'; $('proxyBadge').textContent = 'WORKER OFFLINE';
+      $('proxyNote').textContent = err.message;
+      $('workerStatus').textContent = 'Offline';
+      log('Worker check failed: ' + err.message, 'err');
+    } finally { btn.disabled = false; btn.textContent = 'Check connection'; }
+  }
+
+  // ── IP check (on load) ─────────────────────────────────────
+  async function fetchIp() {
+    try {
+      const start = performance.now();
+      const res = await proxyFetch('https://api64.ipify.org?format=json&ts=' + Date.now());
       const data = await res.json();
-      const ms = Math.round(performance.now()-start);
+      const ms = Math.round(performance.now() - start);
       $('realIp').textContent = data.ip || 'Unavailable';
       $('realLoc').textContent = 'Public address visible to this browser';
       $('statLatency').textContent = ms + ' ms';
-      log('Public IP checked in ' + ms + ' ms','info');
-    }catch(err){
+      log('Public IP: ' + data.ip + ' (' + ms + ' ms)', 'info');
+    } catch {
       $('realIp').textContent = 'Unavailable';
-      $('realLoc').textContent = 'The browser could not determine the public address';
-      log('Public IP lookup failed.','warn');
+      $('realLoc').textContent = 'Could not determine public address';
     }
   }
 
-  async function checkConnection(){
-    const btn = $('checkBtn');
-    btn.disabled = true; btn.textContent = 'Checking...';
-    try{
+  // ── IP Leak Detection ──────────────────────────────────────
+  async function runIpLeakTest() {
+    const btn = $('ipLeakBtn'); btn.disabled = true; btn.textContent = 'Testing...';
+    $('ipLeakNote').textContent = 'Querying multiple IP sources...';
+    log('Running IP leak test...', 'info');
+
+    const sources = [
+      { id: 'ipIpify', url: 'https://api64.ipify.org?format=json', parse: d => d.ip },
+      { id: 'ipCloudflare', url: 'https://1.1.1.1/cdn-cgi/trace', parse: text => {
+        const m = text.match(/ip=(.+)/); return m ? m[1].trim() : '?';
+      }, raw: true },
+      { id: 'ipIpapi', url: 'https://ipapi.co/json/', parse: d => d.ip + (d.org ? ' / ' + d.org : ''), extra: d => {
+        $('ipCountry').textContent = (d.country_name || '-') + (d.region ? ', ' + d.region : '');
+        $('ipAsn').textContent = d.org || '-';
+      }}
+    ];
+
+    const ips = [];
+    for (const src of sources) {
+      try {
+        const res = await proxyFetch(src.url);
+        const val = src.raw ? src.parse(await res.text()) : src.parse(await res.json().then(d => { src.extra && src.extra(d); return d; }));
+        $(src.id).textContent = val;
+        ips.push(val.split(' ')[0]);
+      } catch { $(src.id).textContent = 'Error'; }
+    }
+
+    $('ipBrowser').textContent = $('realIp').textContent;
+    ips.push($('realIp').textContent);
+
+    const unique = [...new Set(ips.filter(ip => ip && ip !== '-' && ip !== 'Error' && ip !== 'Checking...'))];
+    const consistent = unique.length <= 1;
+    $('ipLeakBadge').className = 'badge ' + (consistent ? 'badge-good' : 'badge-bad');
+    $('ipLeakBadge').textContent = consistent ? 'NO LEAK' : 'LEAK DETECTED';
+    $('ipLeakNote').textContent = consistent
+      ? 'All sources agree: ' + unique[0]
+      : 'Inconsistent IPs detected — possible proxy/VPN bypass: ' + unique.join(' vs ');
+    log('IP leak test: ' + (consistent ? 'No leak' : 'LEAK — ' + unique.join(' vs ')), consistent ? 'ok' : 'err');
+    btn.disabled = false; btn.textContent = 'Run IP leak test';
+  }
+
+  // ── WebRTC Leak Test ───────────────────────────────────────
+  async function runWebRtcTest() {
+    const btn = $('webrtcBtn'); btn.disabled = true; btn.textContent = 'Testing...';
+    log('Running WebRTC leak test...', 'info');
+
+    if (!window.RTCPeerConnection) {
+      $('webrtcAvail').textContent = 'WebRTC not available in this browser';
+      $('webrtcBadge').className = 'badge badge-good'; $('webrtcBadge').textContent = 'NO WEBRTC';
+      btn.disabled = false; btn.textContent = 'Run WebRTC leak test'; return;
+    }
+
+    $('webrtcAvail').textContent = 'WebRTC available — probing...';
+
+    const localIPs = new Set(), publicIPs = new Set(), ipv6IPs = new Set();
+
+    try {
+      await new Promise((resolve) => {
+        const pc = new RTCPeerConnection({ iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
+        ]});
+        pc.createDataChannel('');
+        pc.onicecandidate = e => {
+          if (!e.candidate) { pc.close(); resolve(); return; }
+          const ip = e.candidate.candidate.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[a-f0-9:]+:[a-f0-9:]+)/i);
+          if (!ip) return;
+          const addr = ip[1];
+          if (/^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|fd|fc)/.test(addr)) {
+            localIPs.add(addr);
+          } else if (addr.includes(':')) {
+            ipv6IPs.add(addr);
+            publicIPs.add(addr);
+          } else {
+            publicIPs.add(addr);
+          }
+        };
+        pc.createOffer().then(o => pc.setLocalDescription(o));
+        setTimeout(resolve, 4000);
+      });
+    } catch (err) {
+      $('webrtcAvail').textContent = 'Probe error: ' + err.message;
+    }
+
+    $('webrtcAvail').textContent = 'WebRTC supported';
+    $('webrtcLocal').textContent = localIPs.size ? [...localIPs].join(', ') : 'None detected';
+    $('webrtcPublic').textContent = publicIPs.size ? [...publicIPs].join(', ') : 'None detected';
+    $('webrtcIPv6').textContent = ipv6IPs.size ? [...ipv6IPs].join(', ') : 'None detected';
+
+    const leaked = publicIPs.size > 0;
+    $('webrtcBadge').className = 'badge ' + (leaked ? 'badge-warn' : 'badge-good');
+    $('webrtcBadge').textContent = leaked ? 'LEAKING' : 'NO LEAK';
+    log('WebRTC: ' + (leaked ? 'Public IPs exposed — ' + [...publicIPs].join(', ') : 'No public IP leak'), leaked ? 'warn' : 'ok');
+    btn.disabled = false; btn.textContent = 'Run WebRTC leak test';
+  }
+
+  // ── DNS Leak Test ──────────────────────────────────────────
+  async function runDnsLeakTest() {
+    const btn = $('dnsLeakBtn'); btn.disabled = true; btn.textContent = 'Testing...';
+    log('Running DNS leak test...', 'info');
+    const hostname = 'example.com';
+    const checks = [
+      { id: 'dnsLeakCF', resolver: resolvers.cloudflare, name: 'Cloudflare' },
+      { id: 'dnsLeakGoogle', resolver: resolvers.google, name: 'Google' },
+      { id: 'dnsLeakQ9', resolver: resolvers.quad9, name: 'Quad9' }
+    ];
+    const answers = [];
+    for (const check of checks) {
+      try {
+        const url = check.resolver + '?name=' + encodeURIComponent(hostname) + '&type=A';
+        const res = await proxyFetch(url, { headers: { 'Accept': 'application/dns-json' } });
+        const data = await res.json();
+        const ips = (data.Answer || []).filter(r => r.type === 1).map(r => r.data);
+        $(check.id).textContent = ips.length ? ips.join(', ') : 'No records';
+        answers.push(ips.sort().join(','));
+      } catch { $(check.id).textContent = 'Error'; }
+    }
+    const unique = [...new Set(answers.filter(Boolean))];
+    const consistent = unique.length <= 1;
+    $('dnsLeakConsistent').textContent = consistent ? 'Yes — all resolvers agree' : 'No — resolvers disagree';
+    $('dnsLeakBadge').className = 'badge ' + (consistent ? 'badge-good' : 'badge-warn');
+    $('dnsLeakBadge').textContent = consistent ? 'CONSISTENT' : 'INCONSISTENT';
+    log('DNS leak test: ' + (consistent ? 'Consistent' : 'Inconsistent results'), consistent ? 'ok' : 'warn');
+    btn.disabled = false; btn.textContent = 'Run DNS leak test';
+  }
+
+  // ── DNS Resolver ───────────────────────────────────────────
+  async function resolveDns() {
+    const mode = $('dnsMode').value;
+    const host = $('dnsHost').value.trim();
+    const type = $('dnsType').value;
+    const out = $('dnsResult');
+    if (!host) { out.textContent = 'Enter a hostname.'; return; }
+    out.textContent = 'Resolving ' + type + ' for ' + host + '...';
+    let endpoint = resolvers[mode] || $('customDns').value.trim();
+    if (!endpoint) { out.textContent = 'Enter a DoH endpoint.'; return; }
+    try {
+      const url = endpoint + (endpoint.includes('?') ? '&' : '?') + 'name=' + encodeURIComponent(host) + '&type=' + type;
+      const res = await proxyFetch(url, { headers: { 'Accept': 'application/dns-json' } });
+      const data = await res.json();
+      const answers = data.Answer || [];
+      if (!answers.length) { out.textContent = 'No records returned.'; return; }
+      out.textContent = answers.map(r => `${r.name.padEnd(40)} ${r.TTL}s\t${r.type}\t${r.data}`).join('\n');
+      log('DNS ' + type + ' for ' + host + ': ' + answers.length + ' records', 'ok');
+    } catch (err) {
+      out.textContent = 'Error: ' + err.message;
+      log('DNS lookup failed: ' + err.message, 'err');
+    }
+  }
+
+  // ── Header Inspector ───────────────────────────────────────
+  const SEC_HEADERS = [
+    'strict-transport-security', 'content-security-policy', 'x-frame-options',
+    'x-content-type-options', 'referrer-policy', 'permissions-policy',
+    'cross-origin-opener-policy', 'cross-origin-resource-policy', 'x-xss-protection'
+  ];
+
+  async function inspectHeaders() {
+    const url = $('headerUrl').value.trim();
+    if (!url) return;
+    const out = $('headerResults');
+    out.textContent = 'Fetching headers...';
+    $('secHeaderScan').style.display = 'none';
+    try {
+      const res = await proxyFetch(url);
+      const headers = {};
+      res.headers.forEach((v, k) => { headers[k] = v; });
+      const table = document.createElement('table');
+      table.className = 'header-table';
+      for (const [k, v] of Object.entries(headers).sort((a, b) => a[0].localeCompare(b[0]))) {
+        const row = table.insertRow();
+        row.insertCell().textContent = k;
+        row.insertCell().textContent = v;
+      }
+      out.textContent = '';
+      out.appendChild(table);
+
+      // Security header grid
+      const grid = $('secHeaderGrid'); grid.innerHTML = '';
+      for (const h of SEC_HEADERS) {
+        const present = h in headers;
+        const item = document.createElement('div'); item.className = 'scan-item';
+        item.innerHTML = `<b>${h}</b><span class="val" style="color:var(--${present ? 'good' : 'bad'})">${present ? '✓ Present' : '✗ Missing'}</span>`;
+        grid.appendChild(item);
+      }
+      $('secHeaderScan').style.display = 'block';
+      log('Headers fetched for ' + url + ' — ' + Object.keys(headers).length + ' headers', 'ok');
+    } catch (err) {
+      out.textContent = 'Error: ' + err.message;
+      log('Header inspect failed: ' + err.message, 'err');
+    }
+  }
+
+  // ── HTTPS / TLS Check ──────────────────────────────────────
+  async function checkTls() {
+    const input = $('tlsUrl').value.trim();
+    if (!input) return;
+    const btn = $('tlsBtn'); btn.disabled = true; btn.textContent = 'Checking...';
+    try {
+      let url;
+      try { url = new URL(input.includes('://') ? input : 'https://' + input); } catch { $('tlsProto').textContent = 'Invalid URL'; return; }
+
+      $('tlsProto').textContent = url.protocol;
+      $('tlsHttps').textContent = url.protocol === 'https:' ? '✓ Yes' : '✗ No';
+
+      // Check if HTTP redirects to HTTPS
+      if (url.protocol === 'https:') {
+        const httpUrl = 'http://' + url.hostname + url.pathname;
+        try {
+          const res = await proxyFetch(httpUrl);
+          const wasRedirected = res.url.startsWith('https://');
+          $('tlsRedirect').textContent = wasRedirected ? '✓ Yes — redirects to HTTPS' : '✗ No redirect';
+        } catch { $('tlsRedirect').textContent = 'Could not test'; }
+      } else {
+        $('tlsRedirect').textContent = 'N/A (already HTTP)';
+      }
+
+      // Check HSTS header
+      const res = await proxyFetch(url.toString());
+      const hsts = res.headers.get('strict-transport-security');
+      $('tlsHsts').textContent = hsts ? '✓ ' + hsts : '✗ Not set';
+      $('tlsStatus').textContent = 'HTTP ' + res.status + ' ' + res.statusText;
+
+      const good = url.protocol === 'https:' && hsts;
+      $('tlsBadge').className = 'badge ' + (good ? 'badge-good' : url.protocol === 'https:' ? 'badge-warn' : 'badge-bad');
+      $('tlsBadge').textContent = good ? 'SECURE' : url.protocol === 'https:' ? 'PARTIAL' : 'INSECURE';
+      log('TLS check for ' + url.hostname + ': ' + (good ? 'Secure' : 'Issues found'), good ? 'ok' : 'warn');
+    } catch (err) {
+      $('tlsStatus').textContent = 'Error: ' + err.message;
+      log('TLS check failed: ' + err.message, 'err');
+    } finally { btn.disabled = false; btn.textContent = 'Check'; }
+  }
+
+  // ── URL Security Scan (Cloudflare DNS threat intel) ────────
+  async function scanUrl() {
+    const input = $('scanUrl').value.trim();
+    if (!input) return;
+    const btn = $('scanBtn'); btn.disabled = true; btn.textContent = 'Scanning...';
+    let domain;
+    try { domain = new URL(input.includes('://') ? input : 'https://' + input).hostname; } catch { domain = input; }
+    $('scanDomain').textContent = domain;
+    $('scanVerdict').textContent = 'Scanning...';
+    log('URL scan for ' + domain, 'info');
+
+    try {
+      // Cloudflare Security DNS — malware blocked domains return NXDOMAIN / 0.0.0.0
+      const cfSec = 'https://security.cloudflare-dns.com/dns-query?name=' + encodeURIComponent(domain) + '&type=A';
+      const cfFam = 'https://family.cloudflare-dns.com/dns-query?name=' + encodeURIComponent(domain) + '&type=A';
+      const cfGw = 'https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent(domain) + '&type=A';
+
+      async function dnsCheck(url) {
+        try {
+          const r = await proxyFetch(url, { headers: { Accept: 'application/dns-json' } });
+          const d = await r.json();
+          if (d.Status === 3) return 'BLOCKED (NXDOMAIN)';
+          const ips = (d.Answer || []).filter(a => a.type === 1).map(a => a.data);
+          if (ips.includes('0.0.0.0') || ips.includes('0.0.0.1')) return 'BLOCKED';
+          return ips.length ? 'Allowed (' + ips[0] + ')' : 'No records';
+        } catch { return 'Error'; }
+      }
+
+      const [sec, fam, gw] = await Promise.all([
+        dnsCheck(cfSec), dnsCheck(cfFam), dnsCheck(cfGw)
+      ]);
+
+      $('scanMalware').textContent = sec;
+      $('scanAdult').textContent = fam;
+      $('scanGateway').textContent = gw;
+
+      const blocked = sec.includes('BLOCKED');
+      const warn = fam.includes('BLOCKED');
+      $('scanBadge').className = 'badge ' + (blocked ? 'badge-bad' : warn ? 'badge-warn' : 'badge-good');
+      $('scanBadge').textContent = blocked ? 'THREAT' : warn ? 'FLAGGED' : 'CLEAN';
+      $('scanVerdict').textContent = blocked ? '⚠ Blocked by Cloudflare Security DNS' : warn ? 'Flagged by family filter' : '✓ Not on Cloudflare threat lists';
+      log('Scan ' + domain + ': ' + (blocked ? 'THREAT' : warn ? 'FLAGGED' : 'Clean'), blocked ? 'err' : warn ? 'warn' : 'ok');
+    } catch (err) {
+      $('scanVerdict').textContent = 'Error: ' + err.message;
+    } finally { btn.disabled = false; btn.textContent = 'Scan'; }
+  }
+
+  // ── Request Test ───────────────────────────────────────────
+  async function testRequest() {
+    const url = $('testUrl').value.trim(); if (!url) return;
+    const out = $('testResult'); out.textContent = 'Testing...';
+    try {
       const start = performance.now();
-      const health = await workerJson('/vpn');
-      const ms = Math.round(performance.now()-start);
-      if(!health.res.ok || health.data.status !== 'online') throw new Error('Worker is unavailable');
-      $('proxyBadge').className='badge badge-good';
-      $('proxyBadge').textContent='WORKER ONLINE';
-      $('proxyNote').textContent='Worker responded in ' + ms + ' ms';
-      $('statLatency').textContent=ms+' ms';
-      $('workerEndpoint').textContent=WORKER_PROXY;
-      $('pacEndpoint').textContent=PAC_URL;
-      log('Cloudflare Worker is online in ' + ms + ' ms','ok');
-    }catch(err){
-      $('proxyBadge').className='badge badge-bad';
-      $('proxyBadge').textContent='WORKER OFFLINE';
-      $('proxyNote').textContent=err.message;
-      log('Worker check failed: ' + err.message,'err');
-    }finally{
-      btn.disabled=false; btn.textContent='Check connection';
+      const res = await proxyFetch(url);
+      const ms = Math.round(performance.now() - start);
+      const text = await res.text();
+      out.textContent = 'HTTP ' + res.status + ' in ' + ms + ' ms\n\n' + text.slice(0, 900);
+      log('Request to ' + url + ': HTTP ' + res.status + ' in ' + ms + ' ms', 'ok');
+    } catch (err) {
+      out.textContent = 'Error: ' + err.message;
+      log('Request failed: ' + err.message, 'err');
     }
   }
 
-  async function testRequest(){
-    const url=$('testUrl').value.trim();
-    if(!url) return;
-    const out=$('testResult');
-    out.textContent='Testing...';
-    try{
-      const start=performance.now();
-      const res=await fetchThroughWorker(url);
-      const ms=Math.round(performance.now()-start);
-      const text=await res.text();
-      out.textContent='HTTP ' + res.status + ' in ' + ms + ' ms\n\n' + text.slice(0,900);
-      log('Request test completed in ' + ms + ' ms','ok');
-    }catch(err){
-      out.textContent='Could not read this URL from the browser: ' + err.message;
-      log('Request test failed.','warn');
-    }
+  // ── Speed Test ─────────────────────────────────────────────
+  async function runSpeedTest() {
+    const btn = $('speedBtn'); btn.disabled = true; btn.textContent = 'Testing...';
+    $('speedDownload').textContent = '-'; $('speedUpload').textContent = '-'; $('speedLatency').textContent = '-';
+    $('speedNote').textContent = 'Running...';
+    try {
+      const lp = performance.now();
+      await proxyFetch('https://1.1.1.1/cdn-cgi/trace?ts=' + Date.now());
+      $('speedLatency').textContent = Math.max(1, Math.round(performance.now() - lp)) + ' ms';
+
+      const ds = performance.now();
+      const res = await proxyFetch('https://speed.cloudflare.com/__down?bytes=1500000&ts=' + Date.now());
+      const buf = await res.arrayBuffer();
+      const sec = Math.max((performance.now() - ds) / 1000, .001);
+      $('speedDownload').textContent = ((buf.byteLength * 8 / sec) / 1e6).toFixed(1) + ' Mbps';
+
+      const payload = new Uint8Array(350000);
+      const us = performance.now();
+      const up = await proxyFetch('https://httpbin.org/post?ts=' + Date.now(), {
+        method: 'POST', body: payload, headers: { 'Content-Type': 'application/octet-stream' }
+      });
+      if (!up.ok) throw new Error('Upload HTTP ' + up.status);
+      const usec = Math.max((performance.now() - us) / 1000, .001);
+      $('speedUpload').textContent = ((payload.byteLength * 8 / usec) / 1e6).toFixed(1) + ' Mbps';
+      $('speedNote').textContent = 'Estimate via worker proxy.';
+      log('Speed test complete', 'ok');
+    } catch (err) {
+      $('speedNote').textContent = 'Test failed: ' + err.message;
+      log('Speed test failed: ' + err.message, 'err');
+    } finally { btn.disabled = false; btn.textContent = 'Run test'; }
   }
 
-  async function resolveDns(){
-    const mode=$('dnsMode').value;
-    const host=$('dnsHost').value.trim();
-    const out=$('dnsResult');
-    if(!host){ out.textContent='Enter a hostname first.'; return; }
-    if(mode==='system'){
-      out.textContent='Browser default selected. This page cannot change the operating system DNS resolver.';
-      return;
-    }
-    let endpoint=resolvers[mode];
-    if(mode==='custom') endpoint=$('customDns').value.trim();
-    if(!endpoint){ out.textContent='Enter a DNS-over-HTTPS endpoint first.'; return; }
-    try{
-      out.textContent='Resolving...';
-      const url=endpoint + (endpoint.includes('?')?'&':'?') + 'name=' + encodeURIComponent(host) + '&type=A';
-      const headers={};
-      if(mode==='cloudflare') headers.Accept='application/dns-json';
-      const res=await fetchThroughWorker(url,{headers});
-      if(!res.ok) throw new Error('HTTP ' + res.status);
-      const data=await res.json();
-      const answers=(data.Answer||[]).filter(x=>x.type===1).map(x=>x.data);
-      out.textContent=answers.length ? answers.join(', ') : 'No A records returned.';
-      log('DNS lookup completed for ' + host,'ok');
-    }catch(err){
-      out.textContent='DNS lookup failed: ' + err.message;
-      log('DNS lookup failed.','warn');
-    }
+  // ── Browser privacy signals ────────────────────────────────
+  function checkBrowserPrivacy() {
+    const secure = location.protocol === 'https:' || location.hostname === 'localhost';
+    $('httpStatus').textContent = secure ? 'Served over HTTPS' : 'Not HTTPS — connection is unencrypted';
+    $('siHttps').className = 'security-item ' + (secure ? 'pass' : 'fail');
+
+    const hasWebRTC = 'RTCPeerConnection' in window;
+    $('webrtcStatus').textContent = hasWebRTC ? 'Available — run the WebRTC leak test above to check for leaks' : 'WebRTC unavailable in this browser';
+    $('siWebrtc').className = 'security-item ' + (hasWebRTC ? 'warn-item' : 'pass');
+
+    const cookiesOk = navigator.cookieEnabled;
+    $('cookieStatus').textContent = cookiesOk ? 'Enabled' : 'Disabled';
+    $('siCookies').className = 'security-item';
+
+    try { localStorage.setItem('_t', '1'); localStorage.removeItem('_t'); $('storageStatus').textContent = 'Available'; }
+    catch { $('storageStatus').textContent = 'Blocked'; }
+
+    const dnt = navigator.doNotTrack;
+    $('dntStatus').textContent = dnt === '1' ? '✓ Enabled (sent to servers)' : dnt === '0' ? 'Disabled' : 'Not set';
+    $('siDoNotTrack').className = 'security-item ' + (dnt === '1' ? 'pass' : '');
+
+    const gpc = navigator.globalPrivacyControl;
+    $('gpcStatus').textContent = gpc === true ? '✓ Enabled' : gpc === false ? 'Disabled' : 'Not supported';
+    $('siGpc').className = 'security-item ' + (gpc === true ? 'pass' : '');
+
+    $('secureStatus').textContent = secure ? 'Secure context' : 'Insecure context';
+    $('userAgent').textContent = navigator.userAgent;
   }
 
-  async function runSpeedTest(){
-    const btn=$('speedBtn'); btn.disabled=true; btn.textContent='Testing...';
-    $('speedDownload').textContent='-'; $('speedUpload').textContent='-'; $('speedLatency').textContent='-';
-    $('speedNote').textContent='Running a small browser-based estimate...';
-    try{
-      const lp=performance.now();
-      await fetchThroughWorker('https://1.1.1.1/cdn-cgi/trace?ts=' + Date.now());
-      $('speedLatency').textContent=Math.max(1,Math.round(performance.now()-lp))+' ms';
-
-      const downBytes=1500000;
-      const ds=performance.now();
-      const res=await fetchThroughWorker('https://speed.cloudflare.com/__down?bytes=' + downBytes + '&ts=' + Date.now());
-      const buf=await res.arrayBuffer();
-      const sec=Math.max((performance.now()-ds)/1000,.001);
-      const down=(buf.byteLength*8/sec)/1e6;
-      $('speedDownload').textContent=down.toFixed(1)+' Mbps';
-
-      const payload=new Uint8Array(350000);
-      const us=performance.now();
-      const up=await fetchThroughWorker('https://httpbin.org/post?ts=' + Date.now(),{method:'POST',body:payload,headers:{'Content-Type':'application/octet-stream'}});
-      if(!up.ok) throw new Error('Upload test returned HTTP ' + up.status);
-      const usec=Math.max((performance.now()-us)/1000,.001);
-      const upload=(payload.byteLength*8/usec)/1e6;
-      $('speedUpload').textContent=upload.toFixed(1)+' Mbps';
-      $('speedNote').textContent='Quick estimate complete.';
-      log('Speed test complete: ' + down.toFixed(1) + ' Mbps down, ' + upload.toFixed(1) + ' Mbps up','ok');
-    }catch(err){
-      $('speedNote').textContent='The test could not complete: ' + err.message;
-      log('Speed test could not complete.','warn');
-    }finally{
-      btn.disabled=false; btn.textContent='Run quick test';
-    }
+  function connectionInfo() {
+    $('onlineState').textContent = navigator.onLine ? 'Online' : 'Offline';
+    const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    $('connType').textContent = c?.effectiveType || c?.type || 'Unavailable';
+    $('connDownlink').textContent = Number.isFinite(c?.downlink) ? c.downlink + ' Mbps' : 'Unavailable';
+    $('saveData').textContent = c?.saveData ? 'On' : 'Off';
   }
 
-  function connectionInfo(){
-    $('onlineState').textContent=navigator.onLine?'Online':'Offline';
-    const c=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
-    $('connType').textContent=c?.effectiveType || c?.type || 'Unavailable';
-    $('connDownlink').textContent=Number.isFinite(c?.downlink) ? c.downlink + ' Mbps' : 'Unavailable';
-    $('saveData').textContent=c?.saveData ? 'On' : 'Off';
+  function randomMac() {
+    const b = new Uint8Array(6); crypto.getRandomValues(b); b[0] = (b[0] & 0xfe) | 0x02;
+    $('macResult').textContent = [...b].map(x => x.toString(16).padStart(2, '0')).join(':').toUpperCase();
   }
 
-  function checkBrowserPrivacy(){
-    $('secureStatus').textContent=location.protocol==='https:' || location.hostname==='localhost' ? 'Secure context' : 'Not served over HTTPS';
-    const hasWebRTC='RTCPeerConnection' in window;
-    $('webrtcStatus').textContent=hasWebRTC ? 'WebRTC is available. A normal page cannot fully inspect or block every candidate address.' : 'WebRTC API unavailable.';
-  }
-
-  function randomMac(){
-    const b=new Uint8Array(6); crypto.getRandomValues(b); b[0]=(b[0]&0xfe)|0x02;
-    const s=[...b].map(x=>x.toString(16).padStart(2,'0')).join(':').toUpperCase();
-    $('macResult').textContent=s;
-  }
-
-  $('copyPacBtn').addEventListener('click',async()=>{
-    try{
-      await navigator.clipboard.writeText(PAC_URL);
-      log('PAC URL copied.','ok');
-    }catch{
-      log('Could not copy the PAC URL.','warn');
-    }
+  // ── Wire events ────────────────────────────────────────────
+  $('themeToggle').addEventListener('click', () => { state.dark = !state.dark; localStorage.setItem('network-theme', state.dark ? 'dark' : 'light'); applyTheme(); });
+  $('checkBtn').addEventListener('click', checkConnection);
+  $('ipLeakBtn').addEventListener('click', runIpLeakTest);
+  $('webrtcBtn').addEventListener('click', runWebRtcTest);
+  $('dnsLeakBtn').addEventListener('click', runDnsLeakTest);
+  $('dnsBtn').addEventListener('click', resolveDns);
+  $('dnsMode').addEventListener('change', () => { $('customDnsWrap').style.display = $('dnsMode').value === 'custom' ? 'block' : 'none'; });
+  $('headerBtn').addEventListener('click', inspectHeaders);
+  $('tlsBtn').addEventListener('click', checkTls);
+  $('scanBtn').addEventListener('click', scanUrl);
+  $('testBtn').addEventListener('click', testRequest);
+  $('speedBtn').addEventListener('click', runSpeedTest);
+  $('macBtn').addEventListener('click', randomMac);
+  $('copyPacBtn').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(PAC_URL); log('PAC URL copied', 'ok'); }
+    catch { log('Could not copy PAC URL', 'warn'); }
   });
+  $('clearActivity').addEventListener('click', () => { $('activityList').innerHTML = '<div class="activity-item"><span class="activity-kind">INFO</span><span class="activity-text">Log cleared.</span></div>'; });
+  $('activityToggle').addEventListener('change', e => { state.activity = e.target.checked; });
+  window.addEventListener('online', connectionInfo);
+  window.addEventListener('offline', connectionInfo);
 
-  $('themeToggle').addEventListener('click',()=>{state.dark=!state.dark;localStorage.setItem('network-theme',state.dark?'dark':'light');applyTheme();});
-  $('checkBtn').addEventListener('click',checkConnection);
-  $('testBtn').addEventListener('click',testRequest);
-  $('dnsBtn').addEventListener('click',resolveDns);
-  $('speedBtn').addEventListener('click',runSpeedTest);
-  $('macBtn').addEventListener('click',randomMac);
-  $('dnsMode').addEventListener('change',()=>{$('customDnsWrap').style.display=$('dnsMode').value==='custom'?'block':'none';});
-  $('clearActivity').addEventListener('click',()=>{$('activityList').innerHTML='<div class="activity-item"><span class="activity-kind">INFO</span><span class="activity-text">Activity log cleared.</span></div>';localStorage.removeItem('network-activity');});
-  $('activityToggle').addEventListener('change',e=>{state.activity=e.target.checked;if(!state.activity) $('activityList').innerHTML='<div class="activity-item"><span class="activity-kind">INFO</span><span class="activity-text">Activity logging is off.</span></div>';});
-  $('activityPersist').addEventListener('change',e=>{state.persist=e.target.checked;if(state.persist)localStorage.setItem('network-activity',$('activityList').innerHTML);});
-  window.addEventListener('online',connectionInfo); window.addEventListener('offline',connectionInfo);
-
-  applyTheme(); connectionInfo(); checkBrowserPrivacy(); fetchIp();
-
-  const saved=localStorage.getItem('network-activity');
-  if(saved) $('activityList').innerHTML=saved;
+  // ── Init ───────────────────────────────────────────────────
+  applyTheme();
+  connectionInfo();
+  checkBrowserPrivacy();
+  fetchIp();
 })();
 </script>
 </body>
