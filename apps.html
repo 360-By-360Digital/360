@@ -1,20 +1,20 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 — Apps</title>
-  <link rel="icon" type="image/png" href="favicon-32x32.png" />
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 Apps — Productivity, Communication &amp; More</title>
+<link href="favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     .apps-page {
       max-width: 900px;
       margin: 0 auto;
@@ -114,222 +114,194 @@
         display: none;
     }
   </style>
-</head>
+<meta content="Explore 360 apps for productivity, communication, creativity, music, maps, notes, mail and more." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 Apps — Productivity, Communication &amp; More" property="og:title"/><meta content="Explore 360 apps for productivity, communication, creativity, music, maps, notes, mail and more." property="og:description"/><meta content="https://360-search.com/apps.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 Apps — Productivity, Communication &amp; More" name="twitter:title"/><meta content="Explore 360 apps for productivity, communication, creativity, music, maps, notes, mail and more." name="twitter:description"/><link href="https://360-search.com/apps.html" rel="canonical"/></head>
 <body>
-
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <div class="auth-top-right">
-    <button id="signInBtn"  class="auth-btn">Sign In</button>
-    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
-
-  <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
-
-  <div class="overlay" id="overlay"></div>
-
-  <div class="settings-panel" id="settingsPanel">
-    <h3>Appearance</h3>
-    <div class="settings-label">Theme</div>
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-    </div>
-    <div class="settings-label" style="margin-top:20px;">Mode</div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:14px;">Dark mode</span>
-      <input type="checkbox" id="darkToggle" />
-    </label>
-    <h3 style="margin-top:20px;">Cursor</h3>
-    <div class="settings-label">Style</div>
-    <div class="cursor-options">
-      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-    </div>
-    <div class="cursor-color-row">
-      <label>Cursor color</label>
-      <input type="color" id="cursorColorPicker" value="#3b82f6" />
-      <button id="cursorColorReset">Reset</button>
-    </div>
-    <div class="temp-unit-box" style="margin-top:20px;">
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+<aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
+<div class="overlay" id="overlay"></div>
+<div class="settings-panel" id="settingsPanel">
+<h3>Appearance</h3>
+<div class="settings-label">Theme</div>
+<div class="theme-swatches">
+<div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+<div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+<div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+<div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+</div>
+<div class="settings-label" style="margin-top:20px;">Mode</div>
+<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+<span style="font-size:14px;">Dark mode</span>
+<input id="darkToggle" type="checkbox"/>
+</label>
+<h3 style="margin-top:20px;">Cursor</h3>
+<div class="settings-label">Style</div>
+<div class="cursor-options">
+<div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+<div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+<div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+<div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+<div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+<div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+</div>
+<div class="cursor-color-row">
+<label>Cursor color</label>
+<input id="cursorColorPicker" type="color" value="#3b82f6"/>
+<button id="cursorColorReset">Reset</button>
+</div>
+<div class="temp-unit-box" style="margin-top:20px;">
       Temp Unit: <span id="tempUnitLabel">°C</span>
-      <button id="tempUnitBtn">Switch</button>
-    </div>
-    <h3 style="margin-top:25px;">Legal</h3>
-    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
-    <a href="/tos" class="legal-link">📜 Terms of Service</a>
-    <h3 style="margin-top:25px;">About</h3>
-    <details class="about-dropdown">
-      <summary>ℹ️ What is 360?</summary>
-      <p>360 is a next-generation search engine and digital workspace. Built by 360 Digital, Co.</p>
-    </details>
-  </div>
-
-  <div id="auth-popup" class="auth-popup hidden">
-    <div class="auth-box">
-      <h2>Account</h2>
-      <input id="auth-email" type="email" placeholder="Email" />
-      <input id="auth-password" type="password" placeholder="Password" />
-      <button id="auth-login-btn">Log In</button>
-      <button id="auth-signup-btn">Sign Up</button>
-      <button id="github-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        <span>Sign in with GitHub</span>
-      </button>
-      <button id="google-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        <span>Sign in with Google</span>
-      </button>
-      <p id="auth-error" class="auth-error"></p>
-      <button id="auth-close-btn" class="close-btn">Close</button>
-    </div>
-  </div>
-
-  <!-- ══ APPS PAGE ══ -->
-  <div class="apps-page">
-    <h2>📦 Apps</h2>
-    <p class="apps-subtitle">360-integrated tools and services.</p>
-
-    <div class="apps-section-label">360 Suite</div>
-    <div class="apps-grid">
-
-      <a class="app-card" href="apps/360vids">
-        <span class="app-badge">New!</span>
-        <div class="app-icon">🎬</div>
-        <div class="app-title">360Vids</div>
-        <div class="app-desc">Watch and upload content!</div>
-      </a>
-    
-
-      <!-- Music — links to 360Music -->
-      <a class="app-card" href="apps/360Music">
-        <span class="app-badge">Popular!</span>
-        <div class="app-icon">🎶</div>
-        <div class="app-title">360Music</div>
-        <div class="app-desc">Listen and upload music!</div>
-      </a>
-      
-      <!-- Zone — links to 360zone -->
-      <a class="app-card" href="apps/360zone">
-        <span class="app-badge">Tools</span>
-        <div class="app-icon">🏫</div>
-        <div class="app-title">Zone</div>
-        <div class="app-desc">Work faster and smarter in the Zone.</div>
-      </a>
-
-      <a class="app-card" href="apps/360Notes">
-        <span class="app-badge">New!</span>
-        <div class="app-icon">📖</div>
-        <div class="app-title">360Notes</div>
-        <div class="app-desc">Smarter notekeeping.</div>
-      </a>
-
-      <a class="app-card" href="apps/360Draw">
-        <span class="app-badge">New!</span>
-        <div class="app-icon">🎨</div>
-        <div class="app-title">360Draw</div>
-        <div class="app-desc">Draw and share.</div>
-      </a>
-
-      <a class="app-card" href="apps/360Docs">
-        <span class="app-badge">New!</span>
-        <div class="app-icon">📃</div>
-        <div class="app-title">360Docs</div>
-        <div class="app-desc">Write your heart out... or write in HTML....</div>
-      </a>
-
-      <a class="app-card" href="apps/360Do">
-        <span class="app-badge">New!</span>
-        <div class="app-icon">💡</div>
-        <div class="app-title">360Do</div>
-        <div class="app-desc">If your memory is bad... try 360 memory!</div>
-      </a>
-
-      <a class="app-card" href="apps/360mail-claim">
-        <span class="app-badge">New!</span>
-        <div class="app-icon">✉️</div>
-        <div class="app-title">360Mail</div>
-        <div class="app-desc">Your private, 360-powered email inbox.</div>
-      </a>
-
-      <a class="app-card" href="apps/360Studio">
-        <span class="app-badge">New!</span>
-        <div class="app-icon">🎛️</div>
-        <div class="app-title">360Studio</div>
-        <div class="app-desc">Manage all your content in one place.</div>
-      </a>
-
- <a class="app-card" href="apps/360MySite">
-        <span class="app-badge">New!</span>
-        <div class="app-icon">🌐</div>
-        <div class="app-title">360MySite</div>
-        <div class="app-desc">Get your webpages and content on 360 with proper insights.</div>
-      </a>
-
-       <a class="app-card" href="apps/360Canvas">
-        <span class="app-badge">New!</span>
-        <div class="app-icon">🚀</div>
-        <div class="app-title">360Canvas</div>
-        <div class="app-desc">Deploy and create webpages on 360.</div>
-      </a>
-
-    <a class="app-card" href="apps/360Meet">
-        <span class="app-badge">New!</span>
-        <div class="app-icon">👥</div>
-        <div class="app-title">360Meet</div>
-        <div class="app-desc">Talk and see groups or single users.</div>
-      </a>
-
- <a class="app-card" href="apps/360Maps">
-        <span class="app-badge">New!</span>
-        <div class="app-icon">🗺️</div>
-        <div class="app-title">360Maps</div>
-        <div class="app-desc">Get efficient directions with 360Maps.</div>
-      </a>
-
-        <a class="app-card" href="vpn/360vpn">
-        <span class="app-badge">Re-released!</span>
-        <div class="app-icon">🛜</div>
-        <div class="app-title">360VPN</div>
-        <div class="app-desc">Simple VPN client and proxy dedicated to not sharing data.</div>
-      </a>
-
-         <a class="app-card" href="apps/Pomodoro">
-        <span class="app-badge">New!</span>
-        <div class="app-icon">🕥</div>
-        <div class="app-title">Pomodoro</div>
-        <div class="app-desc">Focus timer (soon to integrate with Notes and Stack!)</div>
-      </a>
-
-        
-    </div>
-    <div class="apps-section-label">Coming Soon</div>
-    <div class="apps-grid">
-      
-      <div class="app-card" style="opacity:.5;pointer-events:none;">
-        <div class="app-icon">📅</div>
-        <div class="app-title">360Calendar</div>
-        <div class="app-desc">Smart scheduling inside 360.</div>
-      </div>
-
-      <div class="app-card" style="opacity:.5;pointer-events:none;">
-        <div class="app-icon">📁</div>
-        <div class="app-title">360Drive</div>
-        <div class="app-desc">Secure cloud storage for your files.</div>
-      </div>
+<button id="tempUnitBtn">Switch</button>
+</div>
+<h3 style="margin-top:25px;">Legal</h3>
+<a class="legal-link" href="/privacypolicy">🔒 Privacy Policy</a>
+<a class="legal-link" href="/tos">📜 Terms of Service</a>
+<h3 style="margin-top:25px;">About</h3>
+<details class="about-dropdown">
+<summary>ℹ️ What is 360?</summary>
+<p>360 is a next-generation search engine and digital workspace. Built by 360 Digital, Co.</p>
+</details>
+</div>
+<div class="auth-popup hidden" id="auth-popup">
+<div class="auth-box">
+<h2>Account</h2>
+<input id="auth-email" placeholder="Email" type="email"/>
+<input id="auth-password" placeholder="Password" type="password"/>
+<button id="auth-login-btn">Log In</button>
+<button id="auth-signup-btn">Sign Up</button>
+<button class="oauth-btn" id="github-login">
+<svg fill="currentColor" height="18" viewbox="0 0 24 24" width="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"></path></svg>
+<span>Sign in with GitHub</span>
+</button>
+<button class="oauth-btn" id="google-login">
+<svg height="18" viewbox="0 0 24 24" width="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path></svg>
+<span>Sign in with Google</span>
+</button>
+<p class="auth-error" id="auth-error"></p>
+<button class="close-btn" id="auth-close-btn">Close</button>
+</div>
+</div>
+<!-- ══ APPS PAGE ══ -->
+<div class="apps-page">
+<h2>📦 Apps</h2>
+<p class="apps-subtitle">360-integrated tools and services.</p>
+<div class="apps-section-label">360 Suite</div>
+<div class="apps-grid">
+<a class="app-card" href="apps/360vids">
+<span class="app-badge">New!</span>
+<div class="app-icon">🎬</div>
+<div class="app-title">360Vids</div>
+<div class="app-desc">Watch and upload content!</div>
+</a>
+<!-- Music — links to 360Music -->
+<a class="app-card" href="apps/360Music">
+<span class="app-badge">Popular!</span>
+<div class="app-icon">🎶</div>
+<div class="app-title">360Music</div>
+<div class="app-desc">Listen and upload music!</div>
+</a>
+<!-- Zone — links to 360zone -->
+<a class="app-card" href="apps/360zone">
+<span class="app-badge">Tools</span>
+<div class="app-icon">🏫</div>
+<div class="app-title">Zone</div>
+<div class="app-desc">Work faster and smarter in the Zone.</div>
+</a>
+<a class="app-card" href="apps/360Notes">
+<span class="app-badge">New!</span>
+<div class="app-icon">📖</div>
+<div class="app-title">360Notes</div>
+<div class="app-desc">Smarter notekeeping.</div>
+</a>
+<a class="app-card" href="apps/360Draw">
+<span class="app-badge">New!</span>
+<div class="app-icon">🎨</div>
+<div class="app-title">360Draw</div>
+<div class="app-desc">Draw and share.</div>
+</a>
+<a class="app-card" href="apps/360Docs">
+<span class="app-badge">New!</span>
+<div class="app-icon">📃</div>
+<div class="app-title">360Docs</div>
+<div class="app-desc">Write your heart out... or write in HTML....</div>
+</a>
+<a class="app-card" href="apps/360Do">
+<span class="app-badge">New!</span>
+<div class="app-icon">💡</div>
+<div class="app-title">360Do</div>
+<div class="app-desc">If your memory is bad... try 360 memory!</div>
+</a>
+<a class="app-card" href="apps/360mail-claim">
+<span class="app-badge">New!</span>
+<div class="app-icon">✉️</div>
+<div class="app-title">360Mail</div>
+<div class="app-desc">Your private, 360-powered email inbox.</div>
+</a>
+<a class="app-card" href="apps/360Studio">
+<span class="app-badge">New!</span>
+<div class="app-icon">🎛️</div>
+<div class="app-title">360Studio</div>
+<div class="app-desc">Manage all your content in one place.</div>
+</a>
+<a class="app-card" href="apps/360MySite">
+<span class="app-badge">New!</span>
+<div class="app-icon">🌐</div>
+<div class="app-title">360MySite</div>
+<div class="app-desc">Get your webpages and content on 360 with proper insights.</div>
+</a>
+<a class="app-card" href="apps/360Canvas">
+<span class="app-badge">New!</span>
+<div class="app-icon">🚀</div>
+<div class="app-title">360Canvas</div>
+<div class="app-desc">Deploy and create webpages on 360.</div>
+</a>
+<a class="app-card" href="apps/360Meet">
+<span class="app-badge">New!</span>
+<div class="app-icon">👥</div>
+<div class="app-title">360Meet</div>
+<div class="app-desc">Talk and see groups or single users.</div>
+</a>
+<a class="app-card" href="apps/360Maps">
+<span class="app-badge">New!</span>
+<div class="app-icon">🗺️</div>
+<div class="app-title">360Maps</div>
+<div class="app-desc">Get efficient directions with 360Maps.</div>
+</a>
+<a class="app-card" href="vpn/360vpn">
+<span class="app-badge">Re-released!</span>
+<div class="app-icon">🛜</div>
+<div class="app-title">360VPN</div>
+<div class="app-desc">Simple VPN client and proxy dedicated to not sharing data.</div>
+</a>
+<a class="app-card" href="apps/Pomodoro">
+<span class="app-badge">New!</span>
+<div class="app-icon">🕥</div>
+<div class="app-title">Pomodoro</div>
+<div class="app-desc">Focus timer (soon to integrate with Notes and Stack!)</div>
+</a>
+</div>
+<div class="apps-section-label">Coming Soon</div>
+<div class="apps-grid">
+<div class="app-card" style="opacity:.5;pointer-events:none;">
+<div class="app-icon">📅</div>
+<div class="app-title">360Calendar</div>
+<div class="app-desc">Smart scheduling inside 360.</div>
+</div>
+<div class="app-card" style="opacity:.5;pointer-events:none;">
+<div class="app-icon">📁</div>
+<div class="app-title">360Drive</div>
+<div class="app-desc">Secure cloud storage for your files.</div>
+</div>
 <!--
         <div class="app-card" style="opacity:.5;pointer-events:none;">
         <div class="app-icon">🕥</div> Did you know I (Zaki) used the 10:30 emoji because 360 was made Jan 5 at exactly 10:30 sharp??
@@ -337,23 +309,19 @@
         <div class="app-desc">Focus timer (soon to integrate with Notes and Stack!)</div>
       </div>
 -->
-        <div class="app-card" style="opacity:.5;pointer-events:none;">
-        <div class="app-icon">📞</div>
-        <div class="app-title">WebCell</div>
-        <div class="app-desc">Calling app</div>
-      </div>
-
 <div class="app-card" style="opacity:.5;pointer-events:none;">
-        <div class="app-icon">💬</div>
-        <div class="app-title">Messenger</div>
-        <div class="app-desc">Create group chats, chats and call contacts with WebCell.</div>
-      </div>        
-        
-    </div>
-  </div>
-
-
-  <script>
+<div class="app-icon">📞</div>
+<div class="app-title">WebCell</div>
+<div class="app-desc">Calling app</div>
+</div>
+<div class="app-card" style="opacity:.5;pointer-events:none;">
+<div class="app-icon">💬</div>
+<div class="app-title">Messenger</div>
+<div class="app-desc">Create group chats, chats and call contacts with WebCell.</div>
+</div>
+</div>
+</div>
+<script>
     (function () {
       const cards = document.querySelectorAll('.app-card');
       cards.forEach((card) => {
@@ -376,12 +344,12 @@
       });
     })();
   </script>
-  <audio id="clickSound" src="click-sound.mp3" preload="auto"></audio>
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
+<audio id="clickSound" preload="auto" src="click-sound.mp3"></audio>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
 </body>
 </html>

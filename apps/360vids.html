@@ -1,20 +1,20 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360Vids</title>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360Vids</title>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     /* ── Native cross-document transitions (Vids ↔ Music ↔ Studio) ──
        Chrome/Edge 126+ animate this automatically on same-origin link
        navigation; other browsers just navigate normally, no error. */
@@ -514,242 +514,212 @@
       .vids-watch-info { padding: 14px 16px; }
     }
   </style>
-</head>
+<meta content="360Vids is part of 360 Digital. Explore its features and use it online through the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360Vids" property="og:title"/><meta content="360Vids is part of 360 Digital. Explore its features and use it online through the 360 platform." property="og:description"/><meta content="https://360-search.com/apps/360vids.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360Vids" name="twitter:title"/><meta content="360Vids is part of 360 Digital. Explore its features and use it online through the 360 platform." name="twitter:description"/><link href="https://360-search.com/apps/360vids.html" rel="canonical"/></head>
 <body>
-
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <!-- ══ TOP BAR ══ -->
-  <div class="vids-topbar">
-    <div class="vids-topbar-left">
-      <button class="vids-back-btn" onclick="window.location.href='apps.html'">← Apps</button>
-      <div class="vids-logo">360<span>|</span>Vids</div>
-      <a href="/apps/360Music.html" class="vids-back-btn" style="text-decoration:none;">🎵 Music</a>
-      <a href="/apps/360Studio.html" class="vids-back-btn" style="text-decoration:none;">🎛️ Studio</a>
-    </div>
-
-    <div class="vids-search-wrap">
-      <input type="text" id="vids-search" placeholder="Search videos…" autocomplete="off" />
-      <button class="vids-search-btn" id="vids-search-btn" title="Search">🔍</button>
-    </div>
-
-    <div class="vids-topbar-right">
-    <button id="signInBtn"  class="auth-btn">Sign In</button>
-    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-
-      <button class="vids-upload-btn" id="openUploadBtn">
-        <span>＋</span> Upload
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<!-- ══ TOP BAR ══ -->
+<div class="vids-topbar">
+<div class="vids-topbar-left">
+<button class="vids-back-btn" onclick="window.location.href='apps.html'">← Apps</button>
+<div class="vids-logo">360<span>|</span>Vids</div>
+<a class="vids-back-btn" href="/apps/360Music.html" style="text-decoration:none;">🎵 Music</a>
+<a class="vids-back-btn" href="/apps/360Studio.html" style="text-decoration:none;">🎛️ Studio</a>
+</div>
+<div class="vids-search-wrap">
+<input autocomplete="off" id="vids-search" placeholder="Search videos…" type="text"/>
+<button class="vids-search-btn" id="vids-search-btn" title="Search">🔍</button>
+</div>
+<div class="vids-topbar-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+<button class="vids-upload-btn" id="openUploadBtn">
+<span>＋</span> Upload
       </button>
-      <div class="vids-avatar-btn" id="vids-avatar" title="Account">?</div>
-    </div>
-  </div>
-
-  <!-- ══ BODY ══ -->
-  <div class="vids-body">
-
-    <!-- Sidebar -->
-    <aside class="vids-sidebar" id="vidsSidebar">
-      <div class="vids-nav-item active" data-view="home">
-        <span class="vids-nav-icon">🏠</span> Home
+<div class="vids-avatar-btn" id="vids-avatar" title="Account">?</div>
+</div>
+</div>
+<!-- ══ BODY ══ -->
+<div class="vids-body">
+<!-- Sidebar -->
+<aside class="vids-sidebar" id="vidsSidebar">
+<div class="vids-nav-item active" data-view="home">
+<span class="vids-nav-icon">🏠</span> Home
       </div>
-      <div class="vids-nav-item" data-view="trending">
-        <span class="vids-nav-icon">🔥</span> Trending
+<div class="vids-nav-item" data-view="trending">
+<span class="vids-nav-icon">🔥</span> Trending
       </div>
-      <div class="vids-nav-item" data-view="subscriptions">
-        <span class="vids-nav-icon">📺</span> Subscriptions
+<div class="vids-nav-item" data-view="subscriptions">
+<span class="vids-nav-icon">📺</span> Subscriptions
       </div>
-      <div class="vids-nav-divider"></div>
-      <div class="vids-nav-label">Library</div>
-      <div class="vids-nav-item" data-view="liked">
-        <span class="vids-nav-icon">👍</span> Liked Videos
+<div class="vids-nav-divider"></div>
+<div class="vids-nav-label">Library</div>
+<div class="vids-nav-item" data-view="liked">
+<span class="vids-nav-icon">👍</span> Liked Videos
       </div>
-      <div class="vids-nav-item" data-view="uploads">
-        <span class="vids-nav-icon">🎬</span> Your Videos
+<div class="vids-nav-item" data-view="uploads">
+<span class="vids-nav-icon">🎬</span> Your Videos
       </div>
-      <div class="vids-nav-divider"></div>
-      <div class="vids-nav-label">Browse</div>
-      <div class="vids-nav-item" data-view="cat-gaming">
-        <span class="vids-nav-icon">🎮</span> Gaming
+<div class="vids-nav-divider"></div>
+<div class="vids-nav-label">Browse</div>
+<div class="vids-nav-item" data-view="cat-gaming">
+<span class="vids-nav-icon">🎮</span> Gaming
       </div>
-      <div class="vids-nav-item" data-view="cat-music">
-        <span class="vids-nav-icon">🎵</span> Music
+<div class="vids-nav-item" data-view="cat-music">
+<span class="vids-nav-icon">🎵</span> Music
       </div>
-      <div class="vids-nav-item" data-view="cat-tech">
-        <span class="vids-nav-icon">💻</span> Tech
+<div class="vids-nav-item" data-view="cat-tech">
+<span class="vids-nav-icon">💻</span> Tech
       </div>
-      <div class="vids-nav-item" data-view="cat-education">
-        <span class="vids-nav-icon">📚</span> Education
+<div class="vids-nav-item" data-view="cat-education">
+<span class="vids-nav-icon">📚</span> Education
       </div>
-      <div class="vids-nav-item" data-view="cat-entertainment">
-        <span class="vids-nav-icon">🎭</span> Entertainment
+<div class="vids-nav-item" data-view="cat-entertainment">
+<span class="vids-nav-icon">🎭</span> Entertainment
       </div>
-    </aside>
-
-    <!-- Main -->
-    <main class="vids-main" id="vidsMain">
-
-      <!-- Filter Chips -->
-      <div class="vids-chips" id="vidsChips">
-        <div class="vids-chip active" data-filter="all">All</div>
-        <div class="vids-chip" data-filter="Gaming">Gaming</div>
-        <div class="vids-chip" data-filter="Music">Music</div>
-        <div class="vids-chip" data-filter="Tech">Tech</div>
-        <div class="vids-chip" data-filter="Education">Education</div>
-        <div class="vids-chip" data-filter="Entertainment">Entertainment</div>
-        <div class="vids-chip" data-filter="Other">Other</div>
-      </div>
-
-      <!-- Grid -->
-      <div class="vids-grid" id="vidsGrid">
-        <!-- Skeleton loaders -->
-        <div class="vids-card vids-skeleton">
-          <div class="skel-thumb"></div>
-          <div class="vids-card-body">
-            <div class="skel-line" style="width:90%"></div>
-            <div class="skel-line short"></div>
-          </div>
-        </div>
-        <div class="vids-card vids-skeleton">
-          <div class="skel-thumb"></div>
-          <div class="vids-card-body">
-            <div class="skel-line" style="width:75%"></div>
-            <div class="skel-line short"></div>
-          </div>
-        </div>
-        <div class="vids-card vids-skeleton">
-          <div class="skel-thumb"></div>
-          <div class="vids-card-body">
-            <div class="skel-line" style="width:85%"></div>
-            <div class="skel-line short"></div>
-          </div>
-        </div>
-      </div>
-
-    </main>
-  </div>
-
-  <!-- ══ UPLOAD MODAL ══ -->
-  <div class="vids-modal-overlay" id="uploadOverlay">
-    <div class="vids-modal">
-      <h2>🎬 Upload Video</h2>
-
-      <div class="vids-field">
-        <label>Video File</label>
-        <div class="vids-dropzone" id="dropzone">
-          <input type="file" id="videoFile" accept="video/*" />
-          <div class="vids-dropzone-icon">📁</div>
-          <p>Drag & drop or <strong>browse</strong> to choose a video</p>
-          <p style="font-size:11px;margin-top:4px;">MP4, WebM, MOV — max 500MB</p>
-          <div class="vids-file-chosen" id="fileChosen"></div>
-        </div>
-        <div class="vids-progress-wrap" id="progressWrap">
-          <div class="vids-progress-bar" id="progressBar"></div>
-        </div>
-      </div>
-
-      <div class="vids-field">
-        <label>Title *</label>
-        <input type="text" id="vidTitle" placeholder="Give your video a title…" maxlength="100" />
-      </div>
-
-      <div class="vids-field">
-        <label>Description</label>
-        <textarea id="vidDesc" placeholder="Tell viewers about your video…" maxlength="500"></textarea>
-      </div>
-
-      <div class="vids-field">
-        <label>Category</label>
-        <select id="vidCategory">
-          <option value="Other">Other</option>
-          <option value="Gaming">Gaming</option>
-          <option value="Music">Music</option>
-          <option value="Tech">Tech</option>
-          <option value="Education">Education</option>
-          <option value="Entertainment">Entertainment</option>
-        </select>
-      </div>
-
-      <div class="vids-upload-status" id="uploadStatus"></div>
-
-      <div class="vids-modal-actions">
-        <button class="vids-btn ghost" id="cancelUploadBtn">Cancel</button>
-        <button class="vids-btn primary" id="submitUploadBtn">Upload Video</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ WATCH MODAL ══ -->
-  <div class="vids-watch-overlay" id="watchOverlay">
-    <div class="vids-watch-box">
-      <div class="vids-player-wrap" id="vidsPlayerWrap">
-        <button class="vids-watch-close" id="watchCloseBtn">✕</button>
-        <video id="vidsPlayer" preload="metadata" playsinline></video>
-
-        <div class="vp-controls" id="vpControls">
-          <input type="range" id="vpSeek" class="vp-seek" min="0" max="100" value="0" step="0.1" />
-          <div class="vp-row">
-            <button class="vp-btn" id="vpPlayPause" title="Play/Pause (space)">▶️</button>
-            <button class="vp-btn" id="vpMute" title="Mute (m)">🔊</button>
-            <input type="range" id="vpVolume" class="vp-volume" min="0" max="1" step="0.01" value="1" />
-            <span class="vp-time" id="vpTime">0:00 / 0:00</span>
-            <div class="vp-spacer"></div>
-            <select id="vpSpeed" class="vp-speed" title="Playback speed">
-              <option value="0.5">0.5x</option>
-              <option value="0.75">0.75x</option>
-              <option value="1" selected>1x</option>
-              <option value="1.25">1.25x</option>
-              <option value="1.5">1.5x</option>
-              <option value="2">2x</option>
-            </select>
-            <button class="vp-btn" id="vpPip" title="Picture in picture (p)">⧉</button>
-            <button class="vp-btn" id="vpFullscreen" title="Fullscreen (f)">⛶</button>
-          </div>
-        </div>
-      </div>
-      <div class="vids-watch-info">
-        <div class="vids-watch-title" id="watchTitle"></div>
-        <div class="vids-watch-meta" id="watchMeta"></div>
-        <div class="vids-watch-actions">
-          <button class="vids-action-btn" id="likeBtn">👍 <span id="likeCount">0</span></button>
-          <button class="vids-action-btn" id="dislikeBtn">👎 <span id="dislikeCount">0</span></button>
-          <button class="vids-action-btn" id="followBtn">＋ Follow</button>
-          <button class="vids-action-btn" id="shareBtn">🔗 Share</button>
-        </div>
-        <div class="vids-watch-desc" id="watchDesc"></div>
-
-        <div id="commentsSection" style="margin-top:14px;">
-          <h4 style="font-size:14px;font-weight:700;margin:0 0 6px;">Comments</h4>
-          <div id="commentsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
-          <div id="commentForm" style="display:flex;gap:8px;">
-            <input
-              type="text"
-              id="commentInput"
-              placeholder="Add a comment…"
-              style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--vid-border);font-size:13px;"
-              maxlength="300"
-            />
-            <button class="vids-action-btn" id="commentSubmitBtn">Post</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ TOAST ══ -->
-  <div class="vids-toast" id="vidsToast"></div>
-
-  <audio id="clickSound" src="click-sound.mp3" preload="auto"></audio>
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-
-  <script>
+</aside>
+<!-- Main -->
+<main class="vids-main" id="vidsMain">
+<!-- Filter Chips -->
+<div class="vids-chips" id="vidsChips">
+<div class="vids-chip active" data-filter="all">All</div>
+<div class="vids-chip" data-filter="Gaming">Gaming</div>
+<div class="vids-chip" data-filter="Music">Music</div>
+<div class="vids-chip" data-filter="Tech">Tech</div>
+<div class="vids-chip" data-filter="Education">Education</div>
+<div class="vids-chip" data-filter="Entertainment">Entertainment</div>
+<div class="vids-chip" data-filter="Other">Other</div>
+</div>
+<!-- Grid -->
+<div class="vids-grid" id="vidsGrid">
+<!-- Skeleton loaders -->
+<div class="vids-card vids-skeleton">
+<div class="skel-thumb"></div>
+<div class="vids-card-body">
+<div class="skel-line" style="width:90%"></div>
+<div class="skel-line short"></div>
+</div>
+</div>
+<div class="vids-card vids-skeleton">
+<div class="skel-thumb"></div>
+<div class="vids-card-body">
+<div class="skel-line" style="width:75%"></div>
+<div class="skel-line short"></div>
+</div>
+</div>
+<div class="vids-card vids-skeleton">
+<div class="skel-thumb"></div>
+<div class="vids-card-body">
+<div class="skel-line" style="width:85%"></div>
+<div class="skel-line short"></div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- ══ UPLOAD MODAL ══ -->
+<div class="vids-modal-overlay" id="uploadOverlay">
+<div class="vids-modal">
+<h2>🎬 Upload Video</h2>
+<div class="vids-field">
+<label>Video File</label>
+<div class="vids-dropzone" id="dropzone">
+<input accept="video/*" id="videoFile" type="file"/>
+<div class="vids-dropzone-icon">📁</div>
+<p>Drag &amp; drop or <strong>browse</strong> to choose a video</p>
+<p style="font-size:11px;margin-top:4px;">MP4, WebM, MOV — max 500MB</p>
+<div class="vids-file-chosen" id="fileChosen"></div>
+</div>
+<div class="vids-progress-wrap" id="progressWrap">
+<div class="vids-progress-bar" id="progressBar"></div>
+</div>
+</div>
+<div class="vids-field">
+<label>Title *</label>
+<input id="vidTitle" maxlength="100" placeholder="Give your video a title…" type="text"/>
+</div>
+<div class="vids-field">
+<label>Description</label>
+<textarea id="vidDesc" maxlength="500" placeholder="Tell viewers about your video…"></textarea>
+</div>
+<div class="vids-field">
+<label>Category</label>
+<select id="vidCategory">
+<option value="Other">Other</option>
+<option value="Gaming">Gaming</option>
+<option value="Music">Music</option>
+<option value="Tech">Tech</option>
+<option value="Education">Education</option>
+<option value="Entertainment">Entertainment</option>
+</select>
+</div>
+<div class="vids-upload-status" id="uploadStatus"></div>
+<div class="vids-modal-actions">
+<button class="vids-btn ghost" id="cancelUploadBtn">Cancel</button>
+<button class="vids-btn primary" id="submitUploadBtn">Upload Video</button>
+</div>
+</div>
+</div>
+<!-- ══ WATCH MODAL ══ -->
+<div class="vids-watch-overlay" id="watchOverlay">
+<div class="vids-watch-box">
+<div class="vids-player-wrap" id="vidsPlayerWrap">
+<button class="vids-watch-close" id="watchCloseBtn">✕</button>
+<video id="vidsPlayer" playsinline="" preload="metadata"></video>
+<div class="vp-controls" id="vpControls">
+<input class="vp-seek" id="vpSeek" max="100" min="0" step="0.1" type="range" value="0"/>
+<div class="vp-row">
+<button class="vp-btn" id="vpPlayPause" title="Play/Pause (space)">▶️</button>
+<button class="vp-btn" id="vpMute" title="Mute (m)">🔊</button>
+<input class="vp-volume" id="vpVolume" max="1" min="0" step="0.01" type="range" value="1"/>
+<span class="vp-time" id="vpTime">0:00 / 0:00</span>
+<div class="vp-spacer"></div>
+<select class="vp-speed" id="vpSpeed" title="Playback speed">
+<option value="0.5">0.5x</option>
+<option value="0.75">0.75x</option>
+<option selected="" value="1">1x</option>
+<option value="1.25">1.25x</option>
+<option value="1.5">1.5x</option>
+<option value="2">2x</option>
+</select>
+<button class="vp-btn" id="vpPip" title="Picture in picture (p)">⧉</button>
+<button class="vp-btn" id="vpFullscreen" title="Fullscreen (f)">⛶</button>
+</div>
+</div>
+</div>
+<div class="vids-watch-info">
+<div class="vids-watch-title" id="watchTitle"></div>
+<div class="vids-watch-meta" id="watchMeta"></div>
+<div class="vids-watch-actions">
+<button class="vids-action-btn" id="likeBtn">👍 <span id="likeCount">0</span></button>
+<button class="vids-action-btn" id="dislikeBtn">👎 <span id="dislikeCount">0</span></button>
+<button class="vids-action-btn" id="followBtn">＋ Follow</button>
+<button class="vids-action-btn" id="shareBtn">🔗 Share</button>
+</div>
+<div class="vids-watch-desc" id="watchDesc"></div>
+<div id="commentsSection" style="margin-top:14px;">
+<h4 style="font-size:14px;font-weight:700;margin:0 0 6px;">Comments</h4>
+<div id="commentsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+<div id="commentForm" style="display:flex;gap:8px;">
+<input id="commentInput" maxlength="300" placeholder="Add a comment…" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--vid-border);font-size:13px;" type="text"/>
+<button class="vids-action-btn" id="commentSubmitBtn">Post</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ══ TOAST ══ -->
+<div class="vids-toast" id="vidsToast"></div>
+<audio id="clickSound" preload="auto" src="click-sound.mp3"></audio>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script>
     // ══════════════════════════════════════════════
     //  360Vids — Core Logic
     //  Supabase Storage bucket: "videos"

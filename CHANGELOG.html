@@ -1,16 +1,17 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What's New — 360</title>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 Changelog — What’s New</title>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<style>
     .cl-shell {
       max-width: 680px;
       margin: 0 auto;
@@ -125,95 +126,81 @@
 
     body.dark .cl-items li::before { background: var(--mutd); }
   </style>
-</head>
+<meta content="See what is new, changed and improved across 360." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 Changelog — What’s New" property="og:title"/><meta content="See what is new, changed and improved across 360." property="og:description"/><meta content="https://360-search.com/CHANGELOG.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 Changelog — What’s New" name="twitter:title"/><meta content="See what is new, changed and improved across 360." name="twitter:description"/><link href="https://360-search.com/CHANGELOG.html" rel="canonical"/></head>
 <body>
-
-  <div class="auth-top-right">
-    <button id="signInBtn" class="auth-btn">Sign In</button>
-    <button id="signUpBtn" class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
-  <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
-  <div class="overlay" id="overlay"></div>
-
-  <div class="cl-shell">
-    <h1 class="cl-page-title">What's New</h1>
-    <p class="cl-page-sub">A running list of what's changed in 360.</p>
-
-    <div class="cl-entry">
-      <div class="cl-dot"></div>
-      <div class="cl-version">V.3.6.0</div>
-      <div class="cl-date">August 2026</div>
-
-      <div class="cl-section-label">Added</div>
-      <ul class="cl-items">
-        <li>Grammar correction in chat, uses Groq to quietly fix your messages before they send, with a toast showing what changed and an undo button.</li>
-        <li>@all mention, highlights every server member and writes a notification row for each of them.</li>
-        <li>DM notification badge and popup, now correctly watching <code>user_a</code>/<code>user_b</code> columns.</li>
-        <li>Desktop app for Windows, macOS, and Linux via Electron, download from the Releases page.</li>
-        <li>Server discovery page at <a href="/discover">/discover</a>, find public communities without an invite link.</li>
-        <li>Lyrics in 360 Music, synchronized when available, plain text otherwise. Sourced from LRCLIB, no API key or tracking.</li>
-        <li>Listening activity, when you play a track, your chat profile shows what you're listening to. Clears when you close the player.</li>
-        <li>More like this, queues up to 10 tracks in the same genre as the one you're playing.</li>
-        <li>Incident reporting layer in 360 Maps, report speed traps, accidents, road closures, hazards, police, and heavy traffic. Incidents expire after 2 hours.</li>
-        <li>AI summary toggle in Search, one click to turn off the AI panel and get straight links.</li>
-        <li>Source bias indicator in News, a small colored dot on each article shows where the source sits on the political spectrum.</li>
-        <li>Save articles in News, bookmark button on every card, saved locally. Saved tab shows your list.</li>
-        <li>Add custom RSS feeds in News, paste any feed URL to mix it into your reading.</li>
-        <li>"No ads. No data selling. Ever." now on the homepage, because it's true and we should say so.</li>
-        <li>profiles_public view, safe anon-readable profile columns that don't expose email, birthdate, or moderation data.</li>
-      </ul>
-
-      <div class="cl-section-label">Fixed</div>
-      <ul class="cl-items">
-        <li>Context menu Edit item now works correctly. The click-outside dismissal was racing against the menu item click and clearing the target before the action fired.</li>
-        <li>DM notification watcher was querying the wrong column names (<code>user1_id</code>/<code>user2_id</code> instead of <code>user_a</code>/<code>user_b</code>). Badge and popup now work.</li>
-        <li>Grammar correction toast had no entrance animation, so it appeared and disappeared without being noticed.</li>
-        <li>@all in chat now renders with a yellow highlight for all recipients, not just as a plain grey mention.</li>
-        <li>Removed Google Analytics from 360 Maps.</li>
-      </ul>
-
-      <div class="cl-section-label">Security</div>
-      <ul class="cl-items">
-        <li>RLS policies tightened across profiles, dm_messages, server_members, server_roles, carlos_logs, mentions, and minesweeper_scores.</li>
-        <li>Blanket anonymous SELECT on profiles replaced with a safe view that omits sensitive columns.</li>
-        <li>Any authenticated user could previously create or assign roles in any server, restricted to server owners and admins.</li>
-      </ul>
-    </div>
-
-    <div class="cl-entry">
-      <div class="cl-dot" style="background:var(--mut);"></div>
-      <div class="cl-version" style="color:var(--mut);">V.3.0.0</div>
-      <div class="cl-date">July 2026</div>
-
-      <div class="cl-section-label">Added</div>
-      <ul class="cl-items">
-        <li>Complete UI redesign across all products.</li>
-        <li>New search providers for improved metasearch.</li>
-        <li>Refactored AI assistant.</li>
-      </ul>
-    </div>
-
-    <div class="cl-entry">
-      <div class="cl-dot" style="background:var(--mut);"></div>
-      <div class="cl-version" style="color:var(--mut);">V.2.0.3</div>
-      <div class="cl-date">Earlier</div>
-
-      <div class="cl-section-label">Changed</div>
-      <ul class="cl-items">
-        <li>Release V.2.0.3.</li>
-      </ul>
-    </div>
-
-  </div>
-
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+<aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
+<div class="overlay" id="overlay"></div>
+<div class="cl-shell">
+<h1 class="cl-page-title">What's New</h1>
+<p class="cl-page-sub">A running list of what's changed in 360.</p>
+<div class="cl-entry">
+<div class="cl-dot"></div>
+<div class="cl-version">V.3.6.0</div>
+<div class="cl-date">August 2026</div>
+<div class="cl-section-label">Added</div>
+<ul class="cl-items">
+<li>Grammar correction in chat, uses Groq to quietly fix your messages before they send, with a toast showing what changed and an undo button.</li>
+<li>@all mention, highlights every server member and writes a notification row for each of them.</li>
+<li>DM notification badge and popup, now correctly watching <code>user_a</code>/<code>user_b</code> columns.</li>
+<li>Desktop app for Windows, macOS, and Linux via Electron, download from the Releases page.</li>
+<li>Server discovery page at <a href="/discover">/discover</a>, find public communities without an invite link.</li>
+<li>Lyrics in 360 Music, synchronized when available, plain text otherwise. Sourced from LRCLIB, no API key or tracking.</li>
+<li>Listening activity, when you play a track, your chat profile shows what you're listening to. Clears when you close the player.</li>
+<li>More like this, queues up to 10 tracks in the same genre as the one you're playing.</li>
+<li>Incident reporting layer in 360 Maps, report speed traps, accidents, road closures, hazards, police, and heavy traffic. Incidents expire after 2 hours.</li>
+<li>AI summary toggle in Search, one click to turn off the AI panel and get straight links.</li>
+<li>Source bias indicator in News, a small colored dot on each article shows where the source sits on the political spectrum.</li>
+<li>Save articles in News, bookmark button on every card, saved locally. Saved tab shows your list.</li>
+<li>Add custom RSS feeds in News, paste any feed URL to mix it into your reading.</li>
+<li>"No ads. No data selling. Ever." now on the homepage, because it's true and we should say so.</li>
+<li>profiles_public view, safe anon-readable profile columns that don't expose email, birthdate, or moderation data.</li>
+</ul>
+<div class="cl-section-label">Fixed</div>
+<ul class="cl-items">
+<li>Context menu Edit item now works correctly. The click-outside dismissal was racing against the menu item click and clearing the target before the action fired.</li>
+<li>DM notification watcher was querying the wrong column names (<code>user1_id</code>/<code>user2_id</code> instead of <code>user_a</code>/<code>user_b</code>). Badge and popup now work.</li>
+<li>Grammar correction toast had no entrance animation, so it appeared and disappeared without being noticed.</li>
+<li>@all in chat now renders with a yellow highlight for all recipients, not just as a plain grey mention.</li>
+<li>Removed Google Analytics from 360 Maps.</li>
+</ul>
+<div class="cl-section-label">Security</div>
+<ul class="cl-items">
+<li>RLS policies tightened across profiles, dm_messages, server_members, server_roles, carlos_logs, mentions, and minesweeper_scores.</li>
+<li>Blanket anonymous SELECT on profiles replaced with a safe view that omits sensitive columns.</li>
+<li>Any authenticated user could previously create or assign roles in any server, restricted to server owners and admins.</li>
+</ul>
+</div>
+<div class="cl-entry">
+<div class="cl-dot" style="background:var(--mut);"></div>
+<div class="cl-version" style="color:var(--mut);">V.3.0.0</div>
+<div class="cl-date">July 2026</div>
+<div class="cl-section-label">Added</div>
+<ul class="cl-items">
+<li>Complete UI redesign across all products.</li>
+<li>New search providers for improved metasearch.</li>
+<li>Refactored AI assistant.</li>
+</ul>
+</div>
+<div class="cl-entry">
+<div class="cl-dot" style="background:var(--mut);"></div>
+<div class="cl-version" style="color:var(--mut);">V.2.0.3</div>
+<div class="cl-date">Earlier</div>
+<div class="cl-section-label">Changed</div>
+<ul class="cl-items">
+<li>Release V.2.0.3.</li>
+</ul>
+</div>
+</div>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cursor.js"></script>
 </body>
 </html>

@@ -1,18 +1,18 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 Mail — Email by 360</title>
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-
-  <!-- Apply the site's dark/light preference before first paint, so this
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 Mail — Email by 360</title>
+<link href="/manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/apple-touch-icon.png" rel="apple-touch-icon"/>
+<!-- Apply the site's dark/light preference before first paint, so this
        page never flashes the wrong theme. mirrors main.js's own
        localStorage("darkMode") key exactly — same source of truth. -->
-  <script>
+<script>
     (function () {
       try {
         var dark = localStorage.getItem("darkMode") === "true";
@@ -20,8 +20,7 @@
       } catch (e) {}
     })();
   </script>
-
-  <style>
+<style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
@@ -369,156 +368,140 @@
       footer { flex-direction: column; gap: 0.5rem; text-align: center; }
     }
   </style>
-</head>
+<meta content="Email that's actually yours. is part of 360 Digital. Explore its features and use it online through the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 Mail — Email by 360" property="og:title"/><meta content="Email that's actually yours. is part of 360 Digital. Explore its features and use it online through the 360 platform." property="og:description"/><meta content="https://360-search.com/apps/360mail-claim.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 Mail — Email by 360" name="twitter:title"/><meta content="Email that's actually yours. is part of 360 Digital. Explore its features and use it online through the 360 platform." name="twitter:description"/><link href="https://360-search.com/apps/360mail-claim.html" rel="canonical"/></head>
 <body>
-
-  <!-- NAV -->
-  <nav>
-    <a href="/" class="nav-logo">360<span>Mail</span></a>
-    <div style="display:flex;gap:1.5rem;align-items:center;">
-      <a href="/">360 Home</a>
-      <a href="/apps">Apps</a>
-      <a href="#claim" style="color:var(--accent);">Claim username</a>
-    </div>
-  </nav>
-
-  <!-- HERO -->
-  <section class="hero">
-    <div class="badge">360Mail | A 360 Product</div>
-    <h1>Email that's actually <em>yours.</em></h1>
-    <p class="hero-sub">
+<!-- NAV -->
+<nav>
+<a class="nav-logo" href="/">360<span>Mail</span></a>
+<div style="display:flex;gap:1.5rem;align-items:center;">
+<a href="/">360 Home</a>
+<a href="/apps">Apps</a>
+<a href="#claim" style="color:var(--accent);">Claim username</a>
+</div>
+</nav>
+<!-- HERO -->
+<section class="hero">
+<div class="badge">360Mail | A 360 Product</div>
+<h1>Email that's actually <em>yours.</em></h1>
+<p class="hero-sub">
       360 Mail gives you a clean <strong>@360-search.com</strong> address with no ads, no
       data selling, and no corporate nonsense. Built into the 360 ecosystem you already use.
     </p>
-  </section>
-
-  <!-- CLAIM BOX -->
-  <section id="claim">
-    <div class="claim-card">
-      <h2>Claim your username</h2>
-      <p id="claim-sub">Reserve your address — it's free.</p>
-      <div class="input-row">
-        <input
-          type="text"
-          id="username-input"
-          placeholder="yourname"
-          autocomplete="off"
-          spellcheck="false"
-          maxlength="32"
-          oninput="handleInput(this)"
-        />
-        <span class="input-suffix">@360-search.com</span>
-      </div>
-      <div class="status-msg" id="status-msg"></div>
-      <button class="claim-btn" id="claim-btn" onclick="handleClaim()">Claim this address →</button>
-      <p class="terms">By claiming, you agree to our <a href="/tos">Terms</a> and <a href="/privacypolicy">Privacy Policy</a>.</p>
-    </div>
-  </section>
-
-  <!-- WHY SWITCH -->
-  <section class="why">
-    <p class="section-label">Why 360 Mail</p>
-    <h2>Everything wrong with your current inbox - fixed.</h2>
-    <div class="grid">
-      <div class="feature-card">
-        <div class="feat-icon">🚫</div>
-        <h3>Zero ads. Zero tracking.</h3>
-        <p>Gmail reads your emails to sell you stuff. We don't. Your inbox should be yours.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feat-icon">🔗</div>
-        <h3>Built into 360</h3>
-        <p>Seamlessly connected to the rest of the 360 ecosystem for a better integrated experience than Gmail, Yahoo Mail or Outlook!</p>
-      </div>
-      <div class="feature-card">
-        <div class="feat-icon">⚡</div>
-        <h3>Actually fast</h3>
-        <p>No bloat. No tracking scripts. Just a fast, clean inbox that loads and updates instantly.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feat-icon">🔒</div>
-        <h3>Your identity</h3>
-        <p>A @360-search.com address signals you're part of something built different. But the ability to add a custom domain for free- that's really unique.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feat-icon">📱</div>
-        <h3>Works everywhere</h3>
-        <p>IMAP/SMTP support means it works with any mail client — phone, desktop, anywhere.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feat-icon">🛡️</div>
-        <h3>Spam protection</h3>
-        <p>Resend + Cloudflare routing with Supabase fine filtering before anything hits your inbox.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- COMPARISON TABLE -->
-  <section class="compare">
-    <h2>How we stack up</h2>
-    <table class="compare-table">
-      <thead>
-        <tr>
-          <th>Feature</th>
-          <th class="highlight">360 Mail</th>
-          <th>Gmail</th>
-          <th>Outlook</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Ad-free</td>
-          <td class="highlight check">✓</td>
-          <td class="cross">✗</td>
-          <td class="cross">✗</td>
-        </tr>
-        <tr>
-          <td>No email scanning</td>
-          <td class="highlight check">✓</td>
-          <td class="cross">✗</td>
-          <td class="cross">✗</td>
-        </tr>
-        <tr>
-          <td>Custom @domain</td>
-          <td class="highlight check">✓ Free</td>
-          <td class="cross">Paid only</td>
-          <td class="cross">Paid only</td>
-        </tr>
-        <tr>
-          <td>360 ecosystem integration</td>
-          <td class="highlight check">✓ Native</td>
-          <td class="cross">✗</td>
-          <td class="cross">✗</td>
-        </tr>
-        <tr>
-          <td>IMAP/SMTP support</td>
-          <td class="highlight check">✓</td>
-          <td class="check">✓</td>
-          <td class="check">✓</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
-
-  <!-- BOTTOM CTA -->
-  <section class="cta">
-    <h2>Ready to switch?</h2>
-    <p>Claim your @360-search.com address now — it's free.</p>
-    <a href="#claim" class="cta-btn">Get your address →</a>
-  </section>
-
-  <!-- FOOTER -->
-  <footer>
-    <span>2026, 360Digital, Co.</span>
-    <div style="display:flex;gap:1.5rem;">
-      <a href="/privacypolicy">Privacy</a>
-      <a href="/tos">Terms</a>
-      <a href="mailto:support@360-search.com">Support</a>
-    </div>
-  </footer>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
+</section>
+<!-- CLAIM BOX -->
+<section id="claim">
+<div class="claim-card">
+<h2>Claim your username</h2>
+<p id="claim-sub">Reserve your address — it's free.</p>
+<div class="input-row">
+<input autocomplete="off" id="username-input" maxlength="32" oninput="handleInput(this)" placeholder="yourname" spellcheck="false" type="text"/>
+<span class="input-suffix">@360-search.com</span>
+</div>
+<div class="status-msg" id="status-msg"></div>
+<button class="claim-btn" id="claim-btn" onclick="handleClaim()">Claim this address →</button>
+<p class="terms">By claiming, you agree to our <a href="/tos">Terms</a> and <a href="/privacypolicy">Privacy Policy</a>.</p>
+</div>
+</section>
+<!-- WHY SWITCH -->
+<section class="why">
+<p class="section-label">Why 360 Mail</p>
+<h2>Everything wrong with your current inbox - fixed.</h2>
+<div class="grid">
+<div class="feature-card">
+<div class="feat-icon">🚫</div>
+<h3>Zero ads. Zero tracking.</h3>
+<p>Gmail reads your emails to sell you stuff. We don't. Your inbox should be yours.</p>
+</div>
+<div class="feature-card">
+<div class="feat-icon">🔗</div>
+<h3>Built into 360</h3>
+<p>Seamlessly connected to the rest of the 360 ecosystem for a better integrated experience than Gmail, Yahoo Mail or Outlook!</p>
+</div>
+<div class="feature-card">
+<div class="feat-icon">⚡</div>
+<h3>Actually fast</h3>
+<p>No bloat. No tracking scripts. Just a fast, clean inbox that loads and updates instantly.</p>
+</div>
+<div class="feature-card">
+<div class="feat-icon">🔒</div>
+<h3>Your identity</h3>
+<p>A @360-search.com address signals you're part of something built different. But the ability to add a custom domain for free- that's really unique.</p>
+</div>
+<div class="feature-card">
+<div class="feat-icon">📱</div>
+<h3>Works everywhere</h3>
+<p>IMAP/SMTP support means it works with any mail client — phone, desktop, anywhere.</p>
+</div>
+<div class="feature-card">
+<div class="feat-icon">🛡️</div>
+<h3>Spam protection</h3>
+<p>Resend + Cloudflare routing with Supabase fine filtering before anything hits your inbox.</p>
+</div>
+</div>
+</section>
+<!-- COMPARISON TABLE -->
+<section class="compare">
+<h2>How we stack up</h2>
+<table class="compare-table">
+<thead>
+<tr>
+<th>Feature</th>
+<th class="highlight">360 Mail</th>
+<th>Gmail</th>
+<th>Outlook</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ad-free</td>
+<td class="highlight check">✓</td>
+<td class="cross">✗</td>
+<td class="cross">✗</td>
+</tr>
+<tr>
+<td>No email scanning</td>
+<td class="highlight check">✓</td>
+<td class="cross">✗</td>
+<td class="cross">✗</td>
+</tr>
+<tr>
+<td>Custom @domain</td>
+<td class="highlight check">✓ Free</td>
+<td class="cross">Paid only</td>
+<td class="cross">Paid only</td>
+</tr>
+<tr>
+<td>360 ecosystem integration</td>
+<td class="highlight check">✓ Native</td>
+<td class="cross">✗</td>
+<td class="cross">✗</td>
+</tr>
+<tr>
+<td>IMAP/SMTP support</td>
+<td class="highlight check">✓</td>
+<td class="check">✓</td>
+<td class="check">✓</td>
+</tr>
+</tbody>
+</table>
+</section>
+<!-- BOTTOM CTA -->
+<section class="cta">
+<h2>Ready to switch?</h2>
+<p>Claim your @360-search.com address now — it's free.</p>
+<a class="cta-btn" href="#claim">Get your address →</a>
+</section>
+<!-- FOOTER -->
+<footer>
+<span>2026, 360Digital, Co.</span>
+<div style="display:flex;gap:1.5rem;">
+<a href="/privacypolicy">Privacy</a>
+<a href="/tos">Terms</a>
+<a href="mailto:support@360-search.com">Support</a>
+</div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
     /* ============================================================
        360 Mail  claim page logic
 

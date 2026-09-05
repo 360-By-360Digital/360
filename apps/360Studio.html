@@ -1,20 +1,20 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360Studio</title>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360Studio</title>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     @view-transition { navigation: auto; }
     ::view-transition-old(root) { animation: vt-out .28s cubic-bezier(.4,0,.2,1) both; }
     ::view-transition-new(root) { animation: vt-in .32s cubic-bezier(.2,0,.2,1) both; }
@@ -176,90 +176,82 @@
     }
     .st-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
-</head>
+<meta content="Your content is part of 360 Digital. Explore its features and use it online through the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360Studio" property="og:title"/><meta content="Your content is part of 360 Digital. Explore its features and use it online through the 360 platform." property="og:description"/><meta content="https://360-search.com/apps/360Studio.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360Studio" name="twitter:title"/><meta content="Your content is part of 360 Digital. Explore its features and use it online through the 360 platform." name="twitter:description"/><link href="https://360-search.com/apps/360Studio.html" rel="canonical"/></head>
 <body>
-  <div class="st-root">
-    <div class="st-topbar">
-      <div class="st-logo"><span class="st-logo-badge">🎛️</span> 360Studio</div>
-      <div class="st-spacer"></div>
-      <a class="st-home-link" href="/apps/360vids.html">Vids</a>
-      <a class="st-home-link" href="/apps/360Music.html">Music</a>
-      <button class="st-avatar" id="stAvatar">?</button>
-    </div>
-
-    <div class="st-main">
-      <!-- Signed-out gate -->
-      <div class="st-gate" id="stGate" style="display:none;">
-        <h2>Sign in to manage your content</h2>
-        <p>360Studio shows the videos and tracks tied to your account.</p>
-      </div>
-
-      <!-- Signed-in content -->
-      <div id="stContent" style="display:none;">
-        <div class="st-header">
-          <div>
-            <h1>Your content</h1>
-            <p>Manage everything you've uploaded to 360Vids and 360Music in one place.</p>
-          </div>
-        </div>
-
-        <div class="st-stats" id="stStats"></div>
-
-        <div class="st-tabs" id="stTabs">
-          <div class="st-tab active" data-tab="videos">🎬 Videos</div>
-          <div class="st-tab" data-tab="music">🎵 Music</div>
-          <span class="st-tab-indicator" id="stTabIndicator"></span>
-        </div>
-
-        <div class="st-list" id="stList"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit modal -->
-  <div class="st-modal-overlay" id="stModalOverlay">
-    <div class="st-modal">
-      <h3 id="stModalTitle">Edit</h3>
-      <div class="st-field">
-        <label>Thumbnail</label>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div id="stEditThumbPreview" style="width:110px;height:62px;border-radius:8px;background:linear-gradient(135deg,var(--vid-accent),var(--vid-accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;overflow:hidden;flex-shrink:0;"></div>
-          <div>
-            <button class="st-btn" id="stEditThumbBtn" type="button">Change thumbnail</button>
-            <input type="file" id="stEditThumbFile" accept="image/*" style="display:none;" />
-            <div style="font-size:11px;color:var(--vid-mut);margin-top:4px;">JPG or PNG, up to a few MB.</div>
-          </div>
-        </div>
-      </div>
-      <div class="st-field">
-        <label>Title</label>
-        <input type="text" id="stEditTitle" maxlength="120" />
-      </div>
-      <div class="st-field">
-        <label>Description</label>
-        <textarea id="stEditDesc" maxlength="1000"></textarea>
-      </div>
-      <div class="st-field">
-        <label>Category</label>
-        <select id="stEditCategory">
-          <option>Gaming</option>
-          <option>Music</option>
-          <option>Tech</option>
-          <option>Education</option>
-          <option>Entertainment</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <div class="st-modal-actions">
-        <button class="st-btn" id="stEditCancel">Cancel</button>
-        <button class="st-primary-btn" id="stEditSave">Save changes</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="st-toast" id="stToast"></div>
-
-  <script>
+<div class="st-root">
+<div class="st-topbar">
+<div class="st-logo"><span class="st-logo-badge">🎛️</span> 360Studio</div>
+<div class="st-spacer"></div>
+<a class="st-home-link" href="/apps/360vids.html">Vids</a>
+<a class="st-home-link" href="/apps/360Music.html">Music</a>
+<button class="st-avatar" id="stAvatar">?</button>
+</div>
+<div class="st-main">
+<!-- Signed-out gate -->
+<div class="st-gate" id="stGate" style="display:none;">
+<h2>Sign in to manage your content</h2>
+<p>360Studio shows the videos and tracks tied to your account.</p>
+</div>
+<!-- Signed-in content -->
+<div id="stContent" style="display:none;">
+<div class="st-header">
+<div>
+<h1>Your content</h1>
+<p>Manage everything you've uploaded to 360Vids and 360Music in one place.</p>
+</div>
+</div>
+<div class="st-stats" id="stStats"></div>
+<div class="st-tabs" id="stTabs">
+<div class="st-tab active" data-tab="videos">🎬 Videos</div>
+<div class="st-tab" data-tab="music">🎵 Music</div>
+<span class="st-tab-indicator" id="stTabIndicator"></span>
+</div>
+<div class="st-list" id="stList"></div>
+</div>
+</div>
+</div>
+<!-- Edit modal -->
+<div class="st-modal-overlay" id="stModalOverlay">
+<div class="st-modal">
+<h3 id="stModalTitle">Edit</h3>
+<div class="st-field">
+<label>Thumbnail</label>
+<div style="display:flex;align-items:center;gap:12px;">
+<div id="stEditThumbPreview" style="width:110px;height:62px;border-radius:8px;background:linear-gradient(135deg,var(--vid-accent),var(--vid-accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;overflow:hidden;flex-shrink:0;"></div>
+<div>
+<button class="st-btn" id="stEditThumbBtn" type="button">Change thumbnail</button>
+<input accept="image/*" id="stEditThumbFile" style="display:none;" type="file"/>
+<div style="font-size:11px;color:var(--vid-mut);margin-top:4px;">JPG or PNG, up to a few MB.</div>
+</div>
+</div>
+</div>
+<div class="st-field">
+<label>Title</label>
+<input id="stEditTitle" maxlength="120" type="text"/>
+</div>
+<div class="st-field">
+<label>Description</label>
+<textarea id="stEditDesc" maxlength="1000"></textarea>
+</div>
+<div class="st-field">
+<label>Category</label>
+<select id="stEditCategory">
+<option>Gaming</option>
+<option>Music</option>
+<option>Tech</option>
+<option>Education</option>
+<option>Entertainment</option>
+<option>Other</option>
+</select>
+</div>
+<div class="st-modal-actions">
+<button class="st-btn" id="stEditCancel">Cancel</button>
+<button class="st-primary-btn" id="stEditSave">Save changes</button>
+</div>
+</div>
+</div>
+<div class="st-toast" id="stToast"></div>
+<script>
     const SUPABASE_URL  = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
@@ -565,6 +557,6 @@
 
     initAuth();
   </script>
-  <script src="/assets/js/cursor.js"></script>
+<script src="/assets/js/cursor.js"></script>
 </body>
 </html>

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>NYC DREAM — The American Hustle</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=IBM+Plex+Mono:wght@400;700&amp;family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&amp;display=swap" rel="stylesheet"/>
 <style>
 :root {
   --yellow: #FFD100;
@@ -837,180 +838,162 @@ body {
   pointer-events: none;
 }
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta content="Play NYC DREAM  The American Hustle on 360. Explore this free browser game and discover more games on 360." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="NYC DREAM — The American Hustle" property="og:title"/><meta content="Play NYC DREAM  The American Hustle on 360. Explore this free browser game and discover more games on 360." property="og:description"/><meta content="https://360-search.com/games/nyc_dream.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="NYC DREAM — The American Hustle" name="twitter:title"/><meta content="Play NYC DREAM  The American Hustle on 360. Explore this free browser game and discover more games on 360." name="twitter:description"/><link href="https://360-search.com/games/nyc_dream.html" rel="canonical"/></head>
 <body>
-
 <!-- INTRO SCREEN -->
-<div id="screen-intro" class="active">
-  <div class="skyline-bg"></div>
-  <div class="intro-content">
-    <div class="intro-logo">NYC<br>DREAM</div>
-    <div class="intro-sub">The American Hustle — City Life Simulator</div>
-    <div class="intro-tagline">"In New York, every man for himself."</div>
-    <div id="name-input-wrap">
-      <label>YOUR NAME</label>
-      <input id="player-name" type="text" placeholder="ENTER YOUR NAME" maxlength="16" autocomplete="off">
-    </div>
-    <button class="btn-start" onclick="startGame()">ARRIVE IN NEW YORK</button>
-  </div>
+<div class="active" id="screen-intro">
+<div class="skyline-bg"></div>
+<div class="intro-content">
+<div class="intro-logo">NYC<br/>DREAM</div>
+<div class="intro-sub">The American Hustle — City Life Simulator</div>
+<div class="intro-tagline">"In New York, every man for himself."</div>
+<div id="name-input-wrap">
+<label>YOUR NAME</label>
+<input autocomplete="off" id="player-name" maxlength="16" placeholder="ENTER YOUR NAME" type="text"/>
 </div>
-
+<button class="btn-start" onclick="startGame()">ARRIVE IN NEW YORK</button>
+</div>
+</div>
 <!-- GAME SCREEN -->
 <div id="screen-game">
-  <!-- LEFT PANEL -->
-  <div id="panel-left">
-    <div class="player-card">
-      <div class="player-name-display" id="display-name">UNKNOWN</div>
-      <div class="player-title" id="display-title">NEWCOMER • BROKE</div>
-    </div>
-
-    <div class="stat-row">
-      <span class="stat-label">CASH</span>
-      <span class="stat-value green" id="stat-cash">$0</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label">SAVINGS</span>
-      <span class="stat-value" id="stat-savings">$0</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label">WEEKLY RENT</span>
-      <span class="stat-value red" id="stat-rent">$0</span>
-    </div>
-
-    <div class="rating-bar-wrap">
-      <div class="rating-label">
-        <span>EMPLOYEE RATING</span>
-        <span id="rating-num">50</span>
-      </div>
-      <div class="rating-bar">
-        <div class="rating-fill" id="rating-fill" style="width:50%; background-position: 50% 0;"></div>
-      </div>
-    </div>
-
-    <div class="metro-indicator">
-      <div class="metro-dot" id="metro-dot"></div>
-      <span id="metro-status">No MetroCard</span>
-    </div>
-
-    <div class="section-title">CURRENT JOB</div>
-    <div class="stat-row">
-      <span class="stat-label">POSITION</span>
-      <span class="stat-value orange" id="stat-job">NONE</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label">DAILY PAY</span>
-      <span class="stat-value" id="stat-pay">—</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label">DAYS WORKED</span>
-      <span class="stat-value" id="stat-daysworked">0</span>
-    </div>
-
-    <div class="section-title">RESUME</div>
-    <div id="resume-panel">
-      <div style="padding:12px 16px; font-size:10px; color:var(--muted)">No work history yet.</div>
-    </div>
-
-    <div class="section-title">INVENTORY</div>
-    <div id="inventory-list">
-      <div class="inv-item"><span>Nothing yet</span></div>
-    </div>
-  </div>
-
-  <!-- CENTER MAP -->
-  <div id="map-area">
-    <!-- TIME BAR -->
-    <div id="time-bar">
-      <div class="time-segment">
-        <span class="time-icon">📅</span>
-        <div>
-          <div class="time-val" id="t-day">Day 1</div>
-          <div class="time-label">NEW YORK</div>
-        </div>
-      </div>
-      <div class="time-segment">
-        <span class="time-icon">🕐</span>
-        <div>
-          <div class="time-val" id="t-time">8:00 AM</div>
-          <div class="time-label">TIME</div>
-        </div>
-      </div>
-      <div class="time-segment">
-        <span class="time-icon">🌡️</span>
-        <div>
-          <div class="time-val" id="t-weather">72°F</div>
-          <div class="time-label">WEATHER</div>
-        </div>
-      </div>
-      <div class="time-segment" style="margin-left:auto">
-        <div class="time-val" id="t-location" style="font-size:11px; color:var(--muted)">📍 Penn Station</div>
-      </div>
-    </div>
-
-    <!-- MAP CANVAS -->
-    <div class="map-canvas-wrap">
-      <canvas id="map-canvas"></canvas>
-      <div id="player-marker" class="player-marker">
-        <div class="player-dot"></div>
-      </div>
-      <div id="location-tooltip" class="location-tooltip">
-        <div class="loc-name" id="tt-name"></div>
-        <div class="loc-type" id="tt-type"></div>
-      </div>
-    </div>
-
-    <!-- MAP BUTTONS -->
-    <div class="map-overlay-ui">
-      <button class="map-btn" onclick="openShop()">🛒 SHOP / SPEND</button>
-      <button class="map-btn" onclick="openJobBoard()">💼 JOB BOARD</button>
-      <button class="map-btn" onclick="doWorkDay()" id="btn-work">⚡ WORK SHIFT</button>
-      <button class="map-btn" onclick="advanceDay()">⏭ NEXT DAY</button>
-    </div>
-
-    <!-- TICKER -->
-    <div id="ticker">
-      <div class="ticker-inner" id="ticker-text">
-        🗽 WELCOME TO NEW YORK CITY &nbsp;•&nbsp; SUBWAY DELAYS ON THE A LINE &nbsp;•&nbsp; RENT IN MANHATTAN UP 8% &nbsp;•&nbsp; WALL STREET CLOSING HIGHER &nbsp;•&nbsp; HOT DOG CART PERMIT LOTTERY OPEN &nbsp;•&nbsp; NYC HIRING FAIR AT JAVITS CENTER &nbsp;•&nbsp; BODEGA CAT SIGHTING IN ASTORIA &nbsp;•&nbsp; 🗽 WELCOME TO NEW YORK CITY &nbsp;•&nbsp; SUBWAY DELAYS ON THE A LINE &nbsp;•&nbsp; RENT IN MANHATTAN UP 8%
-      </div>
-    </div>
-  </div>
-
-  <!-- RIGHT PANEL -->
-  <div id="panel-right">
-    <div class="section-title">CITY LOG</div>
-    <div id="log-area"></div>
-
-    <div id="job-status" style="display:none">
-      <span id="job-status-text" style="color:var(--muted)">SHIFT PROGRESS</span>
-      <div class="job-timer-bar">
-        <div class="job-timer-fill" id="job-timer-fill" style="width:0%"></div>
-      </div>
-      <span id="job-timer-label" style="color:var(--yellow)">0%</span>
-    </div>
-
-    <div id="action-panel">
-      <div class="action-title">QUICK ACTIONS</div>
-      <div id="action-buttons">
-        <button class="action-btn primary" onclick="openJobBoard()">💼 FIND JOB</button>
-        <button class="action-btn" onclick="openShop()">🏪 SPEND $$</button>
-        <button class="action-btn" onclick="travelSubway()">🚇 SUBWAY</button>
-        <button class="action-btn" onclick="doWorkDay()" id="qa-work">⚡ WORK</button>
-        <button class="action-btn" onclick="saveToBank()">🏦 SAVE CASH</button>
-        <button class="action-btn" onclick="withdrawBank()">💳 WITHDRAW</button>
-        <button class="action-btn" onclick="talkToNPC()">👤 NETWORK</button>
-        <button class="action-btn danger" onclick="quitJob()">🚪 QUIT JOB</button>
-      </div>
-    </div>
-  </div>
+<!-- LEFT PANEL -->
+<div id="panel-left">
+<div class="player-card">
+<div class="player-name-display" id="display-name">UNKNOWN</div>
+<div class="player-title" id="display-title">NEWCOMER • BROKE</div>
 </div>
-
+<div class="stat-row">
+<span class="stat-label">CASH</span>
+<span class="stat-value green" id="stat-cash">$0</span>
+</div>
+<div class="stat-row">
+<span class="stat-label">SAVINGS</span>
+<span class="stat-value" id="stat-savings">$0</span>
+</div>
+<div class="stat-row">
+<span class="stat-label">WEEKLY RENT</span>
+<span class="stat-value red" id="stat-rent">$0</span>
+</div>
+<div class="rating-bar-wrap">
+<div class="rating-label">
+<span>EMPLOYEE RATING</span>
+<span id="rating-num">50</span>
+</div>
+<div class="rating-bar">
+<div class="rating-fill" id="rating-fill" style="width:50%; background-position: 50% 0;"></div>
+</div>
+</div>
+<div class="metro-indicator">
+<div class="metro-dot" id="metro-dot"></div>
+<span id="metro-status">No MetroCard</span>
+</div>
+<div class="section-title">CURRENT JOB</div>
+<div class="stat-row">
+<span class="stat-label">POSITION</span>
+<span class="stat-value orange" id="stat-job">NONE</span>
+</div>
+<div class="stat-row">
+<span class="stat-label">DAILY PAY</span>
+<span class="stat-value" id="stat-pay">—</span>
+</div>
+<div class="stat-row">
+<span class="stat-label">DAYS WORKED</span>
+<span class="stat-value" id="stat-daysworked">0</span>
+</div>
+<div class="section-title">RESUME</div>
+<div id="resume-panel">
+<div style="padding:12px 16px; font-size:10px; color:var(--muted)">No work history yet.</div>
+</div>
+<div class="section-title">INVENTORY</div>
+<div id="inventory-list">
+<div class="inv-item"><span>Nothing yet</span></div>
+</div>
+</div>
+<!-- CENTER MAP -->
+<div id="map-area">
+<!-- TIME BAR -->
+<div id="time-bar">
+<div class="time-segment">
+<span class="time-icon">📅</span>
+<div>
+<div class="time-val" id="t-day">Day 1</div>
+<div class="time-label">NEW YORK</div>
+</div>
+</div>
+<div class="time-segment">
+<span class="time-icon">🕐</span>
+<div>
+<div class="time-val" id="t-time">8:00 AM</div>
+<div class="time-label">TIME</div>
+</div>
+</div>
+<div class="time-segment">
+<span class="time-icon">🌡️</span>
+<div>
+<div class="time-val" id="t-weather">72°F</div>
+<div class="time-label">WEATHER</div>
+</div>
+</div>
+<div class="time-segment" style="margin-left:auto">
+<div class="time-val" id="t-location" style="font-size:11px; color:var(--muted)">📍 Penn Station</div>
+</div>
+</div>
+<!-- MAP CANVAS -->
+<div class="map-canvas-wrap">
+<canvas id="map-canvas"></canvas>
+<div class="player-marker" id="player-marker">
+<div class="player-dot"></div>
+</div>
+<div class="location-tooltip" id="location-tooltip">
+<div class="loc-name" id="tt-name"></div>
+<div class="loc-type" id="tt-type"></div>
+</div>
+</div>
+<!-- MAP BUTTONS -->
+<div class="map-overlay-ui">
+<button class="map-btn" onclick="openShop()">🛒 SHOP / SPEND</button>
+<button class="map-btn" onclick="openJobBoard()">💼 JOB BOARD</button>
+<button class="map-btn" id="btn-work" onclick="doWorkDay()">⚡ WORK SHIFT</button>
+<button class="map-btn" onclick="advanceDay()">⏭ NEXT DAY</button>
+</div>
+<!-- TICKER -->
+<div id="ticker">
+<div class="ticker-inner" id="ticker-text">
+        🗽 WELCOME TO NEW YORK CITY  •  SUBWAY DELAYS ON THE A LINE  •  RENT IN MANHATTAN UP 8%  •  WALL STREET CLOSING HIGHER  •  HOT DOG CART PERMIT LOTTERY OPEN  •  NYC HIRING FAIR AT JAVITS CENTER  •  BODEGA CAT SIGHTING IN ASTORIA  •  🗽 WELCOME TO NEW YORK CITY  •  SUBWAY DELAYS ON THE A LINE  •  RENT IN MANHATTAN UP 8%
+      </div>
+</div>
+</div>
+<!-- RIGHT PANEL -->
+<div id="panel-right">
+<div class="section-title">CITY LOG</div>
+<div id="log-area"></div>
+<div id="job-status" style="display:none">
+<span id="job-status-text" style="color:var(--muted)">SHIFT PROGRESS</span>
+<div class="job-timer-bar">
+<div class="job-timer-fill" id="job-timer-fill" style="width:0%"></div>
+</div>
+<span id="job-timer-label" style="color:var(--yellow)">0%</span>
+</div>
+<div id="action-panel">
+<div class="action-title">QUICK ACTIONS</div>
+<div id="action-buttons">
+<button class="action-btn primary" onclick="openJobBoard()">💼 FIND JOB</button>
+<button class="action-btn" onclick="openShop()">🏪 SPEND $$</button>
+<button class="action-btn" onclick="travelSubway()">🚇 SUBWAY</button>
+<button class="action-btn" id="qa-work" onclick="doWorkDay()">⚡ WORK</button>
+<button class="action-btn" onclick="saveToBank()">🏦 SAVE CASH</button>
+<button class="action-btn" onclick="withdrawBank()">💳 WITHDRAW</button>
+<button class="action-btn" onclick="talkToNPC()">👤 NETWORK</button>
+<button class="action-btn danger" onclick="quitJob()">🚪 QUIT JOB</button>
+</div>
+</div>
+</div>
+</div>
 <!-- EVENT SCREEN -->
 <div id="screen-event"></div>
-
 <!-- NOTIFICATIONS -->
 <div id="notif-area"></div>
-
 <script>
 // ═══════════════════════════════════════════════════════════
 // STATE
@@ -2411,6 +2394,6 @@ window.onload = () => {
   document.getElementById('screen-intro').classList.add('active');
 };
 </script>
-  <script src="assets/js/game-rewards.js"></script>
+<script src="assets/js/game-rewards.js"></script>
 </body>
 </html>

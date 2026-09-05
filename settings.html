@@ -1,31 +1,31 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
-  <script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+<script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-89NN1P6CEV');
   </script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 — Settings</title>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="360" />
-  <link rel="icon" type="image/png" href="favicon-32x32.png" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 — Settings</title>
+<link href="manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="360" name="apple-mobile-web-app-title"/>
+<link href="favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="apple-touch-icon.png" rel="apple-touch-icon"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -401,449 +401,408 @@
   
     .project-built-with{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}.built-with-item{display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-size:12px}.built-with-item img{width:18px;height:18px;object-fit:contain;flex:0 0 18px}.project-meta{display:grid;gap:0;margin-top:14px}.project-meta-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:9px 0;border-bottom:1px solid var(--br);font-size:13px}.project-meta-row:last-child{border-bottom:none}.project-meta-key{color:var(--mut)}.project-meta-val{color:var(--txt);text-align:right}.project-meta-val a{color:var(--a,#3b82f6);text-decoration:none}.project-meta-val a:hover{text-decoration:underline}.credit-person{display:flex;align-items:center;gap:11px}.credit-pfp{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:0 0 36px;border:1px solid var(--br)}.credit-info{min-width:0}
 </style>
-</head>
+<meta content="360  Settings — part of the 360 web platform." name="description"/><meta content="noindex, nofollow" name="robots"/><meta content="website" property="og:type"/><meta content="360 — Settings" property="og:title"/><meta content="360  Settings — part of the 360 web platform." property="og:description"/><meta content="https://360-search.com/settings.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 — Settings" name="twitter:title"/><meta content="360  Settings — part of the 360 web platform." name="twitter:description"/><link href="https://360-search.com/settings.html" rel="canonical"/></head>
 <body>
-
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <!-- Hidden scaffolding that main.js / cursor.js expect to find -->
-  <button id="installBtn" class="install-banner" style="display:none;">Install 360</button>
-  <button class="sidebar-toggle" id="sidebarToggle" style="display:none;">☰</button>
-  <aside class="sidebar" id="sidebar" style="display:none;"><span id="sidebar-slot" data-extra="[{&quot;label&quot;: &quot;Accounts&quot;, &quot;href&quot;: &quot;/accounts&quot;}]"></span></aside>
-  <div class="overlay" id="overlay"></div>
-
-  <!-- Hidden settings panel so main.js hooks work (theme, dark, cursor, bg, temp, bob) -->
-  <div class="settings-panel" id="settingsPanel" style="display:none !important; visibility:hidden; position:absolute; pointer-events:none;">
-    <input type="checkbox" id="darkToggle" />
-    <div class="temp-unit-box">
-      <span id="tempUnitLabel">°C</span>
-      <button id="tempUnitBtn">Switch</button>
-    </div>
-    <input type="file" id="bgUpload" accept="image/*" class="settings-input" />
-    <input type="text" id="bgUrlInput" class="settings-input" />
-    <button id="bgUrlBtn" class="settings-btn">Apply URL</button>
-    <button id="bgResetBtn" class="settings-btn">Reset</button>
-    <div id="settingsBobToggleRow">
-      <div class="bob-track" id="settingsBobTrack"></div>
-    </div>
-  </div>
-
-  <!-- ═══════════ TOP BAR ═══════════ -->
-  <div class="st-topbar">
-    <a class="st-topbar-logo" href="/">
-      <div class="logo-mark"><button onClick="window.location.href='/';" class="image-only-button" type="button"><img src="/favicon-32x32.png" alt="360"></button></div>
-      <span class="st-logo-text">360</span>
-    </a>
-    <span class="st-topbar-sep">/</span>
-    <span class="st-topbar-section" id="topbarSection">Settings</span>
-    <div class="st-topbar-right" style="display:flex;align-items:center;gap:10px;">
-      <a class="github-stars" href="https://github.com/360DigitalCo/360" target="_blank" rel="noopener noreferrer" aria-label="360 on GitHub">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 .297a12 12 0 0 0-3.79 23.39c.6.113.82-.26.82-.577v-2.234c-3.34.726-4.04-1.416-4.04-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.084-.729.084-.729 1.205.085 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23a11.5 11.5 0 0 1 3.004-.404c1.02.005 2.047.138 3.004.404 2.28-1.552 3.285-1.23 3.285-1.23.65 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.623-5.475 5.92.43.372.81 1.103.81 2.222v3.293c0 .32.21.694.825.576A12 12 0 0 0 12 .297"/>
-        </svg>
-        <span id="github-star-count">—</span>
-      </a>
-      <button class="st-back-btn" onclick="window.location.href='/'">← Back to 360</button>
-    </div>
-  </div>
-
-  <!-- ═══════════ PAGE WRAP ═══════════ -->
-  <div class="page-wrap">
-
-    <!-- SETTINGS NAV SIDEBAR -->
-    <nav class="st-sidebar">
-      <div class="st-sidebar-group-label">Account</div>
-      <div class="st-nav-item" data-tab="account" onclick="switchTab('account')">
-        <span class="st-nav-icon">🔐</span>
-        <span class="st-nav-label">Account Settings</span>
-      </div>
-
-      <div class="st-sidebar-group-label">App</div>
-      <div class="st-nav-item" data-tab="preference" onclick="switchTab('preference')">
-        <span class="st-nav-icon">🎨</span>
-        <span class="st-nav-label">360 Preferences</span>
-      </div>
-
-      <div class="st-sidebar-group-label">Device</div>
-      <div class="st-nav-item" data-tab="sys" onclick="switchTab('sys')">
-        <span class="st-nav-icon">🖥️</span>
-        <span class="st-nav-label">System Info</span>
-      </div>
-    </nav>
-
-    <!-- MAIN CONTENT -->
-    <main class="st-main">
-
-      <!-- ══════════════════════════════
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<!-- Hidden scaffolding that main.js / cursor.js expect to find -->
+<button class="install-banner" id="installBtn" style="display:none;">Install 360</button>
+<button class="sidebar-toggle" id="sidebarToggle" style="display:none;">☰</button>
+<aside class="sidebar" id="sidebar" style="display:none;"><span data-extra='[{"label": "Accounts", "href": "/accounts"}]' id="sidebar-slot"></span></aside>
+<div class="overlay" id="overlay"></div>
+<!-- Hidden settings panel so main.js hooks work (theme, dark, cursor, bg, temp, bob) -->
+<div class="settings-panel" id="settingsPanel" style="display:none !important; visibility:hidden; position:absolute; pointer-events:none;">
+<input id="darkToggle" type="checkbox"/>
+<div class="temp-unit-box">
+<span id="tempUnitLabel">°C</span>
+<button id="tempUnitBtn">Switch</button>
+</div>
+<input accept="image/*" class="settings-input" id="bgUpload" type="file"/>
+<input class="settings-input" id="bgUrlInput" type="text"/>
+<button class="settings-btn" id="bgUrlBtn">Apply URL</button>
+<button class="settings-btn" id="bgResetBtn">Reset</button>
+<div id="settingsBobToggleRow">
+<div class="bob-track" id="settingsBobTrack"></div>
+</div>
+</div>
+<!-- ═══════════ TOP BAR ═══════════ -->
+<div class="st-topbar">
+<a class="st-topbar-logo" href="/">
+<div class="logo-mark"><button class="image-only-button" onclick="window.location.href='/';" type="button"><img alt="360" src="/favicon-32x32.png"/></button></div>
+<span class="st-logo-text">360</span>
+</a>
+<span class="st-topbar-sep">/</span>
+<span class="st-topbar-section" id="topbarSection">Settings</span>
+<div class="st-topbar-right" style="display:flex;align-items:center;gap:10px;">
+<a aria-label="360 on GitHub" class="github-stars" href="https://github.com/360DigitalCo/360" rel="noopener noreferrer" target="_blank">
+<svg aria-hidden="true" viewbox="0 0 24 24">
+<path d="M12 .297a12 12 0 0 0-3.79 23.39c.6.113.82-.26.82-.577v-2.234c-3.34.726-4.04-1.416-4.04-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.084-.729.084-.729 1.205.085 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23a11.5 11.5 0 0 1 3.004-.404c1.02.005 2.047.138 3.004.404 2.28-1.552 3.285-1.23 3.285-1.23.65 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.623-5.475 5.92.43.372.81 1.103.81 2.222v3.293c0 .32.21.694.825.576A12 12 0 0 0 12 .297"></path>
+</svg>
+<span id="github-star-count">—</span>
+</a>
+<button class="st-back-btn" onclick="window.location.href='/'">← Back to 360</button>
+</div>
+</div>
+<!-- ═══════════ PAGE WRAP ═══════════ -->
+<div class="page-wrap">
+<!-- SETTINGS NAV SIDEBAR -->
+<nav class="st-sidebar">
+<div class="st-sidebar-group-label">Account</div>
+<div class="st-nav-item" data-tab="account" onclick="switchTab('account')">
+<span class="st-nav-icon">🔐</span>
+<span class="st-nav-label">Account Settings</span>
+</div>
+<div class="st-sidebar-group-label">App</div>
+<div class="st-nav-item" data-tab="preference" onclick="switchTab('preference')">
+<span class="st-nav-icon">🎨</span>
+<span class="st-nav-label">360 Preferences</span>
+</div>
+<div class="st-sidebar-group-label">Device</div>
+<div class="st-nav-item" data-tab="sys" onclick="switchTab('sys')">
+<span class="st-nav-icon">🖥️</span>
+<span class="st-nav-label">System Info</span>
+</div>
+</nav>
+<!-- MAIN CONTENT -->
+<main class="st-main">
+<!-- ══════════════════════════════
            ACCOUNT SETTINGS
       ══════════════════════════════ -->
-      <div class="st-panel" id="panel-account">
-        <div class="st-panel-header">
-          <div class="st-panel-title">Account Settings</div>
-          <div class="st-panel-sub">Manage your 360 account, profile, and security.</div>
-        </div>
-
-        <!-- SIGN-IN WALL -->
-        <div class="st-card" id="acWallCard">
-          <div class="ac-wall">
-            <div class="ac-wall-icon">🔒</div>
-            <div class="ac-wall-title">Sign in to continue</div>
-            <div class="ac-wall-sub">You need to be signed in to view and manage your account settings.</div>
-            <div class="ac-wall-btns">
-              <button class="st-btn primary" onclick="window.location.href='/account?signin&from=%2Fsettings'">Sign In</button>
-              <button class="st-btn" onclick="window.location.href='/account?signup&from=%2Fsettings'">Create Account</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- SIGNED-IN CONTENT -->
-        <div id="acSignedInContent" style="display:none;">
-
-          <!-- Profile -->
-          <div class="st-card">
-            <div class="st-card-title">Profile</div>
-            <div class="ac-user-row">
-              <div class="ac-avatar" id="acAvatar">?</div>
-              <div style="flex:1;min-width:0;">
-                <div class="ac-name"  id="acName">—</div>
-                <div class="ac-email" id="acEmail">—</div>
-              </div>
-              <button class="st-btn" onclick="window.location.href='/account'">Full Profile →</button>
-            </div>
-          </div>
-
-          <!-- Phone Verification (shown only once 2FA is enabled) -->
-          <div class="st-card" id="phoneVerifyCard" style="display:none;">
-            <div class="st-card-title">Phone Verification</div>
-            <div class="st-row">
-              <div>
-                <div class="st-row-label">Verify Phone Number</div>
-                <div class="st-row-sub">Add a verified phone to secure your account.</div>
-              </div>
-            </div>
-            <div style="display:flex;gap:8px;margin-top:12px;">
-              <input class="st-input" id="phoneInput" type="tel" placeholder="+1 555 123 4567" />
-              <button class="st-btn primary" id="sendPhoneOtpBtn" style="white-space:nowrap;">Send Code</button>
-            </div>
-            <div id="otpSection" style="display:none;margin-top:10px;">
-              <div style="display:flex;gap:8px;">
-                <input class="st-input" id="otpInput" type="text" placeholder="6-digit code" maxlength="6" />
-                <button class="st-btn primary" id="verifyPhoneOtpBtn">Verify</button>
-              </div>
-            </div>
-            <div class="st-msg" id="phoneMsg"></div>
-          </div>
-
-          <!-- Security -->
-          <div class="st-card">
-            <div class="st-card-title">Security</div>
-
-            <div class="st-row-label" style="margin-bottom:4px;">Change Password</div>
-            <div class="st-row-sub" style="margin-bottom:12px;">Update your account password.</div>
-            <div style="display:flex;flex-direction:column;gap:10px;max-width:360px;">
-              <input class="st-input" id="secCurrentPass" type="password" placeholder="Current password" autocomplete="current-password" />
-              <div>
-                <input class="st-input" id="secNewPass" type="password" placeholder="New password (min. 6 characters)" autocomplete="new-password" style="width:100%;" />
-                <div class="pw-strength-wrap" id="secPwStrengthWrap">
-                  <div class="pw-bar-track"><div class="pw-bar-fill"></div></div>
-                  <div class="pw-meta"><span class="pw-strength-label"></span><span class="pw-strength-hint"></span></div>
-                  <div class="pw-checks">
-                    <div class="pw-pill" id="secPw-c-len"><span class="pw-pip"></span>8+ chars</div>
-                    <div class="pw-pill" id="secPw-c-up"><span class="pw-pip"></span>uppercase</div>
-                    <div class="pw-pill" id="secPw-c-num"><span class="pw-pip"></span>number</div>
-                    <div class="pw-pill" id="secPw-c-sym"><span class="pw-pip"></span>symbol</div>
-                  </div>
-                </div>
-              </div>
-              <input class="st-input" id="secConfirmPass" type="password" placeholder="Confirm new password" autocomplete="new-password" />
-              <button class="st-btn primary" id="secChangePassBtn" style="align-self:flex-start;">Update Password</button>
-            </div>
-            <div class="st-msg" id="secPassMsg"></div>
-            <div style="margin-top:6px;">
-              <a class="st-legal-link" href="/account?forgot" style="display:inline;">Forgot your current password?</a>
-            </div>
-
-            <div style="height:1px;background:var(--br);margin:20px 0;"></div>
-
-            <div class="st-row">
-              <div>
-                <div class="st-row-label">Two-Factor Authentication</div>
-                <div class="st-row-sub" id="secMfaStatus">Checking…</div>
-              </div>
-              <div class="st-row-right">
-                <button class="st-toggle" id="secMfaToggle" disabled></button>
-              </div>
-            </div>
-            <div id="secMfaEnrollBody" style="display:none;margin-top:14px;max-width:360px;"></div>
-            <div class="st-msg" id="secMfaMsg"></div>
-          </div>
-
-          <!-- Legal -->
-          <div class="st-card">
-            <div class="st-card-title">Legal</div>
-            <a class="st-legal-link" href="/privacypolicy">🔒 Privacy Policy</a>
-            <a class="st-legal-link" href="/tos">📜 Terms of Service</a>
-          </div>
-
-          <!-- Danger Zone: Sign Out -->
-          <div class="st-card danger-card">
-            <div class="st-card-title">Session</div>
-            <div class="st-row" id="signOutRow">
-              <div>
-                <div class="st-row-label">Sign Out</div>
-                <div class="st-row-sub">End your current 360 session on this device.</div>
-              </div>
-              <div class="st-row-right">
-                <button class="st-btn danger" id="signOutTrigger">Sign Out</button>
-              </div>
-            </div>
-            <div id="signOutConfirm" style="display:none;margin-top:12px;">
-              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                <span style="font-size:13px;color:var(--mut);">Are you sure you want to sign out?</span>
-                <button class="st-btn danger" id="confirmSignOutBtn">Yes, sign out</button>
-                <button class="st-btn" id="cancelSignOutBtn">Cancel</button>
-              </div>
-            </div>
-          </div>
-
-        </div><!-- /acSignedInContent -->
-      </div>
-
-      <!-- ══════════════════════════════
+<div class="st-panel" id="panel-account">
+<div class="st-panel-header">
+<div class="st-panel-title">Account Settings</div>
+<div class="st-panel-sub">Manage your 360 account, profile, and security.</div>
+</div>
+<!-- SIGN-IN WALL -->
+<div class="st-card" id="acWallCard">
+<div class="ac-wall">
+<div class="ac-wall-icon">🔒</div>
+<div class="ac-wall-title">Sign in to continue</div>
+<div class="ac-wall-sub">You need to be signed in to view and manage your account settings.</div>
+<div class="ac-wall-btns">
+<button class="st-btn primary" onclick="window.location.href='/account?signin&amp;from=%2Fsettings'">Sign In</button>
+<button class="st-btn" onclick="window.location.href='/account?signup&amp;from=%2Fsettings'">Create Account</button>
+</div>
+</div>
+</div>
+<!-- SIGNED-IN CONTENT -->
+<div id="acSignedInContent" style="display:none;">
+<!-- Profile -->
+<div class="st-card">
+<div class="st-card-title">Profile</div>
+<div class="ac-user-row">
+<div class="ac-avatar" id="acAvatar">?</div>
+<div style="flex:1;min-width:0;">
+<div class="ac-name" id="acName">—</div>
+<div class="ac-email" id="acEmail">—</div>
+</div>
+<button class="st-btn" onclick="window.location.href='/account'">Full Profile →</button>
+</div>
+</div>
+<!-- Phone Verification (shown only once 2FA is enabled) -->
+<div class="st-card" id="phoneVerifyCard" style="display:none;">
+<div class="st-card-title">Phone Verification</div>
+<div class="st-row">
+<div>
+<div class="st-row-label">Verify Phone Number</div>
+<div class="st-row-sub">Add a verified phone to secure your account.</div>
+</div>
+</div>
+<div style="display:flex;gap:8px;margin-top:12px;">
+<input class="st-input" id="phoneInput" placeholder="+1 555 123 4567" type="tel"/>
+<button class="st-btn primary" id="sendPhoneOtpBtn" style="white-space:nowrap;">Send Code</button>
+</div>
+<div id="otpSection" style="display:none;margin-top:10px;">
+<div style="display:flex;gap:8px;">
+<input class="st-input" id="otpInput" maxlength="6" placeholder="6-digit code" type="text"/>
+<button class="st-btn primary" id="verifyPhoneOtpBtn">Verify</button>
+</div>
+</div>
+<div class="st-msg" id="phoneMsg"></div>
+</div>
+<!-- Security -->
+<div class="st-card">
+<div class="st-card-title">Security</div>
+<div class="st-row-label" style="margin-bottom:4px;">Change Password</div>
+<div class="st-row-sub" style="margin-bottom:12px;">Update your account password.</div>
+<div style="display:flex;flex-direction:column;gap:10px;max-width:360px;">
+<input autocomplete="current-password" class="st-input" id="secCurrentPass" placeholder="Current password" type="password"/>
+<div>
+<input autocomplete="new-password" class="st-input" id="secNewPass" placeholder="New password (min. 6 characters)" style="width:100%;" type="password"/>
+<div class="pw-strength-wrap" id="secPwStrengthWrap">
+<div class="pw-bar-track"><div class="pw-bar-fill"></div></div>
+<div class="pw-meta"><span class="pw-strength-label"></span><span class="pw-strength-hint"></span></div>
+<div class="pw-checks">
+<div class="pw-pill" id="secPw-c-len"><span class="pw-pip"></span>8+ chars</div>
+<div class="pw-pill" id="secPw-c-up"><span class="pw-pip"></span>uppercase</div>
+<div class="pw-pill" id="secPw-c-num"><span class="pw-pip"></span>number</div>
+<div class="pw-pill" id="secPw-c-sym"><span class="pw-pip"></span>symbol</div>
+</div>
+</div>
+</div>
+<input autocomplete="new-password" class="st-input" id="secConfirmPass" placeholder="Confirm new password" type="password"/>
+<button class="st-btn primary" id="secChangePassBtn" style="align-self:flex-start;">Update Password</button>
+</div>
+<div class="st-msg" id="secPassMsg"></div>
+<div style="margin-top:6px;">
+<a class="st-legal-link" href="/account?forgot" style="display:inline;">Forgot your current password?</a>
+</div>
+<div style="height:1px;background:var(--br);margin:20px 0;"></div>
+<div class="st-row">
+<div>
+<div class="st-row-label">Two-Factor Authentication</div>
+<div class="st-row-sub" id="secMfaStatus">Checking…</div>
+</div>
+<div class="st-row-right">
+<button class="st-toggle" disabled="" id="secMfaToggle"></button>
+</div>
+</div>
+<div id="secMfaEnrollBody" style="display:none;margin-top:14px;max-width:360px;"></div>
+<div class="st-msg" id="secMfaMsg"></div>
+</div>
+<!-- Legal -->
+<div class="st-card">
+<div class="st-card-title">Legal</div>
+<a class="st-legal-link" href="/privacypolicy">🔒 Privacy Policy</a>
+<a class="st-legal-link" href="/tos">📜 Terms of Service</a>
+</div>
+<!-- Danger Zone: Sign Out -->
+<div class="st-card danger-card">
+<div class="st-card-title">Session</div>
+<div class="st-row" id="signOutRow">
+<div>
+<div class="st-row-label">Sign Out</div>
+<div class="st-row-sub">End your current 360 session on this device.</div>
+</div>
+<div class="st-row-right">
+<button class="st-btn danger" id="signOutTrigger">Sign Out</button>
+</div>
+</div>
+<div id="signOutConfirm" style="display:none;margin-top:12px;">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+<span style="font-size:13px;color:var(--mut);">Are you sure you want to sign out?</span>
+<button class="st-btn danger" id="confirmSignOutBtn">Yes, sign out</button>
+<button class="st-btn" id="cancelSignOutBtn">Cancel</button>
+</div>
+</div>
+</div>
+</div><!-- /acSignedInContent -->
+</div>
+<!-- ══════════════════════════════
            360 PREFERENCES
       ══════════════════════════════ -->
-      <div class="st-panel" id="panel-preference">
-        <div class="st-panel-header">
-          <div class="st-panel-title">360 Preferences</div>
-          <div class="st-panel-sub">Customize the look, feel, and behavior of 360.</div>
-        </div>
-
-        <!-- Theme -->
-        <div class="st-card">
-          <div class="st-card-title">Theme</div>
-          <div class="theme-swatches" id="themeGrid">
-            <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-            <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-            <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-            <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-            <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-            <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-          </div>
-          <div class="st-row" style="margin-top:16px;">
-            <div>
-              <div class="st-row-label">Dark Mode</div>
-              <div class="st-row-sub">Switch between light and dark interface.</div>
-            </div>
-            <button class="st-toggle" id="darkModeToggle"></button>
-          </div>
-          <div class="st-row">
-            <div>
-              <div class="st-row-label">Bold Font</div>
-              <div class="st-row-sub">Make text across 360 use a bold weight.</div>
-            </div>
-            <button class="st-toggle" id="boldFontToggle" aria-label="Toggle bold font"></button>
-          </div>
-        </div>
-
-        <!-- Cursor -->
-        <div class="st-card">
-          <div class="st-card-title">Cursor Style</div>
-          <div class="cursor-options" id="cursorGrid">
-            <div class="cursor-option" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-            <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-            <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-            <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-            <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-            <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-          </div>
-          <div class="cursor-color-row">
-            <label>Cursor color</label>
-            <input type="color" id="cursorColorPicker" value="#3b82f6" />
-            <button id="cursorColorReset">Reset</button>
-          </div>
-        </div>
-
-        <!-- Units -->
-        <div class="st-card">
-          <div class="st-card-title">Units</div>
-          <div class="st-row">
-            <div>
-              <div class="st-row-label">Temperature Unit</div>
-              <div class="st-row-sub">Used across Weather and other 360 features.</div>
-            </div>
-            <div class="st-row-right">
-              <span id="visTempLabel" style="font-size:15px;font-weight:700;">°C</span>
-              <button class="st-btn" id="visTempSwitch">Switch</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Background Image -->
-        <div class="st-card">
-          <div class="st-card-title">Background Image</div>
-          <div class="st-row">
-            <div>
-              <div class="st-row-label">Upload Image</div>
-              <div class="st-row-sub">Set a custom background on the 360 home page.</div>
-            </div>
-            <label class="st-btn st-upload-btn">
+<div class="st-panel" id="panel-preference">
+<div class="st-panel-header">
+<div class="st-panel-title">360 Preferences</div>
+<div class="st-panel-sub">Customize the look, feel, and behavior of 360.</div>
+</div>
+<!-- Theme -->
+<div class="st-card">
+<div class="st-card-title">Theme</div>
+<div class="theme-swatches" id="themeGrid">
+<div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+<div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+<div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+<div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+</div>
+<div class="st-row" style="margin-top:16px;">
+<div>
+<div class="st-row-label">Dark Mode</div>
+<div class="st-row-sub">Switch between light and dark interface.</div>
+</div>
+<button class="st-toggle" id="darkModeToggle"></button>
+</div>
+<div class="st-row">
+<div>
+<div class="st-row-label">Bold Font</div>
+<div class="st-row-sub">Make text across 360 use a bold weight.</div>
+</div>
+<button aria-label="Toggle bold font" class="st-toggle" id="boldFontToggle"></button>
+</div>
+</div>
+<!-- Cursor -->
+<div class="st-card">
+<div class="st-card-title">Cursor Style</div>
+<div class="cursor-options" id="cursorGrid">
+<div class="cursor-option" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+<div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+<div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+<div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+<div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+<div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+</div>
+<div class="cursor-color-row">
+<label>Cursor color</label>
+<input id="cursorColorPicker" type="color" value="#3b82f6"/>
+<button id="cursorColorReset">Reset</button>
+</div>
+</div>
+<!-- Units -->
+<div class="st-card">
+<div class="st-card-title">Units</div>
+<div class="st-row">
+<div>
+<div class="st-row-label">Temperature Unit</div>
+<div class="st-row-sub">Used across Weather and other 360 features.</div>
+</div>
+<div class="st-row-right">
+<span id="visTempLabel" style="font-size:15px;font-weight:700;">°C</span>
+<button class="st-btn" id="visTempSwitch">Switch</button>
+</div>
+</div>
+</div>
+<!-- Background Image -->
+<div class="st-card">
+<div class="st-card-title">Background Image</div>
+<div class="st-row">
+<div>
+<div class="st-row-label">Upload Image</div>
+<div class="st-row-sub">Set a custom background on the 360 home page.</div>
+</div>
+<label class="st-btn st-upload-btn">
               Choose Background Image
-              <input type="file" id="visBgUpload" accept="image/*" style="display:none;" />
-            </label>
-          </div>
-          <div class="st-row" style="flex-wrap:wrap;gap:8px;">
-            <div style="flex:1;min-width:180px;">
-              <div class="st-row-label">Image URL</div>
-              <div class="st-row-sub">Paste a direct link to any image.</div>
-            </div>
-            <div style="display:flex;gap:6px;flex:2;min-width:200px;">
-              <input class="st-input" type="text" id="visBgUrl" placeholder="https://…" />
-              <button class="st-btn primary" id="visBgUrlApply">Apply</button>
-              <button class="st-btn" id="visBgReset">Reset</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bob -->
-        <div class="st-card">
-          <div class="st-card-title">Bob</div>
-          <div class="bob-toggle-row">
-            <div>
-              <div class="bob-toggle-label">Enable Bob</div>
-              <div class="bob-toggle-sub">Animated stick figure that reacts to your search typing.</div>
-            </div>
-            <button class="st-toggle" id="visBobToggle"></button>
-          </div>
-        </div>
-
-        <!-- 360 Wide -->
-        <div class="st-card" id="settingsWideCard">
-          <div class="st-card-title">360 Wide Mode</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;">
-            <div>
-              <div style="font-size:14px;font-weight:500;">Enable 360 Wide</div>
-              <div style="font-size:12px;color:var(--mut);margin-top:2px;">
+              <input accept="image/*" id="visBgUpload" style="display:none;" type="file"/>
+</label>
+</div>
+<div class="st-row" style="flex-wrap:wrap;gap:8px;">
+<div style="flex:1;min-width:180px;">
+<div class="st-row-label">Image URL</div>
+<div class="st-row-sub">Paste a direct link to any image.</div>
+</div>
+<div style="display:flex;gap:6px;flex:2;min-width:200px;">
+<input class="st-input" id="visBgUrl" placeholder="https://…" type="text"/>
+<button class="st-btn primary" id="visBgUrlApply">Apply</button>
+<button class="st-btn" id="visBgReset">Reset</button>
+</div>
+</div>
+</div>
+<!-- Bob -->
+<div class="st-card">
+<div class="st-card-title">Bob</div>
+<div class="bob-toggle-row">
+<div>
+<div class="bob-toggle-label">Enable Bob</div>
+<div class="bob-toggle-sub">Animated stick figure that reacts to your search typing.</div>
+</div>
+<button class="st-toggle" id="visBobToggle"></button>
+</div>
+</div>
+<!-- 360 Wide -->
+<div class="st-card" id="settingsWideCard">
+<div class="st-card-title">360 Wide Mode</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;">
+<div>
+<div style="font-size:14px;font-weight:500;">Enable 360 Wide</div>
+<div style="font-size:12px;color:var(--mut);margin-top:2px;">
                 Deep glassmorphism across every UI surface. Replaces 360 Gallium when on.
               </div>
-            </div>
-            <button class="st-toggle" id="settingsWideToggle"></button>
-          </div>
-        </div>
-
-        <!-- 360 Gallium -->
-        <div class="st-card" id="settingsGalliumCard">
-          <div class="st-card-title">360 Gallium</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;">
-            <div>
-              <div style="font-size:14px;font-weight:500;">Enable 360 Gallium</div>
-              <div style="font-size:12px;color:var(--mut);margin-top:2px;">
+</div>
+<button class="st-toggle" id="settingsWideToggle"></button>
+</div>
+</div>
+<!-- 360 Gallium -->
+<div class="st-card" id="settingsGalliumCard">
+<div class="st-card-title">360 Gallium</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;">
+<div>
+<div style="font-size:14px;font-weight:500;">Enable 360 Gallium</div>
+<div style="font-size:12px;color:var(--mut);margin-top:2px;">
                 Deep Liquid Glass — refractive and cursor-lit. Replaces 360 Wide when on.
               </div>
-            </div>
-            <button class="st-toggle" id="settingsGalliumToggle"></button>
-          </div>
-        </div>
-
-
-        <!-- Project -->
-        <div class="st-card"><div class="st-card-title">Project</div><div style="font-size:14px;line-height:1.6;color:var(--txt);">360 is a next-generation search engine and digital workspace.</div><div class="project-built-with" aria-label="Built with"><span class="built-with-item"><img src="https://cdn.simpleicons.org/github/888888" alt="GitHub">GitHub</span><span class="built-with-item"><img src="https://cdn.simpleicons.org/supabase/888888" alt="Supabase">Supabase</span><span class="built-with-item"><img src="https://cdn.simpleicons.org/neon/888888" alt="Neon">Neon</span><span class="built-with-item"><img src="https://cdn.simpleicons.org/cloudflare/888888" alt="Cloudflare">Cloudflare</span><span class="built-with-item"><img src="https://cdn.simpleicons.org/spaceship/888888" alt="Spaceship">Spaceship</span><span class="built-with-item"><img src="https://cdn.simpleicons.org/html5/888888" alt="HTML">HTML</span><span class="built-with-item"><img src="https://cdn.simpleicons.org/css/888888" alt="CSS">CSS</span><span class="built-with-item"><img src="https://cdn.simpleicons.org/javascript/888888" alt="JavaScript">JS</span><span class="built-with-item">and 💖 by 360DigitalCo</span></div><div style="color:var(--mut);font-size:12px;margin-top:9px;">360</div><div class="project-meta"><div class="project-meta-row"><span class="project-meta-key">Version</span><span class="project-meta-val">3.6.0</span></div><div class="project-meta-row"><span class="project-meta-key">License</span><span class="project-meta-val"><a href="https://github.com/360DigitalCo/360/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GNU AGPL v3.0</a></span></div><div class="project-meta-row"><span class="project-meta-key">Copyright</span><span class="project-meta-val">© 2026 360DigitalCo</span></div></div></div>
-
-        <!-- Credits -->
-        <div class="st-card"><div class="st-card-title">Credits</div><div class="credits-list">
-          <div class="credit-person"><img class="credit-pfp" src="https://github.com/Zakii360.png?size=72" alt="Zakii360"><div class="credit-info"><div class="credit-role">Lead Developer &amp; Founder</div><a class="credit-name" id="credit-Zakii360" href="https://github.com/Zakii360" target="_blank" rel="noopener noreferrer">Zakii360</a><span class="credit-commits loading" id="commits-Zakii360">Loading commits...</span></div></div><div class="credits-divider"></div>
-          <div class="credit-person"><img class="credit-pfp" src="https://github.com/mingzew2.png?size=72" alt="mingzew2"><div class="credit-info"><div class="credit-role">Lead Developer &amp; Founder</div><a class="credit-name" id="credit-mingzew2" href="https://github.com/mingzew2" target="_blank" rel="noopener noreferrer">mingzew2</a><span class="credit-commits loading" id="commits-mingzew2">Loading commits...</span> <span class="credit-alias">(also known as <a href="https://github.com/MingzeMC" target="_blank" rel="noopener noreferrer">MingzeMC</a>)</span></div></div><div class="credits-divider"></div>
-          <div class="credit-person"><img class="credit-pfp" src="https://github.com/GreatesSoup.png?size=72" alt="GreatesSoup"><div class="credit-info"><div class="credit-role">Analytics Advisor &amp; Feature Designer</div><a class="credit-name" id="credit-GreatesSoup" href="https://github.com/GreatesSoup" target="_blank" rel="noopener noreferrer">GreatesSoup</a><span class="credit-commits loading" id="commits-GreatesSoup">Loading commits...</span></div></div><div class="credits-divider"></div>
-          <div class="credit-person"><img class="credit-pfp" src="https://github.com/UntitledAngel.png?size=72" alt="UntitledAngel"><div class="credit-info"><div class="credit-role">Lead Games Developer</div><a class="credit-name" id="credit-UntitledAngel" href="https://github.com/UntitledAngel" target="_blank" rel="noopener noreferrer">UntitledAngel</a><span class="credit-commits loading" id="commits-UntitledAngel">Loading commits...</span> <span class="credit-alias">(also known as <a href="https://github.com/TheAngelV1" target="_blank" rel="noopener noreferrer">TheAngelV1</a>)</span></div></div>
-        </div></div>
-
-        <!-- Repository -->
-        <div class="st-card"><div class="st-card-title">Repository</div><div class="project-meta" style="margin-top:0;"><div class="project-meta-row"><span class="project-meta-key">GitHub</span><span class="project-meta-val"><a href="https://github.com/360DigitalCo/360" target="_blank" rel="noopener noreferrer">360DigitalCo/360</a></span></div><div class="project-meta-row"><span class="project-meta-key">Stars</span><span class="project-meta-val" id="repo-star-count">—</span></div><div class="project-meta-row"><span class="project-meta-key">Forks</span><span class="project-meta-val" id="repo-fork-count">—</span></div><div class="project-meta-row"><span class="project-meta-key">Open Issues</span><span class="project-meta-val" id="repo-issue-count">—</span></div><div class="project-meta-row"><span class="project-meta-key">Total Commits</span><span class="project-meta-val" id="repo-commit-count">—</span></div></div></div>
-
-        <!-- About -->
-        <div class="st-card">
-          <div class="st-card-title">About 360</div>
-          <div style="font-size:14px;line-height:1.6;color:var(--txt);">
+</div>
+<button class="st-toggle" id="settingsGalliumToggle"></button>
+</div>
+</div>
+<!-- Project -->
+<div class="st-card"><div class="st-card-title">Project</div><div style="font-size:14px;line-height:1.6;color:var(--txt);">360 is a next-generation search engine and digital workspace.</div><div aria-label="Built with" class="project-built-with"><span class="built-with-item"><img alt="GitHub" src="https://cdn.simpleicons.org/github/888888"/>GitHub</span><span class="built-with-item"><img alt="Supabase" src="https://cdn.simpleicons.org/supabase/888888"/>Supabase</span><span class="built-with-item"><img alt="Neon" src="https://cdn.simpleicons.org/neon/888888"/>Neon</span><span class="built-with-item"><img alt="Cloudflare" src="https://cdn.simpleicons.org/cloudflare/888888"/>Cloudflare</span><span class="built-with-item"><img alt="Spaceship" src="https://cdn.simpleicons.org/spaceship/888888"/>Spaceship</span><span class="built-with-item"><img alt="HTML" src="https://cdn.simpleicons.org/html5/888888"/>HTML</span><span class="built-with-item"><img alt="CSS" src="https://cdn.simpleicons.org/css/888888"/>CSS</span><span class="built-with-item"><img alt="JavaScript" src="https://cdn.simpleicons.org/javascript/888888"/>JS</span><span class="built-with-item">and 💖 by 360DigitalCo</span></div><div style="color:var(--mut);font-size:12px;margin-top:9px;">360</div><div class="project-meta"><div class="project-meta-row"><span class="project-meta-key">Version</span><span class="project-meta-val">3.6.0</span></div><div class="project-meta-row"><span class="project-meta-key">License</span><span class="project-meta-val"><a href="https://github.com/360DigitalCo/360/blob/main/LICENSE" rel="noopener noreferrer" target="_blank">GNU AGPL v3.0</a></span></div><div class="project-meta-row"><span class="project-meta-key">Copyright</span><span class="project-meta-val">© 2026 360DigitalCo</span></div></div></div>
+<!-- Credits -->
+<div class="st-card"><div class="st-card-title">Credits</div><div class="credits-list">
+<div class="credit-person"><img alt="Zakii360" class="credit-pfp" src="https://github.com/Zakii360.png?size=72"/><div class="credit-info"><div class="credit-role">Lead Developer &amp; Founder</div><a class="credit-name" href="https://github.com/Zakii360" id="credit-Zakii360" rel="noopener noreferrer" target="_blank">Zakii360</a><span class="credit-commits loading" id="commits-Zakii360">Loading commits...</span></div></div><div class="credits-divider"></div>
+<div class="credit-person"><img alt="mingzew2" class="credit-pfp" src="https://github.com/mingzew2.png?size=72"/><div class="credit-info"><div class="credit-role">Lead Developer &amp; Founder</div><a class="credit-name" href="https://github.com/mingzew2" id="credit-mingzew2" rel="noopener noreferrer" target="_blank">mingzew2</a><span class="credit-commits loading" id="commits-mingzew2">Loading commits...</span> <span class="credit-alias">(also known as <a href="https://github.com/MingzeMC" rel="noopener noreferrer" target="_blank">MingzeMC</a>)</span></div></div><div class="credits-divider"></div>
+<div class="credit-person"><img alt="GreatesSoup" class="credit-pfp" src="https://github.com/GreatesSoup.png?size=72"/><div class="credit-info"><div class="credit-role">Analytics Advisor &amp; Feature Designer</div><a class="credit-name" href="https://github.com/GreatesSoup" id="credit-GreatesSoup" rel="noopener noreferrer" target="_blank">GreatesSoup</a><span class="credit-commits loading" id="commits-GreatesSoup">Loading commits...</span></div></div><div class="credits-divider"></div>
+<div class="credit-person"><img alt="UntitledAngel" class="credit-pfp" src="https://github.com/UntitledAngel.png?size=72"/><div class="credit-info"><div class="credit-role">Lead Games Developer</div><a class="credit-name" href="https://github.com/UntitledAngel" id="credit-UntitledAngel" rel="noopener noreferrer" target="_blank">UntitledAngel</a><span class="credit-commits loading" id="commits-UntitledAngel">Loading commits...</span> <span class="credit-alias">(also known as <a href="https://github.com/TheAngelV1" rel="noopener noreferrer" target="_blank">TheAngelV1</a>)</span></div></div>
+</div></div>
+<!-- Repository -->
+<div class="st-card"><div class="st-card-title">Repository</div><div class="project-meta" style="margin-top:0;"><div class="project-meta-row"><span class="project-meta-key">GitHub</span><span class="project-meta-val"><a href="https://github.com/360DigitalCo/360" rel="noopener noreferrer" target="_blank">360DigitalCo/360</a></span></div><div class="project-meta-row"><span class="project-meta-key">Stars</span><span class="project-meta-val" id="repo-star-count">—</span></div><div class="project-meta-row"><span class="project-meta-key">Forks</span><span class="project-meta-val" id="repo-fork-count">—</span></div><div class="project-meta-row"><span class="project-meta-key">Open Issues</span><span class="project-meta-val" id="repo-issue-count">—</span></div><div class="project-meta-row"><span class="project-meta-key">Total Commits</span><span class="project-meta-val" id="repo-commit-count">—</span></div></div></div>
+<!-- About -->
+<div class="st-card">
+<div class="st-card-title">About 360</div>
+<div style="font-size:14px;line-height:1.6;color:var(--txt);">
             360 is a next-generation search engine and digital workspace — search, chat, translate, weather, stocks, and AI all in one place.
-            <br><br>
-            <span style="color:var(--mut);font-size:12px;">Built by 360 Digital, Co.</span>
-          </div>
-        </div>
-        </div>
-      </div>
-
-      <!-- ══════════════════════════════
+            <br/><br/>
+<span style="color:var(--mut);font-size:12px;">Built by 360 Digital, Co.</span>
+</div>
+</div>
+</div>
+</main></div>
+<!-- ══════════════════════════════
            SYSTEM INFO
       ══════════════════════════════ -->
-      <div class="st-panel" id="panel-sys">
-        <div class="st-panel-header">
-          <div class="st-panel-title">System Info</div>
-          <div class="st-panel-sub">Hardware and browser details for this device.</div>
-        </div>
+<div class="st-panel" id="panel-sys">
+<div class="st-panel-header">
+<div class="st-panel-title">System Info</div>
+<div class="st-panel-sub">Hardware and browser details for this device.</div>
+</div>
+<div class="st-card">
+<div class="st-card-title">Hardware Overview</div>
+<div class="sys-grid">
+<div class="sys-stat">
+<div class="sys-stat-label">CPU Cores</div>
+<div class="sys-stat-val" id="sCpu">—</div>
+<div class="sys-stat-sub">Logical processors</div>
+</div>
+<div class="sys-stat">
+<div class="sys-stat-label">Device RAM</div>
+<div class="sys-stat-val" id="sRam">—</div>
+<div class="sys-stat-sub">Approximate memory</div>
+</div>
+<div class="sys-stat">
+<div class="sys-stat-label">Battery</div>
+<div class="sys-stat-val" id="sBat">—</div>
+<div class="sys-stat-sub" id="sBatSub">Checking…</div>
+<div class="sys-bar-track"><div class="sys-bar-fill" id="sBatBar" style="width:0%"></div></div>
+</div>
+<div class="sys-stat">
+<div class="sys-stat-label">GPU</div>
+<div class="sys-stat-val" id="sGpu" style="font-size:13px;font-weight:700;word-break:break-word;">—</div>
+<div class="sys-stat-sub" id="sGpuSub"></div>
+</div>
+<div class="sys-stat">
+<div class="sys-stat-label">Origin Storage</div>
+<div class="sys-stat-val" id="sStorage">—</div>
+<div class="sys-stat-sub" id="sStorageSub">Browser quota</div>
+<div class="sys-bar-track"><div class="sys-bar-fill" id="sStorageBar" style="width:0%"></div></div>
+</div>
+<div class="sys-stat">
+<div class="sys-stat-label">Network</div>
+<div class="sys-stat-val" id="sNet">—</div>
+<div class="sys-stat-sub" id="sNetSub">Connection type</div>
+</div>
+</div>
+</div>
+<div class="st-card">
+<div class="st-card-title">Browser &amp; Platform</div>
+<div id="sysBrowserRows"></div>
+</div>
+<div class="st-card">
+<div class="st-card-title">Display</div>
+<div id="sysScreenRows"></div>
+</div>
+</div>
 
-        <div class="st-card">
-          <div class="st-card-title">Hardware Overview</div>
-          <div class="sys-grid">
-            <div class="sys-stat">
-              <div class="sys-stat-label">CPU Cores</div>
-              <div class="sys-stat-val" id="sCpu">—</div>
-              <div class="sys-stat-sub">Logical processors</div>
-            </div>
-            <div class="sys-stat">
-              <div class="sys-stat-label">Device RAM</div>
-              <div class="sys-stat-val" id="sRam">—</div>
-              <div class="sys-stat-sub">Approximate memory</div>
-            </div>
-            <div class="sys-stat">
-              <div class="sys-stat-label">Battery</div>
-              <div class="sys-stat-val" id="sBat">—</div>
-              <div class="sys-stat-sub" id="sBatSub">Checking…</div>
-              <div class="sys-bar-track"><div class="sys-bar-fill" id="sBatBar" style="width:0%"></div></div>
-            </div>
-            <div class="sys-stat">
-              <div class="sys-stat-label">GPU</div>
-              <div class="sys-stat-val" id="sGpu" style="font-size:13px;font-weight:700;word-break:break-word;">—</div>
-              <div class="sys-stat-sub" id="sGpuSub"></div>
-            </div>
-            <div class="sys-stat">
-              <div class="sys-stat-label">Origin Storage</div>
-              <div class="sys-stat-val" id="sStorage">—</div>
-              <div class="sys-stat-sub" id="sStorageSub">Browser quota</div>
-              <div class="sys-bar-track"><div class="sys-bar-fill" id="sStorageBar" style="width:0%"></div></div>
-            </div>
-            <div class="sys-stat">
-              <div class="sys-stat-label">Network</div>
-              <div class="sys-stat-val" id="sNet">—</div>
-              <div class="sys-stat-sub" id="sNetSub">Connection type</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="st-card">
-          <div class="st-card-title">Browser & Platform</div>
-          <div id="sysBrowserRows"></div>
-        </div>
-
-        <div class="st-card">
-          <div class="st-card-title">Display</div>
-          <div id="sysScreenRows"></div>
-        </div>
-      </div>
-
-    </main>
-  </div><!-- /page-wrap -->
-
-  <script>window.SKIP_AUTH_CHIP = true;</script>
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-
-  <script>
+<!-- /page-wrap -->
+<script>window.SKIP_AUTH_CHIP = true;</script>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script>
   // ────────────────────────────────────────
   // GITHUB STARS
   // ────────────────────────────────────────

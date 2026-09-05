@@ -1,31 +1,31 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
-  <script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+<script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-89NN1P6CEV');
   </script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 — Account</title>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="360" />
-  <link rel="icon" type="image/png" href="favicon-32x32.png" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 — Account</title>
+<link href="manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="360" name="apple-mobile-web-app-title"/>
+<link href="favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="apple-touch-icon.png" rel="apple-touch-icon"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     body {
       min-height: 100vh;
       display: flex;
@@ -323,119 +323,102 @@
     body.dark .av-preview-name { color:var(--txtd); }
 
   </style>
-</head>
+<meta content="360  Account — part of the 360 web platform." name="description"/><meta content="noindex, nofollow" name="robots"/><meta content="website" property="og:type"/><meta content="360 — Account" property="og:title"/><meta content="360  Account — part of the 360 web platform." property="og:description"/><meta content="https://360-search.com/account.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 — Account" name="twitter:title"/><meta content="360  Account — part of the 360 web platform." name="twitter:description"/><link href="https://360-search.com/account.html" rel="canonical"/></head>
 <body>
-
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <div class="auth-top-right">
-    <button id="signInBtn"  class="auth-btn">Sign In</button>
-    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-
-  <button id="installBtn" class="install-banner" style="display:none;">Install 360</button>
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
-
-  <aside class="sidebar" id="sidebar"><span id="sidebar-slot" data-extra="[{&quot;label&quot;: &quot;Accounts&quot;, &quot;href&quot;: &quot;/accounts&quot;}]"></span></aside>
-
-  <div class="overlay" id="overlay"></div>
-
-  <!-- SETTINGS PANEL — includes Bob toggle -->
-  <div class="settings-panel" id="settingsPanel">
-    <h3>Appearance</h3>
-    <div class="settings-label">Theme</div>
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-    </div>
-
-    <div class="settings-label" style="margin-top:20px;">Mode</div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:14px;">Dark mode</span>
-      <input type="checkbox" id="darkToggle" />
-    </label>
-
-    <h3 style="margin-top:20px;">Cursor</h3>
-    <div class="settings-label">Style</div>
-    <div class="cursor-options">
-      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-    </div>
-    <div class="cursor-color-row">
-      <label>Cursor color</label>
-      <input type="color" id="cursorColorPicker" value="#3b82f6" />
-      <button id="cursorColorReset">Reset</button>
-    </div>
-
-    <div class="temp-unit-box" style="margin-top:20px;">
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<button class="install-banner" id="installBtn" style="display:none;">Install 360</button>
+<button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+<aside class="sidebar" id="sidebar"><span data-extra='[{"label": "Accounts", "href": "/accounts"}]' id="sidebar-slot"></span></aside>
+<div class="overlay" id="overlay"></div>
+<!-- SETTINGS PANEL — includes Bob toggle -->
+<div class="settings-panel" id="settingsPanel">
+<h3>Appearance</h3>
+<div class="settings-label">Theme</div>
+<div class="theme-swatches">
+<div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+<div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+<div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+<div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+</div>
+<div class="settings-label" style="margin-top:20px;">Mode</div>
+<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+<span style="font-size:14px;">Dark mode</span>
+<input id="darkToggle" type="checkbox"/>
+</label>
+<h3 style="margin-top:20px;">Cursor</h3>
+<div class="settings-label">Style</div>
+<div class="cursor-options">
+<div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+<div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+<div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+<div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+<div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+<div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+</div>
+<div class="cursor-color-row">
+<label>Cursor color</label>
+<input id="cursorColorPicker" type="color" value="#3b82f6"/>
+<button id="cursorColorReset">Reset</button>
+</div>
+<div class="temp-unit-box" style="margin-top:20px;">
       Temp Unit: <span id="tempUnitLabel">°C</span>
-      <button id="tempUnitBtn">Switch</button>
-    </div>
-
-    <div class="settings-box" style="margin-top:20px;">
-      <div class="settings-label">Background Image</div>
-      <input type="file" id="bgUpload" accept="image/*" class="settings-input" />
-      <input type="text" id="bgUrlInput" placeholder="Paste image URL…" class="settings-input" />
-      <button id="bgUrlBtn" class="settings-btn">Apply URL</button>
-      <button id="bgResetBtn" class="settings-btn">Reset</button>
-    </div>
-
-    <!-- ── BOB SECTION in Settings ── -->
-    <h3 style="margin-top:20px;">Bob</h3>
-    <div class="settings-bob-section">
-      <div class="bob-toggle-row" id="settingsBobToggleRow">
-        <div>
-          <div class="bob-toggle-label">Enable Bob</div>
-          <div class="bob-toggle-sub">Stick figure reacts to your search typing</div>
-        </div>
-        <div class="bob-track" id="settingsBobTrack"></div>
-      </div>
-    </div>
-
-    <h3 style="margin-top:25px;">Legal</h3>
-    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
-    <a href="/tos" class="legal-link">📜 Terms of Service</a>
-
-    <h3 style="margin-top:25px;">About</h3>
-    <details class="about-dropdown">
-      <summary>ℹ️ What is 360?</summary>
-      <p>360 is a next-generation search engine and digital workspace. Search, chat, translate, check weather, monitor stocks, and interact with AI — all in one unified interface. Built by 360 Digital, Co.</p>
-    </details>
-  </div>
-
-  <!-- ACCOUNT CARD -->
-  <div class="ac-wrap">
-    <div class="ac-card" id="acCard">
-      <div class="ac-logo">
-        <div class="ac-logo-mark"></div>
-        <span class="ac-logo-text">360</span>
-      </div>
-      <div id="acContent"></div>
-    </div>
-  </div>
-
-  <script>window.SKIP_AUTH_CHIP = true;</script>
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-
-
-  <script>
+<button id="tempUnitBtn">Switch</button>
+</div>
+<div class="settings-box" style="margin-top:20px;">
+<div class="settings-label">Background Image</div>
+<input accept="image/*" class="settings-input" id="bgUpload" type="file"/>
+<input class="settings-input" id="bgUrlInput" placeholder="Paste image URL…" type="text"/>
+<button class="settings-btn" id="bgUrlBtn">Apply URL</button>
+<button class="settings-btn" id="bgResetBtn">Reset</button>
+</div>
+<!-- ── BOB SECTION in Settings ── -->
+<h3 style="margin-top:20px;">Bob</h3>
+<div class="settings-bob-section">
+<div class="bob-toggle-row" id="settingsBobToggleRow">
+<div>
+<div class="bob-toggle-label">Enable Bob</div>
+<div class="bob-toggle-sub">Stick figure reacts to your search typing</div>
+</div>
+<div class="bob-track" id="settingsBobTrack"></div>
+</div>
+</div>
+<h3 style="margin-top:25px;">Legal</h3>
+<a class="legal-link" href="/privacypolicy">🔒 Privacy Policy</a>
+<a class="legal-link" href="/tos">📜 Terms of Service</a>
+<h3 style="margin-top:25px;">About</h3>
+<details class="about-dropdown">
+<summary>ℹ️ What is 360?</summary>
+<p>360 is a next-generation search engine and digital workspace. Search, chat, translate, check weather, monitor stocks, and interact with AI — all in one unified interface. Built by 360 Digital, Co.</p>
+</details>
+</div>
+<!-- ACCOUNT CARD -->
+<div class="ac-wrap">
+<div class="ac-card" id="acCard">
+<div class="ac-logo">
+<div class="ac-logo-mark"></div>
+<span class="ac-logo-text">360</span>
+</div>
+<div id="acContent"></div>
+</div>
+</div>
+<script>window.SKIP_AUTH_CHIP = true;</script>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script>
     const sb = supabaseClient;
 
     const qs         = location.search.slice(1);

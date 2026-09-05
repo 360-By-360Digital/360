@@ -1,403 +1,369 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <script>(function(w,i,g){w[g]=w[g]||[];if(typeof w[g].push=='function')w[g].push(i)})(window,'GTM-NZHQGS65','google_tags_first_party');</script>
 <script>(function(w,d,s,l){w[l]=w[l]||[];(function(){w[l].push(arguments);})('set','developer_id.dYzg1YT',true);w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src='/uw4z/';f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer');</script>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-89NN1P6CEV');</script>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>360 — Chat</title>
-<link rel="icon" type="image/png" href="../favicon-32x32.png"/>
-<link rel="manifest" href="../manifest.json"/>
-<link rel="stylesheet" href="/assets/css/main.css"/>
-<link rel="stylesheet" href="/assets/css/wide.css"/>
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-<link rel="stylesheet" href="/assets/css/cursor.css"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+<title>360 Chat — Online Chat</title>
+<link href="../favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="../manifest.json" rel="manifest"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="/assets/css/chat.css"/>
-</head>
+<link href="/assets/css/chat.css" rel="stylesheet"/>
+<meta content="Use 360 Chat for communication within the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 Chat — Online Chat" property="og:title"/><meta content="Use 360 Chat for communication within the 360 platform." property="og:description"/><meta content="https://360-search.com/chat.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 Chat — Online Chat" name="twitter:title"/><meta content="Use 360 Chat for communication within the 360 platform." name="twitter:description"/><link href="https://360-search.com/chat.html" rel="canonical"/></head>
 <body class="dc-body">
 <div class="cursor-dot"></div><div class="cursor-trail"></div><div class="cursor-crosshair"></div><div class="cursor-blob"></div>
-
 <!-- Platform-wide nav (slides in over the Discord layout) -->
 <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
 <div class="overlay" id="overlay"></div>
-
 <div class="settings-panel" id="settingsPanel">
-  <h3>Appearance</h3>
-  <div class="settings-label">Theme</div>
-  <div class="theme-swatches">
-    <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-    <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-    <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-    <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-    <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-    <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-  </div>
-  <div class="settings-label" style="margin-top:20px;">Mode</div>
-  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-    <span style="font-size:14px;">Dark mode</span>
-    <input type="checkbox" id="darkToggle"/>
-  </label>
-  <h3 style="margin-top:20px;">Cursor</h3>
-  <div class="settings-label">Style</div>
-  <div class="cursor-options">
-    <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-    <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-    <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-    <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-    <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-    <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-  </div>
-  <div class="cursor-color-row">
-    <label>Cursor color</label>
-    <input type="color" id="cursorColorPicker" value="#3b82f6"/>
-    <button id="cursorColorReset">Reset</button>
-  </div>
+<h3>Appearance</h3>
+<div class="settings-label">Theme</div>
+<div class="theme-swatches">
+<div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+<div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+<div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+<div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
 </div>
-
+<div class="settings-label" style="margin-top:20px;">Mode</div>
+<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+<span style="font-size:14px;">Dark mode</span>
+<input id="darkToggle" type="checkbox"/>
+</label>
+<h3 style="margin-top:20px;">Cursor</h3>
+<div class="settings-label">Style</div>
+<div class="cursor-options">
+<div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+<div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+<div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+<div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+<div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+<div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+</div>
+<div class="cursor-color-row">
+<label>Cursor color</label>
+<input id="cursorColorPicker" type="color" value="#3b82f6"/>
+<button id="cursorColorReset">Reset</button>
+</div>
+</div>
 <!-- auth-top-right: kept in DOM so main.js doesn't append chip onto <body> flex row -->
 <div class="auth-top-right">
-  <button id="signInBtn" class="auth-btn">Sign In</button>
-  <button id="signUpBtn" class="auth-btn">Sign Up</button>
-  <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
 </div>
-
 <!-- ═══════════════════════════════════════════════════
      OVERLAYS & PANELS (outside the 3-column layout)
 ═══════════════════════════════════════════════════ -->
-
 <!-- Right-click context menu -->
-<div id="ctx-menu" class="ctx-menu hidden">
-  <div class="ctx-item" id="ctx-reply">↩ Reply</div>
-  <div class="ctx-item" id="ctx-react">😊 Add Reaction</div>
-  <div class="ctx-item" id="ctx-thread">🧵 Open Thread</div>
-  <div class="ctx-item" id="ctx-pin">📌 Pin Message</div>
-  <div class="ctx-item" id="ctx-forward">↪️ Forward Message</div>
-  <div class="ctx-item" id="ctx-copy">📋 Copy Text</div>
-  <div class="ctx-sep"></div>
-  <div class="ctx-item" id="ctx-edit" style="display:none;">✏️ Edit</div>
-  <div class="ctx-item danger" id="ctx-delete" style="display:none;">🗑 Delete</div>
+<div class="ctx-menu hidden" id="ctx-menu">
+<div class="ctx-item" id="ctx-reply">↩ Reply</div>
+<div class="ctx-item" id="ctx-react">😊 Add Reaction</div>
+<div class="ctx-item" id="ctx-thread">🧵 Open Thread</div>
+<div class="ctx-item" id="ctx-pin">📌 Pin Message</div>
+<div class="ctx-item" id="ctx-forward">↪️ Forward Message</div>
+<div class="ctx-item" id="ctx-copy">📋 Copy Text</div>
+<div class="ctx-sep"></div>
+<div class="ctx-item" id="ctx-edit" style="display:none;">✏️ Edit</div>
+<div class="ctx-item danger" id="ctx-delete" style="display:none;">🗑 Delete</div>
 </div>
-
 <!-- Reaction emoji quick-pick -->
-<div id="reaction-picker" class="reaction-picker hidden"></div>
-
+<div class="reaction-picker hidden" id="reaction-picker"></div>
 <!-- Thread panel (fixed, slides from right) -->
-<div id="thread-panel" class="thread-panel hidden">
-  <div class="thread-header">
-    <span>🧵 Thread</span>
-    <button id="thread-close" title="Close">✕</button>
-  </div>
-  <div id="thread-root-msg" class="thread-root-msg"></div>
-  <div id="thread-messages" class="thread-messages"></div>
-  <div class="thread-input-row">
-    <textarea id="thread-input" placeholder="Reply in thread…" rows="1" maxlength="2000"></textarea>
-    <button id="thread-send" title="Send reply">↑</button>
-  </div>
+<div class="thread-panel hidden" id="thread-panel">
+<div class="thread-header">
+<span>🧵 Thread</span>
+<button id="thread-close" title="Close">✕</button>
 </div>
-
+<div class="thread-root-msg" id="thread-root-msg"></div>
+<div class="thread-messages" id="thread-messages"></div>
+<div class="thread-input-row">
+<textarea id="thread-input" maxlength="2000" placeholder="Reply in thread…" rows="1"></textarea>
+<button id="thread-send" title="Send reply">↑</button>
+</div>
+</div>
 <!-- Pins panel -->
-<div id="pins-panel" class="pins-panel hidden">
-  <div class="pins-header">
-    <span>📌 Pinned Messages</span>
-    <button id="pins-close" title="Close">✕</button>
-  </div>
-  <div id="pins-list" class="pins-list"></div>
+<div class="pins-panel hidden" id="pins-panel">
+<div class="pins-header">
+<span>📌 Pinned Messages</span>
+<button id="pins-close" title="Close">✕</button>
 </div>
-
+<div class="pins-list" id="pins-list"></div>
+</div>
 <!-- Members panel -->
-<div id="members-panel" class="members-panel hidden">
-  <div class="members-header">
-    <span>👥 Members</span>
-    <button id="members-close" title="Close">✕</button>
-  </div>
-  <div id="members-list" class="members-list"></div>
+<div class="members-panel hidden" id="members-panel">
+<div class="members-header">
+<span>👥 Members</span>
+<button id="members-close" title="Close">✕</button>
 </div>
-
+<div class="members-list" id="members-list"></div>
+</div>
 <!-- Profile popup -->
-<div id="profile-popup" class="profile-popup hidden">
-  <div class="pp-banner" id="pp-banner"></div>
-  <div class="pp-body">
-    <div class="pp-avatar-wrap"><div class="pp-avatar" id="pp-avatar"></div></div>
-    <div class="pp-name" id="pp-name"></div>
-    <div class="pp-tag" id="pp-tag"></div>
-    <div class="pp-role" id="pp-role"></div>
-    <hr class="pp-divider"/>
-    <div class="pp-email" id="pp-email"></div>
-    <button class="pp-dm-btn" id="pp-dm-btn">💬 Send Message</button>
-  </div>
+<div class="profile-popup hidden" id="profile-popup">
+<div class="pp-banner" id="pp-banner"></div>
+<div class="pp-body">
+<div class="pp-avatar-wrap"><div class="pp-avatar" id="pp-avatar"></div></div>
+<div class="pp-name" id="pp-name"></div>
+<div class="pp-tag" id="pp-tag"></div>
+<div class="pp-role" id="pp-role"></div>
+<hr class="pp-divider"/>
+<div class="pp-email" id="pp-email"></div>
+<button class="pp-dm-btn" id="pp-dm-btn">💬 Send Message</button>
 </div>
-
+</div>
 <!-- Lightbox -->
-<div id="lightbox" class="hidden">
-  <img id="lightbox-img" src="" alt=""/>
-  <button id="lightbox-close" title="Close">✕</button>
+<div class="hidden" id="lightbox">
+<img alt="" id="lightbox-img" src=""/>
+<button id="lightbox-close" title="Close">✕</button>
 </div>
-
 <!-- ── MODALS ──────────────────────────────────────── -->
-
 <!-- Create / Edit Server -->
 <div class="dc-modal-overlay hidden" id="serverModal">
-  <div class="dc-modal">
-    <h2 id="serverModalTitle">Create Server</h2>
-
-    <!-- Icon upload widget — JS also builds this via openServerModal(),
+<div class="dc-modal">
+<h2 id="serverModalTitle">Create Server</h2>
+<!-- Icon upload widget — JS also builds this via openServerModal(),
          but the hidden file input must exist in DOM from the start -->
-    <div id="sm-icon-wrap" style="display:flex;align-items:flex-start;gap:16px;margin-bottom:18px;">
-      <div class="server-icon-preview" id="sm-icon-preview" title="Click to upload icon">
-        <span style="font-size:32px;">🌐</span>
-        <div class="icon-overlay">📷</div>
-      </div>
-      <div>
-        <div style="font-weight:700;font-size:14px;margin-bottom:4px;color:var(--dc-text);">Server Icon</div>
-        <div style="font-size:12px;color:var(--dc-muted);margin-bottom:8px;">Max 1 MB · JPG, PNG, GIF, WebP</div>
-        <input type="file" id="sm-icon-file" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;"/>
-        <label for="sm-icon-file" style="cursor:pointer;font-size:13px;color:var(--a);font-weight:600;padding:6px 12px;border:1.5px solid var(--a);border-radius:7px;">Upload Image</label>
-      </div>
-    </div>
-
-    <div class="dc-field"><label>Server Name</label><input id="sm-name" maxlength="32" placeholder="My Server"/></div>
-    <div class="dc-field"><label>Description</label><input id="sm-desc" maxlength="120" placeholder="What's this server about?"/></div>
-    <div class="dc-field">
-      <label>Passcode <span style="font-weight:400;font-size:11px;">(leave blank for public)</span></label>
-      <input id="sm-pass" type="password" placeholder="Optional passcode"/>
-    </div>
-    <p class="dc-modal-err" id="sm-err"></p>
-    <div class="dc-modal-btns">
-      <label style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--dc-muted);margin-bottom:8px;">
-        <input type="checkbox" id="carlos-toggle" style="accent-color:var(--a);"/> 🤖 Enable Carlos bot
-      </label>
-      <button class="dc-btn-sec" id="sm-cancel">Cancel</button>
-      <button class="dc-btn-pri" id="sm-submit">Create</button>
-    </div>
-  </div>
+<div id="sm-icon-wrap" style="display:flex;align-items:flex-start;gap:16px;margin-bottom:18px;">
+<div class="server-icon-preview" id="sm-icon-preview" title="Click to upload icon">
+<span style="font-size:32px;">🌐</span>
+<div class="icon-overlay">📷</div>
 </div>
-
+<div>
+<div style="font-weight:700;font-size:14px;margin-bottom:4px;color:var(--dc-text);">Server Icon</div>
+<div style="font-size:12px;color:var(--dc-muted);margin-bottom:8px;">Max 1 MB · JPG, PNG, GIF, WebP</div>
+<input accept="image/jpeg,image/png,image/gif,image/webp" id="sm-icon-file" style="display:none;" type="file"/>
+<label for="sm-icon-file" style="cursor:pointer;font-size:13px;color:var(--a);font-weight:600;padding:6px 12px;border:1.5px solid var(--a);border-radius:7px;">Upload Image</label>
+</div>
+</div>
+<div class="dc-field"><label>Server Name</label><input id="sm-name" maxlength="32" placeholder="My Server"/></div>
+<div class="dc-field"><label>Description</label><input id="sm-desc" maxlength="120" placeholder="What's this server about?"/></div>
+<div class="dc-field">
+<label>Passcode <span style="font-weight:400;font-size:11px;">(leave blank for public)</span></label>
+<input id="sm-pass" placeholder="Optional passcode" type="password"/>
+</div>
+<p class="dc-modal-err" id="sm-err"></p>
+<div class="dc-modal-btns">
+<label style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--dc-muted);margin-bottom:8px;">
+<input id="carlos-toggle" style="accent-color:var(--a);" type="checkbox"/> 🤖 Enable Carlos bot
+      </label>
+<button class="dc-btn-sec" id="sm-cancel">Cancel</button>
+<button class="dc-btn-pri" id="sm-submit">Create</button>
+</div>
+</div>
+</div>
 <!-- Join Server (passcode gate fallback modal) -->
 <div class="dc-modal-overlay hidden" id="joinModal">
-  <div class="dc-modal">
-    <h2>Join Server</h2>
-    <p id="jm-desc" style="font-size:13px;color:var(--dc-muted);margin-bottom:14px;"></p>
-    <div class="dc-field" id="jm-pass-wrap">
-      <label>Passcode</label>
-      <input id="jm-pass" type="password"/>
-    </div>
-    <p class="dc-modal-err" id="jm-err"></p>
-    <div class="dc-modal-btns">
-      <button class="dc-btn-sec" id="jm-cancel">Cancel</button>
-      <button class="dc-btn-pri" id="jm-join">Join</button>
-    </div>
-  </div>
+<div class="dc-modal">
+<h2>Join Server</h2>
+<p id="jm-desc" style="font-size:13px;color:var(--dc-muted);margin-bottom:14px;"></p>
+<div class="dc-field" id="jm-pass-wrap">
+<label>Passcode</label>
+<input id="jm-pass" type="password"/>
 </div>
-
+<p class="dc-modal-err" id="jm-err"></p>
+<div class="dc-modal-btns">
+<button class="dc-btn-sec" id="jm-cancel">Cancel</button>
+<button class="dc-btn-pri" id="jm-join">Join</button>
+</div>
+</div>
+</div>
 <!-- New DM -->
 <div class="dc-modal-overlay hidden" id="dmModal">
-  <div class="dc-modal">
-    <h2>New Message</h2>
-    <div class="dc-field">
-      <label>Add people (email or @username)</label>
-      <input id="dm-target" placeholder="someone@example.com or @username" autocomplete="off"/>
-    </div>
-    <div id="dm-recipient-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 0;"></div>
-    <div class="dc-field" id="dm-group-name-field" style="display:none;">
-      <label>Group name (optional)</label>
-      <input id="dm-group-name" placeholder="e.g. Weekend crew" autocomplete="off"/>
-    </div>
-    <p class="dc-modal-err" id="dm-err"></p>
-    <div class="dc-modal-btns">
-      <button class="dc-btn-sec" id="dm-cancel">Cancel</button>
-      <button class="dc-btn-pri" id="dm-start">Start Chat</button>
-    </div>
-  </div>
+<div class="dc-modal">
+<h2>New Message</h2>
+<div class="dc-field">
+<label>Add people (email or @username)</label>
+<input autocomplete="off" id="dm-target" placeholder="someone@example.com or @username"/>
 </div>
-
+<div id="dm-recipient-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 0;"></div>
+<div class="dc-field" id="dm-group-name-field" style="display:none;">
+<label>Group name (optional)</label>
+<input autocomplete="off" id="dm-group-name" placeholder="e.g. Weekend crew"/>
+</div>
+<p class="dc-modal-err" id="dm-err"></p>
+<div class="dc-modal-btns">
+<button class="dc-btn-sec" id="dm-cancel">Cancel</button>
+<button class="dc-btn-pri" id="dm-start">Start Chat</button>
+</div>
+</div>
+</div>
 <!-- Forward message -->
 <div class="dc-modal-overlay hidden" id="forwardModal">
-  <div class="dc-modal">
-    <h2>Forward Message</h2>
-    <div class="dc-field">
-      <label>Search channels & DMs</label>
-      <input id="fwd-search" placeholder="Type to filter…" autocomplete="off"/>
-    </div>
-    <div id="fwd-list" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;margin-top:6px;"></div>
-    <p class="dc-modal-err" id="fwd-err"></p>
-    <div class="dc-modal-btns">
-      <button class="dc-btn-sec" id="fwd-cancel">Cancel</button>
-    </div>
-  </div>
+<div class="dc-modal">
+<h2>Forward Message</h2>
+<div class="dc-field">
+<label>Search channels &amp; DMs</label>
+<input autocomplete="off" id="fwd-search" placeholder="Type to filter…"/>
 </div>
-
+<div id="fwd-list" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;margin-top:6px;"></div>
+<p class="dc-modal-err" id="fwd-err"></p>
+<div class="dc-modal-btns">
+<button class="dc-btn-sec" id="fwd-cancel">Cancel</button>
+</div>
+</div>
+</div>
 <!-- Add Channel -->
 <div class="dc-modal-overlay hidden" id="channelModal">
-  <div class="dc-modal">
-    <h2>Add Channel</h2>
-    <div class="dc-field"><label>Channel Name</label><input id="ch-name" placeholder="general" maxlength="32"/></div>
-    <div class="dc-field"><label>Category</label><input id="ch-cat" placeholder="TEXT CHANNELS" maxlength="32"/></div>
-    <div class="dc-field">
-      <label>Topic <span style="font-weight:400;font-size:11px;">(optional)</span></label>
-      <input id="ch-topic" placeholder="What's this channel for?" maxlength="120"/>
-    </div>
-    <div class="dc-field">
-      <label style="display:flex;align-items:center;gap:8px;font-weight:400;">
-        <input type="checkbox" id="ch-restricted" style="width:auto;" /> Restrict posting to specific members
-      </label>
-    </div>
-    <p class="dc-modal-err" id="ch-err"></p>
-    <div class="dc-modal-btns">
-      <button class="dc-btn-sec" id="ch-cancel">Cancel</button>
-      <button class="dc-btn-pri" id="ch-create">Create Channel</button>
-    </div>
-  </div>
+<div class="dc-modal">
+<h2>Add Channel</h2>
+<div class="dc-field"><label>Channel Name</label><input id="ch-name" maxlength="32" placeholder="general"/></div>
+<div class="dc-field"><label>Category</label><input id="ch-cat" maxlength="32" placeholder="TEXT CHANNELS"/></div>
+<div class="dc-field">
+<label>Topic <span style="font-weight:400;font-size:11px;">(optional)</span></label>
+<input id="ch-topic" maxlength="120" placeholder="What's this channel for?"/>
 </div>
-
+<div class="dc-field">
+<label style="display:flex;align-items:center;gap:8px;font-weight:400;">
+<input id="ch-restricted" style="width:auto;" type="checkbox"/> Restrict posting to specific members
+      </label>
+</div>
+<p class="dc-modal-err" id="ch-err"></p>
+<div class="dc-modal-btns">
+<button class="dc-btn-sec" id="ch-cancel">Cancel</button>
+<button class="dc-btn-pri" id="ch-create">Create Channel</button>
+</div>
+</div>
+</div>
 <!-- ═══════════════════════════════════════════════════
      3-PANEL DISCORD LAYOUT
 ═══════════════════════════════════════════════════ -->
 <div class="dc-root">
-
-  <!-- 1 · Server rail (leftmost, narrow) -->
-  <div class="dc-rail" id="dcRail">
-    <button class="sidebar-toggle" id="sidebarToggle" title="Menu">☰</button>
-    <div class="rail-divider"></div>
-    <!-- Server icon buttons injected here by JS -->
-    <div id="rail-servers"></div>
-    <button class="rail-add-btn" id="railAddServer" title="Create or browse servers">＋</button>
-    <div class="rail-divider"></div>
-    <button class="rail-dm-btn" id="railDMs" title="Direct Messages">💬</button>
-    <div class="rail-spacer"></div>
-    <div class="rail-user" id="railUser" title="Your profile"></div>
-  </div>
-
-  <!-- 2 · Channel sidebar -->
-  <div class="dc-sidebar" id="dcSidebar">
-    <div class="dc-sidebar-header" id="sidebarHeader">
-      <span id="sb-server-name">360 Chat</span>
-      <button id="sb-server-menu" title="Server options">⌄</button>
-    </div>
-    <div class="dc-sidebar-body" id="sidebarBody"></div>
-    <div class="dc-sidebar-footer">
-      <div class="dc-user-chip" id="dcUserChip">
-        <div class="dc-user-avatar" id="dcUserAv"></div>
-        <div class="dc-user-info">
-          <div class="dc-user-name" id="dcUserName">Not signed in</div>
-          <div class="dc-user-status">● Online</div>
-        </div>
-        <button class="dc-settings-btn" onclick="window.location.href='/account'" title="Account settings">⚙</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3 · Main chat -->
-  <div class="dc-main" id="dcMain">
-
-    <!-- Header -->
-    <div class="dc-chat-header" id="dcChatHeader">
-      <button class="dc-mobile-back" id="dcMobileBack" title="Back">←</button>
-      <span class="dc-ch-icon" id="hdrIcon">#</span>
-      <div class="dc-ch-info">
-        <span class="dc-ch-name" id="hdrName">general</span>
-        <span class="dc-ch-topic" id="hdrTopic"></span>
-      </div>
-      <div class="dc-header-actions">
-        <button class="dc-hdr-btn hidden" id="btnChanPerms" title="Manage who can post">🔒</button>
-        <button class="dc-hdr-btn" id="btnPins" title="Pinned messages">📌</button>
-        <button class="dc-hdr-btn" id="btnMembers" title="Members">👥</button>
-        <button class="dc-hdr-btn" id="notif-btn" title="Toggle push notifications">🔔</button>
-        <button class="dc-hdr-btn" id="dnd-toggle" title="Do Not Disturb">🔕</button>
-        <!-- Online pill: click opens online users panel -->
-        <span class="dc-online-pill" id="onlinePill" title="See who's online">
-          <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0;"></span>
-          <span id="onlineCount">0</span>
-        </span>
-      </div>
-    </div>
-
-    <!-- Messages -->
-    <div id="dc-messages" class="dc-messages"></div>
-
-    <!-- Typing indicator -->
-    <div id="dc-typing" class="dc-typing"></div>
-
-    <!-- Reply bar -->
-    <div id="dc-reply-bar" class="dc-reply-bar hidden">
-      <span>↩ Replying to <strong id="reply-author"></strong>: <em id="reply-preview"></em></span>
-      <button id="reply-cancel-btn" title="Cancel reply">✕</button>
-    </div>
-
-    <!-- File upload preview -->
-    <div id="dc-upload-preview" class="dc-upload-preview hidden">
-      <span id="up-icon">📎</span>
-      <span id="up-name"></span>
-      <button id="up-cancel" title="Remove file">✕</button>
-    </div>
-    <div class="dc-upload-bar hidden" id="dc-upload-bar">
-      <div id="dc-upload-fill" class="dc-upload-fill"></div>
-    </div>
-
-    <!-- Message input -->
-    <div class="dc-input-area">
-      <button class="dc-input-btn" id="attachBtn" title="Attach file">＋</button>
-      <input type="file" id="fileInput" style="display:none;"/>
-      <div class="dc-input-box">
-        <!-- Slash command suggestions (injected above textarea by JS) -->
-        <!-- Mention popup -->
-        <div id="dc-mention-popup" class="dc-mention-popup"></div>
-        <textarea id="msgInput" rows="1" placeholder="Message #general…" maxlength="4000"></textarea>
-      </div>
-      <button class="dc-input-btn" id="emojiBtn" title="Emoji">😊</button>
-      <button class="dc-input-btn" id="search-btn" title="Search messages" onclick="openSearchPanel()">🔍</button>
-      <button id="voice-note-btn" title="Voice note">🎤</button>
-      <button class="dc-input-btn" id="grammar-btn" title="Grammar correction: ON" onclick="toggleGrammar()">✏️</button>
-      <button class="dc-input-btn" id="gif-btn" title="GIF" onclick="toggleGifPicker()">GIF</button>
-      <button class="dc-input-btn" id="poll-btn" title="Create Poll" onclick="openPollModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
-      <div class="dc-emoji-picker hidden" id="dcEmojiPicker"></div>
-      <button class="dc-send-btn" id="sendBtn" title="Send (Enter)">↑</button>
-    </div>
-
-    <!-- Input footer: markdown hints + translate -->
-    <div class="dc-input-footer">
-      <span>**bold** · *italic* · `code` · @mention · /commands · Enter to send · Shift+Enter for newline</span>
-      <div style="display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0;">
-        <span style="font-size:11px;opacity:.5;">Translate:</span>
-        <select id="translateLang" style="font-size:11px;padding:2px 6px;border-radius:6px;border:1px solid var(--br);background:transparent;color:inherit;font-family:inherit;">
-          <option value="">Off</option>
-          <option value="en">🇬🇧 EN</option>
-          <option value="es">🇪🇸 ES</option>
-          <option value="fr">🇫🇷 FR</option>
-          <option value="de">🇩🇪 DE</option>
-          <option value="ja">🇯🇵 JA</option>
-          <option value="ko">🇰🇷 KO</option>
-          <option value="zh">🇨🇳 ZH</option>
-          <option value="ar">🇸🇦 AR</option>
-          <option value="pt">🇧🇷 PT</option>
-          <option value="ru">🇷🇺 RU</option>
-          <option value="hi">🇮🇳 HI</option>
-          <option value="tr">🇹🇷 TR</option>
-        </select>
-      </div>
-    </div>
-
-  </div><!-- /.dc-main -->
+<!-- 1 · Server rail (leftmost, narrow) -->
+<div class="dc-rail" id="dcRail">
+<button class="sidebar-toggle" id="sidebarToggle" title="Menu">☰</button>
+<div class="rail-divider"></div>
+<!-- Server icon buttons injected here by JS -->
+<div id="rail-servers"></div>
+<button class="rail-add-btn" id="railAddServer" title="Create or browse servers">＋</button>
+<div class="rail-divider"></div>
+<button class="rail-dm-btn" id="railDMs" title="Direct Messages">💬</button>
+<div class="rail-spacer"></div>
+<div class="rail-user" id="railUser" title="Your profile"></div>
+</div>
+<!-- 2 · Channel sidebar -->
+<div class="dc-sidebar" id="dcSidebar">
+<div class="dc-sidebar-header" id="sidebarHeader">
+<span id="sb-server-name">360 Chat</span>
+<button id="sb-server-menu" title="Server options">⌄</button>
+</div>
+<div class="dc-sidebar-body" id="sidebarBody"></div>
+<div class="dc-sidebar-footer">
+<div class="dc-user-chip" id="dcUserChip">
+<div class="dc-user-avatar" id="dcUserAv"></div>
+<div class="dc-user-info">
+<div class="dc-user-name" id="dcUserName">Not signed in</div>
+<div class="dc-user-status">● Online</div>
+</div>
+<button class="dc-settings-btn" onclick="window.location.href='/account'" title="Account settings">⚙</button>
+</div>
+</div>
+</div>
+<!-- 3 · Main chat -->
+<div class="dc-main" id="dcMain">
+<!-- Header -->
+<div class="dc-chat-header" id="dcChatHeader">
+<button class="dc-mobile-back" id="dcMobileBack" title="Back">←</button>
+<span class="dc-ch-icon" id="hdrIcon">#</span>
+<div class="dc-ch-info">
+<span class="dc-ch-name" id="hdrName">general</span>
+<span class="dc-ch-topic" id="hdrTopic"></span>
+</div>
+<div class="dc-header-actions">
+<button class="dc-hdr-btn hidden" id="btnChanPerms" title="Manage who can post">🔒</button>
+<button class="dc-hdr-btn" id="btnPins" title="Pinned messages">📌</button>
+<button class="dc-hdr-btn" id="btnMembers" title="Members">👥</button>
+<button class="dc-hdr-btn" id="notif-btn" title="Toggle push notifications">🔔</button>
+<button class="dc-hdr-btn" id="dnd-toggle" title="Do Not Disturb">🔕</button>
+<!-- Online pill: click opens online users panel -->
+<span class="dc-online-pill" id="onlinePill" title="See who's online">
+<span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0;"></span>
+<span id="onlineCount">0</span>
+</span>
+</div>
+</div>
+<!-- Messages -->
+<div class="dc-messages" id="dc-messages"></div>
+<!-- Typing indicator -->
+<div class="dc-typing" id="dc-typing"></div>
+<!-- Reply bar -->
+<div class="dc-reply-bar hidden" id="dc-reply-bar">
+<span>↩ Replying to <strong id="reply-author"></strong>: <em id="reply-preview"></em></span>
+<button id="reply-cancel-btn" title="Cancel reply">✕</button>
+</div>
+<!-- File upload preview -->
+<div class="dc-upload-preview hidden" id="dc-upload-preview">
+<span id="up-icon">📎</span>
+<span id="up-name"></span>
+<button id="up-cancel" title="Remove file">✕</button>
+</div>
+<div class="dc-upload-bar hidden" id="dc-upload-bar">
+<div class="dc-upload-fill" id="dc-upload-fill"></div>
+</div>
+<!-- Message input -->
+<div class="dc-input-area">
+<button class="dc-input-btn" id="attachBtn" title="Attach file">＋</button>
+<input id="fileInput" style="display:none;" type="file"/>
+<div class="dc-input-box">
+<!-- Slash command suggestions (injected above textarea by JS) -->
+<!-- Mention popup -->
+<div class="dc-mention-popup" id="dc-mention-popup"></div>
+<textarea id="msgInput" maxlength="4000" placeholder="Message #general…" rows="1"></textarea>
+</div>
+<button class="dc-input-btn" id="emojiBtn" title="Emoji">😊</button>
+<button class="dc-input-btn" id="search-btn" onclick="openSearchPanel()" title="Search messages">🔍</button>
+<button id="voice-note-btn" title="Voice note">🎤</button>
+<button class="dc-input-btn" id="grammar-btn" onclick="toggleGrammar()" title="Grammar correction: ON">✏️</button>
+<button class="dc-input-btn" id="gif-btn" onclick="toggleGifPicker()" title="GIF">GIF</button>
+<button class="dc-input-btn" id="poll-btn" onclick="openPollModal()" title="Create Poll"><svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="14"><line x1="18" x2="18" y1="20" y2="10"></line><line x1="12" x2="12" y1="20" y2="4"></line><line x1="6" x2="6" y1="20" y2="14"></line></svg></button>
+<div class="dc-emoji-picker hidden" id="dcEmojiPicker"></div>
+<button class="dc-send-btn" id="sendBtn" title="Send (Enter)">↑</button>
+</div>
+<!-- Input footer: markdown hints + translate -->
+<div class="dc-input-footer">
+<span>**bold** · *italic* · `code` · @mention · /commands · Enter to send · Shift+Enter for newline</span>
+<div style="display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0;">
+<span style="font-size:11px;opacity:.5;">Translate:</span>
+<select id="translateLang" style="font-size:11px;padding:2px 6px;border-radius:6px;border:1px solid var(--br);background:transparent;color:inherit;font-family:inherit;">
+<option value="">Off</option>
+<option value="en">🇬🇧 EN</option>
+<option value="es">🇪🇸 ES</option>
+<option value="fr">🇫🇷 FR</option>
+<option value="de">🇩🇪 DE</option>
+<option value="ja">🇯🇵 JA</option>
+<option value="ko">🇰🇷 KO</option>
+<option value="zh">🇨🇳 ZH</option>
+<option value="ar">🇸🇦 AR</option>
+<option value="pt">🇧🇷 PT</option>
+<option value="ru">🇷🇺 RU</option>
+<option value="hi">🇮🇳 HI</option>
+<option value="tr">🇹🇷 TR</option>
+</select>
+</div>
+</div>
+</div><!-- /.dc-main -->
 </div><!-- /.dc-root -->
-
-<audio id="clickSound" src="../click-sound.mp3" preload="auto"></audio>
-<audio id="notifSound" src="../click-sound.mp3" preload="auto"></audio>
-
+<audio id="clickSound" preload="auto" src="../click-sound.mp3"></audio>
+<audio id="notifSound" preload="auto" src="../click-sound.mp3"></audio>
 <script>window.SKIP_AUTH_CHIP = true;</script>
 <script src="/assets/js/main.js"></script>
 <script src="/assets/js/auth-fix.js"></script>
 <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/gallium.js"></script>
 <script src="/assets/js/cookie.js"></script>
 <script src="/assets/js/cursor.js"></script>
 <script src="/assets/js/chat.js"></script>
 <script src="/assets/js/carlos.js"></script>
 <script src="/assets/js/voice.js"></script>
 <script src="/assets/js/notifications.js"></script>
-
-
 <script>
 /* ─────────────────────────────────────────────────────
    CHAT PAGE — SIDEBAR PATCH
@@ -494,38 +460,36 @@
   if (settingsPanel) settingsPanel.style.zIndex = '6000';
 })();
 </script>
-
-  <!-- Age Verification Gate -->
-  <div id="age-gate" class="age-gate hidden">
-    <div class="age-gate-card">
-      <div class="age-gate-logo">🔞</div>
-      <h2>Age Verification Required</h2>
-      <p>You must be <strong>13 or older</strong> to use 360 Chat.</p>
-      <p class="age-gate-sub">Please confirm your date of birth.</p>
-      <div class="age-gate-form">
-        <label>Date of Birth</label>
-        <input type="date" id="age-gate-dob" max="" />
-        <button class="age-gate-btn" id="age-gate-submit">Confirm Age</button>
-      </div>
-      <p class="age-gate-note">
+<!-- Age Verification Gate -->
+<div class="age-gate hidden" id="age-gate">
+<div class="age-gate-card">
+<div class="age-gate-logo">🔞</div>
+<h2>Age Verification Required</h2>
+<p>You must be <strong>13 or older</strong> to use 360 Chat.</p>
+<p class="age-gate-sub">Please confirm your date of birth.</p>
+<div class="age-gate-form">
+<label>Date of Birth</label>
+<input id="age-gate-dob" max="" type="date"/>
+<button class="age-gate-btn" id="age-gate-submit">Confirm Age</button>
+</div>
+<p class="age-gate-note">
         Under 13? <a href="#" id="age-gate-exception-link">Request an admin exception →</a>
-      </p>
-    </div>
-  </div>
-  <!-- Age Exception Request Modal -->
-  <div id="age-exception-modal" class="age-gate hidden">
-    <div class="age-gate-card">
-      <div class="age-gate-logo">📋</div>
-      <h2>Request Age Exception</h2>
-      <p>An admin can grant you access with a verified reason (e.g. parental consent, educational use).</p>
-      <div class="age-gate-form">
-        <label>Reason for exception</label>
-        <textarea id="age-exception-reason" rows="4" placeholder="Explain why you should be granted access..."></textarea>
-        <button class="age-gate-btn" id="age-exception-submit">Submit Request</button>
-        <button class="age-gate-btn age-gate-btn-secondary" id="age-exception-back">← Back</button>
-      </div>
-    </div>
-  </div>
-
+</p>
+</div>
+</div>
+<!-- Age Exception Request Modal -->
+<div class="age-gate hidden" id="age-exception-modal">
+<div class="age-gate-card">
+<div class="age-gate-logo">📋</div>
+<h2>Request Age Exception</h2>
+<p>An admin can grant you access with a verified reason (e.g. parental consent, educational use).</p>
+<div class="age-gate-form">
+<label>Reason for exception</label>
+<textarea id="age-exception-reason" placeholder="Explain why you should be granted access..." rows="4"></textarea>
+<button class="age-gate-btn" id="age-exception-submit">Submit Request</button>
+<button class="age-gate-btn age-gate-btn-secondary" id="age-exception-back">← Back</button>
+</div>
+</div>
+</div>
 </body>
 </html>

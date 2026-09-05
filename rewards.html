@@ -1,20 +1,20 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 — Rewards</title>
-  <link rel="icon" type="image/png" href="../favicon-32x32.png" />
-  <link rel="manifest" href="../manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 — Rewards</title>
+<link href="../favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="../manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     .rewards-page {
       padding: 30px 20px 50px;
       max-width: 1040px;
@@ -260,213 +260,189 @@
     }
 
   </style>
-</head>
+<meta content="360  Rewards — part of the 360 web platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 — Rewards" property="og:title"/><meta content="360  Rewards — part of the 360 web platform." property="og:description"/><meta content="https://360-search.com/rewards.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 — Rewards" name="twitter:title"/><meta content="360  Rewards — part of the 360 web platform." name="twitter:description"/><link href="https://360-search.com/rewards.html" rel="canonical"/></head>
 <body>
-
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <div class="auth-top-right">
-    <button id="signInBtn"  class="auth-btn">Sign In</button>
-    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
-
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <div class="logo-mark"></div>
-      <button id="settingsBtn">⚙</button>
-    </div>
-    <nav class="nav-list">
-      <div class="nav-item" data-href="../">Home</div>
-      <div class="nav-item" data-href="../ai">AI</div>
-      <div class="nav-item" data-href="../weather">Weather</div>
-      <div class="nav-item" data-href="../translator">Translator</div>
-      <div class="nav-item" data-href="../stocks">Stocks</div>
-      <div class="nav-item" data-href="../url-shortener">URL Shortener</div>
-      <div class="nav-item" data-href="../chat">Chat</div>
-      <div class="nav-item" data-href="../news">News</div>
-      <div class="nav-item" data-href="../apps">Apps</div>
-      <div class="nav-item" data-href="../games">Games</div>
-      <div class="nav-item active" data-href="../rewards">Rewards</div>
-    </nav>
-    <div class="sidebar-footer">© 2026 360 INC. · V.2.0.3</div>
-  </aside>
-
-  <div class="overlay" id="overlay"></div>
-
-  <div class="settings-panel" id="settingsPanel">
-    <h3>Appearance</h3>
-    <div class="settings-label">Theme</div>
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-    </div>
-    <div class="settings-label" style="margin-top:20px;">Mode</div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:14px;">Dark mode</span>
-      <input type="checkbox" id="darkToggle" />
-    </label>
-    <h3 style="margin-top:20px;">Cursor</h3>
-    <div class="settings-label">Style</div>
-    <div class="cursor-options">
-      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-    </div>
-    <div class="cursor-color-row">
-      <label>Cursor color</label>
-      <input type="color" id="cursorColorPicker" value="#3b82f6" />
-      <button id="cursorColorReset">Reset</button>
-    </div>
-  </div>
-
-  <div id="auth-popup" class="auth-popup hidden">
-    <div class="auth-box">
-      <h2>Account</h2>
-      <input id="auth-email" type="email" placeholder="Email" />
-      <input id="auth-password" type="password" placeholder="Password" />
-      <button id="auth-login-btn">Log In</button>
-      <button id="auth-signup-btn">Sign Up</button>
-      <button id="github-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        <span>Sign in with GitHub</span>
-      </button>
-      <button id="google-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        <span>Sign in with Google</span>
-      </button>
-      <p id="auth-error" class="auth-error"></p>
-      <button id="auth-close-btn" class="close-btn">Close</button>
-    </div>
-  </div>
-
-  <div class="rewards-page">
-    <h2><span data-octicon="gift"></span> Rewards</h2>
-
-    <div class="rewards-login-banner" id="loginBanner">
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<div class="logo-mark"></div>
+<button id="settingsBtn">⚙</button>
+</div>
+<nav class="nav-list">
+<div class="nav-item" data-href="../">Home</div>
+<div class="nav-item" data-href="../ai">AI</div>
+<div class="nav-item" data-href="../weather">Weather</div>
+<div class="nav-item" data-href="../translator">Translator</div>
+<div class="nav-item" data-href="../stocks">Stocks</div>
+<div class="nav-item" data-href="../url-shortener">URL Shortener</div>
+<div class="nav-item" data-href="../chat">Chat</div>
+<div class="nav-item" data-href="../news">News</div>
+<div class="nav-item" data-href="../apps">Apps</div>
+<div class="nav-item" data-href="../games">Games</div>
+<div class="nav-item active" data-href="../rewards">Rewards</div>
+</nav>
+<div class="sidebar-footer">© 2026 360 INC. · V.2.0.3</div>
+</aside>
+<div class="overlay" id="overlay"></div>
+<div class="settings-panel" id="settingsPanel">
+<h3>Appearance</h3>
+<div class="settings-label">Theme</div>
+<div class="theme-swatches">
+<div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+<div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+<div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+<div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+</div>
+<div class="settings-label" style="margin-top:20px;">Mode</div>
+<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+<span style="font-size:14px;">Dark mode</span>
+<input id="darkToggle" type="checkbox"/>
+</label>
+<h3 style="margin-top:20px;">Cursor</h3>
+<div class="settings-label">Style</div>
+<div class="cursor-options">
+<div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+<div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+<div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+<div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+<div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+<div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+</div>
+<div class="cursor-color-row">
+<label>Cursor color</label>
+<input id="cursorColorPicker" type="color" value="#3b82f6"/>
+<button id="cursorColorReset">Reset</button>
+</div>
+</div>
+<div class="auth-popup hidden" id="auth-popup">
+<div class="auth-box">
+<h2>Account</h2>
+<input id="auth-email" placeholder="Email" type="email"/>
+<input id="auth-password" placeholder="Password" type="password"/>
+<button id="auth-login-btn">Log In</button>
+<button id="auth-signup-btn">Sign Up</button>
+<button class="oauth-btn" id="github-login">
+<svg fill="currentColor" height="18" viewbox="0 0 24 24" width="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"></path></svg>
+<span>Sign in with GitHub</span>
+</button>
+<button class="oauth-btn" id="google-login">
+<svg height="18" viewbox="0 0 24 24" width="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path></svg>
+<span>Sign in with Google</span>
+</button>
+<p class="auth-error" id="auth-error"></p>
+<button class="close-btn" id="auth-close-btn">Close</button>
+</div>
+</div>
+<div class="rewards-page">
+<h2><span data-octicon="gift"></span> Rewards</h2>
+<div class="rewards-login-banner" id="loginBanner">
       Log in to see your balance and membership status.
       <button id="loginBannerBtn">Log In</button>
-    </div>
-
-    <div class="rewards-hero">
-      <div class="rewards-hero-card">
-        <div class="label">Points Balance</div>
-        <div class="value" id="pointsBalance">—</div>
-        <div class="sub">Your current Rewards Points balance</div>
-      </div>
-      <div class="rewards-hero-card">
-        <div class="label">Membership <span data-membership-badge data-show-free="true"></span></div>
-        <div class="value" id="premiumStatus" style="font-size:20px;">—</div>
-        <div class="sub" id="premiumSub"></div>
-      </div>
-    </div>
-
-    <div class="rewards-tabs">
-      <button class="rewards-tab active" data-tab="earn">Earn</button>
-      <button class="rewards-tab" data-tab="membership">Membership</button>
-      <button class="rewards-tab" data-tab="rules">Rules</button>
-    </div>
-
-    <div class="rewards-tab-panel" id="tab-earn">
-      <h3 style="margin-bottom:6px;">Ways to Earn</h3>
-      <p style="opacity:.7;font-size:14px;margin-top:0;">
+</div>
+<div class="rewards-hero">
+<div class="rewards-hero-card">
+<div class="label">Points Balance</div>
+<div class="value" id="pointsBalance">—</div>
+<div class="sub">Your current Rewards Points balance</div>
+</div>
+<div class="rewards-hero-card">
+<div class="label">Membership <span data-membership-badge="" data-show-free="true"></span></div>
+<div class="value" id="premiumStatus" style="font-size:20px;">—</div>
+<div class="sub" id="premiumSub"></div>
+</div>
+</div>
+<div class="rewards-tabs">
+<button class="rewards-tab active" data-tab="earn">Earn</button>
+<button class="rewards-tab" data-tab="membership">Membership</button>
+<button class="rewards-tab" data-tab="rules">Rules</button>
+</div>
+<div class="rewards-tab-panel" id="tab-earn">
+<h3 style="margin-bottom:6px;">Ways to Earn</h3>
+<p style="opacity:.7;font-size:14px;margin-top:0;">
         Rewards Points are a general 360 rewards currency. Games are only one way to earn them.
       </p>
-
-      <div class="earn-grid">
-        <div class="earn-card">
-          <div class="earn-icon">▦</div>
-          <div class="earn-title">Games</div>
-          <div class="earn-desc">Play supported 360 games and earn points through eligible activity.</div>
-          <div class="earn-rate">Currently available</div>
-          <button type="button" id="randomGameBtn" class="earn-play-btn">Play a Random Game</button>
-        </div>
-
-        <div class="earn-card">
-          <div class="earn-icon">⌕</div>
-          <div class="earn-title">Search for Points</div>
-          <div class="earn-desc">Search on 360 and earn Rewards Points for every eligible search you run.</div>
-          <div class="earn-rate">Currently available</div>
-          <a class="earn-play-btn" href="/search">Search Now</a>
-        </div>
-
-        <div class="earn-card">
-          <div class="earn-icon">+</div>
-          <div class="earn-title">More Ways to Earn</div>
-          <div class="earn-desc">Additional Rewards activities and earning methods will be introduced over time.</div>
-          <div class="earn-rate">Coming soon</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="rewards-tab-panel" id="tab-membership" style="display:none;">
-      <div class="tier-section">
-        <h3>Lite</h3>
-        <p>Flexible membership durations for the standard 360 experience.</p>
-
-        <div class="tiers-grid">
-          <div class="tier-card"><div class="tier-name">Lite · 3 Days</div><div class="tier-cost">1,000 pts</div><div class="tier-duration">3-day membership</div><button data-tier="lite_3day" data-cost="1000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Lite · 1 Week</div><div class="tier-cost">2,500 pts</div><div class="tier-duration">7-day membership</div><button data-tier="lite_1week" data-cost="2500" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Lite · 6 Months</div><div class="tier-cost">25,000 pts</div><div class="tier-duration">6-month membership</div><button data-tier="lite_6month" data-cost="25000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Lite · 1 Year</div><div class="tier-cost">40,000 pts</div><div class="tier-duration">1-year membership</div><button data-tier="lite_1year" data-cost="40000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Lite · 5 Years</div><div class="tier-cost">100,000 pts</div><div class="tier-duration">5-year membership</div><button data-tier="lite_5year" data-cost="100000" class="redeemBtn">Redeem</button></div>
-        </div>
-      </div>
-
-      <div class="tier-section">
-        <h3>Pro</h3>
-        <p>More access and benefits for users who want more from 360.</p>
-
-        <div class="tiers-grid">
-          <div class="tier-card"><div class="tier-name">Pro · 3 Days</div><div class="tier-cost">2,500 pts</div><div class="tier-duration">3-day membership</div><button data-tier="pro_3day" data-cost="2500" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Pro · 1 Week</div><div class="tier-cost">6,000 pts</div><div class="tier-duration">7-day membership</div><button data-tier="pro_1week" data-cost="6000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Pro · 6 Months</div><div class="tier-cost">60,000 pts</div><div class="tier-duration">6-month membership</div><button data-tier="pro_6month" data-cost="60000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Pro · 1 Year</div><div class="tier-cost">100,000 pts</div><div class="tier-duration">1-year membership</div><button data-tier="pro_1year" data-cost="100000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card"><div class="tier-name">Pro · 5 Years</div><div class="tier-cost">250,000 pts</div><div class="tier-duration">5-year membership</div><button data-tier="pro_5year" data-cost="250000" class="redeemBtn">Redeem</button></div>
-        </div>
-      </div>
-
-      <div class="tier-section">
-        <h3>Premium</h3>
-        <p>Premium is an earned status. Timed Premium options are available, while Lifetime Premium is the highest dedication tier.</p>
-
-        <div class="tiers-grid">
-          <div class="tier-card premium-card"><div class="tier-name">Premium · 3 Days</div><div class="tier-cost">10,000 pts</div><div class="tier-duration">3-day membership</div><button data-tier="premium_3day" data-cost="10000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card premium-card"><div class="tier-name">Premium · 1 Week</div><div class="tier-cost">25,000 pts</div><div class="tier-duration">7-day membership</div><button data-tier="premium_1week" data-cost="25000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card premium-card"><div class="tier-name">Premium · 6 Months</div><div class="tier-cost">250,000 pts</div><div class="tier-duration">6-month membership</div><button data-tier="premium_6month" data-cost="250000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card premium-card"><div class="tier-name">Premium · 1 Year</div><div class="tier-cost">400,000 pts</div><div class="tier-duration">1-year membership</div><button data-tier="premium_1year" data-cost="400000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card premium-card"><div class="tier-name">Premium · 5 Years</div><div class="tier-cost">750,000 pts</div><div class="tier-duration">5-year membership</div><button data-tier="premium_5year" data-cost="750000" class="redeemBtn">Redeem</button></div>
-          <div class="tier-card premium-card lifetime-card"><div class="tier-name">Premium · Lifetime</div><div class="tier-cost">1,000,000 lifetime pts</div><div class="tier-duration">Permanent under normal circumstances · earned, not purchased</div><button data-tier="premium_lifetime" data-cost="0" data-lifetime-required="1000000" class="redeemBtn">Unlock</button></div>
-        </div>
-      </div>
-
-      <div class="rewards-status" id="rewardsStatus"></div>
-    </div>
-
-    <div class="rewards-tab-panel" id="tab-rules" style="display:none;">
-      <div class="policy-card">
-        <h3>Membership Status Notice</h3>
-        <p><strong>Membership roles are privileges, not permanent ownership.</strong> 360 may revoke, suspend, or modify any membership status at any time for abuse, fraud, manipulation, harassment, cheating, or other seriously inappropriate activity.</p>
-        <p>Lifetime means the membership does not expire under normal circumstances. Premium Lifetime is earned after 1,000,000 lifetime Rewards Points have been earned. It does not make the status irrevocable.</p>
-        <p>Membership may only be transferred to another account when legitimate proof of ownership or eligibility is provided and the transfer is approved.</p>
-        <p>Verified alternate accounts belonging to the same user may receive qualifying membership benefits at no additional cost. Attempts to use alternate accounts to evade restrictions can result in revocation across associated accounts.</p>
-      </div>
-    </div>
-  </div>
-
-  <script>
+<div class="earn-grid">
+<div class="earn-card">
+<div class="earn-icon">▦</div>
+<div class="earn-title">Games</div>
+<div class="earn-desc">Play supported 360 games and earn points through eligible activity.</div>
+<div class="earn-rate">Currently available</div>
+<button class="earn-play-btn" id="randomGameBtn" type="button">Play a Random Game</button>
+</div>
+<div class="earn-card">
+<div class="earn-icon">⌕</div>
+<div class="earn-title">Search for Points</div>
+<div class="earn-desc">Search on 360 and earn Rewards Points for every eligible search you run.</div>
+<div class="earn-rate">Currently available</div>
+<a class="earn-play-btn" href="/search">Search Now</a>
+</div>
+<div class="earn-card">
+<div class="earn-icon">+</div>
+<div class="earn-title">More Ways to Earn</div>
+<div class="earn-desc">Additional Rewards activities and earning methods will be introduced over time.</div>
+<div class="earn-rate">Coming soon</div>
+</div>
+</div>
+</div>
+<div class="rewards-tab-panel" id="tab-membership" style="display:none;">
+<div class="tier-section">
+<h3>Lite</h3>
+<p>Flexible membership durations for the standard 360 experience.</p>
+<div class="tiers-grid">
+<div class="tier-card"><div class="tier-name">Lite · 3 Days</div><div class="tier-cost">1,000 pts</div><div class="tier-duration">3-day membership</div><button class="redeemBtn" data-cost="1000" data-tier="lite_3day">Redeem</button></div>
+<div class="tier-card"><div class="tier-name">Lite · 1 Week</div><div class="tier-cost">2,500 pts</div><div class="tier-duration">7-day membership</div><button class="redeemBtn" data-cost="2500" data-tier="lite_1week">Redeem</button></div>
+<div class="tier-card"><div class="tier-name">Lite · 6 Months</div><div class="tier-cost">25,000 pts</div><div class="tier-duration">6-month membership</div><button class="redeemBtn" data-cost="25000" data-tier="lite_6month">Redeem</button></div>
+<div class="tier-card"><div class="tier-name">Lite · 1 Year</div><div class="tier-cost">40,000 pts</div><div class="tier-duration">1-year membership</div><button class="redeemBtn" data-cost="40000" data-tier="lite_1year">Redeem</button></div>
+<div class="tier-card"><div class="tier-name">Lite · 5 Years</div><div class="tier-cost">100,000 pts</div><div class="tier-duration">5-year membership</div><button class="redeemBtn" data-cost="100000" data-tier="lite_5year">Redeem</button></div>
+</div>
+</div>
+<div class="tier-section">
+<h3>Pro</h3>
+<p>More access and benefits for users who want more from 360.</p>
+<div class="tiers-grid">
+<div class="tier-card"><div class="tier-name">Pro · 3 Days</div><div class="tier-cost">2,500 pts</div><div class="tier-duration">3-day membership</div><button class="redeemBtn" data-cost="2500" data-tier="pro_3day">Redeem</button></div>
+<div class="tier-card"><div class="tier-name">Pro · 1 Week</div><div class="tier-cost">6,000 pts</div><div class="tier-duration">7-day membership</div><button class="redeemBtn" data-cost="6000" data-tier="pro_1week">Redeem</button></div>
+<div class="tier-card"><div class="tier-name">Pro · 6 Months</div><div class="tier-cost">60,000 pts</div><div class="tier-duration">6-month membership</div><button class="redeemBtn" data-cost="60000" data-tier="pro_6month">Redeem</button></div>
+<div class="tier-card"><div class="tier-name">Pro · 1 Year</div><div class="tier-cost">100,000 pts</div><div class="tier-duration">1-year membership</div><button class="redeemBtn" data-cost="100000" data-tier="pro_1year">Redeem</button></div>
+<div class="tier-card"><div class="tier-name">Pro · 5 Years</div><div class="tier-cost">250,000 pts</div><div class="tier-duration">5-year membership</div><button class="redeemBtn" data-cost="250000" data-tier="pro_5year">Redeem</button></div>
+</div>
+</div>
+<div class="tier-section">
+<h3>Premium</h3>
+<p>Premium is an earned status. Timed Premium options are available, while Lifetime Premium is the highest dedication tier.</p>
+<div class="tiers-grid">
+<div class="tier-card premium-card"><div class="tier-name">Premium · 3 Days</div><div class="tier-cost">10,000 pts</div><div class="tier-duration">3-day membership</div><button class="redeemBtn" data-cost="10000" data-tier="premium_3day">Redeem</button></div>
+<div class="tier-card premium-card"><div class="tier-name">Premium · 1 Week</div><div class="tier-cost">25,000 pts</div><div class="tier-duration">7-day membership</div><button class="redeemBtn" data-cost="25000" data-tier="premium_1week">Redeem</button></div>
+<div class="tier-card premium-card"><div class="tier-name">Premium · 6 Months</div><div class="tier-cost">250,000 pts</div><div class="tier-duration">6-month membership</div><button class="redeemBtn" data-cost="250000" data-tier="premium_6month">Redeem</button></div>
+<div class="tier-card premium-card"><div class="tier-name">Premium · 1 Year</div><div class="tier-cost">400,000 pts</div><div class="tier-duration">1-year membership</div><button class="redeemBtn" data-cost="400000" data-tier="premium_1year">Redeem</button></div>
+<div class="tier-card premium-card"><div class="tier-name">Premium · 5 Years</div><div class="tier-cost">750,000 pts</div><div class="tier-duration">5-year membership</div><button class="redeemBtn" data-cost="750000" data-tier="premium_5year">Redeem</button></div>
+<div class="tier-card premium-card lifetime-card"><div class="tier-name">Premium · Lifetime</div><div class="tier-cost">1,000,000 lifetime pts</div><div class="tier-duration">Permanent under normal circumstances · earned, not purchased</div><button class="redeemBtn" data-cost="0" data-lifetime-required="1000000" data-tier="premium_lifetime">Unlock</button></div>
+</div>
+</div>
+<div class="rewards-status" id="rewardsStatus"></div>
+</div>
+<div class="rewards-tab-panel" id="tab-rules" style="display:none;">
+<div class="policy-card">
+<h3>Membership Status Notice</h3>
+<p><strong>Membership roles are privileges, not permanent ownership.</strong> 360 may revoke, suspend, or modify any membership status at any time for abuse, fraud, manipulation, harassment, cheating, or other seriously inappropriate activity.</p>
+<p>Lifetime means the membership does not expire under normal circumstances. Premium Lifetime is earned after 1,000,000 lifetime Rewards Points have been earned. It does not make the status irrevocable.</p>
+<p>Membership may only be transferred to another account when legitimate proof of ownership or eligibility is provided and the transfer is approved.</p>
+<p>Verified alternate accounts belonging to the same user may receive qualifying membership benefits at no additional cost. Attempts to use alternate accounts to evade restrictions can result in revocation across associated accounts.</p>
+</div>
+</div>
+</div>
+<script>
   (function () {
     "use strict";
 
@@ -784,13 +760,11 @@
     loadProfile().then(subscribeToProfile);
   })();
   </script>
-
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-  <script src="/assets/js/membership.js"></script>
-
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script src="/assets/js/membership.js"></script>
 </body>
 </html>

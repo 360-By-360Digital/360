@@ -1,20 +1,20 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360Notes</title>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360Notes</title>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -471,125 +471,108 @@
       }
     }
   </style>
-</head>
+<meta content="360Notes is part of 360 Digital. Explore its features and use it online through the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360Notes" property="og:title"/><meta content="360Notes is part of 360 Digital. Explore its features and use it online through the 360 platform." property="og:description"/><meta content="https://360-search.com/apps/360Notes.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360Notes" name="twitter:title"/><meta content="360Notes is part of 360 Digital. Explore its features and use it online through the 360 platform." name="twitter:description"/><link href="https://360-search.com/apps/360Notes.html" rel="canonical"/></head>
 <body>
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <div class="notes-root">
-    <header class="notes-topbar">
-      <div class="notes-topbar-left">
-        <button class="notes-pill-btn" onclick="window.location.href='apps.html'">← Apps</button>
-        <div class="notes-logo">
-          <span class="notes-logo-main">360</span>
-          <span>|</span>
-          <span class="notes-logo-main">Notes</span>
-          <span class="notes-logo-sub">lightweight docs</span>
-        </div>
-      </div>
-
-      <div class="notes-topbar-center">
-        <div class="notes-search">
-          <input id="notesSearch" type="text" placeholder="Search your notes…" autocomplete="off" />
-          <button id="notesSearchBtn">🔍</button>
-        </div>
-      </div>
-
-      <div class="notes-topbar-right">
-    <button id="signInBtn"  class="auth-btn">Sign In</button>
-    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-
-        <button class="notes-btn-primary" id="newNoteBtn">
-          <span>＋</span> New note
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<div class="notes-root">
+<header class="notes-topbar">
+<div class="notes-topbar-left">
+<button class="notes-pill-btn" onclick="window.location.href='apps.html'">← Apps</button>
+<div class="notes-logo">
+<span class="notes-logo-main">360</span>
+<span>|</span>
+<span class="notes-logo-main">Notes</span>
+<span class="notes-logo-sub">lightweight docs</span>
+</div>
+</div>
+<div class="notes-topbar-center">
+<div class="notes-search">
+<input autocomplete="off" id="notesSearch" placeholder="Search your notes…" type="text"/>
+<button id="notesSearchBtn">🔍</button>
+</div>
+</div>
+<div class="notes-topbar-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+<button class="notes-btn-primary" id="newNoteBtn">
+<span>＋</span> New note
         </button>
-        <div class="notes-avatar" id="notesAvatar" title="Account">?</div>
-      </div>
-    </header>
-
-    <div class="notes-body">
-      <aside class="notes-sidebar">
-        <div class="notes-sidebar-section-label">Notes</div>
-        <div class="notes-nav-item active" data-view="all">
-          <span class="icon">📄</span>
-          <span>All notes</span>
-        </div>
-        <div class="notes-nav-item" data-view="favorites">
-          <span class="icon">⭐</span>
-          <span>Favorites</span>
-        </div>
-        <div class="notes-nav-item" data-view="recent">
-          <span class="icon">🕒</span>
-          <span>Recently edited</span>
-        </div>
-
-        <div class="notes-sidebar-section-label" style="margin-top:10px;">Other</div>
-        <div class="notes-nav-item" data-view="trash">
-          <span class="icon">🗑️</span>
-          <span>Trash (future)</span>
-        </div>
-      </aside>
-
-      <main class="notes-main">
-        <div class="notes-main-header">
-          <div>
-            <div class="notes-main-title">Your notes</div>
-            <div class="notes-main-sub" id="notesCountLabel">Loading…</div>
-          </div>
-        </div>
-
-        <div class="notes-grid" id="notesGrid">
-          <!-- cards injected here -->
-        </div>
-      </main>
-    </div>
-  </div>
-
-  <!-- Modal -->
-  <div class="notes-modal-overlay" id="notesModalOverlay">
-    <div class="notes-modal">
-      <div class="notes-modal-toolbar">
-        <div class="notes-modal-toolbar-left">
-          <button class="notes-pill-btn" id="closeModalBtn">← Back</button>
-          <span style="font-size:12px;color:var(--notes-muted);" id="docStatusLabel">Editing note</span>
-        </div>
-        <div class="notes-modal-toolbar-right">
-          <button class="notes-pill-btn" id="previewToggleBtn">👁 Preview</button>
-          <button class="notes-pill-btn" id="deleteNoteBtn">🗑 Delete</button>
-          <button class="notes-pill-btn primary" id="saveNoteBtn">💾 Save</button>
-        </div>
-      </div>
-      <div class="notes-modal-body">
-        <input id="noteTitleInput" class="notes-title-input" placeholder="Untitled note" maxlength="200" />
-
-        <div class="notes-meta-line" id="noteMetaLine">New note · not yet saved</div>
-
-        <div class="notes-mode-toggle">
-          <button id="modeTextBtn" class="active">Text</button>
-          <button id="modeHtmlBtn">HTML</button>
-        </div>
-
-        <textarea id="noteBodyInput" class="notes-body-textarea" placeholder="Start writing…"></textarea>
-
-        <div id="htmlPreviewBox" class="notes-preview-box" style="display:none;"></div>
-
-        <div class="notes-status" id="notesStatus">Not saved yet.</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="notes-toast" id="notesToast"></div>
-
-  <audio id="clickSound" src="click-sound.mp3" preload="auto"></audio>
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-
-  <script>
+<div class="notes-avatar" id="notesAvatar" title="Account">?</div>
+</div>
+</header>
+<div class="notes-body">
+<aside class="notes-sidebar">
+<div class="notes-sidebar-section-label">Notes</div>
+<div class="notes-nav-item active" data-view="all">
+<span class="icon">📄</span>
+<span>All notes</span>
+</div>
+<div class="notes-nav-item" data-view="favorites">
+<span class="icon">⭐</span>
+<span>Favorites</span>
+</div>
+<div class="notes-nav-item" data-view="recent">
+<span class="icon">🕒</span>
+<span>Recently edited</span>
+</div>
+<div class="notes-sidebar-section-label" style="margin-top:10px;">Other</div>
+<div class="notes-nav-item" data-view="trash">
+<span class="icon">🗑️</span>
+<span>Trash (future)</span>
+</div>
+</aside>
+<main class="notes-main">
+<div class="notes-main-header">
+<div>
+<div class="notes-main-title">Your notes</div>
+<div class="notes-main-sub" id="notesCountLabel">Loading…</div>
+</div>
+</div>
+<div class="notes-grid" id="notesGrid">
+<!-- cards injected here -->
+</div>
+</main>
+</div>
+</div>
+<!-- Modal -->
+<div class="notes-modal-overlay" id="notesModalOverlay">
+<div class="notes-modal">
+<div class="notes-modal-toolbar">
+<div class="notes-modal-toolbar-left">
+<button class="notes-pill-btn" id="closeModalBtn">← Back</button>
+<span id="docStatusLabel" style="font-size:12px;color:var(--notes-muted);">Editing note</span>
+</div>
+<div class="notes-modal-toolbar-right">
+<button class="notes-pill-btn" id="previewToggleBtn">👁 Preview</button>
+<button class="notes-pill-btn" id="deleteNoteBtn">🗑 Delete</button>
+<button class="notes-pill-btn primary" id="saveNoteBtn">💾 Save</button>
+</div>
+</div>
+<div class="notes-modal-body">
+<input class="notes-title-input" id="noteTitleInput" maxlength="200" placeholder="Untitled note"/>
+<div class="notes-meta-line" id="noteMetaLine">New note · not yet saved</div>
+<div class="notes-mode-toggle">
+<button class="active" id="modeTextBtn">Text</button>
+<button id="modeHtmlBtn">HTML</button>
+</div>
+<textarea class="notes-body-textarea" id="noteBodyInput" placeholder="Start writing…"></textarea>
+<div class="notes-preview-box" id="htmlPreviewBox" style="display:none;"></div>
+<div class="notes-status" id="notesStatus">Not saved yet.</div>
+</div>
+</div>
+</div>
+<div class="notes-toast" id="notesToast"></div>
+<audio id="clickSound" preload="auto" src="click-sound.mp3"></audio>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script>
     // --- Supabase client (same project as 360Music) ---
     const SUPABASE_URL  = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';

@@ -1,17 +1,18 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
   gtag('config', 'G-89NN1P6CEV');
 </script>
-  <meta charset="UTF-8" />
-  <title>360 | Zone — Study Hub</title>
-  <script src="https://accounts.google.com/gsi/client" async></script>
-  <style>
+<meta charset="utf-8"/>
+<title>360 | Zone — Study Hub</title>
+<script async="" src="https://accounts.google.com/gsi/client"></script>
+<style>
     :root {
       --accent: #4a6cff;
       --accent-light: #6f86ff;
@@ -426,289 +427,261 @@
     .gc-view-tab.active { background:var(--accent); color:white; }
     .gc-view-tab:hover:not(.active) { background:var(--border); color:var(--text); }
   </style>
-</head>
+<meta content="Zone Essay &amp; Math Helper is part of 360 Digital. Explore its features and use it online through the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 | Zone — Study Hub" property="og:title"/><meta content="Zone Essay &amp; Math Helper is part of 360 Digital. Explore its features and use it online through the 360 platform." property="og:description"/><meta content="https://360-search.com/apps/360zone.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 | Zone — Study Hub" name="twitter:title"/><meta content="Zone Essay &amp; Math Helper is part of 360 Digital. Explore its features and use it online through the 360 platform." name="twitter:description"/><link href="https://360-search.com/apps/360zone.html" rel="canonical"/></head>
 <body>
-
-  <div class="header">
-    <h1>Zone <span>Essay & Math Helper</span></h1>
-    <div class="header-actions">
-      <button class="hbtn" onclick="window.location.href='apps.html'">← Apps</button>
-      <button class="hbtn" id="darkBtn" onclick="toggleDark()">🌙 Dark</button>
-      <a href="/" class="hbtn" style="text-decoration:none;">← Back to 360</a>
-    </div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab active" onclick="show('builder',this)">📝 Paragraph Builder</button>
-    <button class="tab" onclick="show('grammar',this)">✏️ Grammar Fixer</button>
-    <button class="tab" onclick="show('mla',this)">📚 MLA Generator</button>
-    <button class="tab" onclick="show('evidence',this)">🔍 Evidence Helper</button>
-    <button class="tab" onclick="show('pronouns',this)">👁️ Pronoun Checker</button>
-    <button class="tab" onclick="show('math',this)">🔢 Math Helper</button>
-    <button class="tab" onclick="show('classroom',this)" id="classroomTab">🎓 Classroom <span id="gc-unread-badge" style="display:none;background:#ef4444;color:white;border-radius:999px;font-size:.65rem;font-weight:800;padding:1px 6px;margin-left:4px;vertical-align:middle;"></span></button>
-  </div>
-
-  <!-- ════ PARAGRAPH BUILDER ════ -->
-  <div class="card" id="builder" style="display:block;">
-    <label>Paragraph type</label>
-    <select id="pType">
-      <option>Introduction</option>
-      <option>Body (First)</option>
-      <option>Body (Second)</option>
-      <option>Body (Third)</option>
-      <option>Conclusion</option>
-    </select>
-
-    <label>Claim / Topic sentence</label>
-    <textarea id="pClaim" rows="2" placeholder="e.g. Social media negatively impacts mental health in teenagers."></textarea>
-
-    <label>Evidence / Notes <span class="hint">(paste quotes, bullet points, anything)</span></label>
-    <textarea id="pEvidence" rows="5" placeholder="Paste your evidence, quotes, or rough notes here..."></textarea>
-
-    <div class="row">
-      <button class="primary" onclick="buildParagraph(this)">✨ Build Paragraph</button>
-      <button class="ghost"   onclick="copyEl('pOut')">Copy</button>
-      <span class="ai-badge"><span class="dot-pulse"></span>AI</span>
-    </div>
-    <div class="err" id="pErr"></div>
-    <div class="output" id="pOut"></div>
-  </div>
-
-  <!-- ════ GRAMMAR FIXER ════ -->
-  <div class="card" id="grammar">
-    <label>Paste your paragraph or essay <span class="hint">(Ctrl+Enter to fix)</span></label>
-    <textarea id="gIn" rows="9" placeholder="Paste your writing here. AI will fix grammar, punctuation, clarity, and flow without changing your meaning..."></textarea>
-
-    <div class="row">
-      <button class="primary" onclick="fixGrammar(this)">✨ Fix Grammar</button>
-      <button class="ghost"   onclick="copyEl('gOut')">Copy</button>
-      <span class="ai-badge"><span class="dot-pulse"></span>AI</span>
-    </div>
-    <div class="err" id="gErr"></div>
-    <div class="output" id="gOut"></div>
-  </div>
-  <script>
+<div class="header">
+<h1>Zone <span>Essay &amp; Math Helper</span></h1>
+<div class="header-actions">
+<button class="hbtn" onclick="window.location.href='apps.html'">← Apps</button>
+<button class="hbtn" id="darkBtn" onclick="toggleDark()">🌙 Dark</button>
+<a class="hbtn" href="/" style="text-decoration:none;">← Back to 360</a>
+</div>
+</div>
+<div class="tabs">
+<button class="tab active" onclick="show('builder',this)">📝 Paragraph Builder</button>
+<button class="tab" onclick="show('grammar',this)">✏️ Grammar Fixer</button>
+<button class="tab" onclick="show('mla',this)">📚 MLA Generator</button>
+<button class="tab" onclick="show('evidence',this)">🔍 Evidence Helper</button>
+<button class="tab" onclick="show('pronouns',this)">👁️ Pronoun Checker</button>
+<button class="tab" onclick="show('math',this)">🔢 Math Helper</button>
+<button class="tab" id="classroomTab" onclick="show('classroom',this)">🎓 Classroom <span id="gc-unread-badge" style="display:none;background:#ef4444;color:white;border-radius:999px;font-size:.65rem;font-weight:800;padding:1px 6px;margin-left:4px;vertical-align:middle;"></span></button>
+</div>
+<!-- ════ PARAGRAPH BUILDER ════ -->
+<div class="card" id="builder" style="display:block;">
+<label>Paragraph type</label>
+<select id="pType">
+<option>Introduction</option>
+<option>Body (First)</option>
+<option>Body (Second)</option>
+<option>Body (Third)</option>
+<option>Conclusion</option>
+</select>
+<label>Claim / Topic sentence</label>
+<textarea id="pClaim" placeholder="e.g. Social media negatively impacts mental health in teenagers." rows="2"></textarea>
+<label>Evidence / Notes <span class="hint">(paste quotes, bullet points, anything)</span></label>
+<textarea id="pEvidence" placeholder="Paste your evidence, quotes, or rough notes here..." rows="5"></textarea>
+<div class="row">
+<button class="primary" onclick="buildParagraph(this)">✨ Build Paragraph</button>
+<button class="ghost" onclick="copyEl('pOut')">Copy</button>
+<span class="ai-badge"><span class="dot-pulse"></span>AI</span>
+</div>
+<div class="err" id="pErr"></div>
+<div class="output" id="pOut"></div>
+</div>
+<!-- ════ GRAMMAR FIXER ════ -->
+<div class="card" id="grammar">
+<label>Paste your paragraph or essay <span class="hint">(Ctrl+Enter to fix)</span></label>
+<textarea id="gIn" placeholder="Paste your writing here. AI will fix grammar, punctuation, clarity, and flow without changing your meaning..." rows="9"></textarea>
+<div class="row">
+<button class="primary" onclick="fixGrammar(this)">✨ Fix Grammar</button>
+<button class="ghost" onclick="copyEl('gOut')">Copy</button>
+<span class="ai-badge"><span class="dot-pulse"></span>AI</span>
+</div>
+<div class="err" id="gErr"></div>
+<div class="output" id="gOut"></div>
+</div>
+<script>
     document.getElementById("gIn")?.addEventListener("keydown", e => {
       if ((e.ctrlKey||e.metaKey) && e.key==="Enter") document.querySelector("#grammar .primary")?.click();
     });
   </script>
-
-  <!-- ════ MLA GENERATOR ════ -->
-  <div class="card" id="mla">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div>
-        <label>Author <span class="hint">(Last, First)</span></label>
-        <input id="mAuthor" placeholder="Smith, Jane" />
-      </div>
-      <div>
-        <label>Date Published <span class="hint">(optional)</span></label>
-        <input id="mDate" placeholder="12 May 2024" />
-      </div>
-    </div>
-    <label>Article / Page Title</label>
-    <input id="mTitle" placeholder="The Effects of Climate Change" />
-    <label>Website / Publication Name</label>
-    <input id="mSite" placeholder="National Geographic" />
-    <label>URL</label>
-    <input id="mURL" placeholder="https://..." type="text" />
-    <label>Date Accessed</label>
-    <input id="mAccess" placeholder="10 Mar. 2026" />
-
-    <div class="row">
-      <button class="primary" onclick="genMLA(this)">✨ Generate Citation</button>
-      <button class="ghost"   onclick="copyEl('mOut')">Copy</button>
-      <span class="ai-badge"><span class="dot-pulse"></span>AI</span>
-    </div>
-    <div class="err" id="mErr"></div>
-    <div class="mla-citation" id="mOut"></div>
-  </div>
-
-  <!-- ════ EVIDENCE HELPER ════ -->
-  <div class="card" id="evidence">
-    <label>Your Claim</label>
-    <textarea id="eClaim" rows="2" placeholder="e.g. Renewable energy is essential for reducing carbon emissions."></textarea>
-    <label>Evidence chunks <span class="hint">(one per line, or paste multiple)</span></label>
-    <textarea id="eChunks" rows="7" placeholder="Paste each piece of evidence on a new line..."></textarea>
-
-    <div class="row">
-      <button class="primary" onclick="alignEvidence(this)">✨ Align Evidence</button>
-      <button class="ghost"   onclick="copyEl('eOut')">Copy</button>
-      <span class="ai-badge"><span class="dot-pulse"></span>AI</span>
-    </div>
-    <div class="err" id="eErr"></div>
-    <div class="output" id="eOut"></div>
-  </div>
-
-  <!-- ════ PRONOUN CHECKER ════ -->
-  <div class="card" id="pronouns">
-    <label>Paste your text</label>
-    <textarea id="prIn" rows="7" placeholder="Paste your paragraph or essay section here..."></textarea>
-
-    <label>Pronoun category to highlight</label>
-    <select id="prCat">
-      <option value="subjective">Subjective — he, she, they, I, we, you, it</option>
-      <option value="objective">Objective — him, her, them, me, us, you, it</option>
-      <option value="possessive">Possessive — his, hers, theirs, mine, ours, yours, its</option>
-      <option value="reflexive">Reflexive — himself, herself, themselves, myself, ourselves</option>
-    </select>
-
-    <div class="row">
-      <button class="primary green" onclick="highlightPronouns()">🔎 Highlight</button>
-      <button class="primary purple" onclick="aiPronouns(this)">✨ AI Suggestions</button>
-      <button class="ghost" onclick="copyEl('prOut')">Copy</button>
-    </div>
-    <div class="err" id="prErr"></div>
-    <div class="output" id="prOut"></div>
-    <div class="pronoun-hint" id="prHint"></div>
-  </div>
-
-  <!-- ════ MATH HELPER ════ -->
-  <div class="card" id="math">
-    <div class="math-mode-tabs">
-      <button class="mth active" onclick="mathMode('calc',this)">🧮 Calculator</button>
-      <button class="mth" onclick="mathMode('solver',this)">🔭 Equation Solver</button>
-      <button class="mth" onclick="mathMode('word',this)">📖 Word Problem</button>
-      <button class="mth" onclick="mathMode('units',this)">📐 Unit Converter</button>
-    </div>
-
-    <!-- Calculator -->
-    <div class="math-panel show" id="mpCalc">
-      <div class="calc-display">
-        <div class="calc-expr" id="cExpr"></div>
-        <div class="calc-val"  id="cVal">0</div>
-      </div>
-      <div class="calc-grid" id="cGrid"></div>
-    </div>
-
-    <!-- Equation Solver -->
-    <div class="math-panel" id="mpSolver">
-      <label>Enter your equation or expression <span class="hint">(e.g. "2x + 5 = 13" or "x² - 4x + 4 = 0")</span></label>
-      <textarea id="eqInput" rows="3" placeholder="Type your equation here...&#10;e.g. 3x + 7 = 22&#10;e.g. x² + 5x + 6 = 0"></textarea>
-      <div class="row">
-        <button class="primary" onclick="solveEq(this)">✨ Solve Step-by-Step</button>
-        <button class="ghost"   onclick="copyEl('eqOut')">Copy</button>
-        <span class="ai-badge"><span class="dot-pulse"></span>AI</span>
-      </div>
-      <div class="err" id="eqErr"></div>
-      <div class="output" id="eqOut"></div>
-    </div>
-
-    <!-- Word Problem -->
-    <div class="math-panel" id="mpWord">
-      <label>Paste your word problem <span class="hint">(AI will solve it step-by-step)</span></label>
-      <textarea id="wpInput" rows="5" placeholder="e.g. A train leaves Chicago at 9am traveling 60 mph. Another train leaves St. Louis at 10am traveling 80 mph toward Chicago. The cities are 300 miles apart. When do they meet?"></textarea>
-      <div class="row">
-        <button class="primary" onclick="solveWord(this)">✨ Solve Problem</button>
-        <button class="ghost"   onclick="copyEl('wpOut')">Copy</button>
-        <span class="ai-badge"><span class="dot-pulse"></span>AI</span>
-      </div>
-      <div class="err" id="wpErr"></div>
-      <div class="output" id="wpOut"></div>
-    </div>
-
-    <!-- Unit Converter -->
-    <div class="math-panel" id="mpUnits">
-      <label>Category</label>
-      <select id="uCat" onchange="updateUnitLists()">
-        <option value="length">Length</option>
-        <option value="mass">Mass / Weight</option>
-        <option value="temp">Temperature</option>
-        <option value="area">Area</option>
-        <option value="volume">Volume</option>
-        <option value="speed">Speed</option>
-        <option value="time">Time</option>
-        <option value="data">Data / Storage</option>
-        <option value="energy">Energy</option>
-        <option value="pressure">Pressure</option>
-      </select>
-      <div class="unit-row">
-        <div>
-          <label>From</label>
-          <select id="uFrom"></select>
-          <input id="uVal" type="number" placeholder="Value" style="margin-top:8px;" />
-        </div>
-        <button class="unit-swap" onclick="swapUnits()" title="Swap">&#8644;</button>
-        <div>
-          <label>To</label>
-          <select id="uTo"></select>
-          <div class="convert-result" id="uResult">--</div>
-        </div>
-      </div>
-      <div class="row" style="margin-top:14px;">
-        <button class="primary" onclick="doConvert()">Convert</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════ GOOGLE CLASSROOM ════ -->
-  <div class="card" id="classroom">
-
-    <!-- Connect screen (shown when not authenticated) -->
-    <div id="gc-connect-screen">
-      <div class="gc-connect-wrap">
-        <div class="gc-connect-icon">🎓</div>
-        <div class="gc-connect-title">Connect Google Classroom</div>
-        <div class="gc-connect-sub">
+<!-- ════ MLA GENERATOR ════ -->
+<div class="card" id="mla">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+<div>
+<label>Author <span class="hint">(Last, First)</span></label>
+<input id="mAuthor" placeholder="Smith, Jane"/>
+</div>
+<div>
+<label>Date Published <span class="hint">(optional)</span></label>
+<input id="mDate" placeholder="12 May 2024"/>
+</div>
+</div>
+<label>Article / Page Title</label>
+<input id="mTitle" placeholder="The Effects of Climate Change"/>
+<label>Website / Publication Name</label>
+<input id="mSite" placeholder="National Geographic"/>
+<label>URL</label>
+<input id="mURL" placeholder="https://..." type="text"/>
+<label>Date Accessed</label>
+<input id="mAccess" placeholder="10 Mar. 2026"/>
+<div class="row">
+<button class="primary" onclick="genMLA(this)">✨ Generate Citation</button>
+<button class="ghost" onclick="copyEl('mOut')">Copy</button>
+<span class="ai-badge"><span class="dot-pulse"></span>AI</span>
+</div>
+<div class="err" id="mErr"></div>
+<div class="mla-citation" id="mOut"></div>
+</div>
+<!-- ════ EVIDENCE HELPER ════ -->
+<div class="card" id="evidence">
+<label>Your Claim</label>
+<textarea id="eClaim" placeholder="e.g. Renewable energy is essential for reducing carbon emissions." rows="2"></textarea>
+<label>Evidence chunks <span class="hint">(one per line, or paste multiple)</span></label>
+<textarea id="eChunks" placeholder="Paste each piece of evidence on a new line..." rows="7"></textarea>
+<div class="row">
+<button class="primary" onclick="alignEvidence(this)">✨ Align Evidence</button>
+<button class="ghost" onclick="copyEl('eOut')">Copy</button>
+<span class="ai-badge"><span class="dot-pulse"></span>AI</span>
+</div>
+<div class="err" id="eErr"></div>
+<div class="output" id="eOut"></div>
+</div>
+<!-- ════ PRONOUN CHECKER ════ -->
+<div class="card" id="pronouns">
+<label>Paste your text</label>
+<textarea id="prIn" placeholder="Paste your paragraph or essay section here..." rows="7"></textarea>
+<label>Pronoun category to highlight</label>
+<select id="prCat">
+<option value="subjective">Subjective — he, she, they, I, we, you, it</option>
+<option value="objective">Objective — him, her, them, me, us, you, it</option>
+<option value="possessive">Possessive — his, hers, theirs, mine, ours, yours, its</option>
+<option value="reflexive">Reflexive — himself, herself, themselves, myself, ourselves</option>
+</select>
+<div class="row">
+<button class="primary green" onclick="highlightPronouns()">🔎 Highlight</button>
+<button class="primary purple" onclick="aiPronouns(this)">✨ AI Suggestions</button>
+<button class="ghost" onclick="copyEl('prOut')">Copy</button>
+</div>
+<div class="err" id="prErr"></div>
+<div class="output" id="prOut"></div>
+<div class="pronoun-hint" id="prHint"></div>
+</div>
+<!-- ════ MATH HELPER ════ -->
+<div class="card" id="math">
+<div class="math-mode-tabs">
+<button class="mth active" onclick="mathMode('calc',this)">🧮 Calculator</button>
+<button class="mth" onclick="mathMode('solver',this)">🔭 Equation Solver</button>
+<button class="mth" onclick="mathMode('word',this)">📖 Word Problem</button>
+<button class="mth" onclick="mathMode('units',this)">📐 Unit Converter</button>
+</div>
+<!-- Calculator -->
+<div class="math-panel show" id="mpCalc">
+<div class="calc-display">
+<div class="calc-expr" id="cExpr"></div>
+<div class="calc-val" id="cVal">0</div>
+</div>
+<div class="calc-grid" id="cGrid"></div>
+</div>
+<!-- Equation Solver -->
+<div class="math-panel" id="mpSolver">
+<label>Enter your equation or expression <span class="hint">(e.g. "2x + 5 = 13" or "x² - 4x + 4 = 0")</span></label>
+<textarea id="eqInput" placeholder="Type your equation here...
+e.g. 3x + 7 = 22
+e.g. x² + 5x + 6 = 0" rows="3"></textarea>
+<div class="row">
+<button class="primary" onclick="solveEq(this)">✨ Solve Step-by-Step</button>
+<button class="ghost" onclick="copyEl('eqOut')">Copy</button>
+<span class="ai-badge"><span class="dot-pulse"></span>AI</span>
+</div>
+<div class="err" id="eqErr"></div>
+<div class="output" id="eqOut"></div>
+</div>
+<!-- Word Problem -->
+<div class="math-panel" id="mpWord">
+<label>Paste your word problem <span class="hint">(AI will solve it step-by-step)</span></label>
+<textarea id="wpInput" placeholder="e.g. A train leaves Chicago at 9am traveling 60 mph. Another train leaves St. Louis at 10am traveling 80 mph toward Chicago. The cities are 300 miles apart. When do they meet?" rows="5"></textarea>
+<div class="row">
+<button class="primary" onclick="solveWord(this)">✨ Solve Problem</button>
+<button class="ghost" onclick="copyEl('wpOut')">Copy</button>
+<span class="ai-badge"><span class="dot-pulse"></span>AI</span>
+</div>
+<div class="err" id="wpErr"></div>
+<div class="output" id="wpOut"></div>
+</div>
+<!-- Unit Converter -->
+<div class="math-panel" id="mpUnits">
+<label>Category</label>
+<select id="uCat" onchange="updateUnitLists()">
+<option value="length">Length</option>
+<option value="mass">Mass / Weight</option>
+<option value="temp">Temperature</option>
+<option value="area">Area</option>
+<option value="volume">Volume</option>
+<option value="speed">Speed</option>
+<option value="time">Time</option>
+<option value="data">Data / Storage</option>
+<option value="energy">Energy</option>
+<option value="pressure">Pressure</option>
+</select>
+<div class="unit-row">
+<div>
+<label>From</label>
+<select id="uFrom"></select>
+<input id="uVal" placeholder="Value" style="margin-top:8px;" type="number"/>
+</div>
+<button class="unit-swap" onclick="swapUnits()" title="Swap">⇄</button>
+<div>
+<label>To</label>
+<select id="uTo"></select>
+<div class="convert-result" id="uResult">--</div>
+</div>
+</div>
+<div class="row" style="margin-top:14px;">
+<button class="primary" onclick="doConvert()">Convert</button>
+</div>
+</div>
+</div>
+<!-- ════ GOOGLE CLASSROOM ════ -->
+<div class="card" id="classroom">
+<!-- Connect screen (shown when not authenticated) -->
+<div id="gc-connect-screen">
+<div class="gc-connect-wrap">
+<div class="gc-connect-icon">🎓</div>
+<div class="gc-connect-title">Connect Google Classroom</div>
+<div class="gc-connect-sub">
           See all your courses, upcoming assignments, and announcements — right inside 360 Zone.
           Use AI tools directly on your assignments without switching tabs.
         </div>
-        <button class="gc-connect-btn" id="gc-connect-btn" disabled>
-          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          <span id="gc-connect-label">Loading…</span>
-        </button>
-        <div id="gc-connect-error" class="gc-err" style="display:none;margin-top:1rem;"></div>
-      </div>
-    </div>
-
-    <!-- Dashboard (shown when authenticated) -->
-    <div id="gc-dashboard" style="display:none;">
-      <div class="gc-header">
-        <div class="gc-header-left">
-          <div class="gc-user-chip">
-            <div class="gc-user-initial" id="gc-user-initial">?</div>
-            <span id="gc-user-name">Loading…</span>
-          </div>
-        </div>
-        <button class="gc-disconnect-btn" id="gc-disconnect-btn">Disconnect</button>
-      </div>
-
-      <!-- View tabs -->
-      <div class="gc-view-tabs">
-        <button class="gc-view-tab active" onclick="gcShowView('overview',this)">📊 Overview</button>
-        <button class="gc-view-tab" onclick="gcShowView('assignments',this)">📋 All Assignments</button>
-        <button class="gc-view-tab" onclick="gcShowView('courses',this)">📚 Courses</button>
-        <button class="gc-view-tab" onclick="gcShowView('announcements',this)">📢 Announcements</button>
-      </div>
-
-      <!-- Overview -->
-      <div id="gcv-overview">
-        <div class="gc-stats-row" id="gc-stats-row">
-          <div class="gc-stat"><div class="gc-stat-num" id="gc-stat-courses">–</div><div class="gc-stat-label">Courses</div></div>
-          <div class="gc-stat"><div class="gc-stat-num" id="gc-stat-due">–</div><div class="gc-stat-label">Due This Week</div></div>
-          <div class="gc-stat"><div class="gc-stat-num" id="gc-stat-overdue" style="color:#ef4444;">–</div><div class="gc-stat-label">Overdue</div></div>
-        </div>
-        <div id="gc-overview-content"><div class="gc-loading"><span class="dot-pulse"></span>Loading your classroom…</div></div>
-      </div>
-
-      <!-- All Assignments -->
-      <div id="gcv-assignments" style="display:none;">
-        <div id="gc-assignments-content"><div class="gc-loading"><span class="dot-pulse"></span>Loading…</div></div>
-      </div>
-
-      <!-- Courses -->
-      <div id="gcv-courses" style="display:none;">
-        <div class="gc-courses-grid" id="gc-courses-grid"><div class="gc-loading"><span class="dot-pulse"></span>Loading…</div></div>
-      </div>
-
-      <!-- Announcements -->
-      <div id="gcv-announcements" style="display:none;">
-        <div id="gc-announcements-content"><div class="gc-loading"><span class="dot-pulse"></span>Loading…</div></div>
-      </div>
-    </div>
-
-  </div>
-
-  <script>
+<button class="gc-connect-btn" disabled="" id="gc-connect-btn">
+<svg height="18" viewbox="0 0 24 24" width="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#fff"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#fff"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#fff"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#fff"></path></svg>
+<span id="gc-connect-label">Loading…</span>
+</button>
+<div class="gc-err" id="gc-connect-error" style="display:none;margin-top:1rem;"></div>
+</div>
+</div>
+<!-- Dashboard (shown when authenticated) -->
+<div id="gc-dashboard" style="display:none;">
+<div class="gc-header">
+<div class="gc-header-left">
+<div class="gc-user-chip">
+<div class="gc-user-initial" id="gc-user-initial">?</div>
+<span id="gc-user-name">Loading…</span>
+</div>
+</div>
+<button class="gc-disconnect-btn" id="gc-disconnect-btn">Disconnect</button>
+</div>
+<!-- View tabs -->
+<div class="gc-view-tabs">
+<button class="gc-view-tab active" onclick="gcShowView('overview',this)">📊 Overview</button>
+<button class="gc-view-tab" onclick="gcShowView('assignments',this)">📋 All Assignments</button>
+<button class="gc-view-tab" onclick="gcShowView('courses',this)">📚 Courses</button>
+<button class="gc-view-tab" onclick="gcShowView('announcements',this)">📢 Announcements</button>
+</div>
+<!-- Overview -->
+<div id="gcv-overview">
+<div class="gc-stats-row" id="gc-stats-row">
+<div class="gc-stat"><div class="gc-stat-num" id="gc-stat-courses">–</div><div class="gc-stat-label">Courses</div></div>
+<div class="gc-stat"><div class="gc-stat-num" id="gc-stat-due">–</div><div class="gc-stat-label">Due This Week</div></div>
+<div class="gc-stat"><div class="gc-stat-num" id="gc-stat-overdue" style="color:#ef4444;">–</div><div class="gc-stat-label">Overdue</div></div>
+</div>
+<div id="gc-overview-content"><div class="gc-loading"><span class="dot-pulse"></span>Loading your classroom…</div></div>
+</div>
+<!-- All Assignments -->
+<div id="gcv-assignments" style="display:none;">
+<div id="gc-assignments-content"><div class="gc-loading"><span class="dot-pulse"></span>Loading…</div></div>
+</div>
+<!-- Courses -->
+<div id="gcv-courses" style="display:none;">
+<div class="gc-courses-grid" id="gc-courses-grid"><div class="gc-loading"><span class="dot-pulse"></span>Loading…</div></div>
+</div>
+<!-- Announcements -->
+<div id="gcv-announcements" style="display:none;">
+<div id="gc-announcements-content"><div class="gc-loading"><span class="dot-pulse"></span>Loading…</div></div>
+</div>
+</div>
+</div>
+<script>
   const PROXY = "https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/zone-groq-proxy";
   const MODEL = "llama-3.1-8b-instant";
 
@@ -1147,8 +1120,7 @@
   // Init converter
   updateUnitLists();
   </script>
-
-  <script>
+<script>
   /* =============================================================
      360 ZONE — GOOGLE CLASSROOM INTEGRATION
   ============================================================= */

@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Balloon Blitz TD — Ultimate Edition</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800;900&family=Orbitron:wght@400;700;900&display=swap');
@@ -223,205 +224,195 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);overf
 .hk{font-size:.7rem;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:1px 6px;color:var(--blue);font-weight:700}
 .hk-desc{font-size:.7rem;color:var(--muted)}
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta content="Play Balloon Blitz TD  Ultimate Edition on 360. Explore this free browser game and discover more games on 360." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="Balloon Blitz TD — Ultimate Edition" property="og:title"/><meta content="Play Balloon Blitz TD  Ultimate Edition on 360. Explore this free browser game and discover more games on 360." property="og:description"/><meta content="https://360-search.com/games/BlitzTowerDefense.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="Balloon Blitz TD — Ultimate Edition" name="twitter:title"/><meta content="Play Balloon Blitz TD  Ultimate Edition on 360. Explore this free browser game and discover more games on 360." name="twitter:description"/><link href="https://360-search.com/games/BlitzTowerDefense.html" rel="canonical"/></head>
 <body>
-
-<div id="start-screen" class="screen">
-  <div class="start-stars" id="stars-bg"></div>
-  <div class="start-logo">🎈 BALLOON<br>BLITZ TD</div>
-  <div class="start-tagline">Ultimate Edition</div>
-  <div class="menu-btns">
-    <button class="menu-btn primary" onclick="showMapScreen()">▶ PLAY</button>
-    <button class="menu-btn hero-btn" onclick="showHeroSelect(true)">⚔️ HEROES</button>
-    <button class="menu-btn secondary" onclick="openMKModal()">🧠 Monkey Knowledge</button>
-    <button class="menu-btn secondary" onclick="showHowTo()">? How to Play</button>
-  </div>
+<div class="screen" id="start-screen">
+<div class="start-stars" id="stars-bg"></div>
+<div class="start-logo">🎈 BALLOON<br/>BLITZ TD</div>
+<div class="start-tagline">Ultimate Edition</div>
+<div class="menu-btns">
+<button class="menu-btn primary" onclick="showMapScreen()">▶ PLAY</button>
+<button class="menu-btn hero-btn" onclick="showHeroSelect(true)">⚔️ HEROES</button>
+<button class="menu-btn secondary" onclick="openMKModal()">🧠 Monkey Knowledge</button>
+<button class="menu-btn secondary" onclick="showHowTo()">? How to Play</button>
 </div>
-
-<div id="map-screen" class="screen hidden">
-  <div class="screen-title">SELECT MAP</div>
-  <div class="screen-sub">Complete maps to unlock new ones · <span id="map-unlock-count">0</span> unlocked</div>
-  <div class="map-categories" id="map-cats"></div>
-  <div class="map-grid" id="map-grid"></div>
-  <button class="back-btn" style="margin-top:14px" onclick="showScreen('start-screen')">← Back</button>
 </div>
-
-<div id="diff-screen" class="screen hidden">
-  <div class="screen-title" id="diff-map-title">MAP NAME</div>
-  <div class="diff-map-preview" id="diff-preview"></div>
-  <div class="diff-grid">
-    <div class="diff-card easy" onclick="pickDiff('easy')"><div class="diff-name">EASY</div><div class="diff-desc">200 lives · full income<br>Beginner friendly</div></div>
-    <div class="diff-card medium" onclick="pickDiff('medium')"><div class="diff-name">MEDIUM</div><div class="diff-desc">150 lives · standard<br>Balanced challenge</div></div>
-    <div class="diff-card hard" onclick="pickDiff('hard')"><div class="diff-name">HARD</div><div class="diff-desc">100 lives · 85% income<br>Tough enemies</div></div>
-    <div class="diff-card nightmare" onclick="pickDiff('nightmare')"><div class="diff-name">NIGHTMARE</div><div class="diff-desc">1 life · 50% income<br>No mercy. No errors.</div></div>
-  </div>
-  <div style="font-size:.75rem;color:var(--muted);margin-top:8px">Special Modes:</div>
-  <div class="diff-modes" id="mode-chips"></div>
-  <div style="display:flex;gap:10px;margin-top:14px">
-    <button class="back-btn" onclick="showMapScreen()">← Back</button>
-    <button class="play-btn" onclick="beginGame()">▶ LAUNCH</button>
-  </div>
+<div class="screen hidden" id="map-screen">
+<div class="screen-title">SELECT MAP</div>
+<div class="screen-sub">Complete maps to unlock new ones · <span id="map-unlock-count">0</span> unlocked</div>
+<div class="map-categories" id="map-cats"></div>
+<div class="map-grid" id="map-grid"></div>
+<button class="back-btn" onclick="showScreen('start-screen')" style="margin-top:14px">← Back</button>
 </div>
-
-<div id="hero-screen" class="screen hidden">
-  <div class="screen-title">CHOOSE YOUR HERO</div>
-  <div class="screen-sub">ONE HERO PER MATCH · PLACE ON MAP TO DEPLOY</div>
-  <div class="hero-grid" id="hero-grid"></div>
-  <div style="display:flex;gap:10px;margin-top:14px">
-    <button class="back-btn" onclick="heroScreenBack()">← Back</button>
-    <button class="play-btn" onclick="heroConfirm()">Confirm Hero</button>
-  </div>
+<div class="screen hidden" id="diff-screen">
+<div class="screen-title" id="diff-map-title">MAP NAME</div>
+<div class="diff-map-preview" id="diff-preview"></div>
+<div class="diff-grid">
+<div class="diff-card easy" onclick="pickDiff('easy')"><div class="diff-name">EASY</div><div class="diff-desc">200 lives · full income<br/>Beginner friendly</div></div>
+<div class="diff-card medium" onclick="pickDiff('medium')"><div class="diff-name">MEDIUM</div><div class="diff-desc">150 lives · standard<br/>Balanced challenge</div></div>
+<div class="diff-card hard" onclick="pickDiff('hard')"><div class="diff-name">HARD</div><div class="diff-desc">100 lives · 85% income<br/>Tough enemies</div></div>
+<div class="diff-card nightmare" onclick="pickDiff('nightmare')"><div class="diff-name">NIGHTMARE</div><div class="diff-desc">1 life · 50% income<br/>No mercy. No errors.</div></div>
 </div>
-
+<div style="font-size:.75rem;color:var(--muted);margin-top:8px">Special Modes:</div>
+<div class="diff-modes" id="mode-chips"></div>
+<div style="display:flex;gap:10px;margin-top:14px">
+<button class="back-btn" onclick="showMapScreen()">← Back</button>
+<button class="play-btn" onclick="beginGame()">▶ LAUNCH</button>
+</div>
+</div>
+<div class="screen hidden" id="hero-screen">
+<div class="screen-title">CHOOSE YOUR HERO</div>
+<div class="screen-sub">ONE HERO PER MATCH · PLACE ON MAP TO DEPLOY</div>
+<div class="hero-grid" id="hero-grid"></div>
+<div style="display:flex;gap:10px;margin-top:14px">
+<button class="back-btn" onclick="heroScreenBack()">← Back</button>
+<button class="play-btn" onclick="heroConfirm()">Confirm Hero</button>
+</div>
+</div>
 <div id="game-wrap">
-  <div id="topbar">
-    <span class="game-title">🎈 BLITZ</span>
-    <div class="hud-chip">💰 <span class="val" id="hud-cash">0</span></div>
-    <div class="hud-chip" id="hud-lives">❤️ <span class="val" id="hud-lv">0</span></div>
-    <div class="hud-chip" id="hud-wave">🌊 <span class="val" id="hud-wv">0/60</span></div>
-    <div class="hud-chip">💀 <span class="val" id="hud-pop">0</span></div>
-    <div class="hud-chip">⭐ <span class="val" id="hud-mk">0</span> MK</div>
-    <div class="top-right">
-      <button class="ctrl-btn" id="speed-btn" onclick="cycleSpeed()">⏩ 1×</button>
-      <button class="ctrl-btn" id="auto-btn" onclick="toggleAuto()">⚡ Auto</button>
-      <button class="ctrl-btn" onclick="openMKModal()">🧠 MK</button>
-      <button class="ctrl-btn" onclick="showHowTo()">?</button>
-      <button class="ctrl-btn" onclick="goHome()">🏠</button>
-    </div>
-  </div>
-  <div id="game-body">
-    <div id="canvas-wrap"><canvas id="gc"></canvas></div>
-    <div id="sidebar">
-      <div class="sb-tabs" id="sb-tabs">
-        <div class="sb-tab active" onclick="switchTab(0)">Primary</div>
-        <div class="sb-tab" onclick="switchTab(1)">Military</div>
-        <div class="sb-tab" onclick="switchTab(2)">Magic</div>
-        <div class="sb-tab" onclick="switchTab(3)">Support</div>
-        <div class="sb-tab" onclick="switchTab(4)">Heroes</div>
-      </div>
-      <div id="tower-scroll"></div>
-      <div id="upg-panel" style="display:none">
-        <div class="upg-name" id="upg-name">Tower</div>
-        <div class="upg-stat-row" id="upg-stats"></div>
-        <div id="upg-paths"></div>
-        <div class="sep"></div>
-        <div id="upg-ability-btns"></div>
-        <button class="sell-btn" id="sell-btn" onclick="sellTower()">💸 Sell Tower</button>
-      </div>
-      <div id="hero-placed-panel" style="display:none" class="hero-placed-panel">
-        <div class="hero-placed-title" id="hp-name">Hero</div>
-        <div class="hero-xp-bar"><div class="hero-xp-fill" id="hp-xp" style="width:0%"></div></div>
-        <div class="hero-lvl-info" id="hp-lvl">Lv 1 · 0 / 100 XP</div>
-        <div class="hero-ability-btns" id="hp-abilities"></div>
-      </div>
-    </div>
-  </div>
-  <div id="powers-bar" title="Powers: click to use"></div>
-  <div id="bot-bar">
-    <button id="wave-btn" onclick="startWave()">▶ Start Wave 1</button>
-    <div class="bot-stat">Map: <b id="bot-map">—</b></div>
-    <div class="bot-stat">Mode: <b id="bot-mode">—</b></div>
-    <div class="bot-stat">Target: <b id="bot-tgt" style="cursor:pointer" onclick="cycleTarget()">First ▾</b></div>
-    <div class="bot-right">
-      <button class="mk-btn" onclick="openMKModal()">🧠 MK</button>
-    </div>
-  </div>
+<div id="topbar">
+<span class="game-title">🎈 BLITZ</span>
+<div class="hud-chip">💰 <span class="val" id="hud-cash">0</span></div>
+<div class="hud-chip" id="hud-lives">❤️ <span class="val" id="hud-lv">0</span></div>
+<div class="hud-chip" id="hud-wave">🌊 <span class="val" id="hud-wv">0/60</span></div>
+<div class="hud-chip">💀 <span class="val" id="hud-pop">0</span></div>
+<div class="hud-chip">⭐ <span class="val" id="hud-mk">0</span> MK</div>
+<div class="top-right">
+<button class="ctrl-btn" id="speed-btn" onclick="cycleSpeed()">⏩ 1×</button>
+<button class="ctrl-btn" id="auto-btn" onclick="toggleAuto()">⚡ Auto</button>
+<button class="ctrl-btn" onclick="openMKModal()">🧠 MK</button>
+<button class="ctrl-btn" onclick="showHowTo()">?</button>
+<button class="ctrl-btn" onclick="goHome()">🏠</button>
 </div>
-
+</div>
+<div id="game-body">
+<div id="canvas-wrap"><canvas id="gc"></canvas></div>
+<div id="sidebar">
+<div class="sb-tabs" id="sb-tabs">
+<div class="sb-tab active" onclick="switchTab(0)">Primary</div>
+<div class="sb-tab" onclick="switchTab(1)">Military</div>
+<div class="sb-tab" onclick="switchTab(2)">Magic</div>
+<div class="sb-tab" onclick="switchTab(3)">Support</div>
+<div class="sb-tab" onclick="switchTab(4)">Heroes</div>
+</div>
+<div id="tower-scroll"></div>
+<div id="upg-panel" style="display:none">
+<div class="upg-name" id="upg-name">Tower</div>
+<div class="upg-stat-row" id="upg-stats"></div>
+<div id="upg-paths"></div>
+<div class="sep"></div>
+<div id="upg-ability-btns"></div>
+<button class="sell-btn" id="sell-btn" onclick="sellTower()">💸 Sell Tower</button>
+</div>
+<div class="hero-placed-panel" id="hero-placed-panel" style="display:none">
+<div class="hero-placed-title" id="hp-name">Hero</div>
+<div class="hero-xp-bar"><div class="hero-xp-fill" id="hp-xp" style="width:0%"></div></div>
+<div class="hero-lvl-info" id="hp-lvl">Lv 1 · 0 / 100 XP</div>
+<div class="hero-ability-btns" id="hp-abilities"></div>
+</div>
+</div>
+</div>
+<div id="powers-bar" title="Powers: click to use"></div>
+<div id="bot-bar">
+<button id="wave-btn" onclick="startWave()">▶ Start Wave 1</button>
+<div class="bot-stat">Map: <b id="bot-map">—</b></div>
+<div class="bot-stat">Mode: <b id="bot-mode">—</b></div>
+<div class="bot-stat">Target: <b id="bot-tgt" onclick="cycleTarget()" style="cursor:pointer">First ▾</b></div>
+<div class="bot-right">
+<button class="mk-btn" onclick="openMKModal()">🧠 MK</button>
+</div>
+</div>
+</div>
 <div id="boss-bar">
-  <div class="boss-bar-inner">
-    <div class="boss-bar-name" id="boss-bar-name">BOSS</div>
-    <div class="boss-hp-track"><div class="boss-hp-fill" id="boss-hp-fill" style="width:100%"></div></div>
-    <div class="boss-hp-text" id="boss-hp-text">100%</div>
-  </div>
+<div class="boss-bar-inner">
+<div class="boss-bar-name" id="boss-bar-name">BOSS</div>
+<div class="boss-hp-track"><div class="boss-hp-fill" id="boss-hp-fill" style="width:100%"></div></div>
+<div class="boss-hp-text" id="boss-hp-text">100%</div>
 </div>
-
+</div>
 <div id="mk-modal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div class="modal-title">🧠 Monkey Knowledge</div>
-      <button class="modal-close" onclick="closeMKModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="mk-pts-display">Points: <span id="mk-pts-display">0</span></div>
-      <div class="mk-cats" id="mk-cats"></div>
-      <div class="mk-grid" id="mk-grid"></div>
-    </div>
-  </div>
+<div class="modal-box">
+<div class="modal-header">
+<div class="modal-title">🧠 Monkey Knowledge</div>
+<button class="modal-close" onclick="closeMKModal()">✕</button>
 </div>
-
+<div class="modal-body">
+<div class="mk-pts-display">Points: <span id="mk-pts-display">0</span></div>
+<div class="mk-cats" id="mk-cats"></div>
+<div class="mk-grid" id="mk-grid"></div>
+</div>
+</div>
+</div>
 <div id="howto-modal">
-  <div class="modal-box" style="max-width:600px">
-    <div class="modal-header">
-      <div class="modal-title">? How to Play</div>
-      <button class="modal-close" onclick="document.getElementById('howto-modal').classList.remove('show')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="howto-section">
-        <h3>🎯 OBJECTIVE</h3>
-        <p>Stop balloons from reaching the end of the path. You have a limited number of lives. Survive all 60 waves to win!</p>
-      </div>
-      <div class="howto-section">
-        <h3>🏗️ PLACING TOWERS</h3>
-        <ul>
-          <li>Click a tower in the sidebar to select it</li>
-          <li>Click any <b>green tile</b> on the map to place it (not on the path!)</li>
-          <li>Click a placed tower to upgrade or sell it</li>
-          <li>Each tower has 3 upgrade paths — max 5 tiers per path, but only 2 paths can be upgraded at once</li>
-        </ul>
-      </div>
-      <div class="howto-section">
-        <h3>⚔️ HEROES</h3>
-        <ul>
-          <li>Select your hero before the game from the Heroes tab</li>
-          <li>Place your hero on the map — only one hero allowed</li>
-          <li>Heroes level up by earning XP from kills, gaining new powers and unlocking abilities</li>
-          <li>Use hero abilities by clicking them in the sidebar (they have cooldowns!)</li>
-        </ul>
-      </div>
-      <div class="howto-section">
-        <h3>🌊 WAVES</h3>
-        <ul>
-          <li>Press <b>Start Wave</b> when ready — or enable <b>Auto</b> to start waves automatically</li>
-          <li>Earn cash from popping balloons and a bonus at the end of each wave</li>
-          <li>Farms and support towers generate income at the start of each wave</li>
-          <li>Bosses (MOAB, BFB, ZOMG, DDT, BAD, TITAN) appear from wave 20 onwards</li>
-        </ul>
-      </div>
-      <div class="howto-section">
-        <h3>⚡ POWERS</h3>
-        <p>Single-use power-ups shown in the bar above the bottom controls. Click to activate instantly!</p>
-      </div>
-      <div class="howto-section">
-        <h3>🧠 MONKEY KNOWLEDGE</h3>
-        <p>Earn MK Points by completing waves. Spend them on permanent upgrades that carry over between games!</p>
-      </div>
-      <div class="howto-section">
-        <h3>⌨️ CONTROLS</h3>
-        <div class="hotkey-grid">
-          <span class="hk">Click tower list</span><span class="hk-desc">Select tower to place</span>
-          <span class="hk">Click map</span><span class="hk-desc">Place selected tower</span>
-          <span class="hk">Click placed tower</span><span class="hk-desc">Open upgrade panel</span>
-          <span class="hk">Target ▾</span><span class="hk-desc">Cycle targeting mode</span>
-          <span class="hk">⏩ Speed</span><span class="hk-desc">Cycle 1× / 2× / 3×</span>
-          <span class="hk">⚡ Auto</span><span class="hk-desc">Auto-start next wave</span>
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="modal-box" style="max-width:600px">
+<div class="modal-header">
+<div class="modal-title">? How to Play</div>
+<button class="modal-close" onclick="document.getElementById('howto-modal').classList.remove('show')">✕</button>
 </div>
-
+<div class="modal-body">
+<div class="howto-section">
+<h3>🎯 OBJECTIVE</h3>
+<p>Stop balloons from reaching the end of the path. You have a limited number of lives. Survive all 60 waves to win!</p>
+</div>
+<div class="howto-section">
+<h3>🏗️ PLACING TOWERS</h3>
+<ul>
+<li>Click a tower in the sidebar to select it</li>
+<li>Click any <b>green tile</b> on the map to place it (not on the path!)</li>
+<li>Click a placed tower to upgrade or sell it</li>
+<li>Each tower has 3 upgrade paths — max 5 tiers per path, but only 2 paths can be upgraded at once</li>
+</ul>
+</div>
+<div class="howto-section">
+<h3>⚔️ HEROES</h3>
+<ul>
+<li>Select your hero before the game from the Heroes tab</li>
+<li>Place your hero on the map — only one hero allowed</li>
+<li>Heroes level up by earning XP from kills, gaining new powers and unlocking abilities</li>
+<li>Use hero abilities by clicking them in the sidebar (they have cooldowns!)</li>
+</ul>
+</div>
+<div class="howto-section">
+<h3>🌊 WAVES</h3>
+<ul>
+<li>Press <b>Start Wave</b> when ready — or enable <b>Auto</b> to start waves automatically</li>
+<li>Earn cash from popping balloons and a bonus at the end of each wave</li>
+<li>Farms and support towers generate income at the start of each wave</li>
+<li>Bosses (MOAB, BFB, ZOMG, DDT, BAD, TITAN) appear from wave 20 onwards</li>
+</ul>
+</div>
+<div class="howto-section">
+<h3>⚡ POWERS</h3>
+<p>Single-use power-ups shown in the bar above the bottom controls. Click to activate instantly!</p>
+</div>
+<div class="howto-section">
+<h3>🧠 MONKEY KNOWLEDGE</h3>
+<p>Earn MK Points by completing waves. Spend them on permanent upgrades that carry over between games!</p>
+</div>
+<div class="howto-section">
+<h3>⌨️ CONTROLS</h3>
+<div class="hotkey-grid">
+<span class="hk">Click tower list</span><span class="hk-desc">Select tower to place</span>
+<span class="hk">Click map</span><span class="hk-desc">Place selected tower</span>
+<span class="hk">Click placed tower</span><span class="hk-desc">Open upgrade panel</span>
+<span class="hk">Target ▾</span><span class="hk-desc">Cycle targeting mode</span>
+<span class="hk">⏩ Speed</span><span class="hk-desc">Cycle 1× / 2× / 3×</span>
+<span class="hk">⚡ Auto</span><span class="hk-desc">Auto-start next wave</span>
+</div>
+</div>
+</div>
+</div>
+</div>
 <div id="overlay">
-  <div class="ov-title" id="ov-title" style="color:var(--gold)">🏆 VICTORY!</div>
-  <div class="ov-stats" id="ov-stats"></div>
-  <div class="ov-btns">
-    <button class="ov-btn primary" onclick="restartGame()">🔄 Play Again</button>
-    <button class="ov-btn secondary" onclick="goHome()">🏠 Menu</button>
-  </div>
+<div class="ov-title" id="ov-title" style="color:var(--gold)">🏆 VICTORY!</div>
+<div class="ov-stats" id="ov-stats"></div>
+<div class="ov-btns">
+<button class="ov-btn primary" onclick="restartGame()">🔄 Play Again</button>
+<button class="ov-btn secondary" onclick="goHome()">🏠 Menu</button>
+</div>
 </div>
 <div id="toast"></div>
-
 <script>
 // ================================================================
 // DATA DEFINITIONS
@@ -1939,6 +1930,6 @@ window.addEventListener('resize',()=>{if(G.map&&(G.wave>=0||G.over)){resizeCanva
 // Initial screen
 showScreen('start-screen');
 </script>
-  <script src="assets/js/game-rewards.js"></script>
+<script src="assets/js/game-rewards.js"></script>
 </body>
 </html>

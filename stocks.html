@@ -1,191 +1,175 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 Stocks</title>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="stylesheet" href="/assets/css/stocks.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-SCZB3M2PNX"></script>
-  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SCZB3M2PNX');</script>
-</head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 Stocks — Stock Market Tools</title>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/assets/css/stocks.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-SCZB3M2PNX"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SCZB3M2PNX');</script>
+<meta content="Explore stock market information and tools with 360 Stocks." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 Stocks — Stock Market Tools" property="og:title"/><meta content="Explore stock market information and tools with 360 Stocks." property="og:description"/><meta content="https://360-search.com/stocks.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 Stocks — Stock Market Tools" name="twitter:title"/><meta content="Explore stock market information and tools with 360 Stocks." name="twitter:description"/><link href="https://360-search.com/stocks.html" rel="canonical"/></head>
 <body class="dark">
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <div class="auth-top-right">
-    <button id="signInBtn" class="auth-btn">Sign In</button>
-    <button id="signUpBtn" class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-
-  <!-- 360 navigation sidebar (required by main.js) -->
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
-  <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
-  <div class="overlay" id="overlay"></div>
-
-  <div class="settings-panel" id="settingsPanel">
-    <h3>Appearance</h3>
-    <div class="settings-label">Theme</div>
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-    </div>
-    <div class="settings-label" style="margin-top:20px;">Mode</div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:14px;">Dark mode</span>
-      <input type="checkbox" id="darkToggle" />
-    </label>
-    <h3 style="margin-top:20px;">Cursor</h3>
-    <div class="settings-label">Style</div>
-    <div class="cursor-options">
-      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-    </div>
-    <div class="settings-label" style="margin-top:20px;">Background</div>
-    <div class="settings-box">
-      <input type="file" id="bgUpload" accept="image/*" class="settings-input" />
-      <input type="text" id="bgUrlInput" placeholder="Paste image URL…" class="settings-input" />
-      <button id="bgUrlBtn" class="settings-btn">Apply URL</button>
-      <button id="bgResetBtn" class="settings-btn">Reset</button>
-    </div>
-    <h3 style="margin-top:25px;">Legal</h3>
-    <a href="/privacypolicy" class="legal-link">Privacy Policy</a>
-    <a href="/tos" class="legal-link">Terms of Service</a>
-    <h3 style="margin-top:25px;">About</h3>
-    <details class="about-dropdown">
-      <summary>What is 360?</summary>
-      <p>360 is a next-generation search engine and digital workspace. Built by 360 Digital, Co.</p>
-    </details>
-  </div>
-
-  <div id="auth-popup" class="auth-popup hidden">
-    <div class="auth-box">
-      <h2>Account</h2>
-      <input id="auth-email" type="email" placeholder="Email" />
-      <input id="auth-password" type="password" placeholder="Password" />
-      <button id="auth-login-btn">Log In</button>
-      <button id="auth-signup-btn">Sign Up</button>
-      <p id="auth-error" class="auth-error"></p>
-      <button id="auth-close-btn" class="close-btn">Close</button>
-    </div>
-  </div>
-
-  <main class="stocks-shell">
-    <div class="stocks-header">
-      <div class="stocks-title">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<!-- 360 navigation sidebar (required by main.js) -->
+<button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+<aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
+<div class="overlay" id="overlay"></div>
+<div class="settings-panel" id="settingsPanel">
+<h3>Appearance</h3>
+<div class="settings-label">Theme</div>
+<div class="theme-swatches">
+<div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+<div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+<div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+<div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+</div>
+<div class="settings-label" style="margin-top:20px;">Mode</div>
+<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+<span style="font-size:14px;">Dark mode</span>
+<input id="darkToggle" type="checkbox"/>
+</label>
+<h3 style="margin-top:20px;">Cursor</h3>
+<div class="settings-label">Style</div>
+<div class="cursor-options">
+<div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+<div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+<div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+<div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+<div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+<div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+</div>
+<div class="settings-label" style="margin-top:20px;">Background</div>
+<div class="settings-box">
+<input accept="image/*" class="settings-input" id="bgUpload" type="file"/>
+<input class="settings-input" id="bgUrlInput" placeholder="Paste image URL…" type="text"/>
+<button class="settings-btn" id="bgUrlBtn">Apply URL</button>
+<button class="settings-btn" id="bgResetBtn">Reset</button>
+</div>
+<h3 style="margin-top:25px;">Legal</h3>
+<a class="legal-link" href="/privacypolicy">Privacy Policy</a>
+<a class="legal-link" href="/tos">Terms of Service</a>
+<h3 style="margin-top:25px;">About</h3>
+<details class="about-dropdown">
+<summary>What is 360?</summary>
+<p>360 is a next-generation search engine and digital workspace. Built by 360 Digital, Co.</p>
+</details>
+</div>
+<div class="auth-popup hidden" id="auth-popup">
+<div class="auth-box">
+<h2>Account</h2>
+<input id="auth-email" placeholder="Email" type="email"/>
+<input id="auth-password" placeholder="Password" type="password"/>
+<button id="auth-login-btn">Log In</button>
+<button id="auth-signup-btn">Sign Up</button>
+<p class="auth-error" id="auth-error"></p>
+<button class="close-btn" id="auth-close-btn">Close</button>
+</div>
+</div>
+<main class="stocks-shell">
+<div class="stocks-header">
+<div class="stocks-title">
+<svg fill="none" height="26" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="26"><line x1="18" x2="18" y1="20" y2="10"></line><line x1="12" x2="12" y1="20" y2="4"></line><line x1="6" x2="6" y1="20" y2="14"></line></svg>
         360 Stocks
       </div>
-      <div class="stocks-search">
-        <input id="stockSearchInput" type="text" placeholder="Search a ticker or company (e.g. AAPL, Tesla)…" autocomplete="off" />
-        <div class="stocks-search-results" id="stockSearchResults"></div>
-      </div>
-    </div>
-
-    <div class="stocks-watchlist" id="watchlistChips">
-      <button class="watchlist-chip" data-symbol="AAPL">AAPL</button>
-      <button class="watchlist-chip" data-symbol="MSFT">MSFT</button>
-      <button class="watchlist-chip" data-symbol="NVDA">NVDA</button>
-      <button class="watchlist-chip" data-symbol="GOOGL">GOOGL</button>
-      <button class="watchlist-chip" data-symbol="AMZN">AMZN</button>
-      <button class="watchlist-chip" data-symbol="TSLA">TSLA</button>
-      <button class="watchlist-chip" data-symbol="SPY">SPY</button>
-    </div>
-
-    <div class="stocks-loading" id="stocksLoading">Loading market data…</div>
-    <div class="stocks-error" id="stocksError" style="display:none;"></div>
-
-    <div class="stocks-grid" id="stocksGrid">
-      <!-- LEFT COLUMN -->
-      <div>
-        <div class="s-card" style="margin-bottom:20px;">
-          <div class="s-quote-top">
-            <div>
-              <div class="s-company" id="qCompany">—</div>
-              <div class="s-symbol" id="qSymbol">—</div>
-            </div>
-            <div class="s-price-block">
-              <div class="s-price" id="qPrice">—</div>
-              <div class="s-change" id="qChange">—</div>
-            </div>
-          </div>
-
-          <div class="s-range-btns" id="rangeBtns">
-            <button class="s-range-btn" data-range="1mo">1M</button>
-            <button class="s-range-btn" data-range="6mo">6M</button>
-            <button class="s-range-btn" data-range="1y">1Y</button>
-            <button class="s-range-btn" data-range="5y">5Y</button>
-            <button class="s-range-btn" data-range="max">Max</button>
-          </div>
-
-          <div class="s-chart-wrap">
-            <canvas id="priceChart"></canvas>
-          </div>
-        </div>
-
-        <div class="s-card">
-          <div class="s-card-title">Key Statistics</div>
-          <div class="s-stats-grid" id="statsGrid"></div>
-        </div>
-      </div>
-
-      <!-- RIGHT COLUMN -->
-      <div>
-        <div class="s-card" style="margin-bottom:20px;">
-          <div class="s-card-title">Technical Outlook</div>
-          <span class="s-outlook-badge neutral" id="outlookBadge">—</span>
-
-          <div class="s-gauge-row">
-            <span class="s-gauge-label">Bear</span>
-            <div class="s-gauge-track"><div class="s-gauge-dot" id="gaugeDot" style="left:50%;"></div></div>
-            <span class="s-gauge-label" style="text-align:right;">Bull</span>
-          </div>
-
-          <ul class="s-signals" id="signalsList"></ul>
-
-          <div class="s-disclaimer">
-            <strong>Not financial advice.</strong> This "outlook" is a plain read of common technical indicators
+<div class="stocks-search">
+<input autocomplete="off" id="stockSearchInput" placeholder="Search a ticker or company (e.g. AAPL, Tesla)…" type="text"/>
+<div class="stocks-search-results" id="stockSearchResults"></div>
+</div>
+</div>
+<div class="stocks-watchlist" id="watchlistChips">
+<button class="watchlist-chip" data-symbol="AAPL">AAPL</button>
+<button class="watchlist-chip" data-symbol="MSFT">MSFT</button>
+<button class="watchlist-chip" data-symbol="NVDA">NVDA</button>
+<button class="watchlist-chip" data-symbol="GOOGL">GOOGL</button>
+<button class="watchlist-chip" data-symbol="AMZN">AMZN</button>
+<button class="watchlist-chip" data-symbol="TSLA">TSLA</button>
+<button class="watchlist-chip" data-symbol="SPY">SPY</button>
+</div>
+<div class="stocks-loading" id="stocksLoading">Loading market data…</div>
+<div class="stocks-error" id="stocksError" style="display:none;"></div>
+<div class="stocks-grid" id="stocksGrid">
+<!-- LEFT COLUMN -->
+<div>
+<div class="s-card" style="margin-bottom:20px;">
+<div class="s-quote-top">
+<div>
+<div class="s-company" id="qCompany">—</div>
+<div class="s-symbol" id="qSymbol">—</div>
+</div>
+<div class="s-price-block">
+<div class="s-price" id="qPrice">—</div>
+<div class="s-change" id="qChange">—</div>
+</div>
+</div>
+<div class="s-range-btns" id="rangeBtns">
+<button class="s-range-btn" data-range="1mo">1M</button>
+<button class="s-range-btn" data-range="6mo">6M</button>
+<button class="s-range-btn" data-range="1y">1Y</button>
+<button class="s-range-btn" data-range="5y">5Y</button>
+<button class="s-range-btn" data-range="max">Max</button>
+</div>
+<div class="s-chart-wrap">
+<canvas id="priceChart"></canvas>
+</div>
+</div>
+<div class="s-card">
+<div class="s-card-title">Key Statistics</div>
+<div class="s-stats-grid" id="statsGrid"></div>
+</div>
+</div>
+<!-- RIGHT COLUMN -->
+<div>
+<div class="s-card" style="margin-bottom:20px;">
+<div class="s-card-title">Technical Outlook</div>
+<span class="s-outlook-badge neutral" id="outlookBadge">—</span>
+<div class="s-gauge-row">
+<span class="s-gauge-label">Bear</span>
+<div class="s-gauge-track"><div class="s-gauge-dot" id="gaugeDot" style="left:50%;"></div></div>
+<span class="s-gauge-label" style="text-align:right;">Bull</span>
+</div>
+<ul class="s-signals" id="signalsList"></ul>
+<div class="s-disclaimer">
+<strong>Not financial advice.</strong> This "outlook" is a plain read of common technical indicators
             (moving averages, RSI, short-term trend slope) — it describes what the recent price action looks like,
             not a forecast of what will happen next. No model, including this one, can accurately predict future
             stock prices. Markets are affected by countless unpredictable factors. Always do your own research
             and consider consulting a licensed financial advisor before making investment decisions.
           </div>
-        </div>
-
-        <div class="s-card">
-          <div class="s-card-title">Analyst Snapshot</div>
-          <div class="s-stats-grid" id="analystGrid"></div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-  <script src="/assets/js/stocks.js"></script>
+</div>
+<div class="s-card">
+<div class="s-card-title">Analyst Snapshot</div>
+<div class="s-stats-grid" id="analystGrid"></div>
+</div>
+</div>
+</div>
+</main>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script src="/assets/js/stocks.js"></script>
 </body>
 </html>

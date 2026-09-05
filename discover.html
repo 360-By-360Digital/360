@@ -1,17 +1,18 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Discover &mdash; 360</title>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Discover — 360 Communities &amp; Bots</title>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     .disc-shell{max-width:960px;margin:0 auto;padding:72px 24px 80px;}
     .disc-tabs{display:flex;gap:4px;margin-bottom:28px;border-bottom:1px solid var(--br);}
     .disc-tab{padding:10px 20px;font-size:14px;font-weight:600;color:var(--mut);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;transition:color .15s,border-color .15s;margin-bottom:-1px;}
@@ -59,66 +60,62 @@
     body.dark .bot-server-item{color:var(--txtd);}
     .bot-server-item:hover{border-color:var(--a);}
   </style>
-</head>
+<meta content="Discover communities, servers and bots across the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="Discover — 360 Communities &amp; Bots" property="og:title"/><meta content="Discover communities, servers and bots across the 360 platform." property="og:description"/><meta content="https://360-search.com/discover.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="Discover — 360 Communities &amp; Bots" name="twitter:title"/><meta content="Discover communities, servers and bots across the 360 platform." name="twitter:description"/><link href="https://360-search.com/discover.html" rel="canonical"/></head>
 <body>
-  <div class="auth-top-right">
-    <button id="signInBtn" class="auth-btn">Sign In</button>
-    <button id="signUpBtn" class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-  <button class="sidebar-toggle" id="sidebarToggle">&#9776; Menu</button>
-  <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
-  <div class="overlay" id="overlay"></div>
-
-  <div class="disc-shell">
-    <div class="disc-tabs">
-      <button class="disc-tab active" id="tab-servers" onclick="switchTab('servers')">Servers</button>
-      <button class="disc-tab" id="tab-bots" onclick="switchTab('bots')">Bot Marketplace</button>
-    </div>
-
-    <div id="view-servers">
-      <div class="disc-header"><h1>Discover Servers</h1><p>Find public communities to join.</p></div>
-      <div class="disc-controls">
-        <input class="disc-search" id="serverSearch" type="text" placeholder="Search servers..." autocomplete="off" />
-        <select class="disc-select" id="serverCategory">
-          <option value="">All categories</option>
-          <option value="Gaming">Gaming</option><option value="Tech">Tech</option>
-          <option value="Art">Art</option><option value="Music">Music</option>
-          <option value="Science">Science</option><option value="Education">Education</option>
-          <option value="Social">Social</option><option value="Other">Other</option>
-        </select>
-      </div>
-      <div class="disc-grid" id="serverGrid">
-        <div class="disc-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:44px;height:44px;border-radius:12px;"></div><div class="disc-skeleton" style="width:60%;"></div><div class="disc-skeleton" style="width:85%;"></div></div>
-        <div class="disc-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:44px;height:44px;border-radius:12px;"></div><div class="disc-skeleton" style="width:55%;"></div><div class="disc-skeleton" style="width:80%;"></div></div>
-        <div class="disc-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:44px;height:44px;border-radius:12px;"></div><div class="disc-skeleton" style="width:65%;"></div><div class="disc-skeleton" style="width:75%;"></div></div>
-      </div>
-    </div>
-
-    <div id="view-bots" style="display:none;">
-      <div class="disc-header"><h1>Bot Marketplace</h1><p>Add bots to your servers.</p></div>
-      <div class="disc-controls">
-        <input class="disc-search" id="botSearch" type="text" placeholder="Search bots..." autocomplete="off" />
-        <select class="disc-select" id="botCategory">
-          <option value="">All categories</option>
-          <option value="Utility">Utility</option><option value="Moderation">Moderation</option>
-          <option value="Fun">Fun</option><option value="Music">Music</option>
-          <option value="Productivity">Productivity</option>
-        </select>
-      </div>
-      <div class="disc-grid" id="botGrid">
-        <div class="bot-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:48px;height:48px;border-radius:14px;"></div><div class="disc-skeleton" style="width:50%;"></div><div class="disc-skeleton" style="width:85%;"></div></div>
-        <div class="bot-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:48px;height:48px;border-radius:14px;"></div><div class="disc-skeleton" style="width:45%;"></div><div class="disc-skeleton" style="width:80%;"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-  <script>
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+<aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
+<div class="overlay" id="overlay"></div>
+<div class="disc-shell">
+<div class="disc-tabs">
+<button class="disc-tab active" id="tab-servers" onclick="switchTab('servers')">Servers</button>
+<button class="disc-tab" id="tab-bots" onclick="switchTab('bots')">Bot Marketplace</button>
+</div>
+<div id="view-servers">
+<div class="disc-header"><h1>Discover Servers</h1><p>Find public communities to join.</p></div>
+<div class="disc-controls">
+<input autocomplete="off" class="disc-search" id="serverSearch" placeholder="Search servers..." type="text"/>
+<select class="disc-select" id="serverCategory">
+<option value="">All categories</option>
+<option value="Gaming">Gaming</option><option value="Tech">Tech</option>
+<option value="Art">Art</option><option value="Music">Music</option>
+<option value="Science">Science</option><option value="Education">Education</option>
+<option value="Social">Social</option><option value="Other">Other</option>
+</select>
+</div>
+<div class="disc-grid" id="serverGrid">
+<div class="disc-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:44px;height:44px;border-radius:12px;"></div><div class="disc-skeleton" style="width:60%;"></div><div class="disc-skeleton" style="width:85%;"></div></div>
+<div class="disc-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:44px;height:44px;border-radius:12px;"></div><div class="disc-skeleton" style="width:55%;"></div><div class="disc-skeleton" style="width:80%;"></div></div>
+<div class="disc-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:44px;height:44px;border-radius:12px;"></div><div class="disc-skeleton" style="width:65%;"></div><div class="disc-skeleton" style="width:75%;"></div></div>
+</div>
+</div>
+<div id="view-bots" style="display:none;">
+<div class="disc-header"><h1>Bot Marketplace</h1><p>Add bots to your servers.</p></div>
+<div class="disc-controls">
+<input autocomplete="off" class="disc-search" id="botSearch" placeholder="Search bots..." type="text"/>
+<select class="disc-select" id="botCategory">
+<option value="">All categories</option>
+<option value="Utility">Utility</option><option value="Moderation">Moderation</option>
+<option value="Fun">Fun</option><option value="Music">Music</option>
+<option value="Productivity">Productivity</option>
+</select>
+</div>
+<div class="disc-grid" id="botGrid">
+<div class="bot-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:48px;height:48px;border-radius:14px;"></div><div class="disc-skeleton" style="width:50%;"></div><div class="disc-skeleton" style="width:85%;"></div></div>
+<div class="bot-card" style="pointer-events:none;gap:8px;"><div class="disc-skeleton" style="width:48px;height:48px;border-radius:14px;"></div><div class="disc-skeleton" style="width:45%;"></div><div class="disc-skeleton" style="width:80%;"></div></div>
+</div>
+</div>
+</div>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script>
   (async function() {
     const SB_URL = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';

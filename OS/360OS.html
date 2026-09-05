@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>360 OS</title>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 OS — 360 Operating System</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
@@ -244,121 +245,117 @@ body{font-family:'Google Sans',system-ui,sans-serif;overflow:hidden;background:#
 .store-btn{padding:4px 12px;border-radius:7px;border:none;background:#4285f4;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s}.store-btn:hover{opacity:.85}
 .store-btn.installed{background:#e8f0fe;color:#1a73e8;cursor:default}
 </style>
-</head>
+<meta content="Learn about 360 OS, the 360 operating system and its web-based experience." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 OS — 360 Operating System" property="og:title"/><meta content="Learn about 360 OS, the 360 operating system and its web-based experience." property="og:description"/><meta content="https://360-search.com/OS/360OS.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 OS — 360 Operating System" name="twitter:title"/><meta content="Learn about 360 OS, the 360 operating system and its web-based experience." name="twitter:description"/><link href="https://360-search.com/OS/360OS.html" rel="canonical"/></head>
 <body>
 <div id="root">
-
 <!-- LOCK -->
 <div id="lock">
-  <div class="lock-top">
-    <div class="lock-time" id="lock-time">12:00</div>
-    <div class="lock-date" id="lock-date">Monday, January 1</div>
-    <div class="lock-profiles" id="lock-profiles"></div>
-    <div class="lock-action hidden" id="lock-action">
-      <input class="lk-input" id="lk-pass" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doUnlock()"/>
-      <div class="lk-row">
-        <button class="lk-btn ghost" onclick="cancelSel()">Back</button>
-        <button class="lk-btn primary" onclick="doUnlock()">Sign in</button>
-      </div>
-      <div class="lk-err" id="lk-err"></div>
-      <button class="lk-link" onclick="showAuthModal('in')">Use 360 account</button>
-    </div>
-  </div>
-  <div class="lock-shelf">
-    <span class="lock-shelf-time" id="lock-shelf-t">12:00</span>
-    <div class="ls-icon" onclick="showAuthModal('in')"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
-  </div>
+<div class="lock-top">
+<div class="lock-time" id="lock-time">12:00</div>
+<div class="lock-date" id="lock-date">Monday, January 1</div>
+<div class="lock-profiles" id="lock-profiles"></div>
+<div class="lock-action hidden" id="lock-action">
+<input class="lk-input" id="lk-pass" onkeydown="if(event.key==='Enter')doUnlock()" placeholder="Password" type="password"/>
+<div class="lk-row">
+<button class="lk-btn ghost" onclick="cancelSel()">Back</button>
+<button class="lk-btn primary" onclick="doUnlock()">Sign in</button>
 </div>
-
+<div class="lk-err" id="lk-err"></div>
+<button class="lk-link" onclick="showAuthModal('in')">Use 360 account</button>
+</div>
+</div>
+<div class="lock-shelf">
+<span class="lock-shelf-time" id="lock-shelf-t">12:00</span>
+<div class="ls-icon" onclick="showAuthModal('in')"><svg viewbox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg></div>
+</div>
+</div>
 <!-- AUTH MODAL -->
 <div id="auth-modal">
-  <div class="am-card">
-    <div class="am-hdr">
-      <div class="am-logo"><div class="am-mark"></div><div class="am-text">360</div></div>
-      <button class="am-x" onclick="closeAuthModal()">✕</button>
-    </div>
-    <div class="am-tabs">
-      <button class="am-tab on" id="atab-in" onclick="switchATab('in')">Sign in</button>
-      <button class="am-tab" id="atab-up" onclick="switchATab('up')">Create account</button>
-    </div>
-    <div id="af-in">
-      <div class="am-f"><label>Email</label><input id="si-email" type="email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')doSignIn()"/></div>
-      <div class="am-f"><label>Password</label><input id="si-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doSignIn()"/></div>
-      <button class="am-btn" onclick="doSignIn()">Sign In</button>
-      <div class="am-div">or continue with</div>
-      <div class="am-oauth">
-        <button class="am-ob" onclick="oAuth('google')">🌐 Google</button>
-        <button class="am-ob" onclick="oAuth('github')">🐙 GitHub</button>
-        <button class="am-ob" onclick="oAuth('spotify')">🎵 Spotify</button>
-      </div>
-      <div class="am-msg" id="si-msg"></div>
-    </div>
-    <div id="af-up" style="display:none">
-      <div class="am-f"><label>Username</label><input id="su-user" type="text" placeholder="cooluser123"/></div>
-      <div class="am-f"><label>Email</label><input id="su-email" type="email" placeholder="you@example.com"/></div>
-      <div class="am-f"><label>Password</label><input id="su-pass" type="password" placeholder="Min 6 characters" onkeydown="if(event.key==='Enter')doSignUp()"/></div>
-      <button class="am-btn" onclick="doSignUp()">Create Account</button>
-      <div class="am-div">or continue with</div>
-      <div class="am-oauth">
-        <button class="am-ob" onclick="oAuth('google')">🌐 Google</button>
-        <button class="am-ob" onclick="oAuth('github')">🐙 GitHub</button>
-        <button class="am-ob" onclick="oAuth('spotify')">🎵 Spotify</button>
-      </div>
-      <div class="am-msg" id="su-msg"></div>
-    </div>
-  </div>
+<div class="am-card">
+<div class="am-hdr">
+<div class="am-logo"><div class="am-mark"></div><div class="am-text">360</div></div>
+<button class="am-x" onclick="closeAuthModal()">✕</button>
 </div>
-
+<div class="am-tabs">
+<button class="am-tab on" id="atab-in" onclick="switchATab('in')">Sign in</button>
+<button class="am-tab" id="atab-up" onclick="switchATab('up')">Create account</button>
+</div>
+<div id="af-in">
+<div class="am-f"><label>Email</label><input id="si-email" onkeydown="if(event.key==='Enter')doSignIn()" placeholder="you@example.com" type="email"/></div>
+<div class="am-f"><label>Password</label><input id="si-pass" onkeydown="if(event.key==='Enter')doSignIn()" placeholder="••••••••" type="password"/></div>
+<button class="am-btn" onclick="doSignIn()">Sign In</button>
+<div class="am-div">or continue with</div>
+<div class="am-oauth">
+<button class="am-ob" onclick="oAuth('google')">🌐 Google</button>
+<button class="am-ob" onclick="oAuth('github')">🐙 GitHub</button>
+<button class="am-ob" onclick="oAuth('spotify')">🎵 Spotify</button>
+</div>
+<div class="am-msg" id="si-msg"></div>
+</div>
+<div id="af-up" style="display:none">
+<div class="am-f"><label>Username</label><input id="su-user" placeholder="cooluser123" type="text"/></div>
+<div class="am-f"><label>Email</label><input id="su-email" placeholder="you@example.com" type="email"/></div>
+<div class="am-f"><label>Password</label><input id="su-pass" onkeydown="if(event.key==='Enter')doSignUp()" placeholder="Min 6 characters" type="password"/></div>
+<button class="am-btn" onclick="doSignUp()">Create Account</button>
+<div class="am-div">or continue with</div>
+<div class="am-oauth">
+<button class="am-ob" onclick="oAuth('google')">🌐 Google</button>
+<button class="am-ob" onclick="oAuth('github')">🐙 GitHub</button>
+<button class="am-ob" onclick="oAuth('spotify')">🎵 Spotify</button>
+</div>
+<div class="am-msg" id="su-msg"></div>
+</div>
+</div>
+</div>
 <!-- DESKTOP -->
 <div id="desktop">
-  <div class="desk-wall"></div>
-  <div id="desk-area"></div>
-  <div id="wlayer"></div>
-  <div id="taskbar">
-    <div class="tbi open" onclick="openBrowser()" title="Browser" id="tbi-br">
-      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-    </div>
-    <div class="tbi" onclick="open360('360 AI','https://360-search.com/ai')" title="360 AI">
-      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-    </div>
-    <div class="tbi" onclick="open360('360 Games','https://360-search.com/games')" title="Games">
-      <svg viewBox="0 0 24 24"><path d="M15 7.5V2H9v5.5l3 3 3-3zM7.5 9H2v6h5.5l3-3-3-3zm1 6.5V21h6v-5.5l-3-3-3 3zm7.5-6.5l-3 3 3 3H21V9h-5.5z"/></svg>
-    </div>
-    <div class="tbi" onclick="openStore()" title="360 Apps">
-      <svg viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg>
-    </div>
-    <div class="tb-sep"></div>
-    <div class="tbi" onclick="open360('Settings','https://360-search.com/settings')" title="Settings">
-      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-    </div>
-    <div id="tb-right">
-      <div class="tb-user" onclick="toggleQS()" id="tb-user-btn">
-        <div class="tb-av" id="tb-av">?</div>
-        <span class="tb-av-name" id="tb-av-name">Account</span>
-      </div>
-      <div id="tb-clock"></div>
-    </div>
-  </div>
-  <div id="qs-panel">
-    <div class="qs-urow">
-      <div class="qs-av" id="qs-av">?</div>
-      <div style="flex:1;min-width:0"><div class="qs-uname" id="qs-uname">Guest</div><div class="qs-uemail" id="qs-uemail"></div></div>
-      <button class="qs-so" id="qs-so" onclick="signOut()" style="display:none">Sign out</button>
-    </div>
-    <div class="qs-cta" id="qs-cta" style="display:none" onclick="showAuthModal('in')">Sign in to your 360 account →</div>
-    <div class="qs-toggles">
-      <div class="qs-t" onclick="this.classList.toggle('on')"><div class="qs-t-icon">🔇</div>Mute</div>
-      <div class="qs-t" onclick="this.classList.toggle('on')"><div class="qs-t-icon">📶</div>Wi-Fi</div>
-      <div class="qs-t" onclick="this.classList.toggle('on')"><div class="qs-t-icon">🔵</div>Bluetooth</div>
-      <div class="qs-t" onclick="this.classList.toggle('on')"><div class="qs-t-icon">🔋</div>Battery</div>
-    </div>
-    <div class="qs-theme-row">
-      <span class="qs-theme-lbl">Dark mode</span>
-      <button class="qs-tog" id="qs-dark-btn" onclick="toggleDark()"><div class="qs-thumb"></div></button>
-    </div>
-  </div>
+<div class="desk-wall"></div>
+<div id="desk-area"></div>
+<div id="wlayer"></div>
+<div id="taskbar">
+<div class="tbi open" id="tbi-br" onclick="openBrowser()" title="Browser">
+<svg viewbox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"></path></svg>
 </div>
-
+<div class="tbi" onclick="open360('360 AI','https://360-search.com/ai')" title="360 AI">
+<svg viewbox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg>
+</div>
+<div class="tbi" onclick="open360('360 Games','https://360-search.com/games')" title="Games">
+<svg viewbox="0 0 24 24"><path d="M15 7.5V2H9v5.5l3 3 3-3zM7.5 9H2v6h5.5l3-3-3-3zm1 6.5V21h6v-5.5l-3-3-3 3zm7.5-6.5l-3 3 3 3H21V9h-5.5z"></path></svg>
+</div>
+<div class="tbi" onclick="openStore()" title="360 Apps">
+<svg viewbox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"></path></svg>
+</div>
+<div class="tb-sep"></div>
+<div class="tbi" onclick="open360('Settings','https://360-search.com/settings')" title="Settings">
+<svg viewbox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path></svg>
+</div>
+<div id="tb-right">
+<div class="tb-user" id="tb-user-btn" onclick="toggleQS()">
+<div class="tb-av" id="tb-av">?</div>
+<span class="tb-av-name" id="tb-av-name">Account</span>
+</div>
+<div id="tb-clock"></div>
+</div>
+</div>
+<div id="qs-panel">
+<div class="qs-urow">
+<div class="qs-av" id="qs-av">?</div>
+<div style="flex:1;min-width:0"><div class="qs-uname" id="qs-uname">Guest</div><div class="qs-uemail" id="qs-uemail"></div></div>
+<button class="qs-so" id="qs-so" onclick="signOut()" style="display:none">Sign out</button>
+</div>
+<div class="qs-cta" id="qs-cta" onclick="showAuthModal('in')" style="display:none">Sign in to your 360 account →</div>
+<div class="qs-toggles">
+<div class="qs-t" onclick="this.classList.toggle('on')"><div class="qs-t-icon">🔇</div>Mute</div>
+<div class="qs-t" onclick="this.classList.toggle('on')"><div class="qs-t-icon">📶</div>Wi-Fi</div>
+<div class="qs-t" onclick="this.classList.toggle('on')"><div class="qs-t-icon">🔵</div>Bluetooth</div>
+<div class="qs-t" onclick="this.classList.toggle('on')"><div class="qs-t-icon">🔋</div>Battery</div>
+</div>
+<div class="qs-theme-row">
+<span class="qs-theme-lbl">Dark mode</span>
+<button class="qs-tog" id="qs-dark-btn" onclick="toggleDark()"><div class="qs-thumb"></div></button>
+</div>
+</div>
+</div>
 </div>
 <script>
 const sb=window.supabase.createClient('https://wiswfpfsjiowtrdyqpxy.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM')

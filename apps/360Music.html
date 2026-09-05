@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+<!-- Google tag (gtag.js) -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -10,21 +11,19 @@
 
   gtag('config', 'G-89NN1P6CEV');
 </script>
-  
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360Music</title>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360Music</title>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     @view-transition { navigation: auto; }
     ::view-transition-old(root) { animation: vt-out .28s cubic-bezier(.4,0,.2,1) both; }
     ::view-transition-new(root) { animation: vt-in .32s cubic-bezier(.2,0,.2,1) both; }
@@ -559,314 +558,272 @@
       .vids-watch-info { padding: 14px 16px; }
     }
   </style>
-</head>
+<meta content="360Music is part of 360 Digital. Explore its features and use it online through the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360Music" property="og:title"/><meta content="360Music is part of 360 Digital. Explore its features and use it online through the 360 platform." property="og:description"/><meta content="https://360-search.com/apps/360Music.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360Music" name="twitter:title"/><meta content="360Music is part of 360 Digital. Explore its features and use it online through the 360 platform." name="twitter:description"/><link href="https://360-search.com/apps/360Music.html" rel="canonical"/></head>
 <body>
-
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <div class="vids-topbar">
-    <div class="vids-topbar-left">
-      <button class="vids-back-btn" onclick="window.location.href='apps.html'">← Apps</button>
-      <div class="vids-logo">360<span>|</span>Music</div>
-      <a href="/apps/360vids.html" class="vids-back-btn" style="text-decoration:none;">🎬 Vids</a>
-      <a href="/apps/360Studio.html" class="vids-back-btn" style="text-decoration:none;">🎛️ Studio</a>
-    </div>
-
-    <div class="vids-search-wrap">
-      <input type="text" id="vids-search" placeholder="Search tracks…" autocomplete="off" />
-      <button class="vids-search-btn" id="vids-search-btn" title="Search">🔍</button>
-    </div>
-
-    <div class="vids-topbar-right">
-    <button id="signInBtn"  class="auth-btn">Sign In</button>
-    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-
-      <button class="vids-upload-btn" id="openUploadBtn">
-        <span>＋</span> Upload
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<div class="vids-topbar">
+<div class="vids-topbar-left">
+<button class="vids-back-btn" onclick="window.location.href='apps.html'">← Apps</button>
+<div class="vids-logo">360<span>|</span>Music</div>
+<a class="vids-back-btn" href="/apps/360vids.html" style="text-decoration:none;">🎬 Vids</a>
+<a class="vids-back-btn" href="/apps/360Studio.html" style="text-decoration:none;">🎛️ Studio</a>
+</div>
+<div class="vids-search-wrap">
+<input autocomplete="off" id="vids-search" placeholder="Search tracks…" type="text"/>
+<button class="vids-search-btn" id="vids-search-btn" title="Search">🔍</button>
+</div>
+<div class="vids-topbar-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+<button class="vids-upload-btn" id="openUploadBtn">
+<span>＋</span> Upload
       </button>
-      <div class="vids-avatar-btn" id="vids-avatar" title="Account">?</div>
-    </div>
-  </div>
-
-  <div class="vids-body">
-
-    <aside class="vids-sidebar" id="vidsSidebar">
-      <div class="vids-nav-item active" data-view="home">
-        <span class="vids-nav-icon">🏠</span> Home
+<div class="vids-avatar-btn" id="vids-avatar" title="Account">?</div>
+</div>
+</div>
+<div class="vids-body">
+<aside class="vids-sidebar" id="vidsSidebar">
+<div class="vids-nav-item active" data-view="home">
+<span class="vids-nav-icon">🏠</span> Home
       </div>
-      <div class="vids-nav-item" data-view="trending">
-        <span class="vids-nav-icon">🔥</span> Trending
+<div class="vids-nav-item" data-view="trending">
+<span class="vids-nav-icon">🔥</span> Trending
       </div>
-      <div class="vids-nav-item" data-view="albums">
-        <span class="vids-nav-icon">📀</span> Albums
+<div class="vids-nav-item" data-view="albums">
+<span class="vids-nav-icon">📀</span> Albums
       </div>
-      <div class="vids-nav-item" data-view="playlists">
-        <span class="vids-nav-icon">📃</span> Playlists
+<div class="vids-nav-item" data-view="playlists">
+<span class="vids-nav-icon">📃</span> Playlists
       </div>
-      <div class="vids-nav-item" data-view="subscriptions">
-        <span class="vids-nav-icon">🎧</span> Subscriptions
+<div class="vids-nav-item" data-view="subscriptions">
+<span class="vids-nav-icon">🎧</span> Subscriptions
       </div>
-      <div class="vids-nav-divider"></div>
-      <div class="vids-nav-label">Library</div>
-      <div class="vids-nav-item" data-view="liked">
-        <span class="vids-nav-icon">👍</span> Liked Tracks
+<div class="vids-nav-divider"></div>
+<div class="vids-nav-label">Library</div>
+<div class="vids-nav-item" data-view="liked">
+<span class="vids-nav-icon">👍</span> Liked Tracks
       </div>
-      <div class="vids-nav-item" data-view="uploads">
-        <span class="vids-nav-icon">🎵</span> Your Uploads
+<div class="vids-nav-item" data-view="uploads">
+<span class="vids-nav-icon">🎵</span> Your Uploads
       </div>
-      <div class="vids-nav-divider"></div>
-      <div class="vids-nav-label">Browse</div>
-      <div class="vids-nav-item" data-view="cat-gaming">
-        <span class="vids-nav-icon">🎮</span> Gaming
+<div class="vids-nav-divider"></div>
+<div class="vids-nav-label">Browse</div>
+<div class="vids-nav-item" data-view="cat-gaming">
+<span class="vids-nav-icon">🎮</span> Gaming
       </div>
-      <div class="vids-nav-item" data-view="cat-tech">
-        <span class="vids-nav-icon">💻</span> Tech
+<div class="vids-nav-item" data-view="cat-tech">
+<span class="vids-nav-icon">💻</span> Tech
       </div>
-      <div class="vids-nav-item" data-view="cat-education">
-        <span class="vids-nav-icon">📚</span> Education
+<div class="vids-nav-item" data-view="cat-education">
+<span class="vids-nav-icon">📚</span> Education
       </div>
-      <div class="vids-nav-item" data-view="cat-entertainment">
-        <span class="vids-nav-icon">🎭</span> Entertainment
+<div class="vids-nav-item" data-view="cat-entertainment">
+<span class="vids-nav-icon">🎭</span> Entertainment
       </div>
-    </aside>
-
-    <main class="vids-main" id="vidsMain">
-
-      <div class="vids-chips" id="vidsChips">
-        <div class="vids-chip active" data-filter="all">All</div>
-        <div class="vids-chip" data-filter="Gaming">Gaming</div>
-        <div class="vids-chip" data-filter="Tech">Tech</div>
-        <div class="vids-chip" data-filter="Education">Education</div>
-        <div class="vids-chip" data-filter="Entertainment">Entertainment</div>
-        <div class="vids-chip" data-filter="Other">Other</div>
-        <div class="vids-chip" data-filter="albums">Albums</div>
-      </div>
-
-      <div class="vids-grid" id="vidsGrid">
-        <div class="vids-card vids-skeleton">
-          <div class="skel-thumb"></div>
-          <div class="vids-card-body">
-            <div class="skel-line" style="width:90%"></div>
-            <div class="skel-line short"></div>
-          </div>
-        </div>
-        <div class="vids-card vids-skeleton">
-          <div class="skel-thumb"></div>
-          <div class="vids-card-body">
-            <div class="skel-line" style="width:75%"></div>
-            <div class="skel-line short"></div>
-          </div>
-        </div>
-        <div class="vids-card vids-skeleton">
-          <div class="skel-thumb"></div>
-          <div class="vids-card-body">
-            <div class="skel-line" style="width:85%"></div>
-            <div class="skel-line short"></div>
-          </div>
-        </div>
-      </div>
-
-    </main>
-  </div>
-
-  <!-- ── Upload Modal ── -->
-  <div class="vids-modal-overlay" id="uploadOverlay">
-    <div class="vids-modal">
-      <h2>🎵 Upload Track</h2>
-
-      <div class="vids-field">
-        <label>Audio File</label>
-        <div class="vids-dropzone" id="dropzone">
-          <input type="file" id="audioFile" accept="audio/*" />
-          <div class="vids-dropzone-icon">📁</div>
-          <p>Drag & drop or <strong>browse</strong> to choose an audio file</p>
-          <p style="font-size:11px;margin-top:4px;">MP3, WAV, AAC — max 100MB</p>
-          <div class="vids-file-chosen" id="fileChosen"></div>
-        </div>
-        <div class="vids-progress-wrap" id="progressWrap">
-          <div class="vids-progress-bar" id="progressBar"></div>
-        </div>
-      </div>
-
-      <div class="vids-field">
-        <label>Title *</label>
-        <input type="text" id="trackTitle" placeholder="Give your track a title…" maxlength="100" />
-      </div>
-
-      <div class="vids-field">
-        <label>Description</label>
-        <textarea id="trackDesc" placeholder="Tell listeners about your track…" maxlength="500"></textarea>
-      </div>
-
-      <div class="vids-field">
-        <label>Category</label>
-        <select id="trackCategory">
-          <option value="Other">Other</option>
-          <option value="Gaming">Gaming</option>
-          <option value="Tech">Tech</option>
-          <option value="Education">Education</option>
-          <option value="Entertainment">Entertainment</option>
-        </select>
-      </div>
-
-      <!-- Thumbnail field -->
-      <div class="vids-field">
-        <label>Thumbnail</label>
-        <!-- status line shown while extracting -->
-        <div id="thumbExtractStatus" style="font-size:11px;color:var(--vid-mut);margin-bottom:6px;min-height:16px;"></div>
-        <div class="thumb-options">
-          <button type="button" class="thumb-btn" id="thumbUploadBtn">📷 Upload Image</button>
-          <button type="button" class="thumb-btn" id="thumbAutoBtn">✨ Auto-Generate</button>
-          <button type="button" class="thumb-btn" id="thumbPresetBtn">🖼 Choose Preset</button>
-          <button type="button" class="thumb-btn" id="thumbClearBtn" style="display:none;">✕ Clear</button>
-        </div>
-        <input type="file" id="thumbFileInput" accept="image/*" style="display:none;">
-
-        <!-- Preview box -->
-        <div class="thumb-preview-wrap" id="thumbPreviewWrap">
-          <img id="thumbPreviewImg" src="" alt="Thumbnail preview" />
-          <div class="thumb-preview-placeholder" id="thumbPlaceholder">
-            <span>🎵</span>
-            <div>Thumbnail will appear here</div>
-            <div style="font-size:10px;margin-top:2px;color:var(--vid-mut);">Auto-extracted from MP3 art if available</div>
-          </div>
-          <div class="thumb-source-badge" id="thumbSourceBadge"></div>
-        </div>
-      </div>
-
-      <div class="vids-upload-status" id="uploadStatus"></div>
-
-      <div class="vids-modal-actions">
-        <button class="vids-btn ghost" id="cancelUploadBtn">Cancel</button>
-        <button class="vids-btn primary" id="submitUploadBtn">Upload Track</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Watch / Player Modal ── -->
-  <div class="vids-watch-overlay" id="watchOverlay">
-    <div class="vids-watch-box">
-      <div class="vids-player-wrap">
-        <!-- blurred album art background -->
-        <div class="vids-player-bg" id="playerBg"></div>
-
-        <button class="vids-watch-close" id="watchCloseBtn">✕</button>
-
-        <div class="vids-player-top">
-          <!-- album art square -->
-          <div class="vids-player-art" id="playerArt">
-            <img id="playerArtImg" src="" alt="" style="display:none;" />
-            <span id="playerArtEmoji">🎵</span>
-          </div>
-          <div class="vids-player-info">
-            <div class="now-playing-label">Now Playing</div>
-            <div id="watchNowPlaying">—</div>
-          </div>
-        </div>
-
-        <!-- hidden native audio -->
-        <audio id="musicPlayer" preload="metadata" style="display:none;"></audio>
-
-        <!-- custom controls -->
-        <div id="customPlayerControls">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <button id="cpPrev" class="vids-action-btn" title="Previous">⏮</button>
-            <button id="cpPlayPause" class="vids-action-btn">▶️</button>
-            <button id="cpNext" class="vids-action-btn" title="Next">⏭</button>
-            <button id="cpShuffle" class="vids-action-btn" title="Shuffle">🔀</button>
-            <div id="cpTime" style="font-variant-numeric:tabular-nums;">0:00 / 0:00</div>
-            <button id="cpQueueToggle" class="vids-action-btn" style="margin-left:auto;" title="Up next">📋 Queue</button>
-            <select id="cpSpeed" style="padding:4px 8px;border-radius:8px;border:1px solid rgba(148,163,184,.6);background:#020617;color:#e5e7eb;font-size:12px;">
-              <option value="0.75">0.75x</option>
-              <option value="1" selected>1x</option>
-              <option value="1.25">1.25x</option>
-              <option value="1.5">1.5x</option>
-              <option value="2">2x</option>
-            </select>
-          </div>
-          <div id="cpQueuePanel" style="display:none;max-height:140px;overflow-y:auto;background:rgba(255,255,255,.03);border-radius:8px;padding:6px;margin:6px 0;font-size:12px;"></div>
-          <input id="cpSeek" type="range" min="0" max="100" value="0"
-                 style="width:100%;accent-color:#3b82f6;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:12px;">🔊</span>
-            <input id="cpVolume" type="range" min="0" max="1" step="0.01" value="1"
-                   style="flex:1;accent-color:#3b82f6;">
-          </div>
-        </div>
-      </div>
-
-      <div class="vids-watch-info">
-        <div class="vids-watch-title" id="watchTitle"></div>
-        <div class="vids-watch-meta" id="watchMeta"></div>
-        <div class="vids-watch-actions">
-          <button class="vids-action-btn" id="likeBtn">👍 <span id="likeCount">0</span></button>
-          <button class="vids-action-btn" id="dislikeBtn">👎 <span id="dislikeCount">0</span></button>
-          <button class="vids-action-btn" id="followBtn">＋ Follow</button>
-          <button class="vids-action-btn" id="addToPlaylistBtn">📃 Add to Playlist</button>
-          <button class="vids-action-btn" id="shareBtn">🔗 Share</button>
-          <button class="vids-action-btn" id="downloadBtn">⬇️ Download</button>
-          <button class="vids-action-btn" id="moreLikeBtn" title="More like this">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
+</aside>
+<main class="vids-main" id="vidsMain">
+<div class="vids-chips" id="vidsChips">
+<div class="vids-chip active" data-filter="all">All</div>
+<div class="vids-chip" data-filter="Gaming">Gaming</div>
+<div class="vids-chip" data-filter="Tech">Tech</div>
+<div class="vids-chip" data-filter="Education">Education</div>
+<div class="vids-chip" data-filter="Entertainment">Entertainment</div>
+<div class="vids-chip" data-filter="Other">Other</div>
+<div class="vids-chip" data-filter="albums">Albums</div>
+</div>
+<div class="vids-grid" id="vidsGrid">
+<div class="vids-card vids-skeleton">
+<div class="skel-thumb"></div>
+<div class="vids-card-body">
+<div class="skel-line" style="width:90%"></div>
+<div class="skel-line short"></div>
+</div>
+</div>
+<div class="vids-card vids-skeleton">
+<div class="skel-thumb"></div>
+<div class="vids-card-body">
+<div class="skel-line" style="width:75%"></div>
+<div class="skel-line short"></div>
+</div>
+</div>
+<div class="vids-card vids-skeleton">
+<div class="skel-thumb"></div>
+<div class="vids-card-body">
+<div class="skel-line" style="width:85%"></div>
+<div class="skel-line short"></div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- ── Upload Modal ── -->
+<div class="vids-modal-overlay" id="uploadOverlay">
+<div class="vids-modal">
+<h2>🎵 Upload Track</h2>
+<div class="vids-field">
+<label>Audio File</label>
+<div class="vids-dropzone" id="dropzone">
+<input accept="audio/*" id="audioFile" type="file"/>
+<div class="vids-dropzone-icon">📁</div>
+<p>Drag &amp; drop or <strong>browse</strong> to choose an audio file</p>
+<p style="font-size:11px;margin-top:4px;">MP3, WAV, AAC — max 100MB</p>
+<div class="vids-file-chosen" id="fileChosen"></div>
+</div>
+<div class="vids-progress-wrap" id="progressWrap">
+<div class="vids-progress-bar" id="progressBar"></div>
+</div>
+</div>
+<div class="vids-field">
+<label>Title *</label>
+<input id="trackTitle" maxlength="100" placeholder="Give your track a title…" type="text"/>
+</div>
+<div class="vids-field">
+<label>Description</label>
+<textarea id="trackDesc" maxlength="500" placeholder="Tell listeners about your track…"></textarea>
+</div>
+<div class="vids-field">
+<label>Category</label>
+<select id="trackCategory">
+<option value="Other">Other</option>
+<option value="Gaming">Gaming</option>
+<option value="Tech">Tech</option>
+<option value="Education">Education</option>
+<option value="Entertainment">Entertainment</option>
+</select>
+</div>
+<!-- Thumbnail field -->
+<div class="vids-field">
+<label>Thumbnail</label>
+<!-- status line shown while extracting -->
+<div id="thumbExtractStatus" style="font-size:11px;color:var(--vid-mut);margin-bottom:6px;min-height:16px;"></div>
+<div class="thumb-options">
+<button class="thumb-btn" id="thumbUploadBtn" type="button">📷 Upload Image</button>
+<button class="thumb-btn" id="thumbAutoBtn" type="button">✨ Auto-Generate</button>
+<button class="thumb-btn" id="thumbPresetBtn" type="button">🖼 Choose Preset</button>
+<button class="thumb-btn" id="thumbClearBtn" style="display:none;" type="button">✕ Clear</button>
+</div>
+<input accept="image/*" id="thumbFileInput" style="display:none;" type="file"/>
+<!-- Preview box -->
+<div class="thumb-preview-wrap" id="thumbPreviewWrap">
+<img alt="Thumbnail preview" id="thumbPreviewImg" src=""/>
+<div class="thumb-preview-placeholder" id="thumbPlaceholder">
+<span>🎵</span>
+<div>Thumbnail will appear here</div>
+<div style="font-size:10px;margin-top:2px;color:var(--vid-mut);">Auto-extracted from MP3 art if available</div>
+</div>
+<div class="thumb-source-badge" id="thumbSourceBadge"></div>
+</div>
+</div>
+<div class="vids-upload-status" id="uploadStatus"></div>
+<div class="vids-modal-actions">
+<button class="vids-btn ghost" id="cancelUploadBtn">Cancel</button>
+<button class="vids-btn primary" id="submitUploadBtn">Upload Track</button>
+</div>
+</div>
+</div>
+<!-- ── Watch / Player Modal ── -->
+<div class="vids-watch-overlay" id="watchOverlay">
+<div class="vids-watch-box">
+<div class="vids-player-wrap">
+<!-- blurred album art background -->
+<div class="vids-player-bg" id="playerBg"></div>
+<button class="vids-watch-close" id="watchCloseBtn">✕</button>
+<div class="vids-player-top">
+<!-- album art square -->
+<div class="vids-player-art" id="playerArt">
+<img alt="" id="playerArtImg" src="" style="display:none;"/>
+<span id="playerArtEmoji">🎵</span>
+</div>
+<div class="vids-player-info">
+<div class="now-playing-label">Now Playing</div>
+<div id="watchNowPlaying">—</div>
+</div>
+</div>
+<!-- hidden native audio -->
+<audio id="musicPlayer" preload="metadata" style="display:none;"></audio>
+<!-- custom controls -->
+<div id="customPlayerControls">
+<div style="display:flex;align-items:center;gap:10px;">
+<button class="vids-action-btn" id="cpPrev" title="Previous">⏮</button>
+<button class="vids-action-btn" id="cpPlayPause">▶️</button>
+<button class="vids-action-btn" id="cpNext" title="Next">⏭</button>
+<button class="vids-action-btn" id="cpShuffle" title="Shuffle">🔀</button>
+<div id="cpTime" style="font-variant-numeric:tabular-nums;">0:00 / 0:00</div>
+<button class="vids-action-btn" id="cpQueueToggle" style="margin-left:auto;" title="Up next">📋 Queue</button>
+<select id="cpSpeed" style="padding:4px 8px;border-radius:8px;border:1px solid rgba(148,163,184,.6);background:#020617;color:#e5e7eb;font-size:12px;">
+<option value="0.75">0.75x</option>
+<option selected="" value="1">1x</option>
+<option value="1.25">1.25x</option>
+<option value="1.5">1.5x</option>
+<option value="2">2x</option>
+</select>
+</div>
+<div id="cpQueuePanel" style="display:none;max-height:140px;overflow-y:auto;background:rgba(255,255,255,.03);border-radius:8px;padding:6px;margin:6px 0;font-size:12px;"></div>
+<input id="cpSeek" max="100" min="0" style="width:100%;accent-color:#3b82f6;" type="range" value="0"/>
+<div style="display:flex;align-items:center;gap:8px;">
+<span style="font-size:12px;">🔊</span>
+<input id="cpVolume" max="1" min="0" step="0.01" style="flex:1;accent-color:#3b82f6;" type="range" value="1"/>
+</div>
+</div>
+</div>
+<div class="vids-watch-info">
+<div class="vids-watch-title" id="watchTitle"></div>
+<div class="vids-watch-meta" id="watchMeta"></div>
+<div class="vids-watch-actions">
+<button class="vids-action-btn" id="likeBtn">👍 <span id="likeCount">0</span></button>
+<button class="vids-action-btn" id="dislikeBtn">👎 <span id="dislikeCount">0</span></button>
+<button class="vids-action-btn" id="followBtn">＋ Follow</button>
+<button class="vids-action-btn" id="addToPlaylistBtn">📃 Add to Playlist</button>
+<button class="vids-action-btn" id="shareBtn">🔗 Share</button>
+<button class="vids-action-btn" id="downloadBtn">⬇️ Download</button>
+<button class="vids-action-btn" id="moreLikeBtn" title="More like this">
+<svg fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"></path></svg>
             More like this
           </button>
-        </div>
-        <div class="vids-watch-desc" id="watchDesc"></div>
-
-        <details style="margin-top:12px;" open>
-          <summary style="font-size:13px;font-weight:600;cursor:pointer;color:var(--vid-mut);user-select:none;list-style:none;display:flex;align-items:center;gap:6px;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+</div>
+<div class="vids-watch-desc" id="watchDesc"></div>
+<details open="" style="margin-top:12px;">
+<summary style="font-size:13px;font-weight:600;cursor:pointer;color:var(--vid-mut);user-select:none;list-style:none;display:flex;align-items:center;gap:6px;">
+<svg fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
             Lyrics
           </summary>
-          <div id="lyricsPanel" style="max-height:200px;overflow-y:auto;margin-top:6px;padding:4px 0;"></div>
-        </details>
-
-        <div id="commentsSection" style="margin-top:14px;">
-          <h4 style="font-size:14px;font-weight:700;margin:0 0 6px;">Comments</h4>
-          <div id="commentsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
-          <div id="commentForm" style="display:flex;gap:8px;">
-            <input
-              type="text"
-              id="commentInput"
-              placeholder="Add a comment…"
-              style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--vid-border);font-size:13px;"
-              maxlength="300"
-            />
-            <button class="vids-action-btn" id="commentSubmitBtn">Post</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Mini player -->
-  <div id="miniPlayer"
-       style="position:fixed;left:0;right:0;bottom:0;height:56px;background:rgba(15,23,42,.96);color:#e5e7eb;display:none;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid rgba(148,163,184,.4);z-index:250;">
-    <div id="miniArt" style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0;">
-      <img id="miniArtImg" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none;" />
-      <span id="miniArtEmoji">🎵</span>
-    </div>
-    <div style="flex:1;min-width:0;">
-      <div id="miniTitle" style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Now Playing</div>
-    </div>
-    <button id="miniPlayPause"
-            style="border:none;background:none;color:#e5e7eb;font-size:18px;cursor:pointer;">⏸</button>
-  </div>
-
-  <div class="vids-toast" id="vidsToast"></div>
-
-  <audio id="clickSound" src="click-sound.mp3" preload="auto"></audio>
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsmediatags@3.9.7/dist/jsmediatags.min.js"></script>
-
-  <script>
+<div id="lyricsPanel" style="max-height:200px;overflow-y:auto;margin-top:6px;padding:4px 0;"></div>
+</details>
+<div id="commentsSection" style="margin-top:14px;">
+<h4 style="font-size:14px;font-weight:700;margin:0 0 6px;">Comments</h4>
+<div id="commentsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+<div id="commentForm" style="display:flex;gap:8px;">
+<input id="commentInput" maxlength="300" placeholder="Add a comment…" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--vid-border);font-size:13px;" type="text">
+<button class="vids-action-btn" id="commentSubmitBtn">Post</button>
+</input></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Mini player -->
+<div id="miniPlayer" style="position:fixed;left:0;right:0;bottom:0;height:56px;background:rgba(15,23,42,.96);color:#e5e7eb;display:none;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid rgba(148,163,184,.4);z-index:250;">
+<div id="miniArt" style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0;">
+<img alt="" id="miniArtImg" src="" style="width:100%;height:100%;object-fit:cover;display:none;"/>
+<span id="miniArtEmoji">🎵</span>
+</div>
+<div style="flex:1;min-width:0;">
+<div id="miniTitle" style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Now Playing</div>
+</div>
+<button id="miniPlayPause" style="border:none;background:none;color:#e5e7eb;font-size:18px;cursor:pointer;">⏸</button>
+</div>
+<div class="vids-toast" id="vidsToast"></div>
+<audio id="clickSound" preload="auto" src="click-sound.mp3"></audio>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsmediatags@3.9.7/dist/jsmediatags.min.js"></script>
+<script>
     const SUPABASE_URL  = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);

@@ -1,12 +1,13 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360Draw</title>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360Draw</title>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     html, body { margin:0; padding:0; height:100%; width:100%; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:#05060a; color:#f5f5f5; overflow:hidden; }
     .draw-shell { display:flex; flex-direction:column; height:100vh; width:100vw; }
 
@@ -54,67 +55,62 @@
     .draw-toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); background:#fff; color:#0a0a0a; padding:10px 18px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:.25s; z-index:400; font-weight:600; }
     .draw-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   </style>
-</head>
+<meta content="360Draw is part of 360 Digital. Explore its features and use it online through the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360Draw" property="og:title"/><meta content="360Draw is part of 360 Digital. Explore its features and use it online through the 360 platform." property="og:description"/><meta content="https://360-search.com/apps/360Draw.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360Draw" name="twitter:title"/><meta content="360Draw is part of 360 Digital. Explore its features and use it online through the 360 platform." name="twitter:description"/><link href="https://360-search.com/apps/360Draw.html" rel="canonical"/></head>
 <body>
-  <div class="draw-shell">
-    <div class="draw-topbar">
-      <div class="draw-topbar-left">
-        <div class="draw-logo"></div>
-        <input class="draw-title" id="draw-title" value="Untitled canvas" maxlength="80" />
-      </div>
-      <div class="draw-topbar-right">
-        <button class="draw-btn" onclick="window.location.href='/apps.html'">← Apps</button>
-        <button class="draw-btn" id="undo-btn" disabled>↶ Undo</button>
-        <button class="draw-btn" id="redo-btn" disabled>↷ Redo</button>
-        <button class="draw-btn" id="export-btn">⬇ Export PNG</button>
-        <button class="draw-btn primary" id="save-btn">Save</button>
-      </div>
-    </div>
-
-    <div class="draw-main">
-      <div class="draw-toolbar">
-        <button class="tool-btn active" data-tool="brush" title="Brush">✏️</button>
-        <button class="tool-btn" data-tool="eraser" title="Eraser">🩹</button>
-        <div class="tool-sep"></div>
-        <button class="tool-btn" data-tool="line" title="Line">／</button>
-        <button class="tool-btn" data-tool="rect" title="Rectangle">▢</button>
-        <button class="tool-btn" data-tool="circle" title="Circle">◯</button>
-        <div class="tool-sep"></div>
-        <button class="tool-btn" id="clear-btn" title="Clear canvas">🗑️</button>
-      </div>
-
-      <div class="draw-center">
-        <div class="draw-canvas-wrapper">
-          <canvas id="draw-canvas" width="1200" height="700"></canvas>
-        </div>
-        <div class="draw-bottom-bar">
-          <span id="draw-status">Brush · 4px · #111111</span>
-          <span id="draw-savestate">Not signed in — sign in to save drawings</span>
-        </div>
-      </div>
-
-      <div class="draw-right">
-        <div class="draw-panel">
-          <div class="draw-panel-title">Color</div>
-          <div class="swatches" id="swatches"></div>
-          <input type="color" id="color-picker" value="#111111" />
-        </div>
-        <div class="draw-panel">
-          <div class="draw-panel-title">Brush size</div>
-          <input type="range" id="size-slider" min="1" max="60" value="4" />
-          <div class="size-label"><span>1px</span><span id="size-val">4px</span><span>60px</span></div>
-        </div>
-        <div class="draw-panel">
-          <div class="draw-panel-title">My drawings</div>
-          <div id="canvas-list"><div class="empty-note">Sign in to see saved drawings.</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="draw-toast" id="draw-toast"></div>
-
-  <script>
+<div class="draw-shell">
+<div class="draw-topbar">
+<div class="draw-topbar-left">
+<div class="draw-logo"></div>
+<input class="draw-title" id="draw-title" maxlength="80" value="Untitled canvas"/>
+</div>
+<div class="draw-topbar-right">
+<button class="draw-btn" onclick="window.location.href='/apps.html'">← Apps</button>
+<button class="draw-btn" disabled="" id="undo-btn">↶ Undo</button>
+<button class="draw-btn" disabled="" id="redo-btn">↷ Redo</button>
+<button class="draw-btn" id="export-btn">⬇ Export PNG</button>
+<button class="draw-btn primary" id="save-btn">Save</button>
+</div>
+</div>
+<div class="draw-main">
+<div class="draw-toolbar">
+<button class="tool-btn active" data-tool="brush" title="Brush">✏️</button>
+<button class="tool-btn" data-tool="eraser" title="Eraser">🩹</button>
+<div class="tool-sep"></div>
+<button class="tool-btn" data-tool="line" title="Line">／</button>
+<button class="tool-btn" data-tool="rect" title="Rectangle">▢</button>
+<button class="tool-btn" data-tool="circle" title="Circle">◯</button>
+<div class="tool-sep"></div>
+<button class="tool-btn" id="clear-btn" title="Clear canvas">🗑️</button>
+</div>
+<div class="draw-center">
+<div class="draw-canvas-wrapper">
+<canvas height="700" id="draw-canvas" width="1200"></canvas>
+</div>
+<div class="draw-bottom-bar">
+<span id="draw-status">Brush · 4px · #111111</span>
+<span id="draw-savestate">Not signed in — sign in to save drawings</span>
+</div>
+</div>
+<div class="draw-right">
+<div class="draw-panel">
+<div class="draw-panel-title">Color</div>
+<div class="swatches" id="swatches"></div>
+<input id="color-picker" type="color" value="#111111"/>
+</div>
+<div class="draw-panel">
+<div class="draw-panel-title">Brush size</div>
+<input id="size-slider" max="60" min="1" type="range" value="4"/>
+<div class="size-label"><span>1px</span><span id="size-val">4px</span><span>60px</span></div>
+</div>
+<div class="draw-panel">
+<div class="draw-panel-title">My drawings</div>
+<div id="canvas-list"><div class="empty-note">Sign in to see saved drawings.</div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="draw-toast" id="draw-toast"></div>
+<script>
     const SUPABASE_URL  = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);

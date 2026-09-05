@@ -1,12 +1,13 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stack — 360</title>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Stack — 360</title>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     html, body { margin:0; padding:0; height:100%; width:100%; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:#05060a; color:#f5f5f5; overflow:hidden; }
     .do-shell { display:flex; flex-direction:column; height:100vh; width:100vw; }
     .do-topbar { height:48px; display:flex; align-items:center; justify-content:space-between; padding:0 16px; background:rgba(10,12,20,.9); border-bottom:1px solid rgba(255,255,255,.06); backdrop-filter: blur(18px); flex-shrink:0; }
@@ -58,40 +59,36 @@
     .do-toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); background:#fff; color:#0a0a0a; padding:10px 18px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:.25s; z-index:400; font-weight:600; }
     .do-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   </style>
-</head>
+<meta content="Stack  360 is part of 360 Digital. Explore its features and use it online through the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="Stack — 360" property="og:title"/><meta content="Stack  360 is part of 360 Digital. Explore its features and use it online through the 360 platform." property="og:description"/><meta content="https://360-search.com/apps/Stack.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="Stack — 360" name="twitter:title"/><meta content="Stack  360 is part of 360 Digital. Explore its features and use it online through the 360 platform." name="twitter:description"/><link href="https://360-search.com/apps/Stack.html" rel="canonical"/></head>
 <body>
-  <div class="do-shell">
-    <div class="do-topbar">
-      <div class="do-topbar-left">
-        <div class="do-logo"></div>
-        <div class="do-title">Stack · Lists & Tasks</div>
-      </div>
-      <div class="do-topbar-right">
-        <button class="do-btn" onclick="window.location.href='/apps.html'">← Apps</button>
-        <span id="do-presence">Private</span>
-      </div>
-    </div>
-
-    <div class="do-main">
-      <div class="do-sidebar">
-        <div>
-          <div class="do-sidebar-title">Lists</div>
-          <div id="do-list-container"></div>
-        </div>
-        <div class="do-new-list" id="do-new-list">+ New list</div>
-      </div>
-
-      <div class="do-content" id="do-content">
-        <div class="do-gate" id="do-gate">
-          <p>Sign in to create lists and tasks.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="do-toast" id="do-toast"></div>
-
-  <script>
+<div class="do-shell">
+<div class="do-topbar">
+<div class="do-topbar-left">
+<div class="do-logo"></div>
+<div class="do-title">Stack · Lists &amp; Tasks</div>
+</div>
+<div class="do-topbar-right">
+<button class="do-btn" onclick="window.location.href='/apps.html'">← Apps</button>
+<span id="do-presence">Private</span>
+</div>
+</div>
+<div class="do-main">
+<div class="do-sidebar">
+<div>
+<div class="do-sidebar-title">Lists</div>
+<div id="do-list-container"></div>
+</div>
+<div class="do-new-list" id="do-new-list">+ New list</div>
+</div>
+<div class="do-content" id="do-content">
+<div class="do-gate" id="do-gate">
+<p>Sign in to create lists and tasks.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="do-toast" id="do-toast"></div>
+<script>
     const SUPABASE_URL  = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);

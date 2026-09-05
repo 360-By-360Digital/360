@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Starfall RNG - Ultimate</title>
-    <style>
+<meta charset="utf-8"/>
+<title>Starfall RNG - Ultimate</title>
+<style>
 :root {
     --bg: #050816;
     --panel: #0b1020;
@@ -437,93 +438,80 @@ body {
     border-radius: 999px;
 }
     </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta content="Play STARFALL RNG - Ultamite on 360. Explore this free browser game and discover more games on 360." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="Starfall RNG - Ultimate" property="og:title"/><meta content="Play STARFALL RNG - Ultamite on 360. Explore this free browser game and discover more games on 360." property="og:description"/><meta content="https://360-search.com/games/starfallrngultimate.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="Starfall RNG - Ultimate" name="twitter:title"/><meta content="Play STARFALL RNG - Ultamite on 360. Explore this free browser game and discover more games on 360." name="twitter:description"/><link href="https://360-search.com/games/starfallrngultimate.html" rel="canonical"/></head>
 <body>
-    <div id="app">
-        <aside id="sidebar">
-            <h1 id="game-title">STARFALL RNG - Ultamite</h1>
-
-            <div id="stats-panel">
-                <div class="stat-row"><span>Coins</span><span id="coins">0</span></div>
-                <div class="stat-row"><span>XP</span><span id="xp">0</span></div>
-                <div class="stat-row"><span>Level</span><span id="level">1</span></div>
-                <div class="stat-row"><span>Ascensions</span><span id="ascensions">0</span></div>
-            </div>
-
-            <nav id="nav">
-                <button class="nav-btn active" data-screen="screen-roll">Roll</button>
-                <button class="nav-btn" data-screen="screen-inventory">Inventory</button>
-                <button class="nav-btn" data-screen="screen-quests">Quests</button>
-                <button class="nav-btn" data-screen="screen-shop">Shop</button>
-                <button class="nav-btn" data-screen="screen-ascension">Ascension</button>
-            </nav>
-        </aside>
-
-        <main id="main">
-            <header id="top-bar">
-                <div id="clock"></div>
-                <div id="save-status">Unsaved</div>
-            </header>
-
-            <!-- ROLL SCREEN -->
-            <section id="screen-roll" class="screen active-screen">
-                <section id="roll-section">
-                    <div id="wheel-container">
-                        <div id="rarity-wheel"></div>
-                        <div id="wheel-pointer"></div>
-                    </div>
-
-                    <div id="roll-right">
-                        <div id="roll-controls">
-                            <button id="roll-btn" class="primary-btn">Roll</button>
-                        </div>
-
-                        <div id="rarity-card">
-                            <div id="rarity-card-title">—</div>
-                            <div id="rarity-card-aura">—</div>
-                            <div id="rarity-card-desc">Roll to begin</div>
-                            <div id="rarity-card-tag">—</div>
-                        </div>
-
-                        <div id="rarity-prob-panel"></div>
-                    </div>
-                </section>
-
-                <section id="log-section">
-                    <h2>Roll Log</h2>
-                    <div id="roll-log"></div>
-                </section>
-            </section>
-
-            <!-- INVENTORY SCREEN -->
-            <section id="screen-inventory" class="screen">
-                <h2>Inventory</h2>
-                <div id="inventory-list"></div>
-            </section>
-
-            <!-- QUESTS SCREEN -->
-            <section id="screen-quests" class="screen">
-                <h2>Quests</h2>
-                <div id="quest-list"></div>
-            </section>
-
-            <!-- SHOP SCREEN -->
-            <section id="screen-shop" class="screen">
-                <h2>Shop</h2>
-                <div id="shop-list"></div>
-            </section>
-
-            <!-- ASCENSION SCREEN -->
-            <section id="screen-ascension" class="screen">
-                <h2>Ascension</h2>
-                <p id="ascend-info"></p>
-                <button id="ascend-btn" class="primary-btn">Ascend</button>
-            </section>
-        </main>
-    </div>
-
-    <script>
+<div id="app">
+<aside id="sidebar">
+<h1 id="game-title">STARFALL RNG - Ultamite</h1>
+<div id="stats-panel">
+<div class="stat-row"><span>Coins</span><span id="coins">0</span></div>
+<div class="stat-row"><span>XP</span><span id="xp">0</span></div>
+<div class="stat-row"><span>Level</span><span id="level">1</span></div>
+<div class="stat-row"><span>Ascensions</span><span id="ascensions">0</span></div>
+</div>
+<nav id="nav">
+<button class="nav-btn active" data-screen="screen-roll">Roll</button>
+<button class="nav-btn" data-screen="screen-inventory">Inventory</button>
+<button class="nav-btn" data-screen="screen-quests">Quests</button>
+<button class="nav-btn" data-screen="screen-shop">Shop</button>
+<button class="nav-btn" data-screen="screen-ascension">Ascension</button>
+</nav>
+</aside>
+<main id="main">
+<header id="top-bar">
+<div id="clock"></div>
+<div id="save-status">Unsaved</div>
+</header>
+<!-- ROLL SCREEN -->
+<section class="screen active-screen" id="screen-roll">
+<section id="roll-section">
+<div id="wheel-container">
+<div id="rarity-wheel"></div>
+<div id="wheel-pointer"></div>
+</div>
+<div id="roll-right">
+<div id="roll-controls">
+<button class="primary-btn" id="roll-btn">Roll</button>
+</div>
+<div id="rarity-card">
+<div id="rarity-card-title">—</div>
+<div id="rarity-card-aura">—</div>
+<div id="rarity-card-desc">Roll to begin</div>
+<div id="rarity-card-tag">—</div>
+</div>
+<div id="rarity-prob-panel"></div>
+</div>
+</section>
+<section id="log-section">
+<h2>Roll Log</h2>
+<div id="roll-log"></div>
+</section>
+</section>
+<!-- INVENTORY SCREEN -->
+<section class="screen" id="screen-inventory">
+<h2>Inventory</h2>
+<div id="inventory-list"></div>
+</section>
+<!-- QUESTS SCREEN -->
+<section class="screen" id="screen-quests">
+<h2>Quests</h2>
+<div id="quest-list"></div>
+</section>
+<!-- SHOP SCREEN -->
+<section class="screen" id="screen-shop">
+<h2>Shop</h2>
+<div id="shop-list"></div>
+</section>
+<!-- ASCENSION SCREEN -->
+<section class="screen" id="screen-ascension">
+<h2>Ascension</h2>
+<p id="ascend-info"></p>
+<button class="primary-btn" id="ascend-btn">Ascend</button>
+</section>
+</main>
+</div>
+<script>
 // ---------- Core state ----------
 
 const rarities = [
@@ -1109,6 +1097,6 @@ function init() {
 
 init();
     </script>
-  <script src="assets/js/game-rewards.js"></script>
+<script src="assets/js/game-rewards.js"></script>
 </body>
 </html>

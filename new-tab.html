@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 — New Tab</title>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 — New Tab</title>
+<style>
     /* ── Variables ── */
     :root {
       --bg:       #0b0f1a;
@@ -377,91 +378,76 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
   </style>
-</head>
-
+<meta content="360  New Tab — part of the 360 web platform." name="description"/><meta content="noindex, nofollow" name="robots"/><meta content="website" property="og:type"/><meta content="360 — New Tab" property="og:title"/><meta content="360  New Tab — part of the 360 web platform." property="og:description"/><meta content="https://360-search.com/new-tab.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 — New Tab" name="twitter:title"/><meta content="360  New Tab — part of the 360 web platform." name="twitter:description"/><link href="https://360-search.com/new-tab.html" rel="canonical"/></head>
 <body>
 <div class="page">
-
-  <!-- TOP BAR -->
-  <div class="top-bar">
-    <div class="logo">360</div>
-    <div class="search-wrap">
-      <input id="searchInput" type="text" placeholder="Search 360..." autocomplete="off" />
-      <button class="search-btn" id="searchBtn">🔍</button>
-    </div>
-    <div class="top-actions">
-      <button class="icon-btn" id="themeBtn">🌙</button>
-      <button class="icon-btn" onclick="window.open('https://360-search.com','_blank')">🏠 Home</button>
-    </div>
-  </div>
-
-  <!-- LEFT COLUMN -->
-  <div class="left">
-
-    <!-- Clock -->
-    <div class="card clock-card">
-      <div class="time" id="clock">00:00:00</div>
-      <div class="date-str" id="dateStr">Loading...</div>
-      <div class="greeting" id="greeting">Welcome back!</div>
-    </div>
-
-    <!-- Weather -->
-    <div class="card weather-card" id="weatherCard">
-      <div class="weather-icon" id="weatherIcon">🌤️</div>
-      <div class="weather-info">
-        <div class="temp" id="weatherTemp">--°C</div>
-        <div class="wdesc" id="weatherDesc">Fetching weather...</div>
-        <div class="wloc" id="weatherLoc">📍 Locating...</div>
-      </div>
-      <div class="weather-extra" id="weatherExtra"></div>
-    </div>
-
-    <!-- Quick links -->
-    <div class="card" style="padding:16px;">
-      <div class="links-grid" id="quickLinks"></div>
-    </div>
-
-    <!-- Apps row -->
-    <div class="card apps-card">
-      <h3>360 Apps</h3>
-      <div class="apps-row" id="appsRow"></div>
-    </div>
-
-  </div><!-- /left -->
-
-  <!-- RIGHT COLUMN -->
-  <div class="right">
-
-    <!-- Calculator -->
-    <div class="card calc-card">
-      <h3>Calculator</h3>
-      <div class="calc-display">
-        <div class="calc-expr" id="calcExpr"></div>
-        <div class="calc-val"  id="calcVal">0</div>
-      </div>
-      <div class="calc-grid" id="calcGrid"></div>
-    </div>
-
-    <!-- Todo -->
-    <div class="card todo-card">
-      <h3>To-Do</h3>
-      <div class="todo-input-row">
-        <input id="todoInput" placeholder="Add a task..." maxlength="80" />
-        <button class="todo-add-btn" id="todoAdd">＋</button>
-      </div>
-      <div class="todo-list" id="todoList"></div>
-    </div>
-
-    <!-- Quote -->
-    <div class="card quote-card">
-      <div class="quote-text" id="quoteText">Loading quote...</div>
-      <div class="quote-author" id="quoteAuthor"></div>
-    </div>
-
-  </div><!-- /right -->
-
+<!-- TOP BAR -->
+<div class="top-bar">
+<div class="logo">360</div>
+<div class="search-wrap">
+<input autocomplete="off" id="searchInput" placeholder="Search 360..." type="text"/>
+<button class="search-btn" id="searchBtn">🔍</button>
 </div>
-
+<div class="top-actions">
+<button class="icon-btn" id="themeBtn">🌙</button>
+<button class="icon-btn" onclick="window.open('https://360-search.com','_blank')">🏠 Home</button>
+</div>
+</div>
+<!-- LEFT COLUMN -->
+<div class="left">
+<!-- Clock -->
+<div class="card clock-card">
+<div class="time" id="clock">00:00:00</div>
+<div class="date-str" id="dateStr">Loading...</div>
+<div class="greeting" id="greeting">Welcome back!</div>
+</div>
+<!-- Weather -->
+<div class="card weather-card" id="weatherCard">
+<div class="weather-icon" id="weatherIcon">🌤️</div>
+<div class="weather-info">
+<div class="temp" id="weatherTemp">--°C</div>
+<div class="wdesc" id="weatherDesc">Fetching weather...</div>
+<div class="wloc" id="weatherLoc">📍 Locating...</div>
+</div>
+<div class="weather-extra" id="weatherExtra"></div>
+</div>
+<!-- Quick links -->
+<div class="card" style="padding:16px;">
+<div class="links-grid" id="quickLinks"></div>
+</div>
+<!-- Apps row -->
+<div class="card apps-card">
+<h3>360 Apps</h3>
+<div class="apps-row" id="appsRow"></div>
+</div>
+</div><!-- /left -->
+<!-- RIGHT COLUMN -->
+<div class="right">
+<!-- Calculator -->
+<div class="card calc-card">
+<h3>Calculator</h3>
+<div class="calc-display">
+<div class="calc-expr" id="calcExpr"></div>
+<div class="calc-val" id="calcVal">0</div>
+</div>
+<div class="calc-grid" id="calcGrid"></div>
+</div>
+<!-- Todo -->
+<div class="card todo-card">
+<h3>To-Do</h3>
+<div class="todo-input-row">
+<input id="todoInput" maxlength="80" placeholder="Add a task..."/>
+<button class="todo-add-btn" id="todoAdd">＋</button>
+</div>
+<div class="todo-list" id="todoList"></div>
+</div>
+<!-- Quote -->
+<div class="card quote-card">
+<div class="quote-text" id="quoteText">Loading quote...</div>
+<div class="quote-author" id="quoteAuthor"></div>
+</div>
+</div><!-- /right -->
+</div>
 <script src="/assets/js/newtab.js"></script>
 </body>
 </html>

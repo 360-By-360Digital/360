@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>TROLLEY PROBLEM: THE GAME</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
@@ -302,58 +303,49 @@
     line-height: 1.5;
   }
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta content="Play ⚙ TROLLEY PROBLEM ⚙ on 360. Explore this free browser game and discover more games on 360." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="TROLLEY PROBLEM: THE GAME" property="og:title"/><meta content="Play ⚙ TROLLEY PROBLEM ⚙ on 360. Explore this free browser game and discover more games on 360." property="og:description"/><meta content="https://360-search.com/games/UnwantedProblems.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="TROLLEY PROBLEM: THE GAME" name="twitter:title"/><meta content="Play ⚙ TROLLEY PROBLEM ⚙ on 360. Explore this free browser game and discover more games on 360." name="twitter:description"/><link href="https://360-search.com/games/UnwantedProblems.html" rel="canonical"/></head>
 <body>
 <div id="app">
-  <div id="header">
-    <h1>&#9881; TROLLEY PROBLEM &#9881;</h1>
-    <div class="subtitle">THE PIXEL ETHICS SIMULATOR &mdash; 40 LEVELS</div>
-  </div>
-
-  <div id="statsBar">
-    <div class="stat"><span class="stat-label">SAVED:</span><span class="stat-val saved" id="sSaved">0</span></div>
-    <div class="stat"><span class="stat-label">LEVEL:</span><span class="stat-val level" id="sLevel">1 / 40</span></div>
-    <div class="stat"><span class="stat-label">SACRIFICED:</span><span class="stat-val killed" id="sKilled">0</span></div>
-  </div>
-
-  <div id="progressWrap"><div id="progressBar" style="width:0%"></div></div>
-
-  <div id="levelTitle">LEVEL 1 — THE CLASSIC</div>
-
-  <div id="canvasWrap">
-    <canvas id="c" width="800" height="320"></canvas>
-  </div>
-
-  <div id="dilemmaBox">
-    <span class="dlabel">&#9650; SITUATION:</span>
-    <span id="dilemmaText">Loading...</span>
-  </div>
-
-  <div id="btnRow">
-    <button class="btn btn-pull" id="btnPull" onclick="choose(true)">&#9654; PULL LEVER</button>
-    <button class="btn btn-dont" id="btnDont" onclick="choose(false)">&#9632; DO NOTHING</button>
-  </div>
-
-  <div id="resultBox">
-    <span class="rlabel">&#9658; OUTCOME:</span>
-    <span id="resultText"></span>
-  </div>
-
-  <div id="endScreen">
-    <h2>&#9733; GAME COMPLETE &#9733;</h2>
-    <div class="end-stat">&#x1F7E2; People Saved: <span style="color:var(--green)" id="eFinalSaved">0</span></div>
-    <div class="end-stat">&#x1F534; People Sacrificed: <span style="color:var(--red)" id="eFinalKilled">0</span></div>
-    <div class="end-stat">Levels Completed: <span style="color:var(--gold)">40 / 40</span></div>
-    <div id="verdict">VERDICT: LOADING...</div>
-    <div class="end-note">There are no correct answers. Only choices, consequences, and the quiet weight of moral philosophy.</div>
-    <br>
-    <div id="btnRow2" style="margin-top:12px">
-      <button class="btn btn-restart" onclick="restart()">&#9654; PLAY AGAIN</button>
-    </div>
-  </div>
+<div id="header">
+<h1>⚙ TROLLEY PROBLEM ⚙</h1>
+<div class="subtitle">THE PIXEL ETHICS SIMULATOR — 40 LEVELS</div>
 </div>
-
+<div id="statsBar">
+<div class="stat"><span class="stat-label">SAVED:</span><span class="stat-val saved" id="sSaved">0</span></div>
+<div class="stat"><span class="stat-label">LEVEL:</span><span class="stat-val level" id="sLevel">1 / 40</span></div>
+<div class="stat"><span class="stat-label">SACRIFICED:</span><span class="stat-val killed" id="sKilled">0</span></div>
+</div>
+<div id="progressWrap"><div id="progressBar" style="width:0%"></div></div>
+<div id="levelTitle">LEVEL 1 — THE CLASSIC</div>
+<div id="canvasWrap">
+<canvas height="320" id="c" width="800"></canvas>
+</div>
+<div id="dilemmaBox">
+<span class="dlabel">▲ SITUATION:</span>
+<span id="dilemmaText">Loading...</span>
+</div>
+<div id="btnRow">
+<button class="btn btn-pull" id="btnPull" onclick="choose(true)">▶ PULL LEVER</button>
+<button class="btn btn-dont" id="btnDont" onclick="choose(false)">■ DO NOTHING</button>
+</div>
+<div id="resultBox">
+<span class="rlabel">► OUTCOME:</span>
+<span id="resultText"></span>
+</div>
+<div id="endScreen">
+<h2>★ GAME COMPLETE ★</h2>
+<div class="end-stat">🟢 People Saved: <span id="eFinalSaved" style="color:var(--green)">0</span></div>
+<div class="end-stat">🔴 People Sacrificed: <span id="eFinalKilled" style="color:var(--red)">0</span></div>
+<div class="end-stat">Levels Completed: <span style="color:var(--gold)">40 / 40</span></div>
+<div id="verdict">VERDICT: LOADING...</div>
+<div class="end-note">There are no correct answers. Only choices, consequences, and the quiet weight of moral philosophy.</div>
+<br/>
+<div id="btnRow2" style="margin-top:12px">
+<button class="btn btn-restart" onclick="restart()">▶ PLAY AGAIN</button>
+</div>
+</div>
+</div>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
@@ -721,6 +713,6 @@ function restart() {
 
 updateUI();
 </script>
-  <script src="assets/js/game-rewards.js"></script>
+<script src="assets/js/game-rewards.js"></script>
 </body>
 </html>

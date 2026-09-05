@@ -1,20 +1,20 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pomodoro — 360</title>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Pomodoro — 360</title>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     *, *::before, *::after { box-sizing: border-box; }
 
     /* ── shell tokens — light/dark, same pattern as ai.css ── */
@@ -307,105 +307,90 @@
       .pm-ring-wrap { width: 210px; height: 210px; }
     }
   </style>
-</head>
+<meta content="Pomodoro  360 is part of 360 Digital. Explore its features and use it online through the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="Pomodoro — 360" property="og:title"/><meta content="Pomodoro  360 is part of 360 Digital. Explore its features and use it online through the 360 platform." property="og:description"/><meta content="https://360-search.com/apps/Pomodoro.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="Pomodoro — 360" name="twitter:title"/><meta content="Pomodoro  360 is part of 360 Digital. Explore its features and use it online through the 360 platform." name="twitter:description"/><link href="https://360-search.com/apps/Pomodoro.html" rel="canonical"/></head>
 <body class="dark">
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <div class="pm-shell">
-    <div class="pm-topbar">
-      <div class="pm-topbar-left">
-        <div class="pm-brand">
-          <div class="pm-brand-mark">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9z"/></svg>
-          </div>
-          <span class="pm-brand-text">Pomodoro</span>
-        </div>
-      </div>
-      <div class="pm-topbar-right">
-        <a class="pm-topbar-link" href="/apps">Apps</a>
-      </div>
-    </div>
-
-    <div class="pm-main">
-      <!-- sidebar -->
-      <div class="pm-sidebar">
-        <div class="pm-sidebar-inner">
-
-          <div>
-            <div class="pm-section-title">Mode</div>
-            <button class="pm-mode-btn active" data-mode="focus">Focus <span class="pm-mode-dur" id="lbl-focus">25m</span></button>
-            <button class="pm-mode-btn" data-mode="short">Short break <span class="pm-mode-dur" id="lbl-short">5m</span></button>
-            <button class="pm-mode-btn" data-mode="long">Long break <span class="pm-mode-dur" id="lbl-long">15m</span></button>
-          </div>
-
-          <div>
-            <div class="pm-section-title">Durations (min)</div>
-            <div class="pm-setting"><label>Focus</label><input type="number" id="set-focus" value="25" min="1" max="90" /></div>
-            <div class="pm-setting"><label>Short break</label><input type="number" id="set-short" value="5" min="1" max="30" /></div>
-            <div class="pm-setting"><label>Long break</label><input type="number" id="set-long" value="15" min="1" max="60" /></div>
-            <div class="pm-setting"><label>Long break after</label><input type="number" id="set-interval" value="4" min="2" max="10" /></div>
-          </div>
-
-          <div>
-            <div class="pm-section-title">Options</div>
-            <div class="pm-toggle"><label for="tog-auto">Auto-start next</label><input type="checkbox" id="tog-auto" /></div>
-            <div class="pm-toggle"><label for="tog-sound">Sound alerts</label><input type="checkbox" id="tog-sound" checked /></div>
-          </div>
-
-          <div style="flex:1">
-            <div class="pm-section-title">Session log</div>
-            <div class="pm-log" id="pm-log"><div class="pm-log-empty">No sessions yet.</div></div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- center -->
-      <div class="pm-content">
-        <div class="pm-mode-label" id="pm-mode-label">Focus</div>
-
-        <div class="pm-ring-wrap">
-          <svg class="pm-ring-svg" viewBox="0 0 256 256">
-            <circle class="pm-ring-bg" cx="128" cy="128" r="112" />
-            <circle class="pm-ring-fg" id="pm-ring" cx="128" cy="128" r="112" />
-          </svg>
-          <div class="pm-ring-center">
-            <div class="pm-time" id="pm-time">25:00</div>
-            <div class="pm-rounds" id="pm-rounds">Session 1</div>
-          </div>
-        </div>
-
-        <div class="pm-controls">
-          <button class="pm-ctrl" id="btn-restart" title="Restart">↺</button>
-          <button class="pm-ctrl pm-ctrl-primary" id="btn-play" title="Start">▶</button>
-          <button class="pm-ctrl" id="btn-skip" title="Skip">⏭</button>
-        </div>
-
-        <div class="pm-task-wrap">
-          <input class="pm-task-input" id="pm-task" type="text" placeholder="What are you working on?" maxlength="80" />
-        </div>
-
-        <div class="pm-stats">
-          <div class="pm-stat"><div class="pm-stat-val" id="stat-sessions">0</div><div class="pm-stat-lbl">Sessions</div></div>
-          <div class="pm-stat"><div class="pm-stat-val" id="stat-focus">0m</div><div class="pm-stat-lbl">Focus time</div></div>
-          <div class="pm-stat"><div class="pm-stat-val" id="stat-streak">0</div><div class="pm-stat-lbl">Streak</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="pm-toast" id="pm-toast"></div>
-
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-
-  <script>
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<div class="pm-shell">
+<div class="pm-topbar">
+<div class="pm-topbar-left">
+<div class="pm-brand">
+<div class="pm-brand-mark">
+<svg fill="currentColor" height="14" viewbox="0 0 24 24" width="14"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9z"></path></svg>
+</div>
+<span class="pm-brand-text">Pomodoro</span>
+</div>
+</div>
+<div class="pm-topbar-right">
+<a class="pm-topbar-link" href="/apps">Apps</a>
+</div>
+</div>
+<div class="pm-main">
+<!-- sidebar -->
+<div class="pm-sidebar">
+<div class="pm-sidebar-inner">
+<div>
+<div class="pm-section-title">Mode</div>
+<button class="pm-mode-btn active" data-mode="focus">Focus <span class="pm-mode-dur" id="lbl-focus">25m</span></button>
+<button class="pm-mode-btn" data-mode="short">Short break <span class="pm-mode-dur" id="lbl-short">5m</span></button>
+<button class="pm-mode-btn" data-mode="long">Long break <span class="pm-mode-dur" id="lbl-long">15m</span></button>
+</div>
+<div>
+<div class="pm-section-title">Durations (min)</div>
+<div class="pm-setting"><label>Focus</label><input id="set-focus" max="90" min="1" type="number" value="25"/></div>
+<div class="pm-setting"><label>Short break</label><input id="set-short" max="30" min="1" type="number" value="5"/></div>
+<div class="pm-setting"><label>Long break</label><input id="set-long" max="60" min="1" type="number" value="15"/></div>
+<div class="pm-setting"><label>Long break after</label><input id="set-interval" max="10" min="2" type="number" value="4"/></div>
+</div>
+<div>
+<div class="pm-section-title">Options</div>
+<div class="pm-toggle"><label for="tog-auto">Auto-start next</label><input id="tog-auto" type="checkbox"/></div>
+<div class="pm-toggle"><label for="tog-sound">Sound alerts</label><input checked="" id="tog-sound" type="checkbox"/></div>
+</div>
+<div style="flex:1">
+<div class="pm-section-title">Session log</div>
+<div class="pm-log" id="pm-log"><div class="pm-log-empty">No sessions yet.</div></div>
+</div>
+</div>
+</div>
+<!-- center -->
+<div class="pm-content">
+<div class="pm-mode-label" id="pm-mode-label">Focus</div>
+<div class="pm-ring-wrap">
+<svg class="pm-ring-svg" viewbox="0 0 256 256">
+<circle class="pm-ring-bg" cx="128" cy="128" r="112"></circle>
+<circle class="pm-ring-fg" cx="128" cy="128" id="pm-ring" r="112"></circle>
+</svg>
+<div class="pm-ring-center">
+<div class="pm-time" id="pm-time">25:00</div>
+<div class="pm-rounds" id="pm-rounds">Session 1</div>
+</div>
+</div>
+<div class="pm-controls">
+<button class="pm-ctrl" id="btn-restart" title="Restart">↺</button>
+<button class="pm-ctrl pm-ctrl-primary" id="btn-play" title="Start">▶</button>
+<button class="pm-ctrl" id="btn-skip" title="Skip">⏭</button>
+</div>
+<div class="pm-task-wrap">
+<input class="pm-task-input" id="pm-task" maxlength="80" placeholder="What are you working on?" type="text"/>
+</div>
+<div class="pm-stats">
+<div class="pm-stat"><div class="pm-stat-val" id="stat-sessions">0</div><div class="pm-stat-lbl">Sessions</div></div>
+<div class="pm-stat"><div class="pm-stat-val" id="stat-focus">0m</div><div class="pm-stat-lbl">Focus time</div></div>
+<div class="pm-stat"><div class="pm-stat-val" id="stat-streak">0</div><div class="pm-stat-lbl">Streak</div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="pm-toast" id="pm-toast"></div>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script>
     /* ── settings ── */
     const setFocus    = document.getElementById('set-focus');
     const setShort    = document.getElementById('set-short');

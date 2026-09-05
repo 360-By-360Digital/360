@@ -1,14 +1,12 @@
 <!-- ===============================
   SEARCH.HTML V.3.6.0 CUSTOM SEARCH
 ================================ -->
-
 <!--================================
 Copyright from GCSE Widget: 
 
 Copyright The Closure Library Authors. 
 SPDX-License-Identifier: Apache-2.0!
 ================================ -->
-
 <!--=============================================================================================================================================================
                                                  MODIFIER NOTES (Notes from the contributors of this file):
 - This program scrapes GCSE results and styles them into our custom result cards
@@ -24,33 +22,32 @@ Before taking an action to legal matter, please reach out to us at admin@360-sea
 THIS PROGRAM IS NOT FULLY RELIANT ON GOOGLE'S CSE RESULTS! WE USE MULTIPLE API'S TO CREATE A FUNCTIONING METASEARCH ENGINE AND GOOGLE'S CSE PERFORMS BEST IN THE 
  - FRONTEND.
 ============================================================================================================================================================= !-->
-
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
-  <script>
+<!-- Google tag (gtag.js) -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+<script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-89NN1P6CEV');
   </script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 — Search</title>
-  <link rel="icon" type="image/png" href="favicon-32x32.png" />
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/assets/js/360-settings.js"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 Search Beta — Web Search</title>
+<link href="favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/js/360-settings.js"></script>
+<style>
     /* ══════════════════════════════════════════
        GLASSMORPHISM DESIGN SYSTEM
        No page background — assets handle that.
@@ -1134,251 +1131,233 @@ THIS PROGRAM IS NOT FULLY RELIANT ON GOOGLE'S CSE RESULTS! WE USE MULTIPLE API'S
       .results-tab { padding: 6px 12px; font-size: 12px; }
     }
   </style>
-  <script src="assets/js/octicons.js"></script>
-</head>
+<script src="assets/js/octicons.js"></script>
+<meta content="Try the 360 Search beta experience for fast web search and access to 360 search tools." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 Search Beta — Web Search" property="og:title"/><meta content="Try the 360 Search beta experience for fast web search and access to 360 search tools." property="og:description"/><meta content="https://360-search.com/search-beta.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 Search Beta — Web Search" name="twitter:title"/><meta content="Try the 360 Search beta experience for fast web search and access to 360 search tools." name="twitter:description"/><link href="https://360-search.com/search-beta.html" rel="canonical"/></head>
 <body>
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-  <button class="sidebar-toggle" id="sidebarToggle"><span data-octicon="three-bars"></span> Menu</button>
-  <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
-  <div class="overlay" id="overlay"></div>
-  <div class="settings-panel" id="settingsPanel">
-    <h3>Appearance</h3>
-    <div class="settings-label">Theme</div>
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-    </div>
-    <div class="settings-label" style="margin-top:20px;">Mode</div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:14px;">Dark mode</span>
-      <input type="checkbox" id="darkToggle" />
-    </label>
-    <h3 style="margin-top:20px;">Cursor</h3>
-    <div class="settings-label">Style</div>
-    <div class="cursor-options">
-      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-    </div>
-    <div class="cursor-color-row">
-      <label>Cursor color</label>
-      <input type="color" id="cursorColorPicker" value="#3b82f6" />
-      <button id="cursorColorReset">Reset</button>
-    </div>
-    <div class="temp-unit-box" style="margin-top:20px;">
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<button class="sidebar-toggle" id="sidebarToggle"><span data-octicon="three-bars"></span> Menu</button>
+<aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
+<div class="overlay" id="overlay"></div>
+<div class="settings-panel" id="settingsPanel">
+<h3>Appearance</h3>
+<div class="settings-label">Theme</div>
+<div class="theme-swatches">
+<div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+<div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+<div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+<div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+</div>
+<div class="settings-label" style="margin-top:20px;">Mode</div>
+<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+<span style="font-size:14px;">Dark mode</span>
+<input id="darkToggle" type="checkbox"/>
+</label>
+<h3 style="margin-top:20px;">Cursor</h3>
+<div class="settings-label">Style</div>
+<div class="cursor-options">
+<div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+<div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+<div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+<div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+<div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+<div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+</div>
+<div class="cursor-color-row">
+<label>Cursor color</label>
+<input id="cursorColorPicker" type="color" value="#3b82f6"/>
+<button id="cursorColorReset">Reset</button>
+</div>
+<div class="temp-unit-box" style="margin-top:20px;">
       Temp Unit: <span id="tempUnitLabel">°C</span>
-      <button id="tempUnitBtn">Switch</button>
-    </div>
-    <div class="settings-box" style="margin-top:20px;">
-      <div class="settings-label">Background Image</div>
-      <input type="file" id="bgUpload" accept="image/*" class="settings-input" />
-      <input type="text" id="bgUrlInput" placeholder="Paste image URL…" class="settings-input" />
-      <button id="bgUrlBtn" class="settings-btn">Apply URL</button>
-      <button id="bgResetBtn" class="settings-btn">Reset</button>
-    </div>
-    <h3 style="margin-top:25px;">Legal</h3>
-    <a href="/privacypolicy" class="legal-link"><span data-octicon="lock"></span> Privacy Policy</a>
-    <a href="/tos" class="legal-link"><span data-octicon="law"></span> Terms of Service</a>
-    <h3 style="margin-top:25px;">About</h3>
-    <details class="about-dropdown">
-      <summary>ℹ️ What is 360?</summary>
-      <p>360 is a next-generation search engine and digital workspace. Search, chat, translate, check weather, monitor stocks, and interact with AI — all in one unified interface. Built by 360 Digital, Co.</p>
-    </details>
-  </div>
-  <div id="auth-popup" class="auth-popup hidden">
-    <div class="auth-box">
-      <h2>Account</h2>
-      <input id="auth-email" type="email" placeholder="Email" />
-      <input id="auth-password" type="password" placeholder="Password" />
-      <button id="auth-login-btn">Log In</button>
-      <button id="auth-signup-btn">Sign Up</button>
-      <button id="github-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        <span>Sign in with GitHub</span>
-      </button>
-      <button id="google-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        <span>Sign in with Google</span>
-      </button>
-      <p id="auth-error" class="auth-error"></p>
-      <button id="auth-close-btn" class="close-btn">Close</button>
-    </div>
-  </div>
-  <div class="auth-top-right">
-    <button id="signInBtn" class="auth-btn">Sign In</button>
-    <button id="signUpBtn" class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-
-  <!-- ══ HIDDEN GCSE CONTAINER (does the actual work) ══ -->
-  <div id="idx-container">
-    <div class="gcse-search" id="idx-mount"></div>
-  </div>
-
-  <!-- ══ SEARCH RESULTS PAGE ══ -->
-  <div class="search-results-page">
-    <!-- Top fixed strip with custom search bar -->
-    <div class="search-bar-strip">
-      <a class="strip-logo" href="./">360</a>
-      <div class="custom-search-wrapper">
-        <div class="custom-search-form">
-          <!-- Search icon -->
-          <span class="search-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-            </svg>
-          </span>
-          <input
-            id="custom-search-input"
-            type="text"
-            autocomplete="off"
-            autocorrect="off"
-            spellcheck="false"
-            placeholder="Search the web…"
-            aria-label="Search"
-          />
-          <button id="custom-clear-btn" aria-label="Clear search" title="Clear">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
-          <button id="voice-search-btn" aria-label="Search by voice" title="Search by voice" style="display:none;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
-          </button>
-          <button id="custom-search-btn">Search</button>
-        </div>
-        <!-- Live suggestions dropdown -->
-        <div id="suggestions-dropdown"></div>
-      </div>
-    </div>
-
-    <!-- Tab bar -->
-    <div class="results-tabs" id="results-tabs">
-      <div class="results-tab active" data-tab="web">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+<button id="tempUnitBtn">Switch</button>
+</div>
+<div class="settings-box" style="margin-top:20px;">
+<div class="settings-label">Background Image</div>
+<input accept="image/*" class="settings-input" id="bgUpload" type="file"/>
+<input class="settings-input" id="bgUrlInput" placeholder="Paste image URL…" type="text"/>
+<button class="settings-btn" id="bgUrlBtn">Apply URL</button>
+<button class="settings-btn" id="bgResetBtn">Reset</button>
+</div>
+<h3 style="margin-top:25px;">Legal</h3>
+<a class="legal-link" href="/privacypolicy"><span data-octicon="lock"></span> Privacy Policy</a>
+<a class="legal-link" href="/tos"><span data-octicon="law"></span> Terms of Service</a>
+<h3 style="margin-top:25px;">About</h3>
+<details class="about-dropdown">
+<summary>ℹ️ What is 360?</summary>
+<p>360 is a next-generation search engine and digital workspace. Search, chat, translate, check weather, monitor stocks, and interact with AI — all in one unified interface. Built by 360 Digital, Co.</p>
+</details>
+</div>
+<div class="auth-popup hidden" id="auth-popup">
+<div class="auth-box">
+<h2>Account</h2>
+<input id="auth-email" placeholder="Email" type="email"/>
+<input id="auth-password" placeholder="Password" type="password"/>
+<button id="auth-login-btn">Log In</button>
+<button id="auth-signup-btn">Sign Up</button>
+<button class="oauth-btn" id="github-login">
+<svg fill="currentColor" height="18" viewbox="0 0 24 24" width="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"></path></svg>
+<span>Sign in with GitHub</span>
+</button>
+<button class="oauth-btn" id="google-login">
+<svg height="18" viewbox="0 0 24 24" width="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path></svg>
+<span>Sign in with Google</span>
+</button>
+<p class="auth-error" id="auth-error"></p>
+<button class="close-btn" id="auth-close-btn">Close</button>
+</div>
+</div>
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<!-- ══ HIDDEN GCSE CONTAINER (does the actual work) ══ -->
+<div id="idx-container">
+<div class="gcse-search" id="idx-mount"></div>
+</div>
+<!-- ══ SEARCH RESULTS PAGE ══ -->
+<div class="search-results-page">
+<!-- Top fixed strip with custom search bar -->
+<div class="search-bar-strip">
+<a class="strip-logo" href="./">360</a>
+<div class="custom-search-wrapper">
+<div class="custom-search-form">
+<!-- Search icon -->
+<span class="search-icon">
+<svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="16">
+<circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path>
+</svg>
+</span>
+<input aria-label="Search" autocomplete="off" autocorrect="off" id="custom-search-input" placeholder="Search the web…" spellcheck="false" type="text"/>
+<button aria-label="Clear search" id="custom-clear-btn" title="Clear">
+<svg fill="none" height="12" stroke="currentColor" stroke-linecap="round" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+</button>
+<button aria-label="Search by voice" id="voice-search-btn" style="display:none;" title="Search by voice">
+<svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path><line x1="12" x2="12" y1="18" y2="22"></line><line x1="8" x2="16" y1="22" y2="22"></line></svg>
+</button>
+<button id="custom-search-btn">Search</button>
+</div>
+<!-- Live suggestions dropdown -->
+<div id="suggestions-dropdown"></div>
+</div>
+</div>
+<!-- Tab bar -->
+<div class="results-tabs" id="results-tabs">
+<div class="results-tab active" data-tab="web">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="14"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
         Web
       </div>
-      <div class="results-tab" data-tab="images">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+<div class="results-tab" data-tab="images">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="14"><rect height="18" rx="2" width="18" x="3" y="3"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
         Images
       </div>
-      <div class="results-tab" data-tab="news">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>
+<div class="results-tab" data-tab="news">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="14"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"></path></svg>
         News
       </div>
-      <div class="results-tab" data-tab="videos">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+<div class="results-tab" data-tab="videos">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="14"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect height="14" rx="2" ry="2" width="15" x="1" y="5"></rect></svg>
         Videos
       </div>
-      <div class="results-tab" data-tab="shopping">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+<div class="results-tab" data-tab="shopping">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="14"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" x2="21" y1="6" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
         Shopping
       </div>
-      <div class="results-tab" data-tab="maps">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+<div class="results-tab" data-tab="maps">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="14"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" x2="8" y1="2" y2="18"></line><line x1="16" x2="16" y1="6" y2="22"></line></svg>
         Maps
       </div>
-      <div class="results-tab" data-tab="ai">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 5 5"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+<div class="results-tab" data-tab="ai">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="14"><path d="M12 2a5 5 0 1 0 5 5"></path><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
         AI
       </div>
-      <div id="search-toolbar-right" style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;">
-        <button id="safe-search-toggle" class="safe-search-toggle" style="margin-left:0;" title="Toggle Safe Search">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"/></svg>
-          <span id="safe-search-label">Safe Search: On</span>
-        </button>
-        <button id="tools-toggle" class="safe-search-toggle" style="margin-left:0;" title="Search tools" style="display:none;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
-          <span>Tools</span>
-        </button>
-        <button id="view-mode-toggle" class="safe-search-toggle" style="margin-left:0;" title="Switch results layout">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-          <span id="view-mode-label">Card view</span>
-        </button>
-        <button id="ai-summary-toggle" class="safe-search-toggle" style="margin-left:0;" title="Toggle AI summary">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 5 5"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-          <span id="ai-summary-label">AI: On</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Tools bar: time range + sort, only meaningful for Web/Videos (real
+<div id="search-toolbar-right" style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;">
+<button class="safe-search-toggle" id="safe-search-toggle" style="margin-left:0;" title="Toggle Safe Search">
+<svg fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"></path></svg>
+<span id="safe-search-label">Safe Search: On</span>
+</button>
+<button class="safe-search-toggle" id="tools-toggle" style="display:none;" title="Search tools">
+<svg fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"></path></svg>
+<span>Tools</span>
+</button>
+<button class="safe-search-toggle" id="view-mode-toggle" style="margin-left:0;" title="Switch results layout">
+<svg fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><line x1="3" x2="21" y1="6" y2="6"></line><line x1="3" x2="21" y1="12" y2="12"></line><line x1="3" x2="21" y1="18" y2="18"></line></svg>
+<span id="view-mode-label">Card view</span>
+</button>
+<button class="safe-search-toggle" id="ai-summary-toggle" style="margin-left:0;" title="Toggle AI summary">
+<svg fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><path d="M12 2a5 5 0 1 0 5 5"></path><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
+<span id="ai-summary-label">AI: On</span>
+</button>
+</div>
+</div>
+<!-- Tools bar: time range + sort, only meaningful for Web/Videos (real
          Google results via GCSE) — News/Shopping/Maps come from a single
          backend call with no per-request date filtering available. -->
-    <div class="tools-bar" id="tools-bar">
-      <label>Time:
+<div class="tools-bar" id="tools-bar">
+<label>Time:
         <select id="tools-time-range">
-          <option value="any">Any time</option>
-          <option value="hour">Past hour</option>
-          <option value="day">Past 24 hours</option>
-          <option value="week">Past week</option>
-          <option value="month">Past month</option>
-          <option value="year">Past year</option>
-        </select>
-      </label>
-      <label>Sort:
+<option value="any">Any time</option>
+<option value="hour">Past hour</option>
+<option value="day">Past 24 hours</option>
+<option value="week">Past week</option>
+<option value="month">Past month</option>
+<option value="year">Past year</option>
+</select>
+</label>
+<label>Sort:
         <select id="tools-sort-mode">
-          <option value="relevance">Relevance</option>
-          <option value="recent">Most recent</option>
-        </select>
-      </label>
-      <span class="tools-note">Recency is best-effort — applied as a date filter on the underlying search, not a guaranteed chronological sort.</span>
-    </div>
-
-    <div class="results-layout">
-      <aside id="knowledge-panel"></aside>
-      <!-- Results area -->
-      <div id="custom-results-area">
-      <div class="state-box" id="empty-state">
-        <div class="big-icon"><span data-octicon="search"></span></div>
-
-        <h3>Search anything</h3>
-        <p>Type in the bar above and press Search or Enter</p>
-      </div>
-      </div>
-    </div>
-
-    <!-- AI panel -->
-    <div id="ai-panel"></div>
-  </div>
-
-  <!-- Image lightbox -->
-  <div id="img-lightbox">
-    <button class="lb-close" id="lb-close-btn" aria-label="Close"><span data-octicon="x-circle"></span></button>
-    <div class="lb-box">
-      <div class="lb-img-wrap"><img id="lb-img" src="" alt=""/></div>
-      <div class="lb-info">
-        <div class="lb-desc" id="lb-desc"></div>
-        <div class="lb-url-row">
-          <a class="lb-url" id="lb-url" href="#" target="_blank" rel="noopener noreferrer"></a>
-          <a class="lb-visit-btn" id="lb-visit" href="#" target="_blank" rel="noopener noreferrer">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+<option value="relevance">Relevance</option>
+<option value="recent">Most recent</option>
+</select>
+</label>
+<span class="tools-note">Recency is best-effort — applied as a date filter on the underlying search, not a guaranteed chronological sort.</span>
+</div>
+<div class="results-layout">
+<aside id="knowledge-panel"></aside>
+<!-- Results area -->
+<div id="custom-results-area">
+<div class="state-box" id="empty-state">
+<div class="big-icon"><span data-octicon="search"></span></div>
+<h3>Search anything</h3>
+<p>Type in the bar above and press Search or Enter</p>
+</div>
+</div>
+</div>
+<!-- AI panel -->
+<div id="ai-panel"></div>
+</div>
+<!-- Image lightbox -->
+<div id="img-lightbox">
+<button aria-label="Close" class="lb-close" id="lb-close-btn"><span data-octicon="x-circle"></span></button>
+<div class="lb-box">
+<div class="lb-img-wrap"><img alt="" id="lb-img" src=""/></div>
+<div class="lb-info">
+<div class="lb-desc" id="lb-desc"></div>
+<div class="lb-url-row">
+<a class="lb-url" href="#" id="lb-url" rel="noopener noreferrer" target="_blank"></a>
+<a class="lb-visit-btn" href="#" id="lb-visit" rel="noopener noreferrer" target="_blank">
+<svg fill="none" height="11" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" viewbox="0 0 24 24" width="11"><path d="M7 17 17 7M7 7h10v10"></path></svg>
             Visit
           </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <audio id="clickSound" src="click-sound.mp3" preload="auto"></audio>
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-  <!-- Load GCSE silently -->
-  <script async src="https://cse.google.com/cse.js?cx=e003eb0834b6b4be8"></script>
-
-  <script>
+</div>
+</div>
+</div>
+</div>
+<audio id="clickSound" preload="auto" src="click-sound.mp3"></audio>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<!-- Load GCSE silently -->
+<script async="" src="https://cse.google.com/cse.js?cx=e003eb0834b6b4be8"></script>
+<script>
   (() => {
     /* ─────────────────────────────────
        STATE

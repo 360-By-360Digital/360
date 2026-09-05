@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Untitled Monster Fighter</title>
 
-    <style>
+<html lang="en">
+<head>
+<title>Untitled Monster Fighter</title>
+<style>
         body {
             background-color: #1e1e1e;
             color: white;
@@ -110,40 +110,33 @@
             margin-top: 10px;
         }
     </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta content="Play Untitled Monster Fighter on 360. Explore this free browser game and discover more games on 360." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="Untitled Monster Fighter" property="og:title"/><meta content="Play Untitled Monster Fighter on 360. Explore this free browser game and discover more games on 360." property="og:description"/><meta content="https://360-search.com/games/untitledMonsterFighter.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="Untitled Monster Fighter" name="twitter:title"/><meta content="Play Untitled Monster Fighter on 360. Explore this free browser game and discover more games on 360." name="twitter:description"/><link href="https://360-search.com/games/untitledMonsterFighter.html" rel="canonical"/></head>
 <body>
-
 <div id="container">
-    <div id="left">
-        <h1>Untitled Monster Fighter</h1>
-        <p id="info">Wave: 1 | Grace Period</p>
-
-        <div id="healthBar">
-            <div id="healthFill"></div>
-        </div>
-
-        <canvas id="game" width="600" height="400"></canvas>
-
-        <div id="forge">
-            <h3>Forge</h3>
-            <button onclick="forgeSword()">Sword</button>
-            <button onclick="forgeGun()">Gun</button>
-            <button onclick="forgeArmor()">Armor</button>
-        </div>
-    </div>
-
-    <div id="controls">
-        <h2>Controls</h2>
-        <ul>
-            <li><b>WASD</b> – Move</li>
-            <li><b>Mouse Click</b> – Shoot</li>
-            <li><b>Space</b> – Sword</li>
-        </ul>
-    </div>
+<div id="left">
+<h1>Untitled Monster Fighter</h1>
+<p id="info">Wave: 1 | Grace Period</p>
+<div id="healthBar">
+<div id="healthFill"></div>
 </div>
-
+<canvas height="400" id="game" width="600"></canvas>
+<div id="forge">
+<h3>Forge</h3>
+<button onclick="forgeSword()">Sword</button>
+<button onclick="forgeGun()">Gun</button>
+<button onclick="forgeArmor()">Armor</button>
+</div>
+</div>
+<div id="controls">
+<h2>Controls</h2>
+<ul>
+<li><b>WASD</b> – Move</li>
+<li><b>Mouse Click</b> – Shoot</li>
+<li><b>Space</b> – Sword</li>
+</ul>
+</div>
+</div>
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -280,7 +273,6 @@ function loop() {
 
 loop();
 </script>
-
-  <script src="assets/js/game-rewards.js"></script>
+<script src="assets/js/game-rewards.js"></script>
 </body>
 </html>

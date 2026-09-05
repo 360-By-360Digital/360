@@ -1,14 +1,13 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>360 Search API</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 Search API — Developer Documentation</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <style>
 :root{
     --bg:#ffffff;
@@ -279,16 +278,11 @@ footer{
     }
 }
 </style>
-</head>
-
+<meta content="Read the 360 Search API documentation for developers building integrations with 360 Search." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 Search API — Developer Documentation" property="og:title"/><meta content="Read the 360 Search API documentation for developers building integrations with 360 Search." property="og:description"/><meta content="https://360-search.com/docs/api.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 Search API — Developer Documentation" name="twitter:title"/><meta content="Read the 360 Search API documentation for developers building integrations with 360 Search." name="twitter:description"/><link href="https://360-search.com/docs/api.html" rel="canonical"/></head>
 <body>
-
 <div class="wrapper">
-
 <aside class="sidebar">
-
 <div class="logo">360<span>.</span>docs</div>
-
 <nav>
 <a href="#overview">Overview</a>
 <a href="#endpoint">Endpoint</a>
@@ -299,157 +293,115 @@ footer{
 <a href="#tester">API Tester</a>
 <a href="#errors">Errors</a>
 </nav>
-
 </aside>
-
 <main>
-
 <h1>360 Search API</h1>
-
 <p class="subtitle">
 A simple HTTP API for accessing 360 Search results.
 </p>
-
 <section id="overview">
-
 <h2>Overview</h2>
-
 <p>
 The 360 Search API provides programmatic access to web, news, shopping,
 and image search results through a single HTTP endpoint.
 </p>
-
 <p>
 Requests are sent using <span class="badge">GET</span> and responses are
 returned as JSON. No SDK is required.
 </p>
-
 <div class="endpoint">
 <span class="method">GET</span>
 <span class="url">https://api.360-search.com/?q=YOUR_QUERY</span>
 </div>
-
 </section>
-
 <section id="endpoint">
-
 <h2>Endpoint</h2>
-
 <p>
 All API requests use the same endpoint. The search type is selected with
 the <span class="badge">type</span> query parameter.
 </p>
-
 <div class="code">https://api.360-search.com/?q=example
 https://api.360-search.com/?q=example&amp;type=news
 https://api.360-search.com/?q=laptop&amp;type=shopping
 https://api.360-search.com/?q=cats&amp;type=image</div>
-
 <p>
 The <span class="badge">q</span> parameter is required and may contain up
 to 500 characters.
 </p>
-
 </section>
-
 <section id="parameters">
-
 <h2>Parameters</h2>
-
 <table>
-
 <tr>
 <th>Parameter</th>
 <th>Required</th>
 <th>Default</th>
 <th>Description</th>
 </tr>
-
 <tr>
 <td><span class="badge">q</span></td>
 <td>Yes</td>
 <td>None</td>
 <td>The search query. Maximum 500 characters.</td>
 </tr>
-
 <tr>
 <td><span class="badge">type</span></td>
 <td>No</td>
 <td>web</td>
 <td>Search type: web, news, shopping, or image.</td>
 </tr>
-
 <tr>
 <td><span class="badge">safe</span></td>
 <td>No</td>
 <td>moderate</td>
 <td>Safe search mode. Use moderate or off.</td>
 </tr>
-
 <tr>
 <td><span class="badge">limit</span></td>
 <td>No</td>
 <td>50</td>
 <td>Maximum number of results. Range: 1-100.</td>
 </tr>
-
 <tr>
 <td><span class="badge">page</span></td>
 <td>No</td>
 <td>1</td>
 <td>Result page. Range: 1-100. Used by web and image search.</td>
 </tr>
-
 </table>
-
 </section>
-
 <section id="types">
-
 <h2>Search Types</h2>
-
 <table>
-
 <tr>
 <th>Type</th>
 <th>Description</th>
 </tr>
-
 <tr>
 <td><span class="badge">web</span></td>
 <td>General web search results.</td>
 </tr>
-
 <tr>
 <td><span class="badge">news</span></td>
 <td>News and recent articles.</td>
 </tr>
-
 <tr>
 <td><span class="badge">shopping</span></td>
 <td>Products, prices, ratings, and shopping results.</td>
 </tr>
-
 <tr>
 <td><span class="badge">image</span></td>
 <td>Image search results with source URLs and dimensions.</td>
 </tr>
-
 </table>
-
 </section>
-
 <section id="responses">
-
 <h2>Responses</h2>
-
 <p>
 Successful requests return JSON containing the original query, search type,
 result count, and an array of results.
 </p>
-
 <h3>Web response</h3>
-
 <div class="code">{
   "query": "open source",
   "type": "web",
@@ -468,9 +420,7 @@ result count, and an array of results.
     }
   ]
 }</div>
-
 <h3>Shopping response</h3>
-
 <div class="code">{
   "query": "laptop",
   "type": "shopping",
@@ -489,9 +439,7 @@ result count, and an array of results.
     }
   ]
 }</div>
-
 <h3>Image response</h3>
-
 <div class="code">{
   "query": "cats",
   "type": "image",
@@ -509,54 +457,36 @@ result count, and an array of results.
     }
   ]
 }</div>
-
 </section>
-
 <section id="examples">
-
 <h2>Examples</h2>
-
 <h3>Web search</h3>
-
 <div class="code">fetch("https://api.360-search.com/?q=open+source")
   .then(response =&gt; response.json())
   .then(data =&gt; console.log(data));</div>
-
 <h3>News search</h3>
-
 <div class="code">fetch("https://api.360-search.com/?q=technology&amp;type=news")
   .then(response =&gt; response.json())
   .then(data =&gt; console.log(data));</div>
-
 <h3>Shopping search</h3>
-
 <div class="code">fetch("https://api.360-search.com/?q=laptop&amp;type=shopping&amp;limit=10")
   .then(response =&gt; response.json())
   .then(data =&gt; console.log(data));</div>
-
 <h3>Image search</h3>
-
 <div class="code">fetch("https://api.360-search.com/?q=cats&amp;type=image&amp;limit=20")
   .then(response =&gt; response.json())
   .then(data =&gt; console.log(data));</div>
-
 </section>
-
 <section id="tester">
-
 <h2>API Tester</h2>
-
 <p>
 Try the API directly from this page.
 </p>
-
 <div class="tester">
-
 <div class="field">
 <label for="query">Query</label>
-<input id="query" type="text" value="open source">
+<input id="query" type="text" value="open source"/>
 </div>
-
 <div class="field">
 <label for="type">Type</label>
 <select id="type">
@@ -566,7 +496,6 @@ Try the API directly from this page.
 <option value="image">Image</option>
 </select>
 </div>
-
 <div class="field">
 <label for="safe">Safe Search</label>
 <select id="safe">
@@ -574,77 +503,54 @@ Try the API directly from this page.
 <option value="off">Off</option>
 </select>
 </div>
-
 <div class="field">
 <label for="limit">Limit</label>
-<input id="limit" type="number" value="10" min="1" max="100">
+<input id="limit" max="100" min="1" type="number" value="10"/>
 </div>
-
 <button id="run">Run Request</button>
-
-<div id="status" class="status"></div>
-
-<div id="result" class="result">
-<div id="output" class="code"></div>
+<div class="status" id="status"></div>
+<div class="result" id="result">
+<div class="code" id="output"></div>
 </div>
-
 </div>
-
 </section>
-
 <section id="errors">
-
 <h2>Errors</h2>
-
 <p>
 Errors are returned as JSON with an HTTP status code.
 </p>
-
 <table>
-
 <tr>
 <th>Status</th>
 <th>Meaning</th>
 </tr>
-
 <tr>
 <td>400</td>
 <td>Missing, invalid, or excessively long query parameters.</td>
 </tr>
-
 <tr>
 <td>405</td>
 <td>The request method is not supported.</td>
 </tr>
-
 <tr>
 <td>500</td>
 <td>Server configuration error.</td>
 </tr>
-
 <tr>
 <td>502</td>
 <td>An upstream search service returned an error.</td>
 </tr>
-
 </table>
-
 <h3>Example error</h3>
-
 <div class="code">{
   "error": "Missing required parameter: q"
 }</div>
-
 </section>
-
 <footer>
 360 Search API · Built for the 360 platform
 </footer>
-
 </main>
-
 </div>
-
 <script>
 const API = "https://api.360-search.com/";
 
@@ -700,6 +606,5 @@ runButton.addEventListener("click", async () => {
     }
 });
 </script>
-
 </body>
 </html>

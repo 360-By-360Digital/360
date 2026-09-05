@@ -1,32 +1,32 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
-  <script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+<script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-89NN1P6CEV');
   </script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 — Report</title>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="360" />
-  <link rel="icon" type="image/png" href="favicon-32x32.png" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <!-- Supabase (same version as main.js) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 — Report</title>
+<link href="manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="360" name="apple-mobile-web-app-title"/>
+<link href="favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="apple-touch-icon.png" rel="apple-touch-icon"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<!-- Supabase (same version as main.js) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     /* ── PAGE SHELL ── */
     .report-page {
       max-width: 680px;
@@ -277,338 +277,297 @@
     .rp-success-sub { font-size: 14px; color: var(--mut); max-width: 340px; line-height: 1.6; }
     .rp-success-btns { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
   </style>
-</head>
+<meta content="360  Report — part of the 360 web platform." name="description"/><meta content="noindex, nofollow" name="robots"/><meta content="website" property="og:type"/><meta content="360 — Report" property="og:title"/><meta content="360  Report — part of the 360 web platform." property="og:description"/><meta content="https://360-search.com/report.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 — Report" name="twitter:title"/><meta content="360  Report — part of the 360 web platform." name="twitter:description"/><link href="https://360-search.com/report.html" rel="canonical"/></head>
 <body>
-
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <!-- ── MENU BUTTON ── -->
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
-
-  <!-- ── SIDEBAR ── -->
-  <aside class="sidebar" id="sidebar"><span id="sidebar-slot" data-extra="[{&quot;label&quot;: &quot;Report&quot;, &quot;href&quot;: &quot;/report&quot;}]"></span></aside>
-  <div class="overlay" id="overlay"></div>
-
-  <!-- ── SETTINGS PANEL ── -->
-  <div class="settings-panel" id="settingsPanel">
-    <h3>Appearance</h3>
-    <div class="settings-label">Theme</div>
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-    </div>
-    <div class="settings-label" style="margin-top:20px;">Mode</div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:14px;">Dark mode</span>
-      <input type="checkbox" id="darkToggle" />
-    </label>
-    <h3 style="margin-top:20px;">Cursor</h3>
-    <div class="settings-label">Style</div>
-    <div class="cursor-options">
-      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-    </div>
-    <div class="cursor-color-row">
-      <label>Cursor color</label>
-      <input type="color" id="cursorColorPicker" value="#3b82f6" />
-      <button id="cursorColorReset">Reset</button>
-    </div>
-    <div class="temp-unit-box" style="margin-top:20px;">
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<!-- ── MENU BUTTON ── -->
+<button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar" id="sidebar"><span data-extra='[{"label": "Report", "href": "/report"}]' id="sidebar-slot"></span></aside>
+<div class="overlay" id="overlay"></div>
+<!-- ── SETTINGS PANEL ── -->
+<div class="settings-panel" id="settingsPanel">
+<h3>Appearance</h3>
+<div class="settings-label">Theme</div>
+<div class="theme-swatches">
+<div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+<div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+<div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+<div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+</div>
+<div class="settings-label" style="margin-top:20px;">Mode</div>
+<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+<span style="font-size:14px;">Dark mode</span>
+<input id="darkToggle" type="checkbox"/>
+</label>
+<h3 style="margin-top:20px;">Cursor</h3>
+<div class="settings-label">Style</div>
+<div class="cursor-options">
+<div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+<div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+<div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+<div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+<div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+<div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+</div>
+<div class="cursor-color-row">
+<label>Cursor color</label>
+<input id="cursorColorPicker" type="color" value="#3b82f6"/>
+<button id="cursorColorReset">Reset</button>
+</div>
+<div class="temp-unit-box" style="margin-top:20px;">
       Temp Unit: <span id="tempUnitLabel">°C</span>
-      <button id="tempUnitBtn">Switch</button>
-    </div>
-    <div class="settings-box" style="margin-top:20px;">
-      <div class="settings-label">Background Image</div>
-      <input type="file" id="bgUpload" accept="image/*" class="settings-input" />
-      <input type="text" id="bgUrlInput" placeholder="Paste image URL…" class="settings-input" />
-      <button id="bgUrlBtn" class="settings-btn">Apply URL</button>
-      <button id="bgResetBtn" class="settings-btn">Reset</button>
-    </div>
-    <h3 style="margin-top:25px;">Legal</h3>
-    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
-    <a href="/tos" class="legal-link">📜 Terms of Service</a>
-  </div>
-
-  <!-- ── AUTH POPUP ── -->
-  <div id="auth-popup" class="auth-popup hidden">
-    <div class="auth-box">
-      <h2>Account</h2>
-      <input id="auth-email" type="email" placeholder="Email" />
-      <input id="auth-password" type="password" placeholder="Password" />
-      <button id="auth-login-btn">Log In</button>
-      <button id="auth-signup-btn">Sign Up</button>
-      <button id="github-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        <span>Sign in with GitHub</span>
-      </button>
-      <button id="google-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        <span>Sign in with Google</span>
-      </button>
-      <p id="auth-error" class="auth-error"></p>
-      <button id="auth-close-btn" class="close-btn">Close</button>
-    </div>
-  </div>
-
-  <!-- ── AUTH BUTTONS TOP RIGHT ── -->
-  <div class="auth-top-right">
-    <button id="signInBtn" class="auth-btn">Sign In</button>
-    <button id="signUpBtn" class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-
-  <button id="installBtn" class="install-banner" style="display:none;">Install 360</button>
-
-  <!-- ══════════════════════════════════
+<button id="tempUnitBtn">Switch</button>
+</div>
+<div class="settings-box" style="margin-top:20px;">
+<div class="settings-label">Background Image</div>
+<input accept="image/*" class="settings-input" id="bgUpload" type="file"/>
+<input class="settings-input" id="bgUrlInput" placeholder="Paste image URL…" type="text"/>
+<button class="settings-btn" id="bgUrlBtn">Apply URL</button>
+<button class="settings-btn" id="bgResetBtn">Reset</button>
+</div>
+<h3 style="margin-top:25px;">Legal</h3>
+<a class="legal-link" href="/privacypolicy">🔒 Privacy Policy</a>
+<a class="legal-link" href="/tos">📜 Terms of Service</a>
+</div>
+<!-- ── AUTH POPUP ── -->
+<div class="auth-popup hidden" id="auth-popup">
+<div class="auth-box">
+<h2>Account</h2>
+<input id="auth-email" placeholder="Email" type="email"/>
+<input id="auth-password" placeholder="Password" type="password"/>
+<button id="auth-login-btn">Log In</button>
+<button id="auth-signup-btn">Sign Up</button>
+<button class="oauth-btn" id="github-login">
+<svg fill="currentColor" height="18" viewbox="0 0 24 24" width="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"></path></svg>
+<span>Sign in with GitHub</span>
+</button>
+<button class="oauth-btn" id="google-login">
+<svg height="18" viewbox="0 0 24 24" width="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path></svg>
+<span>Sign in with Google</span>
+</button>
+<p class="auth-error" id="auth-error"></p>
+<button class="close-btn" id="auth-close-btn">Close</button>
+</div>
+</div>
+<!-- ── AUTH BUTTONS TOP RIGHT ── -->
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<button class="install-banner" id="installBtn" style="display:none;">Install 360</button>
+<!-- ══════════════════════════════════
        REPORT PAGE
   ══════════════════════════════════ -->
-  <div class="report-page">
-
-    <div class="rp-page-header">
-      <div class="rp-page-title">Report</div>
-      <div class="rp-page-sub">Submit a bug or flag a user to our moderation team.</div>
-    </div>
-
-    <div class="report-tabs">
-      <button class="report-tab active" data-tab="issue" onclick="switchTab('issue')">🐛 Report an Issue</button>
-      <button class="report-tab" data-tab="user" onclick="switchTab('user')">🚩 Report a User</button>
-    </div>
-
-    <!-- ═══════════════════════
+<div class="report-page">
+<div class="rp-page-header">
+<div class="rp-page-title">Report</div>
+<div class="rp-page-sub">Submit a bug or flag a user to our moderation team.</div>
+</div>
+<div class="report-tabs">
+<button class="report-tab active" data-tab="issue" onclick="switchTab('issue')">🐛 Report an Issue</button>
+<button class="report-tab" data-tab="user" onclick="switchTab('user')">🚩 Report a User</button>
+</div>
+<!-- ═══════════════════════
          ISSUE PANEL
     ═══════════════════════ -->
-    <div class="report-panel active" id="panel-issue">
-      <div class="rp-card">
-
-        <!-- Anonymous warning banner (shown when not signed in) -->
-        <div class="rp-anon-banner" id="issue-anon-banner">
-          <span class="rp-anon-banner-icon">⚠️</span>
-          <span>You're not signed in. Your report will be submitted <strong>anonymously</strong>. <a onclick="document.getElementById('signInBtn').click()">Sign in</a> to attach your account.</span>
-        </div>
-
-        <!-- Signed-in chip (shown when signed in) -->
-        <div class="rp-user-chip" id="issue-chip">
-          <div class="rp-user-avatar" id="issue-avatar">?</div>
-          <div>
-            <div class="rp-user-name" id="issue-name">—</div>
-            <div class="rp-user-email" id="issue-email-display">—</div>
-          </div>
-          <span class="rp-user-badge">Signed In</span>
-        </div>
-
-        <!-- Success -->
-        <div class="rp-success" id="issue-success">
-          <div class="rp-success-icon">✅</div>
-          <div class="rp-success-title">Report Submitted!</div>
-          <div class="rp-success-sub">Thanks for helping us improve 360. Our team will review your report shortly.</div>
-          <div class="rp-success-btns">
-            <button class="rp-btn primary" onclick="resetForm('issue')">Submit Another</button>
-            <a class="rp-btn" href="/">Back to 360</a>
-          </div>
-        </div>
-
-        <!-- Form (always visible for issues) -->
-        <div class="rp-form show" id="issue-form">
-          <div class="rp-card-title">Issue Details</div>
-
-          <!-- Category -->
-          <div class="rp-field">
-            <label class="rp-label">Category <span class="rp-req">*</span></label>
-            <input type="hidden" id="issueCategory" />
-            <div class="rp-dropdown" id="dd-issueCategory">
-              <div class="rp-dropdown-trigger placeholder" onclick="toggleDropdown('issueCategory')">
-                <span class="dd-label">Select a category…</span>
-                <span class="rp-dropdown-arrow">▼</span>
-              </div>
-              <div class="rp-dropdown-menu">
-                <div class="rp-dropdown-option" data-value="bug"         onclick="selectOption('issueCategory','bug','🐛 Bug / Error')">                <span class="dd-emoji">🐛</span><span>Bug / Error</span>              <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="ui"          onclick="selectOption('issueCategory','ui','🎨 UI / Visual Glitch')">          <span class="dd-emoji">🎨</span><span>UI / Visual Glitch</span>        <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="performance" onclick="selectOption('issueCategory','performance','⚡ Performance Issue')">  <span class="dd-emoji">⚡</span><span>Performance Issue</span>          <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="search"      onclick="selectOption('issueCategory','search','🔍 Search Not Working')">      <span class="dd-emoji">🔍</span><span>Search Not Working</span>         <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="account"     onclick="selectOption('issueCategory','account','🔐 Account / Login Problem')"><span class="dd-emoji">🔐</span><span>Account / Login Problem</span>   <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="feature"     onclick="selectOption('issueCategory','feature','💡 Feature Request')">        <span class="dd-emoji">💡</span><span>Feature Request</span>            <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="security"    onclick="selectOption('issueCategory','security','🔒 Security Concern')">      <span class="dd-emoji">🔒</span><span>Security Concern</span>           <span class="dd-check">✓</span></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Page URL -->
-          <div class="rp-field">
-            <label class="rp-label" for="issuePage">Page / URL Where Issue Occurred</label>
-            <input class="rp-input" type="url" id="issuePage" placeholder="e.g. https://360-search.com/search" />
-          </div>
-
-          <!-- Title -->
-          <div class="rp-field">
-            <label class="rp-label" for="issueTitle">Issue Title <span class="rp-req">*</span></label>
-            <input class="rp-input" type="text" id="issueTitle" placeholder="Short summary of the issue" maxlength="120" />
-          </div>
-
-          <!-- Description -->
-          <div class="rp-field">
-            <label class="rp-label" for="issueDesc">Description <span class="rp-req">*</span></label>
-            <textarea class="rp-textarea" id="issueDesc" maxlength="2000"
-              placeholder="Describe what happened, what you expected, and how to reproduce it…"></textarea>
-            <div class="rp-char-count" id="issueDescCount">0 / 2000</div>
-          </div>
-
-          <!-- Severity -->
-          <div class="rp-field">
-            <label class="rp-label">Severity</label>
-            <div class="rp-radio-group">
-              <label class="rp-radio-label"><input type="radio" name="issueSeverity" value="low" /> 🟢 Low</label>
-              <label class="rp-radio-label"><input type="radio" name="issueSeverity" value="medium" checked /> 🟡 Medium</label>
-              <label class="rp-radio-label"><input type="radio" name="issueSeverity" value="high" /> 🔴 High</label>
-              <label class="rp-radio-label"><input type="radio" name="issueSeverity" value="critical" /> 🚨 Critical</label>
-            </div>
-          </div>
-
-          <button class="rp-submit" id="issueSubmitBtn" onclick="submitIssueReport()">Submit Issue Report</button>
-          <div class="rp-msg" id="issueMsg"></div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ═══════════════════════
+<div class="report-panel active" id="panel-issue">
+<div class="rp-card">
+<!-- Anonymous warning banner (shown when not signed in) -->
+<div class="rp-anon-banner" id="issue-anon-banner">
+<span class="rp-anon-banner-icon">⚠️</span>
+<span>You're not signed in. Your report will be submitted <strong>anonymously</strong>. <a onclick="document.getElementById('signInBtn').click()">Sign in</a> to attach your account.</span>
+</div>
+<!-- Signed-in chip (shown when signed in) -->
+<div class="rp-user-chip" id="issue-chip">
+<div class="rp-user-avatar" id="issue-avatar">?</div>
+<div>
+<div class="rp-user-name" id="issue-name">—</div>
+<div class="rp-user-email" id="issue-email-display">—</div>
+</div>
+<span class="rp-user-badge">Signed In</span>
+</div>
+<!-- Success -->
+<div class="rp-success" id="issue-success">
+<div class="rp-success-icon">✅</div>
+<div class="rp-success-title">Report Submitted!</div>
+<div class="rp-success-sub">Thanks for helping us improve 360. Our team will review your report shortly.</div>
+<div class="rp-success-btns">
+<button class="rp-btn primary" onclick="resetForm('issue')">Submit Another</button>
+<a class="rp-btn" href="/">Back to 360</a>
+</div>
+</div>
+<!-- Form (always visible for issues) -->
+<div class="rp-form show" id="issue-form">
+<div class="rp-card-title">Issue Details</div>
+<!-- Category -->
+<div class="rp-field">
+<label class="rp-label">Category <span class="rp-req">*</span></label>
+<input id="issueCategory" type="hidden"/>
+<div class="rp-dropdown" id="dd-issueCategory">
+<div class="rp-dropdown-trigger placeholder" onclick="toggleDropdown('issueCategory')">
+<span class="dd-label">Select a category…</span>
+<span class="rp-dropdown-arrow">▼</span>
+</div>
+<div class="rp-dropdown-menu">
+<div class="rp-dropdown-option" data-value="bug" onclick="selectOption('issueCategory','bug','🐛 Bug / Error')"> <span class="dd-emoji">🐛</span><span>Bug / Error</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="ui" onclick="selectOption('issueCategory','ui','🎨 UI / Visual Glitch')"> <span class="dd-emoji">🎨</span><span>UI / Visual Glitch</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="performance" onclick="selectOption('issueCategory','performance','⚡ Performance Issue')"> <span class="dd-emoji">⚡</span><span>Performance Issue</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="search" onclick="selectOption('issueCategory','search','🔍 Search Not Working')"> <span class="dd-emoji">🔍</span><span>Search Not Working</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="account" onclick="selectOption('issueCategory','account','🔐 Account / Login Problem')"><span class="dd-emoji">🔐</span><span>Account / Login Problem</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="feature" onclick="selectOption('issueCategory','feature','💡 Feature Request')"> <span class="dd-emoji">💡</span><span>Feature Request</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="security" onclick="selectOption('issueCategory','security','🔒 Security Concern')"> <span class="dd-emoji">🔒</span><span>Security Concern</span> <span class="dd-check">✓</span></div>
+</div>
+</div>
+</div>
+<!-- Page URL -->
+<div class="rp-field">
+<label class="rp-label" for="issuePage">Page / URL Where Issue Occurred</label>
+<input class="rp-input" id="issuePage" placeholder="e.g. https://360-search.com/search" type="url"/>
+</div>
+<!-- Title -->
+<div class="rp-field">
+<label class="rp-label" for="issueTitle">Issue Title <span class="rp-req">*</span></label>
+<input class="rp-input" id="issueTitle" maxlength="120" placeholder="Short summary of the issue" type="text"/>
+</div>
+<!-- Description -->
+<div class="rp-field">
+<label class="rp-label" for="issueDesc">Description <span class="rp-req">*</span></label>
+<textarea class="rp-textarea" id="issueDesc" maxlength="2000" placeholder="Describe what happened, what you expected, and how to reproduce it…"></textarea>
+<div class="rp-char-count" id="issueDescCount">0 / 2000</div>
+</div>
+<!-- Severity -->
+<div class="rp-field">
+<label class="rp-label">Severity</label>
+<div class="rp-radio-group">
+<label class="rp-radio-label"><input name="issueSeverity" type="radio" value="low"/> 🟢 Low</label>
+<label class="rp-radio-label"><input checked="" name="issueSeverity" type="radio" value="medium"/> 🟡 Medium</label>
+<label class="rp-radio-label"><input name="issueSeverity" type="radio" value="high"/> 🔴 High</label>
+<label class="rp-radio-label"><input name="issueSeverity" type="radio" value="critical"/> 🚨 Critical</label>
+</div>
+</div>
+<button class="rp-submit" id="issueSubmitBtn" onclick="submitIssueReport()">Submit Issue Report</button>
+<div class="rp-msg" id="issueMsg"></div>
+</div>
+</div>
+</div>
+<!-- ═══════════════════════
          USER REPORT PANEL
     ═══════════════════════ -->
-    <div class="report-panel" id="panel-user">
-      <div class="rp-card">
-
-        <!-- Hard auth wall -->
-        <div class="rp-wall" id="user-wall">
-          <div class="rp-wall-icon">🔒</div>
-          <div class="rp-wall-title">Sign in to report a user</div>
-          <div class="rp-wall-sub">You must be signed in to report another user. This keeps reports accountable and confidential.</div>
-          <div class="rp-wall-btns">
-            <button class="rp-btn primary" onclick="document.getElementById('signInBtn').click()">Sign In</button>
-            <button class="rp-btn" onclick="document.getElementById('signUpBtn').click()">Create Account</button>
-          </div>
-        </div>
-
-        <!-- Signed-in chip -->
-        <div class="rp-user-chip" id="user-chip">
-          <div class="rp-user-avatar" id="user-avatar">?</div>
-          <div>
-            <div class="rp-user-name" id="user-name">—</div>
-            <div class="rp-user-email" id="user-email-display">—</div>
-          </div>
-          <span class="rp-user-badge">Signed In</span>
-        </div>
-
-        <!-- Success -->
-        <div class="rp-success" id="user-success">
-          <div class="rp-success-icon">🛡️</div>
-          <div class="rp-success-title">Report Received</div>
-          <div class="rp-success-sub">Thank you. Our moderation team will review this and take appropriate action. The reported user won't know who filed this report.</div>
-          <div class="rp-success-btns">
-            <button class="rp-btn primary" onclick="resetForm('user')">Submit Another</button>
-            <a class="rp-btn" href="/">Back to 360</a>
-          </div>
-        </div>
-
-        <!-- Form (hidden until signed in) -->
-        <div class="rp-form" id="user-form">
-          <div class="rp-card-title">User Report Details</div>
-
-          <div class="rp-info-row">
-            <span class="rp-info-icon">🔒</span>
-            <span>All reports are <strong>confidential</strong>. The reported user will not be notified of who filed this report.</span>
-          </div>
-
-          <!-- Reported username -->
-          <div class="rp-field">
-            <label class="rp-label" for="reportedUsername">Reported Username <span class="rp-req">*</span></label>
-            <input class="rp-input" type="text" id="reportedUsername" placeholder="Enter their 360 username" />
-          </div>
-
-          <!-- Reason dropdown -->
-          <div class="rp-field">
-            <label class="rp-label">Reason for Report <span class="rp-req">*</span></label>
-            <input type="hidden" id="reportReason" />
-            <div class="rp-dropdown" id="dd-reportReason">
-              <div class="rp-dropdown-trigger placeholder" onclick="toggleDropdown('reportReason')">
-                <span class="dd-label">Select a reason…</span>
-                <span class="rp-dropdown-arrow">▼</span>
-              </div>
-              <div class="rp-dropdown-menu">
-                <div class="rp-dropdown-option" data-value="harassment"    onclick="selectOption('reportReason','harassment','😡 Harassment / Bullying')">       <span class="dd-emoji">😡</span><span>Harassment / Bullying</span>      <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="spam"          onclick="selectOption('reportReason','spam','📧 Spam')">                              <span class="dd-emoji">📧</span><span>Spam</span>                        <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="hate"          onclick="selectOption('reportReason','hate','🚫 Hate Speech / Discrimination')">      <span class="dd-emoji">🚫</span><span>Hate Speech / Discrimination</span><span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="impersonation" onclick="selectOption('reportReason','impersonation','🎭 Impersonation')">            <span class="dd-emoji">🎭</span><span>Impersonation</span>              <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="threats"       onclick="selectOption('reportReason','threats','⚠️ Threats / Violence')">             <span class="dd-emoji">⚠️</span><span>Threats / Violence</span>         <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="inappropriate" onclick="selectOption('reportReason','inappropriate','🔞 Inappropriate Content')">    <span class="dd-emoji">🔞</span><span>Inappropriate Content</span>       <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="scam"          onclick="selectOption('reportReason','scam','💸 Scam / Fraud')">                      <span class="dd-emoji">💸</span><span>Scam / Fraud</span>               <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="underage"      onclick="selectOption('reportReason','underage','👶 Underage User')">                 <span class="dd-emoji">👶</span><span>Underage User</span>              <span class="dd-check">✓</span></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Where -->
-          <div class="rp-field">
-            <label class="rp-label">Where Did This Happen? <span class="rp-req">*</span></label>
-            <input type="hidden" id="reportContext" />
-            <div class="rp-dropdown" id="dd-reportContext">
-              <div class="rp-dropdown-trigger placeholder" onclick="toggleDropdown('reportContext')">
-                <span class="dd-label">Select a location…</span>
-                <span class="rp-dropdown-arrow">▼</span>
-              </div>
-              <div class="rp-dropdown-menu">
-                <div class="rp-dropdown-option" data-value="chat"     onclick="selectOption('reportContext','chat','💬 360 Chat')">             <span class="dd-emoji">💬</span><span>360 Chat</span>          <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="profile"  onclick="selectOption('reportContext','profile','👤 User Profile')">      <span class="dd-emoji">👤</span><span>User Profile</span>       <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="comments" onclick="selectOption('reportContext','comments','📝 Comments / Posts')">  <span class="dd-emoji">📝</span><span>Comments / Posts</span>   <span class="dd-check">✓</span></div>
-                <div class="rp-dropdown-option" data-value="dms"      onclick="selectOption('reportContext','dms','📩 Direct Messages')">        <span class="dd-emoji">📩</span><span>Direct Messages</span>    <span class="dd-check">✓</span></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Details -->
-          <div class="rp-field">
-            <label class="rp-label" for="userReportDesc">Additional Details <span class="rp-req">*</span></label>
-            <textarea class="rp-textarea" id="userReportDesc" maxlength="2000"
-              placeholder="Describe the incident in detail. Include any relevant messages, links, or context…"></textarea>
-            <div class="rp-char-count" id="userDescCount">0 / 2000</div>
-          </div>
-
-          <!-- Evidence -->
-          <div class="rp-field">
-            <label class="rp-label" for="evidenceUrl">Evidence Link <span style="color:var(--mut);font-weight:400;">(optional)</span></label>
-            <input class="rp-input" type="url" id="evidenceUrl" placeholder="Link to screenshot, post, or message" />
-          </div>
-
-          <div class="rp-warn-card">
+<div class="report-panel" id="panel-user">
+<div class="rp-card">
+<!-- Hard auth wall -->
+<div class="rp-wall" id="user-wall">
+<div class="rp-wall-icon">🔒</div>
+<div class="rp-wall-title">Sign in to report a user</div>
+<div class="rp-wall-sub">You must be signed in to report another user. This keeps reports accountable and confidential.</div>
+<div class="rp-wall-btns">
+<button class="rp-btn primary" onclick="document.getElementById('signInBtn').click()">Sign In</button>
+<button class="rp-btn" onclick="document.getElementById('signUpBtn').click()">Create Account</button>
+</div>
+</div>
+<!-- Signed-in chip -->
+<div class="rp-user-chip" id="user-chip">
+<div class="rp-user-avatar" id="user-avatar">?</div>
+<div>
+<div class="rp-user-name" id="user-name">—</div>
+<div class="rp-user-email" id="user-email-display">—</div>
+</div>
+<span class="rp-user-badge">Signed In</span>
+</div>
+<!-- Success -->
+<div class="rp-success" id="user-success">
+<div class="rp-success-icon">🛡️</div>
+<div class="rp-success-title">Report Received</div>
+<div class="rp-success-sub">Thank you. Our moderation team will review this and take appropriate action. The reported user won't know who filed this report.</div>
+<div class="rp-success-btns">
+<button class="rp-btn primary" onclick="resetForm('user')">Submit Another</button>
+<a class="rp-btn" href="/">Back to 360</a>
+</div>
+</div>
+<!-- Form (hidden until signed in) -->
+<div class="rp-form" id="user-form">
+<div class="rp-card-title">User Report Details</div>
+<div class="rp-info-row">
+<span class="rp-info-icon">🔒</span>
+<span>All reports are <strong>confidential</strong>. The reported user will not be notified of who filed this report.</span>
+</div>
+<!-- Reported username -->
+<div class="rp-field">
+<label class="rp-label" for="reportedUsername">Reported Username <span class="rp-req">*</span></label>
+<input class="rp-input" id="reportedUsername" placeholder="Enter their 360 username" type="text"/>
+</div>
+<!-- Reason dropdown -->
+<div class="rp-field">
+<label class="rp-label">Reason for Report <span class="rp-req">*</span></label>
+<input id="reportReason" type="hidden"/>
+<div class="rp-dropdown" id="dd-reportReason">
+<div class="rp-dropdown-trigger placeholder" onclick="toggleDropdown('reportReason')">
+<span class="dd-label">Select a reason…</span>
+<span class="rp-dropdown-arrow">▼</span>
+</div>
+<div class="rp-dropdown-menu">
+<div class="rp-dropdown-option" data-value="harassment" onclick="selectOption('reportReason','harassment','😡 Harassment / Bullying')"> <span class="dd-emoji">😡</span><span>Harassment / Bullying</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="spam" onclick="selectOption('reportReason','spam','📧 Spam')"> <span class="dd-emoji">📧</span><span>Spam</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="hate" onclick="selectOption('reportReason','hate','🚫 Hate Speech / Discrimination')"> <span class="dd-emoji">🚫</span><span>Hate Speech / Discrimination</span><span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="impersonation" onclick="selectOption('reportReason','impersonation','🎭 Impersonation')"> <span class="dd-emoji">🎭</span><span>Impersonation</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="threats" onclick="selectOption('reportReason','threats','⚠️ Threats / Violence')"> <span class="dd-emoji">⚠️</span><span>Threats / Violence</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="inappropriate" onclick="selectOption('reportReason','inappropriate','🔞 Inappropriate Content')"> <span class="dd-emoji">🔞</span><span>Inappropriate Content</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="scam" onclick="selectOption('reportReason','scam','💸 Scam / Fraud')"> <span class="dd-emoji">💸</span><span>Scam / Fraud</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="underage" onclick="selectOption('reportReason','underage','👶 Underage User')"> <span class="dd-emoji">👶</span><span>Underage User</span> <span class="dd-check">✓</span></div>
+</div>
+</div>
+</div>
+<!-- Where -->
+<div class="rp-field">
+<label class="rp-label">Where Did This Happen? <span class="rp-req">*</span></label>
+<input id="reportContext" type="hidden"/>
+<div class="rp-dropdown" id="dd-reportContext">
+<div class="rp-dropdown-trigger placeholder" onclick="toggleDropdown('reportContext')">
+<span class="dd-label">Select a location…</span>
+<span class="rp-dropdown-arrow">▼</span>
+</div>
+<div class="rp-dropdown-menu">
+<div class="rp-dropdown-option" data-value="chat" onclick="selectOption('reportContext','chat','💬 360 Chat')"> <span class="dd-emoji">💬</span><span>360 Chat</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="profile" onclick="selectOption('reportContext','profile','👤 User Profile')"> <span class="dd-emoji">👤</span><span>User Profile</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="comments" onclick="selectOption('reportContext','comments','📝 Comments / Posts')"> <span class="dd-emoji">📝</span><span>Comments / Posts</span> <span class="dd-check">✓</span></div>
+<div class="rp-dropdown-option" data-value="dms" onclick="selectOption('reportContext','dms','📩 Direct Messages')"> <span class="dd-emoji">📩</span><span>Direct Messages</span> <span class="dd-check">✓</span></div>
+</div>
+</div>
+</div>
+<!-- Details -->
+<div class="rp-field">
+<label class="rp-label" for="userReportDesc">Additional Details <span class="rp-req">*</span></label>
+<textarea class="rp-textarea" id="userReportDesc" maxlength="2000" placeholder="Describe the incident in detail. Include any relevant messages, links, or context…"></textarea>
+<div class="rp-char-count" id="userDescCount">0 / 2000</div>
+</div>
+<!-- Evidence -->
+<div class="rp-field">
+<label class="rp-label" for="evidenceUrl">Evidence Link <span style="color:var(--mut);font-weight:400;">(optional)</span></label>
+<input class="rp-input" id="evidenceUrl" placeholder="Link to screenshot, post, or message" type="url"/>
+</div>
+<div class="rp-warn-card">
             ⚠️ <strong>False reports are taken seriously.</strong> Submitting a report in bad faith may result in action against your own account.
           </div>
-
-          <button class="rp-submit" id="userSubmitBtn" onclick="submitUserReport()">Submit User Report</button>
-          <div class="rp-msg" id="userMsg"></div>
-        </div>
-
-      </div>
-    </div>
-
-  </div><!-- /report-page -->
-
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-
-  <script>
+<button class="rp-submit" id="userSubmitBtn" onclick="submitUserReport()">Submit User Report</button>
+<div class="rp-msg" id="userMsg"></div>
+</div>
+</div>
+</div>
+</div><!-- /report-page -->
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script>
   // ═══════════════════════════════════════════
   // FORMSPREE ENDPOINT
   // 1. Go to formspree.io and create a free account

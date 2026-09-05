@@ -1,13 +1,14 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Bot Marketplace — 360</title>
-  <link rel="stylesheet" href="/assets/css/main.css"/>
-  <link rel="stylesheet" href="/assets/css/wide.css"/>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+<title>360 Bot Marketplace — Discover Bots</title>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     *{box-sizing:border-box;margin:0;padding:0;}
     body{background:var(--bg);font-family:var(--font);color:var(--dc-text);}
     .mp-header{padding:32px 40px 20px;border-bottom:1px solid var(--dc-sep);display:flex;align-items:center;gap:16px;background:var(--dc-sidebar-bg);}
@@ -47,27 +48,25 @@
     .mp-modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--dc-muted);}
     select.mp-server-sel{padding:8px 12px;border-radius:8px;border:1.5px solid var(--dc-sep);background:var(--dc-input-bg);color:var(--dc-text);font-size:13px;margin-bottom:12px;width:100%;}
   </style>
-  <script src="assets/js/octicons.js"></script>
-</head>
+<script src="assets/js/octicons.js"></script>
+<meta content="Browse the 360 Bot Marketplace to discover useful bots and integrations." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 Bot Marketplace — Discover Bots" property="og:title"/><meta content="Browse the 360 Bot Marketplace to discover useful bots and integrations." property="og:description"/><meta content="https://360-search.com/marketplace.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 Bot Marketplace — Discover Bots" name="twitter:title"/><meta content="Browse the 360 Bot Marketplace to discover useful bots and integrations." name="twitter:description"/><link href="https://360-search.com/marketplace.html" rel="canonical"/></head>
 <body>
 <div class="mp-header">
-  <span style="font-size:28px"><span data-octicon="hubot"></span></span>
-  <h1>Bot Marketplace</h1>
-  <input class="mp-search" id="mp-search" placeholder="Search bots…" oninput="filterBots()"/>
-  <a href="/chat">← Back to Chat</a>
+<span style="font-size:28px"><span data-octicon="hubot"></span></span>
+<h1>Bot Marketplace</h1>
+<input class="mp-search" id="mp-search" oninput="filterBots()" placeholder="Search bots…"/>
+<a href="/chat">← Back to Chat</a>
 </div>
 <div class="mp-body">
-  <div class="mp-cats" id="mp-cats">
-    <div class="mp-cat active" onclick="setCategory(this,'all')">All</div>
-  </div>
-  <div class="mp-grid" id="mp-grid"><div class="mp-empty">Loading…</div></div>
+<div class="mp-cats" id="mp-cats">
+<div class="mp-cat active" onclick="setCategory(this,'all')">All</div>
 </div>
-
+<div class="mp-grid" id="mp-grid"><div class="mp-empty">Loading…</div></div>
+</div>
 <!-- Bot detail modal -->
 <div class="mp-modal-bg hidden" id="mp-modal">
-  <div class="mp-modal" id="mp-modal-inner" style="position:relative;"></div>
+<div class="mp-modal" id="mp-modal-inner" style="position:relative;"></div>
 </div>
-
 <script>
 const SB_URL='https://wiswfpfsjiowtrdyqpxy.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';

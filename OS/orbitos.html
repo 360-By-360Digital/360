@@ -1,272 +1,259 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>OrbitOS — 360 Digital</title>
-<link rel="stylesheet" href="style.css">
-</head>
+<link href="style.css" rel="stylesheet"/>
+<meta content="Explore OrbitOS, a 360 Digital operating system project." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="OrbitOS — 360 Digital" property="og:title"/><meta content="Explore OrbitOS, a 360 Digital operating system project." property="og:description"/><meta content="https://360-search.com/OS/orbitos.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="OrbitOS — 360 Digital" name="twitter:title"/><meta content="Explore OrbitOS, a 360 Digital operating system project." name="twitter:description"/><link href="https://360-search.com/OS/orbitos.html" rel="canonical"/></head>
 <body>
-
 <div id="wallpaper-layer">
-  <canvas id="wallpaper-canvas"></canvas>
-  <img id="wallpaper-img" alt="wallpaper">
+<canvas id="wallpaper-canvas"></canvas>
+<img alt="wallpaper" id="wallpaper-img"/>
 </div>
-
 <!-- LOGIN -->
 <div id="login-screen">
-  <div id="login-card">
-    <div id="login-logo">🪐</div>
-    <div id="login-os-name">OrbitOS</div>
-    <div id="login-tagline">by 360 Digital, Co.</div>
-    <div id="login-tabs">
-      <div class="login-tab active" data-panel="360">360 Account</div>
-      <div class="login-tab" data-panel="oauth">Google / GitHub</div>
-    </div>
-    <div id="panel-360" class="login-panel" style="display:flex;flex-direction:column;gap:12px;width:100%">
-      <input id="inp-user" class="login-input" type="text" placeholder="Username or email" autocomplete="username">
-      <input id="inp-pass" class="login-input" type="password" placeholder="Password" autocomplete="current-password">
-      <div id="login-error"></div>
-      <button id="btn-360-login" id="login-submit">Sign in to OrbitOS</button>
-      <div style="font-size:10px;color:var(--text-muted);text-align:center">Try: <code style="color:var(--accent3)">zaki / 360</code> &nbsp;or&nbsp; <code style="color:var(--accent3)">admin / orbit</code></div>
-    </div>
-    <div id="panel-oauth" class="login-panel" style="display:none;flex-direction:column;gap:10px;width:100%">
-      <button id="btn-google" class="oauth-btn"><span class="oauth-icon">🔵</span> Continue with Google</button>
-      <button id="btn-github" class="oauth-btn"><span class="oauth-icon">⚫</span> Continue with GitHub</button>
-    </div>
-    <button id="login-guest">Continue as guest</button>
-  </div>
+<div id="login-card">
+<div id="login-logo">🪐</div>
+<div id="login-os-name">OrbitOS</div>
+<div id="login-tagline">by 360 Digital, Co.</div>
+<div id="login-tabs">
+<div class="login-tab active" data-panel="360">360 Account</div>
+<div class="login-tab" data-panel="oauth">Google / GitHub</div>
 </div>
-
+<div class="login-panel" id="panel-360" style="display:flex;flex-direction:column;gap:12px;width:100%">
+<input autocomplete="username" class="login-input" id="inp-user" placeholder="Username or email" type="text"/>
+<input autocomplete="current-password" class="login-input" id="inp-pass" placeholder="Password" type="password"/>
+<div id="login-error"></div>
+<button id="login-submit">Sign in to OrbitOS</button>
+<div style="font-size:10px;color:var(--text-muted);text-align:center">Try: <code style="color:var(--accent3)">zaki / 360</code>  or  <code style="color:var(--accent3)">admin / orbit</code></div>
+</div>
+<div class="login-panel" id="panel-oauth" style="display:none;flex-direction:column;gap:10px;width:100%">
+<button class="oauth-btn" id="btn-google"><span class="oauth-icon">🔵</span> Continue with Google</button>
+<button class="oauth-btn" id="btn-github"><span class="oauth-icon">⚫</span> Continue with GitHub</button>
+</div>
+<button id="login-guest">Continue as guest</button>
+</div>
+</div>
 <!-- DESKTOP -->
 <div id="desktop">
-  <div id="desktop-grid-overlay"></div>
-  <div id="desk-clock">
-    <div class="time" id="dc-time">--:--:--</div>
-    <div class="date" id="dc-date">Loading...</div>
-  </div>
-  <div id="icons">
-    <div class="desk-icon" onclick="openApp('browser')"><div class="ico">🌐</div><div class="lbl">360 Browser</div></div>
-    <div class="desk-icon" onclick="openApp('files')"><div class="ico">📁</div><div class="lbl">Files</div></div>
-    <div class="desk-icon" onclick="openApp('terminal')"><div class="ico">💻</div><div class="lbl">Terminal</div></div>
-    <div class="desk-icon" onclick="openApp('editor')"><div class="ico">📝</div><div class="lbl">Editor</div></div>
-    <div class="desk-icon" onclick="openApp('music')"><div class="ico">🎵</div><div class="lbl">Music</div></div>
-    <div class="desk-icon" onclick="openApp('settings')"><div class="ico">⚙️</div><div class="lbl">Settings</div></div>
-  </div>
-
-  <!-- BROWSER -->
-  <div class="window focused" id="win-browser" style="left:140px;top:28px;width:820px;height:560px;z-index:100">
-    <div class="win-titlebar" onmousedown="startDrag(event,'win-browser')">
-      <div class="win-dots">
-        <div class="win-dot dot-close" onclick="closeWin('browser')"></div>
-        <div class="win-dot dot-min" onclick="minimizeWin('browser')"></div>
-        <div class="win-dot dot-max" onclick="maximizeWin('browser')"></div>
-      </div>
-      <div class="win-title">🌐 360 Browser</div>
-    </div>
-    <div class="win-body">
-      <div id="browser-bar">
-        <button class="browser-nav" onclick="document.getElementById('browser-frame').contentWindow.history.back()">←</button>
-        <button class="browser-nav" onclick="document.getElementById('browser-frame').contentWindow.history.forward()">→</button>
-        <button class="browser-nav" onclick="document.getElementById('browser-frame').src=document.getElementById('browser-frame').src">⟳</button>
-        <input id="browser-url" type="text" value="https://360-search.com" onkeydown="if(event.key==='Enter')browserGo()">
-        <button id="browser-go" onclick="browserGo()">Go</button>
-      </div>
-      <iframe id="browser-frame" src="https://360-search.com"></iframe>
-    </div>
-    <div class="win-resize" onmousedown="startResize(event,'win-browser')"></div>
-  </div>
-
-  <!-- FILES -->
-  <div class="window" id="win-files" style="left:160px;top:55px;width:580px;height:420px;z-index:99">
-    <div class="win-titlebar" onmousedown="startDrag(event,'win-files')">
-      <div class="win-dots">
-        <div class="win-dot dot-close" onclick="closeWin('files')"></div>
-        <div class="win-dot dot-min" onclick="minimizeWin('files')"></div>
-        <div class="win-dot dot-max" onclick="maximizeWin('files')"></div>
-      </div>
-      <div class="win-title">📁 File Explorer</div>
-    </div>
-    <div class="win-body">
-      <div id="files-toolbar">
-        <button class="browser-nav" style="padding:4px 8px;font-size:12px">↑</button>
-        <div id="files-path">orbit://home/zaki</div>
-      </div>
-      <div id="files-grid"></div>
-    </div>
-    <div class="win-resize" onmousedown="startResize(event,'win-files')"></div>
-  </div>
-
-  <!-- TERMINAL -->
-  <div class="window" id="win-terminal" style="left:180px;top:80px;width:580px;height:380px;z-index:98">
-    <div class="win-titlebar" onmousedown="startDrag(event,'win-terminal')">
-      <div class="win-dots">
-        <div class="win-dot dot-close" onclick="closeWin('terminal')"></div>
-        <div class="win-dot dot-min" onclick="minimizeWin('terminal')"></div>
-        <div class="win-dot dot-max" onclick="maximizeWin('terminal')"></div>
-      </div>
-      <div class="win-title">💻 Terminal</div>
-    </div>
-    <div class="win-body">
-      <div id="term-output"></div>
-      <div id="term-input-row">
-        <span id="term-prompt-label">zaki@orbitos ~ $</span>
-        <input id="term-input" type="text" placeholder="type a command..." autocomplete="off" spellcheck="false">
-      </div>
-    </div>
-    <div class="win-resize" onmousedown="startResize(event,'win-terminal')"></div>
-  </div>
-
-  <!-- EDITOR -->
-  <div class="window" id="win-editor" style="left:200px;top:65px;width:560px;height:400px;z-index:97">
-    <div class="win-titlebar" onmousedown="startDrag(event,'win-editor')">
-      <div class="win-dots">
-        <div class="win-dot dot-close" onclick="closeWin('editor')"></div>
-        <div class="win-dot dot-min" onclick="minimizeWin('editor')"></div>
-        <div class="win-dot dot-max" onclick="maximizeWin('editor')"></div>
-      </div>
-      <div class="win-title">📝 Text Editor — untitled.txt</div>
-    </div>
-    <div class="win-body">
-      <div id="editor-toolbar">
-        <button class="ed-btn"><b>B</b></button>
-        <button class="ed-btn"><i>I</i></button>
-        <button class="ed-btn" onclick="edSave()">💾 Save</button>
-        <button class="ed-btn" onclick="edNew()">+ New</button>
-        <span style="margin-left:auto;font-size:10px;color:var(--text-muted)" id="ed-saved"></span>
-      </div>
-      <textarea id="editor-area" placeholder="Start typing...">Welcome to OrbitOS 2.0 ✨
+<div id="desktop-grid-overlay"></div>
+<div id="desk-clock">
+<div class="time" id="dc-time">--:--:--</div>
+<div class="date" id="dc-date">Loading...</div>
+</div>
+<div id="icons">
+<div class="desk-icon" onclick="openApp('browser')"><div class="ico">🌐</div><div class="lbl">360 Browser</div></div>
+<div class="desk-icon" onclick="openApp('files')"><div class="ico">📁</div><div class="lbl">Files</div></div>
+<div class="desk-icon" onclick="openApp('terminal')"><div class="ico">💻</div><div class="lbl">Terminal</div></div>
+<div class="desk-icon" onclick="openApp('editor')"><div class="ico">📝</div><div class="lbl">Editor</div></div>
+<div class="desk-icon" onclick="openApp('music')"><div class="ico">🎵</div><div class="lbl">Music</div></div>
+<div class="desk-icon" onclick="openApp('settings')"><div class="ico">⚙️</div><div class="lbl">Settings</div></div>
+</div>
+<!-- BROWSER -->
+<div class="window focused" id="win-browser" style="left:140px;top:28px;width:820px;height:560px;z-index:100">
+<div class="win-titlebar" onmousedown="startDrag(event,'win-browser')">
+<div class="win-dots">
+<div class="win-dot dot-close" onclick="closeWin('browser')"></div>
+<div class="win-dot dot-min" onclick="minimizeWin('browser')"></div>
+<div class="win-dot dot-max" onclick="maximizeWin('browser')"></div>
+</div>
+<div class="win-title">🌐 360 Browser</div>
+</div>
+<div class="win-body">
+<div id="browser-bar">
+<button class="browser-nav" onclick="document.getElementById('browser-frame').contentWindow.history.back()">←</button>
+<button class="browser-nav" onclick="document.getElementById('browser-frame').contentWindow.history.forward()">→</button>
+<button class="browser-nav" onclick="document.getElementById('browser-frame').src=document.getElementById('browser-frame').src">⟳</button>
+<input id="browser-url" onkeydown="if(event.key==='Enter')browserGo()" type="text" value="https://360-search.com"/>
+<button id="browser-go" onclick="browserGo()">Go</button>
+</div>
+<iframe id="browser-frame" src="https://360-search.com"></iframe>
+</div>
+<div class="win-resize" onmousedown="startResize(event,'win-browser')"></div>
+</div>
+<!-- FILES -->
+<div class="window" id="win-files" style="left:160px;top:55px;width:580px;height:420px;z-index:99">
+<div class="win-titlebar" onmousedown="startDrag(event,'win-files')">
+<div class="win-dots">
+<div class="win-dot dot-close" onclick="closeWin('files')"></div>
+<div class="win-dot dot-min" onclick="minimizeWin('files')"></div>
+<div class="win-dot dot-max" onclick="maximizeWin('files')"></div>
+</div>
+<div class="win-title">📁 File Explorer</div>
+</div>
+<div class="win-body">
+<div id="files-toolbar">
+<button class="browser-nav" style="padding:4px 8px;font-size:12px">↑</button>
+<div id="files-path">orbit://home/zaki</div>
+</div>
+<div id="files-grid"></div>
+</div>
+<div class="win-resize" onmousedown="startResize(event,'win-files')"></div>
+</div>
+<!-- TERMINAL -->
+<div class="window" id="win-terminal" style="left:180px;top:80px;width:580px;height:380px;z-index:98">
+<div class="win-titlebar" onmousedown="startDrag(event,'win-terminal')">
+<div class="win-dots">
+<div class="win-dot dot-close" onclick="closeWin('terminal')"></div>
+<div class="win-dot dot-min" onclick="minimizeWin('terminal')"></div>
+<div class="win-dot dot-max" onclick="maximizeWin('terminal')"></div>
+</div>
+<div class="win-title">💻 Terminal</div>
+</div>
+<div class="win-body">
+<div id="term-output"></div>
+<div id="term-input-row">
+<span id="term-prompt-label">zaki@orbitos ~ $</span>
+<input autocomplete="off" id="term-input" placeholder="type a command..." spellcheck="false" type="text"/>
+</div>
+</div>
+<div class="win-resize" onmousedown="startResize(event,'win-terminal')"></div>
+</div>
+<!-- EDITOR -->
+<div class="window" id="win-editor" style="left:200px;top:65px;width:560px;height:400px;z-index:97">
+<div class="win-titlebar" onmousedown="startDrag(event,'win-editor')">
+<div class="win-dots">
+<div class="win-dot dot-close" onclick="closeWin('editor')"></div>
+<div class="win-dot dot-min" onclick="minimizeWin('editor')"></div>
+<div class="win-dot dot-max" onclick="maximizeWin('editor')"></div>
+</div>
+<div class="win-title">📝 Text Editor — untitled.txt</div>
+</div>
+<div class="win-body">
+<div id="editor-toolbar">
+<button class="ed-btn"><b>B</b></button>
+<button class="ed-btn"><i>I</i></button>
+<button class="ed-btn" onclick="edSave()">💾 Save</button>
+<button class="ed-btn" onclick="edNew()">+ New</button>
+<span id="ed-saved" style="margin-left:auto;font-size:10px;color:var(--text-muted)"></span>
+</div>
+<textarea id="editor-area" placeholder="Start typing...">Welcome to OrbitOS 2.0 ✨
 Built by Zaki @ 360 Digital, Co.
 
 Start typing your notes here...</textarea>
-      <div id="editor-status">UTF-8 · Plain Text · 4 lines</div>
-    </div>
-    <div class="win-resize" onmousedown="startResize(event,'win-editor')"></div>
-  </div>
-
-  <!-- MUSIC -->
-  <div class="window" id="win-music" style="left:220px;top:75px;width:300px;height:430px;z-index:96">
-    <div class="win-titlebar" onmousedown="startDrag(event,'win-music')">
-      <div class="win-dots">
-        <div class="win-dot dot-close" onclick="closeWin('music')"></div>
-        <div class="win-dot dot-min" onclick="minimizeWin('music')"></div>
-        <div class="win-dot dot-max" onclick="maximizeWin('music')"></div>
-      </div>
-      <div class="win-title">🎵 Music Player</div>
-    </div>
-    <div id="music-body" class="win-body">
-      <div id="music-art">🎵</div>
-      <div id="music-title">No Track</div>
-      <div id="music-artist">360 Music</div>
-      <div style="width:100%">
-        <div id="music-progress-bar" onclick="seekMusic(event)"><div id="music-progress-fill"></div></div>
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:4px">
-          <span id="m-cur">0:00</span><span id="m-dur">0:00</span>
-        </div>
-      </div>
-      <div id="music-controls">
-        <div class="mc-btn" onclick="prevTrack()">⏮</div>
-        <div class="mc-btn main" id="play-btn" onclick="togglePlay()">▶</div>
-        <div class="mc-btn" onclick="nextTrack()">⏭</div>
-      </div>
-      <div id="music-vol-row">🔈 <input type="range" id="music-vol" min="0" max="1" step="0.01" value="0.7" oninput="setVol(this.value)"> 🔊</div>
-      <div id="music-drop-hint">Drag an MP3 onto the desktop to load it</div>
-    </div>
-    <div class="win-resize" onmousedown="startResize(event,'win-music')"></div>
-  </div>
-
-  <!-- SETTINGS -->
-  <div class="window" id="win-settings" style="left:240px;top:55px;width:400px;height:490px;z-index:95">
-    <div class="win-titlebar" onmousedown="startDrag(event,'win-settings')">
-      <div class="win-dots">
-        <div class="win-dot dot-close" onclick="closeWin('settings')"></div>
-        <div class="win-dot dot-min" onclick="minimizeWin('settings')"></div>
-        <div class="win-dot dot-max" onclick="maximizeWin('settings')"></div>
-      </div>
-      <div class="win-title">⚙️ Settings</div>
-    </div>
-    <div id="settings-body" class="win-body">
-      <div class="setting-card">
-        <div class="setting-label">Wallpaper</div>
-        <div id="wp-scroll"></div>
-        <input type="file" id="wp-file-input" accept="image/*,.gif" style="display:none">
-      </div>
-      <div class="setting-card">
-        <div class="setting-label">Appearance</div>
-        <div class="setting-row"><span class="setting-name">Glassmorphism</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-        <div class="setting-row"><span class="setting-name">Animations</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-        <div class="setting-row"><span class="setting-name">Grid overlay</span><div class="toggle on" onclick="this.classList.toggle('on');document.getElementById('desktop-grid-overlay').style.display=this.classList.contains('on')?'block':'none';"></div></div>
-      </div>
-      <div class="setting-card">
-        <div class="setting-label">System</div>
-        <div class="setting-row"><span class="setting-name">OrbitOS Version</span><span class="setting-val">2.0.0</span></div>
-        <div class="setting-row"><span class="setting-name">User</span><span class="setting-val" id="sys-user">—</span></div>
-        <div class="setting-row"><span class="setting-name">Provider</span><span class="setting-val" id="sys-provider">—</span></div>
-        <div class="setting-row"><span class="setting-name">Wallpaper</span><span class="setting-val" id="sys-wp">aurora</span></div>
-      </div>
-      <div class="setting-card">
-        <div class="setting-label">360 Ecosystem</div>
-        <div class="setting-row"><span class="setting-name">360 Search</span><span class="setting-val">360-search.com</span></div>
-        <div class="setting-row"><span class="setting-name">360 Mail</span><span class="setting-val">Beta</span></div>
-        <div class="setting-row"><span class="setting-name">360 OS</span><span class="setting-val">OrbitOS v2</span></div>
-      </div>
-      <div class="setting-card">
-        <div class="setting-label">Account</div>
-        <div class="setting-row"><button class="sm-power" onclick="signOut()" style="width:100%;text-align:center">⏻ Sign Out</button></div>
-      </div>
-    </div>
-    <div class="win-resize" onmousedown="startResize(event,'win-settings')"></div>
-  </div>
-
-  <!-- TASKBAR -->
-  <div id="taskbar">
-    <button id="start-btn" onclick="toggleStart()">⊛</button>
-    <div id="taskbar-apps"></div>
-    <div id="tb-right">
-      <div id="tb-user" onclick="openApp('settings')">
-        <div id="tb-avatar">?</div>
-        <div id="tb-username">Guest</div>
-      </div>
-      <div id="tb-clock">
-        <span id="tb-time">--:--</span>
-        <span id="tb-date" style="font-size:10px">---</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- START MENU -->
-  <div id="start-menu">
-    <div class="sm-header">OrbitOS</div>
-    <div class="sm-grid">
-      <div class="sm-app" onclick="openApp('browser');toggleStart()"><div class="sico">🌐</div><div class="slbl">360 Browser</div></div>
-      <div class="sm-app" onclick="openApp('files');toggleStart()"><div class="sico">📁</div><div class="slbl">Files</div></div>
-      <div class="sm-app" onclick="openApp('terminal');toggleStart()"><div class="sico">💻</div><div class="slbl">Terminal</div></div>
-      <div class="sm-app" onclick="openApp('editor');toggleStart()"><div class="sico">📝</div><div class="slbl">Editor</div></div>
-      <div class="sm-app" onclick="openApp('music');toggleStart()"><div class="sico">🎵</div><div class="slbl">Music</div></div>
-      <div class="sm-app" onclick="openApp('settings');toggleStart()"><div class="sico">⚙️</div><div class="slbl">Settings</div></div>
-    </div>
-    <div class="sm-footer">
-      <div class="sm-user"><strong id="sm-uname">—</strong><span id="sm-uemail">—</span></div>
-      <button class="sm-power" onclick="signOut()">⏻ Sign Out</button>
-    </div>
-  </div>
-
-  <!-- CONTEXT MENU -->
-  <div id="ctx-menu">
-    <div class="ctx-item" onclick="openApp('browser')">🌐 Open 360 Browser</div>
-    <div class="ctx-item" onclick="openApp('terminal')">💻 Terminal</div>
-    <div class="ctx-sep"></div>
-    <div class="ctx-item" onclick="openApp('settings')">⚙️ Settings</div>
-    <div class="ctx-item" onclick="notify('OrbitOS','Desktop refreshed! ✓')">🔄 Refresh</div>
-    <div class="ctx-sep"></div>
-    <div class="ctx-item" onclick="notify('OrbitOS','OrbitOS v2.0 — 360 Digital, Co.')">ℹ️ About OrbitOS</div>
-    <div class="ctx-item" onclick="signOut()">⏻ Sign Out</div>
-  </div>
-
-  <!-- NOTIFICATION STACK -->
-  <div id="notif-stack"></div>
+<div id="editor-status">UTF-8 · Plain Text · 4 lines</div>
 </div>
-
+<div class="win-resize" onmousedown="startResize(event,'win-editor')"></div>
+</div>
+<!-- MUSIC -->
+<div class="window" id="win-music" style="left:220px;top:75px;width:300px;height:430px;z-index:96">
+<div class="win-titlebar" onmousedown="startDrag(event,'win-music')">
+<div class="win-dots">
+<div class="win-dot dot-close" onclick="closeWin('music')"></div>
+<div class="win-dot dot-min" onclick="minimizeWin('music')"></div>
+<div class="win-dot dot-max" onclick="maximizeWin('music')"></div>
+</div>
+<div class="win-title">🎵 Music Player</div>
+</div>
+<div class="win-body" id="music-body">
+<div id="music-art">🎵</div>
+<div id="music-title">No Track</div>
+<div id="music-artist">360 Music</div>
+<div style="width:100%">
+<div id="music-progress-bar" onclick="seekMusic(event)"><div id="music-progress-fill"></div></div>
+<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:4px">
+<span id="m-cur">0:00</span><span id="m-dur">0:00</span>
+</div>
+</div>
+<div id="music-controls">
+<div class="mc-btn" onclick="prevTrack()">⏮</div>
+<div class="mc-btn main" id="play-btn" onclick="togglePlay()">▶</div>
+<div class="mc-btn" onclick="nextTrack()">⏭</div>
+</div>
+<div id="music-vol-row">🔈 <input id="music-vol" max="1" min="0" oninput="setVol(this.value)" step="0.01" type="range" value="0.7"/> 🔊</div>
+<div id="music-drop-hint">Drag an MP3 onto the desktop to load it</div>
+</div>
+<div class="win-resize" onmousedown="startResize(event,'win-music')"></div>
+</div>
+<!-- SETTINGS -->
+<div class="window" id="win-settings" style="left:240px;top:55px;width:400px;height:490px;z-index:95">
+<div class="win-titlebar" onmousedown="startDrag(event,'win-settings')">
+<div class="win-dots">
+<div class="win-dot dot-close" onclick="closeWin('settings')"></div>
+<div class="win-dot dot-min" onclick="minimizeWin('settings')"></div>
+<div class="win-dot dot-max" onclick="maximizeWin('settings')"></div>
+</div>
+<div class="win-title">⚙️ Settings</div>
+</div>
+<div class="win-body" id="settings-body">
+<div class="setting-card">
+<div class="setting-label">Wallpaper</div>
+<div id="wp-scroll"></div>
+<input accept="image/*,.gif" id="wp-file-input" style="display:none" type="file"/>
+</div>
+<div class="setting-card">
+<div class="setting-label">Appearance</div>
+<div class="setting-row"><span class="setting-name">Glassmorphism</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+<div class="setting-row"><span class="setting-name">Animations</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+<div class="setting-row"><span class="setting-name">Grid overlay</span><div class="toggle on" onclick="this.classList.toggle('on');document.getElementById('desktop-grid-overlay').style.display=this.classList.contains('on')?'block':'none';"></div></div>
+</div>
+<div class="setting-card">
+<div class="setting-label">System</div>
+<div class="setting-row"><span class="setting-name">OrbitOS Version</span><span class="setting-val">2.0.0</span></div>
+<div class="setting-row"><span class="setting-name">User</span><span class="setting-val" id="sys-user">—</span></div>
+<div class="setting-row"><span class="setting-name">Provider</span><span class="setting-val" id="sys-provider">—</span></div>
+<div class="setting-row"><span class="setting-name">Wallpaper</span><span class="setting-val" id="sys-wp">aurora</span></div>
+</div>
+<div class="setting-card">
+<div class="setting-label">360 Ecosystem</div>
+<div class="setting-row"><span class="setting-name">360 Search</span><span class="setting-val">360-search.com</span></div>
+<div class="setting-row"><span class="setting-name">360 Mail</span><span class="setting-val">Beta</span></div>
+<div class="setting-row"><span class="setting-name">360 OS</span><span class="setting-val">OrbitOS v2</span></div>
+</div>
+<div class="setting-card">
+<div class="setting-label">Account</div>
+<div class="setting-row"><button class="sm-power" onclick="signOut()" style="width:100%;text-align:center">⏻ Sign Out</button></div>
+</div>
+</div>
+<div class="win-resize" onmousedown="startResize(event,'win-settings')"></div>
+</div>
+<!-- TASKBAR -->
+<div id="taskbar">
+<button id="start-btn" onclick="toggleStart()">⊛</button>
+<div id="taskbar-apps"></div>
+<div id="tb-right">
+<div id="tb-user" onclick="openApp('settings')">
+<div id="tb-avatar">?</div>
+<div id="tb-username">Guest</div>
+</div>
+<div id="tb-clock">
+<span id="tb-time">--:--</span>
+<span id="tb-date" style="font-size:10px">---</span>
+</div>
+</div>
+</div>
+<!-- START MENU -->
+<div id="start-menu">
+<div class="sm-header">OrbitOS</div>
+<div class="sm-grid">
+<div class="sm-app" onclick="openApp('browser');toggleStart()"><div class="sico">🌐</div><div class="slbl">360 Browser</div></div>
+<div class="sm-app" onclick="openApp('files');toggleStart()"><div class="sico">📁</div><div class="slbl">Files</div></div>
+<div class="sm-app" onclick="openApp('terminal');toggleStart()"><div class="sico">💻</div><div class="slbl">Terminal</div></div>
+<div class="sm-app" onclick="openApp('editor');toggleStart()"><div class="sico">📝</div><div class="slbl">Editor</div></div>
+<div class="sm-app" onclick="openApp('music');toggleStart()"><div class="sico">🎵</div><div class="slbl">Music</div></div>
+<div class="sm-app" onclick="openApp('settings');toggleStart()"><div class="sico">⚙️</div><div class="slbl">Settings</div></div>
+</div>
+<div class="sm-footer">
+<div class="sm-user"><strong id="sm-uname">—</strong><span id="sm-uemail">—</span></div>
+<button class="sm-power" onclick="signOut()">⏻ Sign Out</button>
+</div>
+</div>
+<!-- CONTEXT MENU -->
+<div id="ctx-menu">
+<div class="ctx-item" onclick="openApp('browser')">🌐 Open 360 Browser</div>
+<div class="ctx-item" onclick="openApp('terminal')">💻 Terminal</div>
+<div class="ctx-sep"></div>
+<div class="ctx-item" onclick="openApp('settings')">⚙️ Settings</div>
+<div class="ctx-item" onclick="notify('OrbitOS','Desktop refreshed! ✓')">🔄 Refresh</div>
+<div class="ctx-sep"></div>
+<div class="ctx-item" onclick="notify('OrbitOS','OrbitOS v2.0 — 360 Digital, Co.')">ℹ️ About OrbitOS</div>
+<div class="ctx-item" onclick="signOut()">⏻ Sign Out</div>
+</div>
+<!-- NOTIFICATION STACK -->
+<div id="notif-stack"></div>
+</div>
 <script src="app.js"></script>
 </body>
 </html>

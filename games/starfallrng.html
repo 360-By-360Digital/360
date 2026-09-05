@@ -1,7 +1,8 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="utf-8"/>
 <title>Starfall RNG</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -125,120 +126,108 @@ body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:c
 .upgrade-card-enter{animation:cardIn .25s ease-out}
 @keyframes cardIn{0%{transform:translateY(10px) scale(.95);opacity:0}100%{transform:translateY(0) scale(1);opacity:1}}
 </style>
-</head>
+<meta content="Play Starfall RNG on 360. Explore this free browser game and discover more games on 360." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="Starfall RNG" property="og:title"/><meta content="Play Starfall RNG on 360. Explore this free browser game and discover more games on 360." property="og:description"/><meta content="https://360-search.com/games/starfallrng.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="Starfall RNG" name="twitter:title"/><meta content="Play Starfall RNG on 360. Explore this free browser game and discover more games on 360." name="twitter:description"/><link href="https://360-search.com/games/starfallrng.html" rel="canonical"/></head>
 <body>
-
 <canvas id="particles"></canvas>
-
 <!-- Shop -->
 <div class="shop-backdrop" id="shop-backdrop">
-  <div class="shop-modal">
-    <div class="shop-title">Starfall Shop</div>
-    <div class="shop-subtitle">Spend coins to bend the odds.</div>
-    <div class="shop-items">
-      <div class="shop-item" data-upgrade="xpBoost">
-        <div class="shop-name">XP Booster</div>
-        <div class="shop-desc">Gain more XP per roll.</div>
-        <div class="shop-cost" id="cost-xpBoost">Cost: 150</div>
-      </div>
-      <div class="shop-item" data-upgrade="luckBoost">
-        <div class="shop-name">Luck Charm</div>
-        <div class="shop-desc">Increase Rare+ chances.</div>
-        <div class="shop-cost" id="cost-luckBoost">Cost: 200</div>
-      </div>
-      <div class="shop-item" data-upgrade="coinBoost">
-        <div class="shop-name">Coin Magnet</div>
-        <div class="shop-desc">More coins from every roll.</div>
-        <div class="shop-cost" id="cost-coinBoost">Cost: 120</div>
-      </div>
-      <div class="shop-item" data-upgrade="particleBoost">
-        <div class="shop-name">Particle Storm</div>
-        <div class="shop-desc">More particles on good rolls.</div>
-        <div class="shop-cost" id="cost-particleBoost">Cost: 90</div>
-      </div>
-      <div class="shop-item" data-upgrade="cosmeticAura">
-        <div class="shop-name">Cosmic Trail</div>
-        <div class="shop-desc">Pure flex. No stats, just style.</div>
-        <div class="shop-cost" id="cost-cosmeticAura">Cost: 250</div>
-      </div>
-    </div>
-    <div class="shop-close" id="shop-close">Close</div>
-  </div>
+<div class="shop-modal">
+<div class="shop-title">Starfall Shop</div>
+<div class="shop-subtitle">Spend coins to bend the odds.</div>
+<div class="shop-items">
+<div class="shop-item" data-upgrade="xpBoost">
+<div class="shop-name">XP Booster</div>
+<div class="shop-desc">Gain more XP per roll.</div>
+<div class="shop-cost" id="cost-xpBoost">Cost: 150</div>
 </div>
-
+<div class="shop-item" data-upgrade="luckBoost">
+<div class="shop-name">Luck Charm</div>
+<div class="shop-desc">Increase Rare+ chances.</div>
+<div class="shop-cost" id="cost-luckBoost">Cost: 200</div>
+</div>
+<div class="shop-item" data-upgrade="coinBoost">
+<div class="shop-name">Coin Magnet</div>
+<div class="shop-desc">More coins from every roll.</div>
+<div class="shop-cost" id="cost-coinBoost">Cost: 120</div>
+</div>
+<div class="shop-item" data-upgrade="particleBoost">
+<div class="shop-name">Particle Storm</div>
+<div class="shop-desc">More particles on good rolls.</div>
+<div class="shop-cost" id="cost-particleBoost">Cost: 90</div>
+</div>
+<div class="shop-item" data-upgrade="cosmeticAura">
+<div class="shop-name">Cosmic Trail</div>
+<div class="shop-desc">Pure flex. No stats, just style.</div>
+<div class="shop-cost" id="cost-cosmeticAura">Cost: 250</div>
+</div>
+</div>
+<div class="shop-close" id="shop-close">Close</div>
+</div>
+</div>
 <!-- Level Up Upgrade UI -->
 <div class="shop-backdrop" id="upgrade-backdrop">
-  <div class="shop-modal">
-    <div class="shop-title">Level Up!</div>
-    <div class="shop-subtitle">Choose one upgrade:</div>
-    <div class="shop-items" id="upgrade-choices"></div>
-    <div class="shop-close" id="upgrade-close">Skip</div>
-  </div>
+<div class="shop-modal">
+<div class="shop-title">Level Up!</div>
+<div class="shop-subtitle">Choose one upgrade:</div>
+<div class="shop-items" id="upgrade-choices"></div>
+<div class="shop-close" id="upgrade-close">Skip</div>
 </div>
-
+</div>
 <div class="game" id="game-card">
-  <div class="title">Starfall RNG</div>
-  <div class="subtitle">Roll, level up, and bend the odds.</div>
-
-  <div class="top-bar">
-    <div class="currency">
-      <div class="currency-item">
-        <span class="currency-label">Coins</span>
-        <span class="currency-value" id="coins">0</span>
-      </div>
-      <div class="currency-item">
-        <span class="currency-label">Level</span>
-        <span class="currency-value" id="level">1</span>
-      </div>
-    </div>
-    <button class="shop-btn" id="shop-btn">Shop</button>
-  </div>
-
-  <div class="xp-bar-container">
-    <div class="xp-top">
-      <span id="xp-label">XP: 0 / 50</span>
-      <span id="xp-bonus-label">No XP bonus</span>
-    </div>
-    <div class="xp-bar-outer">
-      <div class="xp-bar-inner" id="xp-bar-inner"></div>
-    </div>
-  </div>
-
-  <div class="stats">
-    <div>
-      <div class="stat-label">Total Rolls</div>
-      <div class="stat-value" id="total-rolls">0</div>
-    </div>
-    <div>
-      <div class="stat-label">Best Rarity</div>
-      <div class="stat-value" id="best-rarity">None</div>
-    </div>
-    <div>
-      <div class="stat-label">Last Roll</div>
-      <div class="stat-value" id="last-roll-time">—</div>
-    </div>
-  </div>
-
-  <div class="current-roll" id="current-roll">
-    <div class="current-label">Current Roll</div>
-    <div class="current-name rarity-common" id="current-name">No roll yet</div>
-    <div class="current-extra" id="current-extra">Press "Roll" to begin.</div>
-    <div class="rarity-chip">
-      <span class="rarity-dot dot-common" id="current-dot"></span>
-      <span id="current-rarity-label">—</span>
-    </div>
-  </div>
-
-  <button class="roll-btn" id="roll-btn">Roll</button>
-
-  <div class="history">
-    <div class="history-title">History</div>
-    <div id="history-list"></div>
-  </div>
-
-  <div class="prob-table" id="prob-table"></div>
+<div class="title">Starfall RNG</div>
+<div class="subtitle">Roll, level up, and bend the odds.</div>
+<div class="top-bar">
+<div class="currency">
+<div class="currency-item">
+<span class="currency-label">Coins</span>
+<span class="currency-value" id="coins">0</span>
 </div>
-
+<div class="currency-item">
+<span class="currency-label">Level</span>
+<span class="currency-value" id="level">1</span>
+</div>
+</div>
+<button class="shop-btn" id="shop-btn">Shop</button>
+</div>
+<div class="xp-bar-container">
+<div class="xp-top">
+<span id="xp-label">XP: 0 / 50</span>
+<span id="xp-bonus-label">No XP bonus</span>
+</div>
+<div class="xp-bar-outer">
+<div class="xp-bar-inner" id="xp-bar-inner"></div>
+</div>
+</div>
+<div class="stats">
+<div>
+<div class="stat-label">Total Rolls</div>
+<div class="stat-value" id="total-rolls">0</div>
+</div>
+<div>
+<div class="stat-label">Best Rarity</div>
+<div class="stat-value" id="best-rarity">None</div>
+</div>
+<div>
+<div class="stat-label">Last Roll</div>
+<div class="stat-value" id="last-roll-time">—</div>
+</div>
+</div>
+<div class="current-roll" id="current-roll">
+<div class="current-label">Current Roll</div>
+<div class="current-name rarity-common" id="current-name">No roll yet</div>
+<div class="current-extra" id="current-extra">Press "Roll" to begin.</div>
+<div class="rarity-chip">
+<span class="rarity-dot dot-common" id="current-dot"></span>
+<span id="current-rarity-label">—</span>
+</div>
+</div>
+<button class="roll-btn" id="roll-btn">Roll</button>
+<div class="history">
+<div class="history-title">History</div>
+<div id="history-list"></div>
+</div>
+<div class="prob-table" id="prob-table"></div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script type="module">
 /* ---------- Supabase safe init ---------- */
@@ -928,6 +917,6 @@ historyArray.forEach(entry=>{
   historyListEl.appendChild(item);
 });
 </script>
-  <script src="assets/js/game-rewards.js"></script>
+<script src="assets/js/game-rewards.js"></script>
 </body>
 </html>

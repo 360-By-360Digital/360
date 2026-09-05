@@ -1,20 +1,20 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 Docs</title>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" /> 
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 Docs</title>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -649,162 +649,146 @@
       }
     }
   </style>
-</head>
+<meta content="360 Docs is part of 360 Digital. Explore its features and use it online through the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 Docs" property="og:title"/><meta content="360 Docs is part of 360 Digital. Explore its features and use it online through the 360 platform." property="og:description"/><meta content="https://360-search.com/apps/360Docs.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 Docs" name="twitter:title"/><meta content="360 Docs is part of 360 Digital. Explore its features and use it online through the 360 platform." name="twitter:description"/><link href="https://360-search.com/apps/360Docs.html" rel="canonical"/></head>
 <body>
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <div class="docs-root">
-    <header class="docs-topbar">
-      <div class="docs-topbar-left">
-        <button class="docs-pill-btn" onclick="window.location.href='apps.html'">← Apps</button>
-        <div class="docs-logo">
-          <span class="docs-logo-main">360</span>
-          <span>|</span>
-          <span class="docs-logo-main">Docs</span>
-          <span class="docs-logo-sub">collaborative documents</span>
-        </div>
-      </div>
-
-      <div class="docs-topbar-center">
-        <div class="docs-search">
-          <input id="docsSearch" type="text" placeholder="Search your docs…" autocomplete="off" />
-          <button id="docsSearchBtn">🔍</button>
-        </div>
-      </div>
-
-      <div class="docs-topbar-right">
-    <button id="signInBtn"  class="auth-btn">Sign In</button>
-    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-
-        <button class="docs-btn-primary" id="newDocBtn">
-          <span>＋</span> New doc
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<div class="docs-root">
+<header class="docs-topbar">
+<div class="docs-topbar-left">
+<button class="docs-pill-btn" onclick="window.location.href='apps.html'">← Apps</button>
+<div class="docs-logo">
+<span class="docs-logo-main">360</span>
+<span>|</span>
+<span class="docs-logo-main">Docs</span>
+<span class="docs-logo-sub">collaborative documents</span>
+</div>
+</div>
+<div class="docs-topbar-center">
+<div class="docs-search">
+<input autocomplete="off" id="docsSearch" placeholder="Search your docs…" type="text"/>
+<button id="docsSearchBtn">🔍</button>
+</div>
+</div>
+<div class="docs-topbar-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+<button class="docs-btn-primary" id="newDocBtn">
+<span>＋</span> New doc
         </button>
-        <div class="docs-avatar" id="docsAvatar" title="Account">?</div>
-      </div>
-    </header>
-
-    <div class="docs-body">
-      <aside class="docs-sidebar">
-        <div class="docs-sidebar-section-label">Documents</div>
-        <div class="docs-nav-item active" data-view="all">
-          <span class="icon">📄</span>
-          <span>All docs</span>
-        </div>
-        <div class="docs-nav-item" data-view="shared">
-          <span class="icon">🤝</span>
-          <span>Shared with you</span>
-        </div>
-        <div class="docs-nav-item" data-view="owned">
-          <span class="icon">👤</span>
-          <span>Owned by you</span>
-        </div>
-        <div class="docs-nav-item" data-view="recent">
-          <span class="icon">🕒</span>
-          <span>Recently opened</span>
-        </div>
-
-        <div class="docs-sidebar-section-label" style="margin-top:10px;">Other</div>
-        <div class="docs-nav-item" data-view="trash">
-          <span class="icon">🗑️</span>
-          <span>Trash (future)</span>
-        </div>
-      </aside>
-
-      <main class="docs-main">
-        <div class="docs-main-header">
-          <div>
-            <div class="docs-main-title">Your documents</div>
-            <div class="docs-main-sub" id="docsCountLabel">Loading…</div>
-          </div>
-        </div>
-
-        <div class="docs-grid" id="docsGrid">
-          <!-- cards injected here -->
-        </div>
-      </main>
-    </div>
-  </div>
-
-  <!-- Editor modal -->
-  <div class="docs-modal-overlay" id="docsModalOverlay">
-    <div class="docs-modal">
-      <div class="docs-modal-toolbar">
-        <div class="docs-modal-toolbar-left">
-          <button class="docs-pill-btn" id="closeModalBtn">← Back</button>
-          <input id="docTitleInput" class="docs-title-input" placeholder="Untitled document" maxlength="200" />
-          <span class="docs-status" id="docsStatus">Not saved.</span>
-        </div>
-        <div class="docs-modal-toolbar-right">
-          <div class="docs-presence" id="docsPresence">
-            <!-- presence avatars -->
-          </div>
-          <button class="docs-pill-btn" id="commentModeBtn">💬 Comments</button>
-          <button class="docs-pill-btn" id="shareBtn">🔗 Share</button>
-          <button class="docs-pill-btn primary" id="saveDocBtn">💾 Save</button>
-        </div>
-      </div>
-
-      <div class="docs-modal-body">
-        <div class="docs-pages-wrap">
-          <div class="docs-page-stack" id="docsPageStack">
-            <!-- pages injected -->
-          </div>
-        </div>
-
-        <aside class="docs-rightbar" id="docsRightbar">
-          <button class="docs-pill-btn" id="rightbarCloseBtn" style="align-self:flex-end;">✕ Close</button>
-          <div class="docs-right-section">
-            <h4>Sharing</h4>
-            <div class="docs-share-row">
-              <input id="shareEmailInput" type="email" placeholder="Add collaborator email" />
-              <button id="shareAddBtn">Add</button>
-            </div>
-            <div style="margin-top:4px;font-size:11px;">Link access:</div>
-            <div style="display:flex;gap:4px;margin-top:2px;flex-wrap:wrap;">
-              <div class="docs-share-pill" data-access="private">Private</div>
-              <div class="docs-share-pill" data-access="link-view">Anyone with link (view)</div>
-              <div class="docs-share-pill" data-access="link-edit">Anyone with link (edit)</div>
-            </div>
-            <div class="docs-share-row" style="margin-top:6px;">
-              <input id="shareLinkInput" type="text" readonly />
-              <button id="shareCopyBtn">Copy</button>
-            </div>
-          </div>
-
-          <div class="docs-right-section">
-            <h4>Comments</h4>
-            <div class="docs-comments-list" id="docsCommentsList"></div>
-            <div class="docs-comment-form">
-              <input id="docsCommentInput" type="text" placeholder="Add a comment…" maxlength="300" />
-              <button id="docsCommentSubmit">Post</button>
-            </div>
-          </div>
-
-          <div class="docs-right-section">
-            <h4>Versions</h4>
-            <div class="docs-versions-list" id="docsVersionsList">
-              <!-- version items -->
-            </div>
-          </div>
-        </aside>
-      </div>
-    </div>
-  </div>
-
-  <div class="docs-toast" id="docsToast"></div>
-
-  <audio id="clickSound" src="click-sound.mp3" preload="auto"></audio>
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-
-  <script>
+<div class="docs-avatar" id="docsAvatar" title="Account">?</div>
+</div>
+</header>
+<div class="docs-body">
+<aside class="docs-sidebar">
+<div class="docs-sidebar-section-label">Documents</div>
+<div class="docs-nav-item active" data-view="all">
+<span class="icon">📄</span>
+<span>All docs</span>
+</div>
+<div class="docs-nav-item" data-view="shared">
+<span class="icon">🤝</span>
+<span>Shared with you</span>
+</div>
+<div class="docs-nav-item" data-view="owned">
+<span class="icon">👤</span>
+<span>Owned by you</span>
+</div>
+<div class="docs-nav-item" data-view="recent">
+<span class="icon">🕒</span>
+<span>Recently opened</span>
+</div>
+<div class="docs-sidebar-section-label" style="margin-top:10px;">Other</div>
+<div class="docs-nav-item" data-view="trash">
+<span class="icon">🗑️</span>
+<span>Trash (future)</span>
+</div>
+</aside>
+<main class="docs-main">
+<div class="docs-main-header">
+<div>
+<div class="docs-main-title">Your documents</div>
+<div class="docs-main-sub" id="docsCountLabel">Loading…</div>
+</div>
+</div>
+<div class="docs-grid" id="docsGrid">
+<!-- cards injected here -->
+</div>
+</main>
+</div>
+</div>
+<!-- Editor modal -->
+<div class="docs-modal-overlay" id="docsModalOverlay">
+<div class="docs-modal">
+<div class="docs-modal-toolbar">
+<div class="docs-modal-toolbar-left">
+<button class="docs-pill-btn" id="closeModalBtn">← Back</button>
+<input class="docs-title-input" id="docTitleInput" maxlength="200" placeholder="Untitled document"/>
+<span class="docs-status" id="docsStatus">Not saved.</span>
+</div>
+<div class="docs-modal-toolbar-right">
+<div class="docs-presence" id="docsPresence">
+<!-- presence avatars -->
+</div>
+<button class="docs-pill-btn" id="commentModeBtn">💬 Comments</button>
+<button class="docs-pill-btn" id="shareBtn">🔗 Share</button>
+<button class="docs-pill-btn primary" id="saveDocBtn">💾 Save</button>
+</div>
+</div>
+<div class="docs-modal-body">
+<div class="docs-pages-wrap">
+<div class="docs-page-stack" id="docsPageStack">
+<!-- pages injected -->
+</div>
+</div>
+<aside class="docs-rightbar" id="docsRightbar">
+<button class="docs-pill-btn" id="rightbarCloseBtn" style="align-self:flex-end;">✕ Close</button>
+<div class="docs-right-section">
+<h4>Sharing</h4>
+<div class="docs-share-row">
+<input id="shareEmailInput" placeholder="Add collaborator email" type="email"/>
+<button id="shareAddBtn">Add</button>
+</div>
+<div style="margin-top:4px;font-size:11px;">Link access:</div>
+<div style="display:flex;gap:4px;margin-top:2px;flex-wrap:wrap;">
+<div class="docs-share-pill" data-access="private">Private</div>
+<div class="docs-share-pill" data-access="link-view">Anyone with link (view)</div>
+<div class="docs-share-pill" data-access="link-edit">Anyone with link (edit)</div>
+</div>
+<div class="docs-share-row" style="margin-top:6px;">
+<input id="shareLinkInput" readonly="" type="text"/>
+<button id="shareCopyBtn">Copy</button>
+</div>
+</div>
+<div class="docs-right-section">
+<h4>Comments</h4>
+<div class="docs-comments-list" id="docsCommentsList"></div>
+<div class="docs-comment-form">
+<input id="docsCommentInput" maxlength="300" placeholder="Add a comment…" type="text"/>
+<button id="docsCommentSubmit">Post</button>
+</div>
+</div>
+<div class="docs-right-section">
+<h4>Versions</h4>
+<div class="docs-versions-list" id="docsVersionsList">
+<!-- version items -->
+</div>
+</div>
+</aside>
+</div>
+</div>
+</div>
+<div class="docs-toast" id="docsToast"></div>
+<audio id="clickSound" preload="auto" src="click-sound.mp3"></audio>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script>
     // --- Supabase client (same project as others) ---
     const SUPABASE_URL  = 'https://wiswfpfsjiowtrdyqpxy.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM';

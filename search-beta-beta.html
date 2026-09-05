@@ -1,51 +1,44 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <!-- Google tag -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
-  <script>
+<!-- Google tag -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+<script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-89NN1P6CEV');
   </script>
-
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 Search</title>
-
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="360" />
-
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-
-  <!-- 360 OS CSS -->
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <link rel="stylesheet" href="/assets/css/search.css" />
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-</head>
-
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 Search</title>
+<link href="/manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="360" name="apple-mobile-web-app-title"/>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/apple-touch-icon.png" rel="apple-touch-icon"/>
+<!-- 360 OS CSS -->
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<link href="/assets/css/search.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<meta content="360 Search — part of the 360 web platform." name="description"/><meta content="noindex, nofollow" name="robots"/><meta content="website" property="og:type"/><meta content="360 Search" property="og:title"/><meta content="360 Search — part of the 360 web platform." property="og:description"/><meta content="https://360-search.com/search-beta-beta.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 Search" name="twitter:title"/><meta content="360 Search — part of the 360 web platform." name="twitter:description"/><link href="https://360-search.com/search-beta-beta.html" rel="canonical"/></head>
 <body>
-
-  <!-- SPLASH -->
-  <div id="splash">
-    <div class="splash-num" id="s3">3</div>
-    <div class="splash-num" id="s6">6</div>
-    <div class="splash-num" id="s0">0</div>
-  </div>
-
-  <script>
+<!-- SPLASH -->
+<div id="splash">
+<div class="splash-num" id="s3">3</div>
+<div class="splash-num" id="s6">6</div>
+<div class="splash-num" id="s0">0</div>
+</div>
+<script>
     (function(){
       const isPWA = window.matchMedia('(display-mode:standalone)').matches || window.navigator.standalone === true;
       if(!isPWA){ document.getElementById('splash')?.remove(); return; }
@@ -60,161 +53,135 @@
       },1250);
     })();
   </script>
-
-  <!-- Cursor -->
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <!-- Auth buttons -->
-  <div class="auth-top-right">
-    <button id="signInBtn" class="auth-btn">Sign In</button>
-    <button id="signUpBtn" class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-
-  <!-- Install + sidebar toggle -->
-  <button id="installBtn" class="install-banner" style="display:none;">Install 360</button>
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
-
-  <!-- Sidebar -->
-  <aside class="sidebar" id="sidebar"><span id="sidebar-slot" data-extra="[{&quot;label&quot;: &quot;Search&quot;, &quot;href&quot;: &quot;/search&quot;}]"></span></aside>
-
-  <div class="overlay" id="overlay"></div>
-
-  <div class="settings-panel" id="settingsPanel"></div>
-  <div id="auth-popup" class="auth-popup hidden"></div>
-
-  <!-- SEARCH PAGE -->
-  <div class="search-results-page">
-
-    <!-- TOP STRIP -->
-    <header class="search-bar-strip">
-      <a class="strip-logo" href="/">360</a>
-
-      <form id="strip-search-form">
-        <input id="strip-search-input" type="text" placeholder="Search with 360…" autocomplete="off" />
-
-        <!-- Bob -->
-        <div id="bob-canvas-wrap">
-          <canvas id="bob-canvas" width="32" height="32"></canvas>
-        </div>
-
-        <!-- Autocomplete -->
-        <div id="autocompleteList" class="autocomplete"></div>
-
-        <!-- Recommended -->
-        <div id="recommendedBox" class="recommended-box hidden">
-          <div class="recommended-title">Popular searches</div>
-          <div id="recommendedList" class="recommended-list"></div>
-        </div>
-
-        <button id="strip-search-btn" type="submit">Search</button>
-      </form>
-
-      <!-- TOP CONTROLS -->
-      <div class="top-controls">
-        <div class="top-tabs">
-          <button id="tabAll" class="pill-btn active">All</button>
-          <button id="tabImages" class="pill-btn">Images</button>
-        </div>
-        <div class="top-views">
-          <button id="listViewBtn" class="pill-btn active">List</button>
-          <button id="gridViewBtn" class="pill-btn">Grid</button>
-        </div>
-        <div class="top-safe">
-          <select id="safeSelect" class="safe-select pill-select">
-            <option value="moderate">Moderate</option>
-            <option value="strict">Strict</option>
-            <option value="off">Off</option>
-          </select>
-        </div>
-      </div>
-    </header>
-    <!-- MAIN LAYOUT -->
-    <div class="search-main-layout">
-
-      <!-- LEFT -->
-      <div class="search-left">
-
-        <!-- SPEED TEST -->
-        <article id="speedTestModule" class="result-card hidden speed-module">
-          <h2 class="speed-title">Speed Test</h2>
-          <div class="speed-layout">
-            <canvas id="speedometer" width="260" height="140"></canvas>
-            <div class="speed-stats">
-              <div class="speed-row">
-                <span>Ping</span>
-                <span><span id="pingResult">0</span> ms</span>
-              </div>
-              <div class="speed-row">
-                <span>Download</span>
-                <span><span id="downloadResult">0.0</span> <span id="unitLabel">Mbps</span></span>
-              </div>
-              <div class="speed-row">
-                <span>Upload</span>
-                <span><span id="uploadResult">0.0</span> <span id="unitLabel2">Mbps</span></span>
-              </div>
-              <div class="speed-row">
-                <span>Units</span>
-                <select id="unitSelect">
-                  <option value="mbps" selected>Mbps</option>
-                  <option value="mbps2">MB/s</option>
-                  <option value="kbps">Kbps</option>
-                </select>
-              </div>
-              <button id="startSpeedTest" type="button" class="speed-btn">Start test</button>
-              <div id="speedResults" class="speed-results">
-                <p id="speedFeedback">Run a test to see your connection quality.</p>
-              </div>
-            </div>
-          </div>
-        </article>
-
-        <!-- RESULTS (WEB) -->
-        <div id="resultsContainer" class="results list-view"></div>
-
-        <!-- IMAGE RESULTS -->
-        <div id="imageResults" class="results images-view hidden"></div>
-
-        <!-- PAA -->
-        <section id="paaSection" class="paa-section hidden">
-          <h2 class="paa-title">People also ask</h2>
-          <div id="paaList"></div>
-        </section>
-
-      </div>
-
-      <!-- KNOWLEDGE PANEL -->
-      <aside id="knowledgePanel" class="knowledge-panel hidden"></aside>
-
-    </div>
-  </div>
-
-  <!-- Loader -->
-  <div id="frame-loader" class="loading">
-    <div class="loader-spinner"></div>
+<!-- Cursor -->
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<!-- Auth buttons -->
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<!-- Install + sidebar toggle -->
+<button class="install-banner" id="installBtn" style="display:none;">Install 360</button>
+<button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar"><span data-extra='[{"label": "Search", "href": "/search"}]' id="sidebar-slot"></span></aside>
+<div class="overlay" id="overlay"></div>
+<div class="settings-panel" id="settingsPanel"></div>
+<div class="auth-popup hidden" id="auth-popup"></div>
+<!-- SEARCH PAGE -->
+<div class="search-results-page">
+<!-- TOP STRIP -->
+<header class="search-bar-strip">
+<a class="strip-logo" href="/">360</a>
+<form id="strip-search-form">
+<input autocomplete="off" id="strip-search-input" placeholder="Search with 360…" type="text"/>
+<!-- Bob -->
+<div id="bob-canvas-wrap">
+<canvas height="32" id="bob-canvas" width="32"></canvas>
+</div>
+<!-- Autocomplete -->
+<div class="autocomplete" id="autocompleteList"></div>
+<!-- Recommended -->
+<div class="recommended-box hidden" id="recommendedBox">
+<div class="recommended-title">Popular searches</div>
+<div class="recommended-list" id="recommendedList"></div>
+</div>
+<button id="strip-search-btn" type="submit">Search</button>
+</form>
+<!-- TOP CONTROLS -->
+<div class="top-controls">
+<div class="top-tabs">
+<button class="pill-btn active" id="tabAll">All</button>
+<button class="pill-btn" id="tabImages">Images</button>
+</div>
+<div class="top-views">
+<button class="pill-btn active" id="listViewBtn">List</button>
+<button class="pill-btn" id="gridViewBtn">Grid</button>
+</div>
+<div class="top-safe">
+<select class="safe-select pill-select" id="safeSelect">
+<option value="moderate">Moderate</option>
+<option value="strict">Strict</option>
+<option value="off">Off</option>
+</select>
+</div>
+</div>
+</header>
+<!-- MAIN LAYOUT -->
+<div class="search-main-layout">
+<!-- LEFT -->
+<div class="search-left">
+<!-- SPEED TEST -->
+<article class="result-card hidden speed-module" id="speedTestModule">
+<h2 class="speed-title">Speed Test</h2>
+<div class="speed-layout">
+<canvas height="140" id="speedometer" width="260"></canvas>
+<div class="speed-stats">
+<div class="speed-row">
+<span>Ping</span>
+<span><span id="pingResult">0</span> ms</span>
+</div>
+<div class="speed-row">
+<span>Download</span>
+<span><span id="downloadResult">0.0</span> <span id="unitLabel">Mbps</span></span>
+</div>
+<div class="speed-row">
+<span>Upload</span>
+<span><span id="uploadResult">0.0</span> <span id="unitLabel2">Mbps</span></span>
+</div>
+<div class="speed-row">
+<span>Units</span>
+<select id="unitSelect">
+<option selected="" value="mbps">Mbps</option>
+<option value="mbps2">MB/s</option>
+<option value="kbps">Kbps</option>
+</select>
+</div>
+<button class="speed-btn" id="startSpeedTest" type="button">Start test</button>
+<div class="speed-results" id="speedResults">
+<p id="speedFeedback">Run a test to see your connection quality.</p>
+</div>
+</div>
+</div>
+</article>
+<!-- RESULTS (WEB) -->
+<div class="results list-view" id="resultsContainer"></div>
+<!-- IMAGE RESULTS -->
+<div class="results images-view hidden" id="imageResults"></div>
+<!-- PAA -->
+<section class="paa-section hidden" id="paaSection">
+<h2 class="paa-title">People also ask</h2>
+<div id="paaList"></div>
+</section>
+</div>
+<!-- KNOWLEDGE PANEL -->
+<aside class="knowledge-panel hidden" id="knowledgePanel"></aside>
+</div>
+</div>
+<!-- Loader -->
+<div class="loading" id="frame-loader">
+<div class="loader-spinner"></div>
     Loading…
   </div>
-
-  <!-- No Results -->
-  <div id="no-query" class="no-results">
-    <div class="big-emoji">🔎</div>
+<!-- No Results -->
+<div class="no-results" id="no-query">
+<div class="big-emoji">🔎</div>
     No results found
   </div>
-
-  <!-- 360 OS Scripts -->
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/home.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-
-  <!-- Firebase -->
-  <script type="module">
+<!-- 360 OS Scripts -->
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/home.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<!-- Firebase -->
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
     const firebaseConfig = {

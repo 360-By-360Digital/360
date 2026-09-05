@@ -3,289 +3,264 @@
       Last updated by Zaki! (again lol)
 ========================== -->
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>360 - Maps</title>
-  <link rel="manifest" href="/manifest.json"/>
-  <meta name="theme-color" content="#3b82f6"/>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png"/>
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/assets/css/main.css"/>
-  <link rel="stylesheet" href="/assets/css/wide.css"/>
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css"/>
-  <link rel="stylesheet" href="/assets/css/responsive.css"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="/assets/css/360Maps.css"/>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-</head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+<title>360 - Maps</title>
+<link href="/manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/apple-touch-icon.png" rel="apple-touch-icon"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="https://unpkg.com/leaflet/dist/leaflet.css" rel="stylesheet"/>
+<link href="/assets/css/360Maps.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<meta content="360 - Maps is part of 360 Digital. Explore its features and use it online through the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 - Maps" property="og:title"/><meta content="360 - Maps is part of 360 Digital. Explore its features and use it online through the 360 platform." property="og:description"/><meta content="https://360-search.com/apps/360Maps.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 - Maps" name="twitter:title"/><meta content="360 - Maps is part of 360 Digital. Explore its features and use it online through the 360 platform." name="twitter:description"/><link href="https://360-search.com/apps/360Maps.html" rel="canonical"/></head>
 <body>
-
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
-
-  <aside class="sidebar" id="sidebar"><span id="sidebar-slot" data-extra='[{"label":"360 Maps","href":"/apps/360Maps"}]'></span></aside>
-
-  <div class="overlay" id="overlay"></div>
-
-  <div class="settings-panel" id="settingsPanel">
-    <h3>Appearance</h3>
-    <div class="settings-label">Theme</div>
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-    </div>
-    <div class="settings-label" style="margin-top:20px;">Mode</div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:14px;">Dark mode</span>
-      <input type="checkbox" id="darkToggle"/>
-    </label>
-    <h3 style="margin-top:20px;">Cursor</h3>
-    <div class="settings-label">Style</div>
-    <div class="cursor-options">
-      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-    </div>
-    <div class="cursor-color-row">
-      <label>Cursor color</label>
-      <input type="color" id="cursorColorPicker" value="#3b82f6"/>
-      <button id="cursorColorReset">Reset</button>
-    </div>
-    <div class="temp-unit-box" style="margin-top:20px;">
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+<aside class="sidebar" id="sidebar"><span data-extra='[{"label":"360 Maps","href":"/apps/360Maps"}]' id="sidebar-slot"></span></aside>
+<div class="overlay" id="overlay"></div>
+<div class="settings-panel" id="settingsPanel">
+<h3>Appearance</h3>
+<div class="settings-label">Theme</div>
+<div class="theme-swatches">
+<div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+<div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+<div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+<div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+</div>
+<div class="settings-label" style="margin-top:20px;">Mode</div>
+<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+<span style="font-size:14px;">Dark mode</span>
+<input id="darkToggle" type="checkbox"/>
+</label>
+<h3 style="margin-top:20px;">Cursor</h3>
+<div class="settings-label">Style</div>
+<div class="cursor-options">
+<div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+<div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+<div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+<div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+<div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+<div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+</div>
+<div class="cursor-color-row">
+<label>Cursor color</label>
+<input id="cursorColorPicker" type="color" value="#3b82f6"/>
+<button id="cursorColorReset">Reset</button>
+</div>
+<div class="temp-unit-box" style="margin-top:20px;">
       Temp Unit: <span id="tempUnitLabel">C</span>
-      <button id="tempUnitBtn">Switch</button>
-    </div>
-    <div class="settings-box" style="margin-top:20px;">
-      <div class="settings-label">Background Image</div>
-      <input type="file" id="bgUpload" accept="image/*" class="settings-input"/>
-      <input type="text" id="bgUrlInput" placeholder="Paste image URL..." class="settings-input"/>
-      <button id="bgUrlBtn" class="settings-btn">Apply URL</button>
-      <button id="bgResetBtn" class="settings-btn">Reset</button>
-    </div>
-    <h3 style="margin-top:25px;">Legal</h3>
-    <a href="/privacypolicy" class="legal-link">Privacy Policy</a>
-    <a href="/tos" class="legal-link">Terms of Service</a>
-    <h3 style="margin-top:25px;">About</h3>
-    <details class="about-dropdown">
-      <summary>What is 360?</summary>
-      <p>360 is a next-generation search engine and digital workspace. Built by 360 Digital, Co.</p>
-    </details>
-  </div>
-
-  <div class="auth-top-right">
-    <button id="signInBtn" class="auth-btn">Sign In</button>
-    <button id="signUpBtn" class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-
-  <button id="installBtn" class="install-banner" style="display:none;">Install 360</button>
-
-  <div id="auth-popup" class="auth-popup hidden">
-    <div class="auth-box">
-      <h2>Account</h2>
-      <input id="auth-email" type="email" placeholder="Email" />
-      <input id="auth-password" type="password" placeholder="Password" />
-      <button id="auth-login-btn">Log In</button>
-      <button id="auth-signup-btn">Sign Up</button>
-      <button id="github-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        <span>Sign in with GitHub</span>
-      </button>
-      <button id="google-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        <span>Sign in with Google</span>
-      </button>
-      <p id="auth-error" class="auth-error"></p>
-      <button id="auth-close-btn" class="close-btn">Close</button>
-    </div>
-  </div>
-
-  <!-- ══════════ FULLSCREEN NAV BAR (shown only during navigation) ══════════ -->
-  <div class="maps-nav-bar" id="mapsNavBar">
-    <button class="maps-nav-exit" id="mapsNavExit" aria-label="Exit navigation">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-    </button>
-    <div class="maps-nav-info">
-      <div class="maps-nav-eta" id="mapsNavEta">--</div>
-      <div class="maps-nav-sub" id="mapsNavSub"></div>
-      <div class="maps-nav-instruction" id="mapsNavInstruction"></div>
-    </div>
-    <button class="maps-nav-steps-toggle" id="mapsNavStepsToggle" aria-label="Show steps">☰</button>
-  </div>
-
-  <!-- Steps panel (slides down from nav bar) -->
-  <div class="maps-nav-steps-panel" id="mapsNavStepsPanel"></div>
-
-  <!-- ══════════ FULLSCREEN MAP (Leaflet / OpenStreetMap) ══════════ -->
-  <div id="mapsCanvas"></div>
-
-  <!-- ══════════ SINGLE UNIFIED FLOATING CARD ══════════ -->
-  <div class="maps-card" id="mapsCard">
-    <div class="maps-search-wrap">
-      <form class="maps-search-row" id="mapsSearchForm" autocomplete="off">
-        <button type="submit" class="maps-search-icon-btn" aria-label="Search">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+<button id="tempUnitBtn">Switch</button>
+</div>
+<div class="settings-box" style="margin-top:20px;">
+<div class="settings-label">Background Image</div>
+<input accept="image/*" class="settings-input" id="bgUpload" type="file"/>
+<input class="settings-input" id="bgUrlInput" placeholder="Paste image URL..." type="text"/>
+<button class="settings-btn" id="bgUrlBtn">Apply URL</button>
+<button class="settings-btn" id="bgResetBtn">Reset</button>
+</div>
+<h3 style="margin-top:25px;">Legal</h3>
+<a class="legal-link" href="/privacypolicy">Privacy Policy</a>
+<a class="legal-link" href="/tos">Terms of Service</a>
+<h3 style="margin-top:25px;">About</h3>
+<details class="about-dropdown">
+<summary>What is 360?</summary>
+<p>360 is a next-generation search engine and digital workspace. Built by 360 Digital, Co.</p>
+</details>
+</div>
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<button class="install-banner" id="installBtn" style="display:none;">Install 360</button>
+<div class="auth-popup hidden" id="auth-popup">
+<div class="auth-box">
+<h2>Account</h2>
+<input id="auth-email" placeholder="Email" type="email"/>
+<input id="auth-password" placeholder="Password" type="password"/>
+<button id="auth-login-btn">Log In</button>
+<button id="auth-signup-btn">Sign Up</button>
+<button class="oauth-btn" id="github-login">
+<svg fill="currentColor" height="18" viewbox="0 0 24 24" width="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"></path></svg>
+<span>Sign in with GitHub</span>
+</button>
+<button class="oauth-btn" id="google-login">
+<svg height="18" viewbox="0 0 24 24" width="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path></svg>
+<span>Sign in with Google</span>
+</button>
+<p class="auth-error" id="auth-error"></p>
+<button class="close-btn" id="auth-close-btn">Close</button>
+</div>
+</div>
+<!-- ══════════ FULLSCREEN NAV BAR (shown only during navigation) ══════════ -->
+<div class="maps-nav-bar" id="mapsNavBar">
+<button aria-label="Exit navigation" class="maps-nav-exit" id="mapsNavExit">
+<svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-width="2.4" viewbox="0 0 24 24" width="16"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+</button>
+<div class="maps-nav-info">
+<div class="maps-nav-eta" id="mapsNavEta">--</div>
+<div class="maps-nav-sub" id="mapsNavSub"></div>
+<div class="maps-nav-instruction" id="mapsNavInstruction"></div>
+</div>
+<button aria-label="Show steps" class="maps-nav-steps-toggle" id="mapsNavStepsToggle">☰</button>
+</div>
+<!-- Steps panel (slides down from nav bar) -->
+<div class="maps-nav-steps-panel" id="mapsNavStepsPanel"></div>
+<!-- ══════════ FULLSCREEN MAP (Leaflet / OpenStreetMap) ══════════ -->
+<div id="mapsCanvas"></div>
+<!-- ══════════ SINGLE UNIFIED FLOATING CARD ══════════ -->
+<div class="maps-card" id="mapsCard">
+<div class="maps-search-wrap">
+<form autocomplete="off" class="maps-search-row" id="mapsSearchForm">
+<button aria-label="Search" class="maps-search-icon-btn" type="submit">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24" width="18"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+</button>
+<input autocomplete="off" id="mapsSearchInput" placeholder="Search a place or address"/>
+</form>
+<!-- Turn-by-turn: navigation bar at top handles this (see #mapsNavBar above) -->
+<div class="maps-instruction-row" id="mapsInstructionRow">
+<button aria-label="Exit navigation" class="maps-instruction-exit" id="mapsNavExit">
+<svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-width="2.4" viewbox="0 0 24 24" width="16"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+</button>
+<div class="maps-instruction-text" id="mapsInstructionText">Getting directions...</div>
+</div>
+<div id="mapsSuggestDropdown"></div>
+<div id="mapsStatus"></div>
+<div id="mapsError"></div>
+</div>
+<!-- Quick POI categories -->
+<div class="maps-quickcats" id="mapsQuickCats" style="padding: 0 12px 4px;">
+<button class="maps-quickcat-btn" data-poi="restaurant">🍽️ Food</button>
+<button class="maps-quickcat-btn" data-poi="cafe">☕ Café</button>
+<button class="maps-quickcat-btn" data-poi="fuel">⛽ Fuel</button>
+<button class="maps-quickcat-btn" data-poi="atm">🏧 ATM</button>
+<button class="maps-quickcat-btn" data-poi="hospital">🏥 Hospital</button>
+<button class="maps-quickcat-btn" data-poi="park">🌳 Park</button>
+<button class="maps-quickcat-btn" data-poi="supermarket">🛒 Market</button>
+<button class="maps-quickcat-btn" data-poi="pharmacy">💊 Pharmacy</button>
+</div>
+<!-- Tab bar: Saved / Nearby / Trips -->
+<div class="maps-tabs" id="mapsTabs">
+<button class="maps-tab active" data-tab="saved">📍 Saved</button>
+<button class="maps-tab" data-tab="nearby">🔍 Nearby</button>
+<button class="maps-tab" data-tab="trips">🧳 Trips</button>
+</div>
+<div class="maps-card-body" id="mapsCardBody"></div>
+</div>
+<!-- ══════════ ETA CARD (separate, bottom-left, shown only while navigating) ══════════ -->
+<div class="maps-eta-card" id="mapsEtaCard">
+<div class="maps-eta-duration" id="mapsEtaDuration">--</div>
+<div class="maps-eta-arrival" id="mapsEtaArrival">--</div>
+</div>
+<!-- ══════════ MAP LAYER SWITCHER (bottom-left) ══════════ -->
+<div class="maps-layer-switcher" id="mapsLayerSwitcher">
+<button class="maps-layer-btn active" data-style="standard" title="Standard">🗺️</button>
+<button class="maps-layer-btn" data-style="dark" title="Dark">🌑</button>
+<button class="maps-layer-btn" data-style="satellite" title="Satellite">🛰️</button>
+<button class="maps-layer-btn" data-style="terrain" title="Terrain">⛰️</button>
+</div>
+<!-- ══════════ FLOATING ACTION BUTTONS (bottom-right) ══════════ -->
+<div class="maps-fab-stack" id="mapsFabStack">
+<button aria-label="Zoom in" class="maps-fab" id="mapsZoomInBtn" title="Zoom in">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-width="2.2" viewbox="0 0 24 24" width="18"><path d="M12 5v14M5 12h14"></path></svg>
+</button>
+<button aria-label="Zoom out" class="maps-fab" id="mapsZoomOutBtn" title="Zoom out">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-width="2.2" viewbox="0 0 24 24" width="18"><path d="M5 12h14"></path></svg>
+</button>
+<button aria-label="My location" class="maps-fab" id="mapsLocateBtn" title="My location">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24" width="18"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>
+</button>
+<button aria-label="Measure distance" class="maps-fab" id="mapsMeasureBtn" title="Measure distance (M)">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24" width="18"><path d="M2 12h20M2 12l4-4M2 12l4 4M22 12l-4-4M22 12l-4 4"></path></svg>
+</button>
+<button aria-label="Fullscreen" class="maps-fab" id="mapsFullscreenBtn" title="Fullscreen (F)">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24" width="18"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+</button>
+</div>
+<!-- ══════════ MEASURE READOUT (center-bottom, shown while measuring) ══════════ -->
+<div class="maps-measure-readout" id="mapsMeasureReadout" style="display:none;">
+<span id="mapsMeasureText">Click points on the map to measure. Double-click to finish.</span>
+<button class="maps-btn-text" id="mapsMeasureClear">Clear</button>
+<button class="maps-btn-text" id="mapsMeasureDone">Done</button>
+</div>
+<!-- ══════════ COMPARE OVERLAY ══════════ -->
+<div class="maps-modal-overlay" id="mapsCompareOverlay">
+<div class="maps-modal">
+<h3>Compare distance</h3>
+<select class="maps-modal-select" id="mapsCompareSelect"></select>
+<div class="maps-compare-result" id="mapsCompareResult"></div>
+<div class="maps-modal-actions">
+<button class="maps-btn-outline" id="mapsCompareCancel">Close</button>
+</div>
+</div>
+</div>
+<!-- Save modal -->
+<div class="maps-modal-overlay" id="mapsModalOverlay">
+<div class="maps-modal">
+<h3>Save this location</h3>
+<input id="mapsModalLabel" placeholder="Label (e.g. Mom's house)" type="text"/>
+<textarea id="mapsModalNote" placeholder="Note (optional)" rows="2"></textarea>
+<div class="maps-cat-row" id="mapsModalCatRow"></div>
+<div class="maps-modal-actions">
+<button class="maps-btn-outline" id="mapsModalCancel">Cancel</button>
+<button class="maps-btn" id="mapsModalSave">Save</button>
+</div>
+</div>
+</div>
+<audio id="clickSound" preload="auto" src="../click-sound.mp3"></audio>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script src="/assets/js/360Maps.js"></script>
+<!-- ── Incident reporting layer ── -->
+<button id="incidentBtn" style="position:fixed;bottom:100px;right:20px;z-index:1000;width:44px;height:44px;border-radius:50%;border:none;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;font-size:18px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;" title="Report a road incident">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="18"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" x2="12" y1="9" y2="13"></line><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
+</button>
+<div id="incidentModal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center;">
+<div style="background:#0f172a;border:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;padding:24px;width:min(480px,100vw);box-sizing:border-box;display:flex;flex-direction:column;gap:14px;">
+<div style="font-weight:800;font-size:16px;color:#f1f5f9;">Report an incident</div>
+<div id="incidentTypeGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+<button class="inc-type-btn" data-type="speed_trap" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
+<div style="font-size:20px;margin-bottom:4px;">📸</div>Speed trap
         </button>
-        <input id="mapsSearchInput" placeholder="Search a place or address" autocomplete="off" />
-      </form>
-
-      <!-- Turn-by-turn: navigation bar at top handles this (see #mapsNavBar above) -->
-      <div class="maps-instruction-row" id="mapsInstructionRow">
-        <button class="maps-instruction-exit" id="mapsNavExit" aria-label="Exit navigation">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+<button class="inc-type-btn" data-type="accident" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
+<div style="font-size:20px;margin-bottom:4px;">💥</div>Accident
         </button>
-        <div class="maps-instruction-text" id="mapsInstructionText">Getting directions...</div>
-      </div>
-
-      <div id="mapsSuggestDropdown"></div>
-      <div id="mapsStatus"></div>
-      <div id="mapsError"></div>
-    </div>
-    <!-- Quick POI categories -->
-    <div class="maps-quickcats" id="mapsQuickCats" style="padding: 0 12px 4px;">
-      <button class="maps-quickcat-btn" data-poi="restaurant">🍽️ Food</button>
-      <button class="maps-quickcat-btn" data-poi="cafe">☕ Café</button>
-      <button class="maps-quickcat-btn" data-poi="fuel">⛽ Fuel</button>
-      <button class="maps-quickcat-btn" data-poi="atm">🏧 ATM</button>
-      <button class="maps-quickcat-btn" data-poi="hospital">🏥 Hospital</button>
-      <button class="maps-quickcat-btn" data-poi="park">🌳 Park</button>
-      <button class="maps-quickcat-btn" data-poi="supermarket">🛒 Market</button>
-      <button class="maps-quickcat-btn" data-poi="pharmacy">💊 Pharmacy</button>
-    </div>
-
-    <!-- Tab bar: Saved / Nearby / Trips -->
-    <div class="maps-tabs" id="mapsTabs">
-      <button class="maps-tab active" data-tab="saved">📍 Saved</button>
-      <button class="maps-tab" data-tab="nearby">🔍 Nearby</button>
-      <button class="maps-tab" data-tab="trips">🧳 Trips</button>
-    </div>
-
-    <div class="maps-card-body" id="mapsCardBody"></div>
-  </div>
-
-  <!-- ══════════ ETA CARD (separate, bottom-left, shown only while navigating) ══════════ -->
-  <div class="maps-eta-card" id="mapsEtaCard">
-    <div class="maps-eta-duration" id="mapsEtaDuration">--</div>
-    <div class="maps-eta-arrival" id="mapsEtaArrival">--</div>
-  </div>
-
-  <!-- ══════════ MAP LAYER SWITCHER (bottom-left) ══════════ -->
-  <div class="maps-layer-switcher" id="mapsLayerSwitcher">
-    <button class="maps-layer-btn active" data-style="standard" title="Standard">🗺️</button>
-    <button class="maps-layer-btn" data-style="dark" title="Dark">🌑</button>
-    <button class="maps-layer-btn" data-style="satellite" title="Satellite">🛰️</button>
-    <button class="maps-layer-btn" data-style="terrain" title="Terrain">⛰️</button>
-  </div>
-
-  <!-- ══════════ FLOATING ACTION BUTTONS (bottom-right) ══════════ -->
-  <div class="maps-fab-stack" id="mapsFabStack">
-    <button class="maps-fab" id="mapsZoomInBtn" title="Zoom in" aria-label="Zoom in">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-    </button>
-    <button class="maps-fab" id="mapsZoomOutBtn" title="Zoom out" aria-label="Zoom out">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg>
-    </button>
-    <button class="maps-fab" id="mapsLocateBtn" title="My location" aria-label="My location">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-    </button>
-    <button class="maps-fab" id="mapsMeasureBtn" title="Measure distance (M)" aria-label="Measure distance">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M2 12l4-4M2 12l4 4M22 12l-4-4M22 12l-4 4"/></svg>
-    </button>
-    <button class="maps-fab" id="mapsFullscreenBtn" title="Fullscreen (F)" aria-label="Fullscreen">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-    </button>
-  </div>
-
-  <!-- ══════════ MEASURE READOUT (center-bottom, shown while measuring) ══════════ -->
-  <div class="maps-measure-readout" id="mapsMeasureReadout" style="display:none;">
-    <span id="mapsMeasureText">Click points on the map to measure. Double-click to finish.</span>
-    <button class="maps-btn-text" id="mapsMeasureClear">Clear</button>
-    <button class="maps-btn-text" id="mapsMeasureDone">Done</button>
-  </div>
-
-  <!-- ══════════ COMPARE OVERLAY ══════════ -->
-  <div class="maps-modal-overlay" id="mapsCompareOverlay">
-    <div class="maps-modal">
-      <h3>Compare distance</h3>
-      <select class="maps-modal-select" id="mapsCompareSelect"></select>
-      <div class="maps-compare-result" id="mapsCompareResult"></div>
-      <div class="maps-modal-actions">
-        <button class="maps-btn-outline" id="mapsCompareCancel">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Save modal -->
-  <div class="maps-modal-overlay" id="mapsModalOverlay">
-    <div class="maps-modal">
-      <h3>Save this location</h3>
-      <input id="mapsModalLabel" type="text" placeholder="Label (e.g. Mom's house)" />
-      <textarea id="mapsModalNote" rows="2" placeholder="Note (optional)"></textarea>
-      <div class="maps-cat-row" id="mapsModalCatRow"></div>
-      <div class="maps-modal-actions">
-        <button class="maps-btn-outline" id="mapsModalCancel">Cancel</button>
-        <button class="maps-btn" id="mapsModalSave">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <audio id="clickSound" src="../click-sound.mp3" preload="auto"></audio>
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-  <script src="/assets/js/360Maps.js"></script>
-
-  <!-- ── Incident reporting layer ── -->
-  <button id="incidentBtn" title="Report a road incident" style="position:fixed;bottom:100px;right:20px;z-index:1000;width:44px;height:44px;border-radius:50%;border:none;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;font-size:18px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-  </button>
-
-  <div id="incidentModal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center;">
-    <div style="background:#0f172a;border:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;padding:24px;width:min(480px,100vw);box-sizing:border-box;display:flex;flex-direction:column;gap:14px;">
-      <div style="font-weight:800;font-size:16px;color:#f1f5f9;">Report an incident</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="incidentTypeGrid">
-        <button class="inc-type-btn" data-type="speed_trap" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
-          <div style="font-size:20px;margin-bottom:4px;">📸</div>Speed trap
+<button class="inc-type-btn" data-type="road_closed" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
+<div style="font-size:20px;margin-bottom:4px;">🚧</div>Road closed
         </button>
-        <button class="inc-type-btn" data-type="accident" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
-          <div style="font-size:20px;margin-bottom:4px;">💥</div>Accident
+<button class="inc-type-btn" data-type="hazard" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
+<div style="font-size:20px;margin-bottom:4px;">⚠️</div>Hazard
         </button>
-        <button class="inc-type-btn" data-type="road_closed" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
-          <div style="font-size:20px;margin-bottom:4px;">🚧</div>Road closed
+<button class="inc-type-btn" data-type="police" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
+<div style="font-size:20px;margin-bottom:4px;">🚔</div>Police
         </button>
-        <button class="inc-type-btn" data-type="hazard" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
-          <div style="font-size:20px;margin-bottom:4px;">⚠️</div>Hazard
+<button class="inc-type-btn" data-type="traffic" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
+<div style="font-size:20px;margin-bottom:4px;">🚦</div>Heavy traffic
         </button>
-        <button class="inc-type-btn" data-type="police" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
-          <div style="font-size:20px;margin-bottom:4px;">🚔</div>Police
-        </button>
-        <button class="inc-type-btn" data-type="traffic" style="padding:12px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;">
-          <div style="font-size:20px;margin-bottom:4px;">🚦</div>Heavy traffic
-        </button>
-      </div>
-      <button onclick="document.getElementById('incidentModal').style.display='none'" style="padding:10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:none;color:#94a3b8;cursor:pointer;font-family:inherit;">Cancel</button>
-    </div>
-  </div>
-
-  <script>
+</div>
+<button onclick="document.getElementById('incidentModal').style.display='none'" style="padding:10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:none;color:#94a3b8;cursor:pointer;font-family:inherit;">Cancel</button>
+</div>
+</div>
+<script>
   (function initIncidents() {
     const sb = supabase.createClient(
       'https://wiswfpfsjiowtrdyqpxy.supabase.co',

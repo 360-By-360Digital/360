@@ -1,29 +1,29 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
   gtag('config', 'G-89NN1P6CEV');
 </script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 — News</title>
-  <link rel="icon" type="image/png" href="../favicon-32x32.png" />
-  <link rel="manifest" href="../manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 News — News &amp; Headlines</title>
+<link href="../favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="../manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&amp;family=DM+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     :root {
       --news-bg: radial-gradient(circle at top left, rgba(59,130,246,.16), transparent 34%), radial-gradient(circle at 80% 0%, rgba(139,92,246,.14), transparent 30%);
       --news-surface: rgba(255,255,255,.72);
@@ -132,166 +132,151 @@
     .news-modal-btn-cancel { padding: 10px 18px; border-radius: 999px; border: 1px solid var(--news-border); background: none; color: var(--news-muted); cursor: pointer; font-family: inherit; }
     @media (max-width: 600px) { .news-page { padding-inline:14px; } .news-grid { grid-template-columns:1fr; } .news-grid.compact .news-card { grid-template-columns:112px 1fr; } .news-card-desc { display:none; } }
   </style>
-  <script src="assets/js/octicons.js"></script>
-</head>
+<script src="assets/js/octicons.js"></script>
+<meta content="Browse news and headlines through 360 News." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 News — News &amp; Headlines" property="og:title"/><meta content="Browse news and headlines through 360 News." property="og:description"/><meta content="https://360-search.com/news.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 News — News &amp; Headlines" name="twitter:title"/><meta content="Browse news and headlines through 360 News." name="twitter:description"/><link href="https://360-search.com/news.html" rel="canonical"/></head>
 <body>
-
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <div class="auth-top-right">
-    <button id="signInBtn"  class="auth-btn">Sign In</button>
-    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-  <button class="sidebar-toggle" id="sidebarToggle"><span data-octicon="three-bars"></span> Menu</button>
-
-  <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
-
-  <div class="overlay" id="overlay"></div>
-
-  <div class="settings-panel" id="settingsPanel">
-    <h3>Appearance</h3>
-    <div class="settings-label">Theme</div>
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-    </div>
-    <div class="settings-label" style="margin-top:20px;">Mode</div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:14px;">Dark mode</span>
-      <input type="checkbox" id="darkToggle" />
-    </label>
-    <h3 style="margin-top:20px;">Cursor</h3>
-    <div class="settings-label">Style</div>
-    <div class="cursor-options">
-      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-    </div>
-    <div class="cursor-color-row">
-      <label>Cursor color</label>
-      <input type="color" id="cursorColorPicker" value="#3b82f6" />
-      <button id="cursorColorReset">Reset</button>
-    </div>
-  </div>
-
-  <div id="auth-popup" class="auth-popup hidden">
-    <div class="auth-box">
-      <h2>Account</h2>
-      <input id="auth-email" type="email" placeholder="Email" />
-      <input id="auth-password" type="password" placeholder="Password" />
-      <button id="auth-login-btn">Log In</button>
-      <button id="auth-signup-btn">Sign Up</button>
-      <button id="github-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        <span>Sign in with GitHub</span>
-      </button>
-      <button id="google-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        <span>Sign in with Google</span>
-      </button>
-      <p id="auth-error" class="auth-error"></p>
-      <button id="auth-close-btn" class="close-btn">Close</button>
-    </div>
-  </div>
-
-  <!-- ══════════════ PAGE ══════════════ -->
-  <div class="news-page">
-    <div class="news-shell">
-      <div class="news-header">
-        <div class="news-header-left">
-          <div class="eyebrow"><span class="pulse-dot"></span>Live briefing</div>
-          <h2>360 News <span id="api-badge"><span class="dot"></span><span id="api-label">Loading</span></span></h2>
-          <p id="news-timestamp">Fast, visual, multi-source headlines with smart fallback loading, local caching, search, and a quick briefing that beats opening one single news site.</p>
-        </div>
-        <div class="news-actions">
-          <button class="utility-btn" id="saveDigestBtn" type="button">Save digest</button>
-          <button class="refresh-btn" id="refreshBtn" type="button" onclick="loadNews({ force: true })">
-            <span class="icon">↻</span> Refresh
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<button class="sidebar-toggle" id="sidebarToggle"><span data-octicon="three-bars"></span> Menu</button>
+<aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
+<div class="overlay" id="overlay"></div>
+<div class="settings-panel" id="settingsPanel">
+<h3>Appearance</h3>
+<div class="settings-label">Theme</div>
+<div class="theme-swatches">
+<div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+<div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+<div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+<div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+</div>
+<div class="settings-label" style="margin-top:20px;">Mode</div>
+<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+<span style="font-size:14px;">Dark mode</span>
+<input id="darkToggle" type="checkbox"/>
+</label>
+<h3 style="margin-top:20px;">Cursor</h3>
+<div class="settings-label">Style</div>
+<div class="cursor-options">
+<div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+<div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+<div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+<div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+<div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+<div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+</div>
+<div class="cursor-color-row">
+<label>Cursor color</label>
+<input id="cursorColorPicker" type="color" value="#3b82f6"/>
+<button id="cursorColorReset">Reset</button>
+</div>
+</div>
+<div class="auth-popup hidden" id="auth-popup">
+<div class="auth-box">
+<h2>Account</h2>
+<input id="auth-email" placeholder="Email" type="email"/>
+<input id="auth-password" placeholder="Password" type="password"/>
+<button id="auth-login-btn">Log In</button>
+<button id="auth-signup-btn">Sign Up</button>
+<button class="oauth-btn" id="github-login">
+<svg fill="currentColor" height="18" viewbox="0 0 24 24" width="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"></path></svg>
+<span>Sign in with GitHub</span>
+</button>
+<button class="oauth-btn" id="google-login">
+<svg height="18" viewbox="0 0 24 24" width="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path></svg>
+<span>Sign in with Google</span>
+</button>
+<p class="auth-error" id="auth-error"></p>
+<button class="close-btn" id="auth-close-btn">Close</button>
+</div>
+</div>
+<!-- ══════════════ PAGE ══════════════ -->
+<div class="news-page">
+<div class="news-shell">
+<div class="news-header">
+<div class="news-header-left">
+<div class="eyebrow"><span class="pulse-dot"></span>Live briefing</div>
+<h2>360 News <span id="api-badge"><span class="dot"></span><span id="api-label">Loading</span></span></h2>
+<p id="news-timestamp">Fast, visual, multi-source headlines with smart fallback loading, local caching, search, and a quick briefing that beats opening one single news site.</p>
+</div>
+<div class="news-actions">
+<button class="utility-btn" id="saveDigestBtn" type="button">Save digest</button>
+<button class="refresh-btn" id="refreshBtn" onclick="loadNews({ force: true })" type="button">
+<span class="icon">↻</span> Refresh
           </button>
-        </div>
-      </div>
-
-      <div class="control-deck">
-        <div class="news-search">
-          <span class="search-icon"><span data-octicon="search"></span></span>
-          <input type="text" id="news-search-input" placeholder="Search loaded headlines, sources, summaries..." oninput="filterNews()" />
-        </div>
-        <div class="density-toggle" aria-label="News view density">
-          <button type="button" class="active" data-density="cards">Cards</button>
-          <button type="button" data-density="compact">Compact</button>
-        </div>
-      </div>
-
-      <!-- Category pills -->
-      <div class="news-cats" aria-label="News categories">
-        <button class="news-cat active" data-primary="https://feeds.bbci.co.uk/news/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" data-label="Top Stories" data-icon="newspaper" onclick="switchCat(this)"><span data-octicon="newspaper"></span> Top Stories</button>
-        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/technology/rss.xml" data-backup="https://techcrunch.com/feed/" data-label="Tech" data-icon="device-desktop" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Tech</button>
-        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/science_and_environment/rss.xml" data-backup="https://www.nasa.gov/rss/dyn/breaking_news.rss" data-label="Science" data-icon="search" onclick="switchCat(this)"><span data-octicon="search"></span> Science</button>
-        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/business/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/Business.xml" data-label="Business" data-icon="graph" onclick="switchCat(this)"><span data-octicon="graph"></span> Business</button>
-        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/Arts.xml" data-label="Entertainment" data-icon="device-desktop" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Entertainment</button>
-        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/sport/rss.xml" data-backup="https://www.espn.com/espn/rss/news" data-label="Sports" data-icon="device-desktop" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Sports</button>
-        <button class="news-cat" data-primary="https://feeds.bbci.co.uk/news/world/rss.xml" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/World.xml" data-label="World" data-icon="globe" onclick="switchCat(this)"><span data-octicon="globe"></span> World</button>
-        <button class="news-cat" data-primary="https://www.theverge.com/rss/index.xml" data-backup="https://www.wired.com/feed/rss" data-label="Future" data-icon="device-desktop" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Future</button>
-        <button class="news-cat" id="savedTab" data-label="Saved" data-icon="bookmark" onclick="showSaved()"><span data-octicon="bookmark"></span> Saved</button>
-        <button class="news-cat" id="rssTab" onclick="showRssModal()"><span data-octicon="rss"></span> Add RSS</button>
-      </div>
-
-      <div class="news-modal-backdrop" id="rssModal">
-        <div class="news-modal">
-          <div class="news-modal-title">Add RSS Feed</div>
-          <input id="rssInput" class="news-modal-input" type="url" placeholder="https://example.com/feed.xml" />
-          <div class="news-modal-list" id="rssCustomList"></div>
-          <div class="news-modal-actions">
-            <button class="news-modal-btn-primary" onclick="addRssFeed()">Add Feed</button>
-            <button class="news-modal-btn-cancel" onclick="document.getElementById('rssModal').classList.remove('open')">Cancel</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="insight-bar" id="insightBar">
-        <div class="insight-card"><div class="insight-label">Stories</div><div class="insight-value" id="storyCount">—</div></div>
-        <div class="insight-card"><div class="insight-label">Freshest</div><div class="insight-value" id="freshestStory">—</div></div>
-        <div class="insight-card"><div class="insight-label">Source</div><div class="insight-value" id="sourceMix">—</div></div>
-        <div class="insight-card"><div class="insight-label">Saved</div><div class="insight-value" id="savedState">Not saved</div></div>
-      </div>
-
-      <div class="top-layout">
-        <a class="news-hero" id="news-hero" target="_blank" rel="noopener noreferrer"></a>
-        <aside class="briefing-panel">
-          <h3><span data-octicon="zap"></span> 360 Briefing</h3>
-          <div class="briefing-list" id="briefingList">
-            <div class="news-status"><div class="spinner"></div>Building briefing…</div>
-          </div>
-        </aside>
-      </div>
-
-      <div class="news-grid" id="news-grid">
-        <div class="news-status"><div class="spinner"></div>Loading news…</div>
-      </div>
-    </div>
-  </div>
-  <div class="toast" id="newsToast" role="status" aria-live="polite"></div>
-
-  <audio id="clickSound" src="../click-sound.mp3" preload="auto"></audio>
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-
-  <script>
+</div>
+</div>
+<div class="control-deck">
+<div class="news-search">
+<span class="search-icon"><span data-octicon="search"></span></span>
+<input id="news-search-input" oninput="filterNews()" placeholder="Search loaded headlines, sources, summaries..." type="text"/>
+</div>
+<div aria-label="News view density" class="density-toggle">
+<button class="active" data-density="cards" type="button">Cards</button>
+<button data-density="compact" type="button">Compact</button>
+</div>
+</div>
+<!-- Category pills -->
+<div aria-label="News categories" class="news-cats">
+<button class="news-cat active" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" data-icon="newspaper" data-label="Top Stories" data-primary="https://feeds.bbci.co.uk/news/rss.xml" onclick="switchCat(this)"><span data-octicon="newspaper"></span> Top Stories</button>
+<button class="news-cat" data-backup="https://techcrunch.com/feed/" data-icon="device-desktop" data-label="Tech" data-primary="https://feeds.bbci.co.uk/news/technology/rss.xml" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Tech</button>
+<button class="news-cat" data-backup="https://www.nasa.gov/rss/dyn/breaking_news.rss" data-icon="search" data-label="Science" data-primary="https://feeds.bbci.co.uk/news/science_and_environment/rss.xml" onclick="switchCat(this)"><span data-octicon="search"></span> Science</button>
+<button class="news-cat" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/Business.xml" data-icon="graph" data-label="Business" data-primary="https://feeds.bbci.co.uk/news/business/rss.xml" onclick="switchCat(this)"><span data-octicon="graph"></span> Business</button>
+<button class="news-cat" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/Arts.xml" data-icon="device-desktop" data-label="Entertainment" data-primary="https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Entertainment</button>
+<button class="news-cat" data-backup="https://www.espn.com/espn/rss/news" data-icon="device-desktop" data-label="Sports" data-primary="https://feeds.bbci.co.uk/sport/rss.xml" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Sports</button>
+<button class="news-cat" data-backup="https://rss.nytimes.com/services/xml/rss/nyt/World.xml" data-icon="globe" data-label="World" data-primary="https://feeds.bbci.co.uk/news/world/rss.xml" onclick="switchCat(this)"><span data-octicon="globe"></span> World</button>
+<button class="news-cat" data-backup="https://www.wired.com/feed/rss" data-icon="device-desktop" data-label="Future" data-primary="https://www.theverge.com/rss/index.xml" onclick="switchCat(this)"><span data-octicon="device-desktop"></span> Future</button>
+<button class="news-cat" data-icon="bookmark" data-label="Saved" id="savedTab" onclick="showSaved()"><span data-octicon="bookmark"></span> Saved</button>
+<button class="news-cat" id="rssTab" onclick="showRssModal()"><span data-octicon="rss"></span> Add RSS</button>
+</div>
+<div class="news-modal-backdrop" id="rssModal">
+<div class="news-modal">
+<div class="news-modal-title">Add RSS Feed</div>
+<input class="news-modal-input" id="rssInput" placeholder="https://example.com/feed.xml" type="url"/>
+<div class="news-modal-list" id="rssCustomList"></div>
+<div class="news-modal-actions">
+<button class="news-modal-btn-primary" onclick="addRssFeed()">Add Feed</button>
+<button class="news-modal-btn-cancel" onclick="document.getElementById('rssModal').classList.remove('open')">Cancel</button>
+</div>
+</div>
+</div>
+<div class="insight-bar" id="insightBar">
+<div class="insight-card"><div class="insight-label">Stories</div><div class="insight-value" id="storyCount">—</div></div>
+<div class="insight-card"><div class="insight-label">Freshest</div><div class="insight-value" id="freshestStory">—</div></div>
+<div class="insight-card"><div class="insight-label">Source</div><div class="insight-value" id="sourceMix">—</div></div>
+<div class="insight-card"><div class="insight-label">Saved</div><div class="insight-value" id="savedState">Not saved</div></div>
+</div>
+<div class="top-layout">
+<a class="news-hero" id="news-hero" rel="noopener noreferrer" target="_blank"></a>
+<aside class="briefing-panel">
+<h3><span data-octicon="zap"></span> 360 Briefing</h3>
+<div class="briefing-list" id="briefingList">
+<div class="news-status"><div class="spinner"></div>Building briefing…</div>
+</div>
+</aside>
+</div>
+<div class="news-grid" id="news-grid">
+<div class="news-status"><div class="spinner"></div>Loading news…</div>
+</div>
+</div>
+</div>
+<div aria-live="polite" class="toast" id="newsToast" role="status"></div>
+<audio id="clickSound" preload="auto" src="../click-sound.mp3"></audio>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script>
   // ─── CONFIG ───────────────────────────────────────────────────────────────
   const PROXIES = [
     url => `https://api.rss2json.com/v1/api.json?count=35&rss_url=${encodeURIComponent(url)}`,

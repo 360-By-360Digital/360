@@ -1,19 +1,20 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 — Games</title>
-  <link rel="icon" type="image/png" href="../favicon-32x32.png" />
-  <link rel="manifest" href="../manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 — Games</title>
+<link href="../favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="../manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     .blockblast-container { padding: 20px; max-width: 640px; margin: auto; text-align: center; }
     .bb-top-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:10px; }
     .bb-top-bar h1 { font-size:22px; margin:0; }
@@ -53,130 +54,121 @@
     .bb-gameover-box p { opacity:.75; margin:4px 0 18px; }
     .bb-gameover-box button { padding:8px 20px; border-radius:8px; border:none; background:linear-gradient(110deg,var(--a),var(--a2)); color:#050816; font-weight:700; cursor:pointer; }
   </style>
-</head>
+<meta content="Play Block Blast on 360. Explore this free browser game and discover more games on 360." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 — Games" property="og:title"/><meta content="Play Block Blast on 360. Explore this free browser game and discover more games on 360." property="og:description"/><meta content="https://360-search.com/games/BlockBlast.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 — Games" name="twitter:title"/><meta content="Play Block Blast on 360. Explore this free browser game and discover more games on 360." name="twitter:description"/><link href="https://360-search.com/games/BlockBlast.html" rel="canonical"/></head>
 <body>
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <div class="auth-top-right">
-    <button id="signInBtn" class="auth-btn">Sign In</button>
-    <button id="signUpBtn" class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
-
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <div class="logo-mark"></div>
-      <button id="settingsBtn">⚙</button>
-    </div>
-    <nav class="nav-list">
-      <div class="nav-item" data-href="../">Home</div>
-      <div class="nav-item" data-href="../ai">AI</div>
-      <div class="nav-item" data-href="../weather">Weather</div>
-      <div class="nav-item" data-href="../translator">Translator</div>
-      <div class="nav-item" data-href="../stocks">Stocks</div>
-      <div class="nav-item" data-href="../url-shortener">URL Shortener</div>
-      <div class="nav-item" data-href="../chat">Chat</div>
-      <div class="nav-item" data-href="../news">News</div>
-      <div class="nav-item" data-href="../apps">Apps</div>
-      <div class="nav-item active" data-href="../games">Games</div>
-      <div class="nav-item" data-href="../rewards">Rewards</div>
-    </nav>
-    <div class="sidebar-footer">© 2026 360 INC. · V.2.0.3</div>
-  </aside>
-
-  <div class="overlay" id="overlay"></div>
-
-  <div class="settings-panel" id="settingsPanel">
-    <h3>Appearance</h3>
-    <div class="settings-label">Theme</div>
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-    </div>
-    <div class="settings-label" style="margin-top:20px;">Mode</div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:14px;">Dark mode</span>
-      <input type="checkbox" id="darkToggle" />
-    </label>
-    <h3 style="margin-top:20px;">Cursor</h3>
-    <div class="settings-label">Style</div>
-    <div class="cursor-options">
-      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-    </div>
-    <div class="cursor-color-row">
-      <label>Cursor color</label>
-      <input type="color" id="cursorColorPicker" value="#3b82f6" />
-      <button id="cursorColorReset">Reset</button>
-    </div>
-  </div>
-
-  <div id="auth-popup" class="auth-popup hidden">
-    <div class="auth-box">
-      <h2>Account</h2>
-      <input id="auth-email" type="email" placeholder="Email" />
-      <input id="auth-password" type="password" placeholder="Password" />
-      <button id="auth-login-btn">Log In</button>
-      <button id="auth-signup-btn">Sign Up</button>
-      <button id="github-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        <span>Sign in with GitHub</span>
-      </button>
-      <button id="google-login" class="oauth-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        <span>Sign in with Google</span>
-      </button>
-      <p id="auth-error" class="auth-error"></p>
-      <button id="auth-close-btn" class="close-btn">Close</button>
-    </div>
-  </div>
-
-  <div class="games-page">
-    <div class="blockblast-container">
-      <div class="bb-top-bar">
-        <h1>Block Blast</h1>
-        <div class="bb-top-actions">
-          <button id="bbFinish">🏁 Finish</button>
-          <button id="bbRestart">🔄 Restart</button>
-          <button id="bbRewardsLink">🎁 Rewards</button>
-        </div>
-      </div>
-      <div class="bb-stats">
-        <div class="bb-stat"><div class="bb-stat-label">Score</div><div class="bb-stat-value" id="bbScore">0</div></div>
-        <div class="bb-stat"><div class="bb-stat-label">Best</div><div class="bb-stat-value" id="bbBest">0</div></div>
-        <div class="bb-stat"><div class="bb-stat-label">Combo</div><div class="bb-stat-value" id="bbCombo">0</div></div>
-        <div class="bb-stat"><div class="bb-stat-label">Pending Pts</div><div class="bb-stat-value" id="bbPending">0</div></div>
-        <div class="bb-stat"><div class="bb-stat-label">Rewards Bal.</div><div class="bb-stat-value" id="bbBalance">—</div></div>
-      </div>
-      <div class="bb-status" id="bbStatus">Drag a piece onto the grid. Fill a row or column to blast it!</div>
-      <div class="bb-board-wrap"><div id="bbBoard"></div></div>
-      <div class="bb-tray" id="bbTray"></div>
-    </div>
-  </div>
-
-  <div class="bb-gameover" id="bbGameOver">
-    <div class="bb-gameover-box">
-      <h2 id="bbGameOverTitle">Game Over</h2>
-      <p id="bbFinalScore">Score: 0</p>
-      <p id="bbBankedNote" style="font-size:13px;"></p>
-      <button id="bbPlayAgain">Play Again</button>
-    </div>
-  </div>
-
-  <script>
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<div class="logo-mark"></div>
+<button id="settingsBtn">⚙</button>
+</div>
+<nav class="nav-list">
+<div class="nav-item" data-href="../">Home</div>
+<div class="nav-item" data-href="../ai">AI</div>
+<div class="nav-item" data-href="../weather">Weather</div>
+<div class="nav-item" data-href="../translator">Translator</div>
+<div class="nav-item" data-href="../stocks">Stocks</div>
+<div class="nav-item" data-href="../url-shortener">URL Shortener</div>
+<div class="nav-item" data-href="../chat">Chat</div>
+<div class="nav-item" data-href="../news">News</div>
+<div class="nav-item" data-href="../apps">Apps</div>
+<div class="nav-item active" data-href="../games">Games</div>
+<div class="nav-item" data-href="../rewards">Rewards</div>
+</nav>
+<div class="sidebar-footer">© 2026 360 INC. · V.2.0.3</div>
+</aside>
+<div class="overlay" id="overlay"></div>
+<div class="settings-panel" id="settingsPanel">
+<h3>Appearance</h3>
+<div class="settings-label">Theme</div>
+<div class="theme-swatches">
+<div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+<div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+<div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+<div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+</div>
+<div class="settings-label" style="margin-top:20px;">Mode</div>
+<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+<span style="font-size:14px;">Dark mode</span>
+<input id="darkToggle" type="checkbox"/>
+</label>
+<h3 style="margin-top:20px;">Cursor</h3>
+<div class="settings-label">Style</div>
+<div class="cursor-options">
+<div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+<div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+<div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+<div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+<div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+<div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+</div>
+<div class="cursor-color-row">
+<label>Cursor color</label>
+<input id="cursorColorPicker" type="color" value="#3b82f6"/>
+<button id="cursorColorReset">Reset</button>
+</div>
+</div>
+<div class="auth-popup hidden" id="auth-popup">
+<div class="auth-box">
+<h2>Account</h2>
+<input id="auth-email" placeholder="Email" type="email"/>
+<input id="auth-password" placeholder="Password" type="password"/>
+<button id="auth-login-btn">Log In</button>
+<button id="auth-signup-btn">Sign Up</button>
+<button class="oauth-btn" id="github-login">
+<svg aria-hidden="true" fill="currentColor" height="18" viewbox="0 0 24 24" width="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"></path></svg>
+<span>Sign in with GitHub</span>
+</button>
+<button class="oauth-btn" id="google-login">
+<svg aria-hidden="true" height="18" viewbox="0 0 24 24" width="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path></svg>
+<span>Sign in with Google</span>
+</button>
+<p class="auth-error" id="auth-error"></p>
+<button class="close-btn" id="auth-close-btn">Close</button>
+</div>
+</div>
+<div class="games-page">
+<div class="blockblast-container">
+<div class="bb-top-bar">
+<h1>Block Blast</h1>
+<div class="bb-top-actions">
+<button id="bbFinish">🏁 Finish</button>
+<button id="bbRestart">🔄 Restart</button>
+<button id="bbRewardsLink">🎁 Rewards</button>
+</div>
+</div>
+<div class="bb-stats">
+<div class="bb-stat"><div class="bb-stat-label">Score</div><div class="bb-stat-value" id="bbScore">0</div></div>
+<div class="bb-stat"><div class="bb-stat-label">Best</div><div class="bb-stat-value" id="bbBest">0</div></div>
+<div class="bb-stat"><div class="bb-stat-label">Combo</div><div class="bb-stat-value" id="bbCombo">0</div></div>
+<div class="bb-stat"><div class="bb-stat-label">Pending Pts</div><div class="bb-stat-value" id="bbPending">0</div></div>
+<div class="bb-stat"><div class="bb-stat-label">Rewards Bal.</div><div class="bb-stat-value" id="bbBalance">—</div></div>
+</div>
+<div class="bb-status" id="bbStatus">Drag a piece onto the grid. Fill a row or column to blast it!</div>
+<div class="bb-board-wrap"><div id="bbBoard"></div></div>
+<div class="bb-tray" id="bbTray"></div>
+</div>
+</div>
+<div class="bb-gameover" id="bbGameOver">
+<div class="bb-gameover-box">
+<h2 id="bbGameOverTitle">Game Over</h2>
+<p id="bbFinalScore">Score: 0</p>
+<p id="bbBankedNote" style="font-size:13px;"></p>
+<button id="bbPlayAgain">Play Again</button>
+</div>
+</div>
+<script>
   (function () {
     "use strict";
 
@@ -879,11 +871,10 @@
     startGame();
   })();
   </script>
-
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
 </body>
 </html>

@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>CQB SIM v5</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
@@ -227,193 +228,186 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--border2);}
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta content="Play CQB SIM v5 on 360. Explore this free browser game and discover more games on 360." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="CQB SIM v5" property="og:title"/><meta content="Play CQB SIM v5 on 360. Explore this free browser game and discover more games on 360." property="og:description"/><meta content="https://360-search.com/games/CQBSIM.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="CQB SIM v5" name="twitter:title"/><meta content="Play CQB SIM v5 on 360. Explore this free browser game and discover more games on 360." name="twitter:description"/><link href="https://360-search.com/games/CQBSIM.html" rel="canonical"/></head>
 <body>
 <div id="scanlines"></div>
 <div id="vignette"></div>
 <div id="cursor"><div class="c-ring"></div><div class="c-dot"></div><div class="c-h l"></div><div class="c-h r"></div><div class="c-v u"></div><div class="c-v d"></div></div>
-
 <!-- MENU -->
-<div id="screen-menu" class="screen active">
-  <div class="menu-bg"></div>
-  <div class="menu-content">
-    <div class="menu-title">CQB<span class="r">.</span>SIM</div>
-    <div class="menu-sub">CLOSE QUARTERS BATTLE SIMULATOR // v5.0</div>
-    <div class="menu-line"></div>
-    <div class="menu-rank" id="menu-rank-display">
-      <div class="menu-rank-badge" id="menu-rank-badge">RECRUIT</div>
-      <div class="menu-rank-info">
-        <div class="menu-rank-name" id="menu-rank-name">RECRUIT</div>
-        <div class="menu-rank-xp" id="menu-rank-xp">0 / 500 XP</div>
-        <div class="xp-bar-outer"><div class="xp-bar-inner" id="menu-xp-fill" style="width:0%"></div></div>
-      </div>
-    </div>
-    <div class="menu-btns">
-      <button class="btn primary" onclick="goTo('missions')">DEPLOY</button>
-      <button class="btn" onclick="startTutorial()">TRAINING</button>
-      <button class="btn" onclick="goTo('loadout')">ARMORY</button>
-      <button class="btn danger sm" onclick="resetProgress()" style="width:100%;text-align:center;font-size:11px;">RESET PROGRESS</button>
-    </div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);margin-top:24px;letter-spacing:3px;">OPERATOR CLEARANCE: ALPHA // CLASSIFIED</div>
-  </div>
+<div class="screen active" id="screen-menu">
+<div class="menu-bg"></div>
+<div class="menu-content">
+<div class="menu-title">CQB<span class="r">.</span>SIM</div>
+<div class="menu-sub">CLOSE QUARTERS BATTLE SIMULATOR // v5.0</div>
+<div class="menu-line"></div>
+<div class="menu-rank" id="menu-rank-display">
+<div class="menu-rank-badge" id="menu-rank-badge">RECRUIT</div>
+<div class="menu-rank-info">
+<div class="menu-rank-name" id="menu-rank-name">RECRUIT</div>
+<div class="menu-rank-xp" id="menu-rank-xp">0 / 500 XP</div>
+<div class="xp-bar-outer"><div class="xp-bar-inner" id="menu-xp-fill" style="width:0%"></div></div>
 </div>
-
+</div>
+<div class="menu-btns">
+<button class="btn primary" onclick="goTo('missions')">DEPLOY</button>
+<button class="btn" onclick="startTutorial()">TRAINING</button>
+<button class="btn" onclick="goTo('loadout')">ARMORY</button>
+<button class="btn danger sm" onclick="resetProgress()" style="width:100%;text-align:center;font-size:11px;">RESET PROGRESS</button>
+</div>
+<div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);margin-top:24px;letter-spacing:3px;">OPERATOR CLEARANCE: ALPHA // CLASSIFIED</div>
+</div>
+</div>
 <!-- MISSION SELECT -->
-<div id="screen-missions" class="screen">
-  <div class="topbar">
-    <div class="topbar-logo">CQB<span>.</span>SIM</div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:4px;">MISSION SELECT</div>
-    <div style="display:flex;gap:20px;align-items:center;">
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;"><span class="tag">RANK</span><span class="val" id="missions-rank-name" style="font-size:12px;">RECRUIT</span></div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;"><span class="tag">XP</span><span class="val" id="missions-rank-xp">0</span></div>
-    </div>
-  </div>
-  <div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;gap:16px;flex-shrink:0;">
-    <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;">TIER FILTER:</div>
-    <div style="display:flex;gap:6px;" id="tier-filter-btns"></div>
-    <div style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);" id="missions-progress"></div>
-  </div>
-  <div style="flex:1;overflow-y:auto;">
-    <div class="mission-grid" id="mission-grid"></div>
-  </div>
-  <div style="padding:14px 20px;border-top:1px solid var(--border);background:var(--bg2);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
-    <button class="btn" onclick="goTo('menu')">← BACK</button>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;" id="missions-footer-msg"></div>
-    <button class="btn primary" id="missions-deploy-btn" onclick="goToBriefingFromMissions()">BRIEFING →</button>
-  </div>
+<div class="screen" id="screen-missions">
+<div class="topbar">
+<div class="topbar-logo">CQB<span>.</span>SIM</div>
+<div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:4px;">MISSION SELECT</div>
+<div style="display:flex;gap:20px;align-items:center;">
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;"><span class="tag">RANK</span><span class="val" id="missions-rank-name" style="font-size:12px;">RECRUIT</span></div>
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;"><span class="tag">XP</span><span class="val" id="missions-rank-xp">0</span></div>
 </div>
-
+</div>
+<div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;gap:16px;flex-shrink:0;">
+<div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;">TIER FILTER:</div>
+<div id="tier-filter-btns" style="display:flex;gap:6px;"></div>
+<div id="missions-progress" style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);"></div>
+</div>
+<div style="flex:1;overflow-y:auto;">
+<div class="mission-grid" id="mission-grid"></div>
+</div>
+<div style="padding:14px 20px;border-top:1px solid var(--border);background:var(--bg2);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+<button class="btn" onclick="goTo('menu')">← BACK</button>
+<div id="missions-footer-msg" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;"></div>
+<button class="btn primary" id="missions-deploy-btn" onclick="goToBriefingFromMissions()">BRIEFING →</button>
+</div>
+</div>
 <!-- BRIEFING -->
-<div id="screen-briefing" class="screen">
-  <div class="topbar">
-    <div class="topbar-logo">CQB<span>.</span>SIM</div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:4px;">MISSION BRIEFING</div>
-    <div style="display:flex;gap:20px;">
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;"><span class="tag">MISSION</span><span class="val" id="brief-num">01</span></div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;"><span class="tag">THREAT</span><span class="val" id="brief-threat">MODERATE</span></div>
-    </div>
-  </div>
-  <div class="brief-grid">
-    <div class="brief-col">
-      <div class="bsec">
-        <div class="bsec-title">OPERATION</div>
-        <div style="font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;letter-spacing:3px;" id="brief-opname"></div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);margin-top:4px;" id="brief-opsub"></div>
-        <div style="display:flex;gap:5px;margin-top:10px;" id="brief-pips"></div>
-      </div>
-      <div class="bsec">
-        <div class="bsec-title">PRIMARY OBJECTIVES</div>
-        <ul style="list-style:none;display:flex;flex-direction:column;gap:7px;" id="brief-pri"></ul>
-      </div>
-      <div class="bsec" style="flex:1;">
-        <div class="bsec-title">SECONDARY OBJECTIVES</div>
-        <ul style="list-style:none;display:flex;flex-direction:column;gap:7px;" id="brief-sec"></ul>
-      </div>
-      <div class="bsec">
-        <div class="bsec-title">INTEL</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="brief-intel"></div>
-      </div>
-    </div>
-    <div class="brief-col">
-      <div class="bsec"><div class="bsec-title">STRUCTURE LAYOUT</div></div>
-      <div style="flex:1;background:var(--bg3);margin:12px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;padding:16px;" id="brief-map"></div>
-      <div class="bsec">
-        <div class="bsec-title">SITUATION REPORT</div>
-        <p style="font-size:12px;color:var(--text2);line-height:1.7;" id="brief-sitrep"></p>
-      </div>
-      <div class="bsec" style="background:rgba(212,168,67,.03);border-top:1px solid rgba(212,168,67,.15);">
-        <div class="bsec-title">CQB DOCTRINE</div>
-        <p style="font-size:11px;color:var(--text3);line-height:1.8;" id="brief-tip"></p>
-      </div>
-    </div>
-  </div>
-  <div class="brief-footer">
-    <button class="btn" onclick="goTo('missions')">← BACK</button>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:2px;" id="brief-xp-reward">+XP REWARD</div>
-    <button class="btn primary" onclick="goTo('loadout')">ARMORY →</button>
-  </div>
+<div class="screen" id="screen-briefing">
+<div class="topbar">
+<div class="topbar-logo">CQB<span>.</span>SIM</div>
+<div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:4px;">MISSION BRIEFING</div>
+<div style="display:flex;gap:20px;">
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;"><span class="tag">MISSION</span><span class="val" id="brief-num">01</span></div>
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;"><span class="tag">THREAT</span><span class="val" id="brief-threat">MODERATE</span></div>
 </div>
-
+</div>
+<div class="brief-grid">
+<div class="brief-col">
+<div class="bsec">
+<div class="bsec-title">OPERATION</div>
+<div id="brief-opname" style="font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;letter-spacing:3px;"></div>
+<div id="brief-opsub" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);margin-top:4px;"></div>
+<div id="brief-pips" style="display:flex;gap:5px;margin-top:10px;"></div>
+</div>
+<div class="bsec">
+<div class="bsec-title">PRIMARY OBJECTIVES</div>
+<ul id="brief-pri" style="list-style:none;display:flex;flex-direction:column;gap:7px;"></ul>
+</div>
+<div class="bsec" style="flex:1;">
+<div class="bsec-title">SECONDARY OBJECTIVES</div>
+<ul id="brief-sec" style="list-style:none;display:flex;flex-direction:column;gap:7px;"></ul>
+</div>
+<div class="bsec">
+<div class="bsec-title">INTEL</div>
+<div id="brief-intel" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+</div>
+</div>
+<div class="brief-col">
+<div class="bsec"><div class="bsec-title">STRUCTURE LAYOUT</div></div>
+<div id="brief-map" style="flex:1;background:var(--bg3);margin:12px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;padding:16px;"></div>
+<div class="bsec">
+<div class="bsec-title">SITUATION REPORT</div>
+<p id="brief-sitrep" style="font-size:12px;color:var(--text2);line-height:1.7;"></p>
+</div>
+<div class="bsec" style="background:rgba(212,168,67,.03);border-top:1px solid rgba(212,168,67,.15);">
+<div class="bsec-title">CQB DOCTRINE</div>
+<p id="brief-tip" style="font-size:11px;color:var(--text3);line-height:1.8;"></p>
+</div>
+</div>
+</div>
+<div class="brief-footer">
+<button class="btn" onclick="goTo('missions')">← BACK</button>
+<div id="brief-xp-reward" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:2px;">+XP REWARD</div>
+<button class="btn primary" onclick="goTo('loadout')">ARMORY →</button>
+</div>
+</div>
 <!-- LOADOUT -->
-<div id="screen-loadout" class="screen">
-  <div class="topbar">
-    <div class="topbar-logo">CQB<span>.</span>SIM</div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:4px;">ARMORY</div>
-    <div style="display:flex;gap:20px;">
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;"><span class="tag">CLASS</span><span class="val" id="top-class">—</span></div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;"><span class="tag">PRIMARY</span><span class="val" id="top-weapon">—</span></div>
-    </div>
-  </div>
-  <div class="loadout-grid">
-    <div class="lcol"><div class="lcol-hdr">CLASS</div><div id="class-list"></div></div>
-    <div class="lcol"><div class="lcol-hdr">WEAPONS</div><div id="weapon-list"></div></div>
-    <div class="lcol"><div class="lcol-hdr">ATTACHMENTS</div><div class="att-grid" id="att-list"></div></div>
-    <div class="lcol"><div class="lcol-hdr">PROFILE</div><div id="loadout-sum"></div></div>
-  </div>
-  <div class="loadout-footer">
-    <button class="btn" onclick="goTo('briefing')">← BACK</button>
-    <div id="loadout-warn" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;"></div>
-    <button class="btn primary disabled" id="deploy-btn" onclick="startGame()">DEPLOY →</button>
-  </div>
+<div class="screen" id="screen-loadout">
+<div class="topbar">
+<div class="topbar-logo">CQB<span>.</span>SIM</div>
+<div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:4px;">ARMORY</div>
+<div style="display:flex;gap:20px;">
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;"><span class="tag">CLASS</span><span class="val" id="top-class">—</span></div>
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;"><span class="tag">PRIMARY</span><span class="val" id="top-weapon">—</span></div>
 </div>
-
+</div>
+<div class="loadout-grid">
+<div class="lcol"><div class="lcol-hdr">CLASS</div><div id="class-list"></div></div>
+<div class="lcol"><div class="lcol-hdr">WEAPONS</div><div id="weapon-list"></div></div>
+<div class="lcol"><div class="lcol-hdr">ATTACHMENTS</div><div class="att-grid" id="att-list"></div></div>
+<div class="lcol"><div class="lcol-hdr">PROFILE</div><div id="loadout-sum"></div></div>
+</div>
+<div class="loadout-footer">
+<button class="btn" onclick="goTo('briefing')">← BACK</button>
+<div id="loadout-warn" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;"></div>
+<button class="btn primary disabled" id="deploy-btn" onclick="startGame()">DEPLOY →</button>
+</div>
+</div>
 <!-- GAME -->
-<div id="screen-game" class="screen">
-  <canvas id="game-canvas"></canvas>
-  <div id="hud">
-    <div class="hud-bar">
-      <div class="hud-grp"><div class="hud-lbl">HEALTH</div><div id="hp-bar-wrap"><div id="hp-bar-outer"><div id="hp-bar-inner"></div></div><div id="hp-num">100</div></div></div>
-      <div class="hud-sep"></div>
-      <div class="hud-grp"><div class="hud-lbl">AMMO</div><div id="ammo-display">30/30</div><div id="ammo-reserve">RES:90</div></div>
-      <div class="hud-sep"></div>
-      <div class="hud-grp"><div class="hud-lbl">STANCE</div><div class="hud-val" id="hud-stance" style="font-size:10px;color:var(--text3)">STAND</div></div>
-      <div class="hud-sep"></div>
-      <div class="hud-grp"><div class="hud-lbl">MISSION</div><div class="hud-val" id="hud-mission">1</div></div>
-      <div class="hud-grp"><div class="hud-lbl">ROOM</div><div class="hud-val" id="hud-room">1/3</div></div>
-      <div class="hud-sep"></div>
-      <div class="hud-grp"><div class="hud-lbl">SCORE</div><div class="hud-val" id="hud-score">0</div></div>
-      <div class="hud-grp"><div class="hud-lbl">KILLS</div><div class="hud-val" id="hud-kills">0</div></div>
-      <div class="hud-sep"></div>
-      <div class="hud-grp"><div class="hud-lbl">CLASS</div><div class="hud-badge" id="hud-class">—</div></div>
-      <div class="hud-grp"><div class="hud-lbl">WEAPON</div><div class="hud-badge" id="hud-weapon">—</div></div>
-      <div class="hud-sep"></div>
-      <div class="hud-grp" id="xp-hud-wrap">
-        <div class="hud-lbl">RANK XP</div>
-        <div id="xp-hud-bar"><div id="xp-hud-fill"></div></div>
-        <div id="xp-hud-label">0 XP</div>
-      </div>
-      <div style="margin-left:auto;"></div>
-      <button class="btn danger sm" style="pointer-events:all;" onclick="goTo('menu')">ABORT</button>
-    </div>
-  </div>
-  <div id="flash-msg"></div>
-  <div id="tac-tip"></div>
-  <div id="ff-warn">⚠ FATAL FUNNEL</div>
-  <div id="xp-popup"></div>
-  <div id="rank-up-banner"></div>
-  <div id="kill-feed"></div>
-  <div id="reload-wrap"><span class="reload-lbl">RELOADING</span><div id="reload-track"><div id="reload-bar"></div></div></div>
-  <div id="room-label"></div>
-  <div id="tutorial-overlay">
-    <div class="tut-title">OPERATOR CONTROLS</div>
-    <div class="tut-keys" id="tut-keys-grid"></div>
-  </div>
+<div class="screen" id="screen-game">
+<canvas id="game-canvas"></canvas>
+<div id="hud">
+<div class="hud-bar">
+<div class="hud-grp"><div class="hud-lbl">HEALTH</div><div id="hp-bar-wrap"><div id="hp-bar-outer"><div id="hp-bar-inner"></div></div><div id="hp-num">100</div></div></div>
+<div class="hud-sep"></div>
+<div class="hud-grp"><div class="hud-lbl">AMMO</div><div id="ammo-display">30/30</div><div id="ammo-reserve">RES:90</div></div>
+<div class="hud-sep"></div>
+<div class="hud-grp"><div class="hud-lbl">STANCE</div><div class="hud-val" id="hud-stance" style="font-size:10px;color:var(--text3)">STAND</div></div>
+<div class="hud-sep"></div>
+<div class="hud-grp"><div class="hud-lbl">MISSION</div><div class="hud-val" id="hud-mission">1</div></div>
+<div class="hud-grp"><div class="hud-lbl">ROOM</div><div class="hud-val" id="hud-room">1/3</div></div>
+<div class="hud-sep"></div>
+<div class="hud-grp"><div class="hud-lbl">SCORE</div><div class="hud-val" id="hud-score">0</div></div>
+<div class="hud-grp"><div class="hud-lbl">KILLS</div><div class="hud-val" id="hud-kills">0</div></div>
+<div class="hud-sep"></div>
+<div class="hud-grp"><div class="hud-lbl">CLASS</div><div class="hud-badge" id="hud-class">—</div></div>
+<div class="hud-grp"><div class="hud-lbl">WEAPON</div><div class="hud-badge" id="hud-weapon">—</div></div>
+<div class="hud-sep"></div>
+<div class="hud-grp" id="xp-hud-wrap">
+<div class="hud-lbl">RANK XP</div>
+<div id="xp-hud-bar"><div id="xp-hud-fill"></div></div>
+<div id="xp-hud-label">0 XP</div>
 </div>
-
+<div style="margin-left:auto;"></div>
+<button class="btn danger sm" onclick="goTo('menu')" style="pointer-events:all;">ABORT</button>
+</div>
+</div>
+<div id="flash-msg"></div>
+<div id="tac-tip"></div>
+<div id="ff-warn">⚠ FATAL FUNNEL</div>
+<div id="xp-popup"></div>
+<div id="rank-up-banner"></div>
+<div id="kill-feed"></div>
+<div id="reload-wrap"><span class="reload-lbl">RELOADING</span><div id="reload-track"><div id="reload-bar"></div></div></div>
+<div id="room-label"></div>
+<div id="tutorial-overlay">
+<div class="tut-title">OPERATOR CONTROLS</div>
+<div class="tut-keys" id="tut-keys-grid"></div>
+</div>
+</div>
 <!-- DEBRIEF -->
-<div id="screen-debrief" class="screen">
-  <div class="db-panel">
-    <div class="db-hdr">
-      <div class="db-title" id="db-title">MISSION COMPLETE</div>
-      <div class="db-sub" id="db-sub">ALL OBJECTIVES CLEARED</div>
-    </div>
-    <div class="db-stats" id="db-stats"></div>
-    <div class="db-rankup" id="db-rankup" style="display:none;"></div>
-    <div class="db-btns" id="db-btns"></div>
-  </div>
+<div class="screen" id="screen-debrief">
+<div class="db-panel">
+<div class="db-hdr">
+<div class="db-title" id="db-title">MISSION COMPLETE</div>
+<div class="db-sub" id="db-sub">ALL OBJECTIVES CLEARED</div>
 </div>
-
+<div class="db-stats" id="db-stats"></div>
+<div class="db-rankup" id="db-rankup" style="display:none;"></div>
+<div class="db-btns" id="db-btns"></div>
+</div>
+</div>
 <script>
 // ══════════════════════════════════════════════════════════════════════════════
 // RANK SYSTEM
@@ -1484,6 +1478,6 @@ loadProgress();
 updateMenuRankDisplay();
 updateDeployBtn();
 </script>
-  <script src="assets/js/game-rewards.js"></script>
+<script src="assets/js/game-rewards.js"></script>
 </body>
 </html>

@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Nightfall RNG</title>
 <style>
 </style>
@@ -341,8 +342,8 @@ hr.sdiv{max-width:940px;margin:18px auto 16px;border:none;border-top:1px solid r
 .upgrade-select option{background:#0d0720}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,107,53,.28);border-radius:3px}
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head><body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta content="Play Nightfall RNG on 360. Explore this free browser game and discover more games on 360." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="Nightfall RNG" property="og:title"/><meta content="Play Nightfall RNG on 360. Explore this free browser game and discover more games on 360." property="og:description"/><meta content="https://360-search.com/games/NightfallRNG.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="Nightfall RNG" name="twitter:title"/><meta content="Play Nightfall RNG on 360. Explore this free browser game and discover more games on 360." name="twitter:description"/><link href="https://360-search.com/games/NightfallRNG.html" rel="canonical"/></head><body>
 <div class="sky" id="skyBg"></div>
 <div class="stars-layer" id="starsLayer"></div>
 <div class="horizon-glow"></div>
@@ -350,183 +351,168 @@ hr.sdiv{max-width:940px;margin:18px auto 16px;border:none;border-top:1px solid r
 <div class="nebula" style="width:280px;height:280px;top:16%;right:7%;background:rgba(255,107,53,.045);--nd:22s;animation-delay:-9s"></div>
 <div class="w-overlay" id="wOverlay"></div>
 <div class="toast-layer" id="toastLayer"></div>
-
 <div class="modal-overlay" id="modal">
-  <div class="modal-box">
-    <div class="modal-emoji" id="mEmoji"></div>
-    <div class="modal-title" id="mTitle"></div>
-    <div class="modal-body" id="mBody"></div>
-    <button class="modal-dismiss" onclick="closeModal()">Dismiss</button>
-  </div>
+<div class="modal-box">
+<div class="modal-emoji" id="mEmoji"></div>
+<div class="modal-title" id="mTitle"></div>
+<div class="modal-body" id="mBody"></div>
+<button class="modal-dismiss" onclick="closeModal()">Dismiss</button>
 </div>
-
+</div>
 <div class="pack-scene" id="packScene">
-  <div class="pack-wrap">
-    <div class="pack-body" id="packBody" onclick="clickPack()">
-      <div class="pack-bg" id="packBg"></div>
-      <div class="pack-shine"></div>
-      <div class="pack-hatch"></div>
-      <div class="pack-tear"></div>
-      <div class="pack-logo">
-        <span class="pack-logo-icon" id="pIcon">🌅</span>
-        <div class="pack-logo-set" id="pSet">NIGHTFALL SERIES</div>
-        <div class="pack-logo-name" id="pName">BOOSTER PACK</div>
-        <div class="pack-logo-sub" id="pSub">10 cards within</div>
-      </div>
-      <div class="pack-footer" id="pFooter">nightfall rng</div>
-    </div>
-    <div class="pack-hint" id="pHint">✦ click to open ✦</div>
-    <div class="pack-cost-lbl">Cost paid: 🌅 <span id="pCost">450</span></div>
-  </div>
+<div class="pack-wrap">
+<div class="pack-body" id="packBody" onclick="clickPack()">
+<div class="pack-bg" id="packBg"></div>
+<div class="pack-shine"></div>
+<div class="pack-hatch"></div>
+<div class="pack-tear"></div>
+<div class="pack-logo">
+<span class="pack-logo-icon" id="pIcon">🌅</span>
+<div class="pack-logo-set" id="pSet">NIGHTFALL SERIES</div>
+<div class="pack-logo-name" id="pName">BOOSTER PACK</div>
+<div class="pack-logo-sub" id="pSub">10 cards within</div>
 </div>
-
+<div class="pack-footer" id="pFooter">nightfall rng</div>
+</div>
+<div class="pack-hint" id="pHint">✦ click to open ✦</div>
+<div class="pack-cost-lbl">Cost paid: 🌅 <span id="pCost">450</span></div>
+</div>
+</div>
 <div class="reveal-scene" id="revealScene">
-  <div class="rev-title" id="revTitle">✦ Pack Opened ✦</div>
-  <div class="rev-set-label" id="revSetLabel"></div>
-  <div class="cards-spread" id="cardsSpread"></div>
-  <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:center">
-    <div class="rev-hint" id="revHint">↑ tap any card to flip ↑</div>
-    <button class="flip-all-btn" onclick="flipAll()">Reveal All</button>
-  </div>
-  <div class="rev-btns">
-    <button class="rev-btn" onclick="anotherPack()">✦ Open Another ✦</button>
-    <button class="rev-btn sec" onclick="closeReveal()">Back to Game</button>
-  </div>
+<div class="rev-title" id="revTitle">✦ Pack Opened ✦</div>
+<div class="rev-set-label" id="revSetLabel"></div>
+<div class="cards-spread" id="cardsSpread"></div>
+<div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:center">
+<div class="rev-hint" id="revHint">↑ tap any card to flip ↑</div>
+<button class="flip-all-btn" onclick="flipAll()">Reveal All</button>
 </div>
-
+<div class="rev-btns">
+<button class="rev-btn" onclick="anotherPack()">✦ Open Another ✦</button>
+<button class="rev-btn sec" onclick="closeReveal()">Back to Game</button>
+</div>
+</div>
 <div class="app">
-  <div class="header">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
-      <div class="title-eyebrow">✦ An Endless Gacha Experience ✦</div>
-      <div class="game-title">NIGHTFALL RNG</div>
-      <div class="title-rule">
-        <div class="title-rule-line"></div>
-        <span style="color:var(--h2);font-size:.66rem;opacity:.68">◆</span>
-        <div class="title-rule-line r"></div>
-      </div>
-      <div class="game-subtitle">where the horizon holds secrets</div>
-    </div>
-  </div>
-
-  <div style="text-align:center;padding:4px 0">
-    <div class="w-pill" id="wPill">
-      <div class="w-dot" id="wDot"></div>
-      <span id="wLabel">Detecting weather…</span>
-    </div>
-  </div>
-
-  <div class="curr-bar">
-    <div class="curr-item"><span class="curr-icon">🌅</span><div><div class="curr-lbl">Balantix</div><div class="curr-val" id="balDisplay">250</div></div></div>
-    <div class="curr-item"><span class="curr-icon">🃏</span><div><div class="curr-lbl">Cards</div><div class="curr-val" id="cardDisplay">0</div></div></div>
-    <div class="curr-item"><span class="curr-icon">🔥</span><div><div class="curr-lbl">Streak</div><div class="curr-val" id="streakDisplay">0</div></div></div>
-    <div class="curr-item"><span class="curr-icon">📜</span><div><div class="curr-lbl">Draws</div><div class="curr-val" id="drawsDisplay">0</div></div></div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab-btn" id="tab-btn-sets" onclick="switchTab('sets')">Sets</button>
-    <button class="tab-btn" id="tab-btn-collection" onclick="switchTab('collection')">Collection</button>
-    <button class="tab-btn" id="tab-btn-factory" onclick="switchTab('factory')">Factory</button>
-    <button class="tab-btn" id="tab-btn-market" onclick="switchTab('market')">Market</button>
-    <button class="tab-btn" id="tab-btn-shop" onclick="switchTab('shop')">Shop</button>
-  </div>
-
-  <div class="main-panel">
-    <div class="tab-content active" id="tab-sets">
-      <div class="sec-hdr"><div class="sec-title">Card Sets</div><div class="sec-sub">Each set has its own exclusive card pool</div></div>
-    <div style="display:flex;justify-content:center;margin-bottom:18px">
-      <div style="background:rgba(9,5,20,.88);border:1px solid rgba(255,150,55,.28);border-radius:14px;padding:16px 22px;text-align:center;max-width:400px;width:100%">
-        <div style="font-family:'Palatino Linotype','Palatino','Book Antiqua',Palatino,serif;font-size:.78rem;color:var(--h2);letter-spacing:.12em;margin-bottom:6px">🌅 Daily Reward</div>
-        <div style="font-size:.76rem;color:var(--dim);font-style:italic;margin-bottom:10px">Every 24 hours: a free 5-card pack from a random set + 🌅100 Balantix</div>
-        <div style="font-family:Arial,sans-serif;font-size:.66rem;color:var(--dim);margin-bottom:10px" id="dailyCountdown">Checking...</div>
-        <button class="btn-primary" id="dailyRewardBtn" onclick="claimDailyReward()" disabled style="font-size:.66rem;padding:9px 22px">✦ Claim Daily Reward ✦</button>
-      </div>
-    </div>
-      <div class="sets-grid" id="setsGrid"></div>
-    <!-- Hidden elements referenced by JS -->
-    <div id="histSection" style="display:none">
-      <div class="hist-label">Recent Draws</div>
-      <div class="hist-strip" id="histStrip"></div>
-    </div>
-    <div style="display:none">
-      <span id="pityCount">0 / 60</span>
-      <div id="pityFill"></div>
-      <span id="sGodly">0</span><span id="sCel">0</span><span id="sMyt">0</span>
-      <span id="sLeg">0</span><span id="sFoil">0</span><span id="sGem">0</span><span id="sSal">0</span>
-    </div>
-
-    </div>
-
-    <div class="tab-content" id="tab-collection">
-      <div class="sec-hdr"><div class="sec-title">Your Collection</div><div class="sec-sub" id="invSub">The cards the night has gifted you</div></div>
-      <div class="inv-header">
-        <div class="filter-row">
-          <button class="f-btn active" data-r="all" onclick="setFilter('all')">All</button>
-          <button class="f-btn" data-r="godly" onclick="setFilter('godly')">Godly</button>
-          <button class="f-btn" data-r="celestial" onclick="setFilter('celestial')">Celestial</button>
-          <button class="f-btn" data-r="mythical" onclick="setFilter('mythical')">Mythical</button>
-          <button class="f-btn" data-r="legendary" onclick="setFilter('legendary')">Legendary</button>
-          <button class="f-btn" data-r="ultra-rare" onclick="setFilter('ultra-rare')">Ultra Rare</button>
-          <button class="f-btn" data-r="rare" onclick="setFilter('rare')">Rare</button>
-          <button class="f-btn" data-r="uncommon" onclick="setFilter('uncommon')">Uncommon</button>
-          <button class="f-btn" data-r="common" onclick="setFilter('common')">Common</button>
-        </div>
-        <button class="sell-dupes-btn" id="sellDupesBtn" onclick="sellAllDupes()">
-          ⚔️ Sell Dupes
-          <span style="background:rgba(255,107,53,.28);padding:2px 6px;border-radius:8px;font-size:.56rem;color:var(--h3)" id="dupeCnt">0</span>
-          <span style="color:var(--gold);font-size:.7rem" id="dupeVal"></span>
-        </button>
-      </div>
-      <div class="inv-grid" id="invGrid"></div>
-    </div>
-
-    <div class="tab-content" id="tab-factory">
-      <div class="sec-hdr"><div class="sec-title">The Card Factory</div><div class="sec-sub">Craft, upgrade, and refine your cards</div></div>
-      <div class="factory-layout">
-        <div class="factory-panel">
-          <div class="factory-panel-title">⚙️ Craft Recipes</div>
-          <div class="recipe-list" id="recipeList"></div>
-        </div>
-        <div class="factory-panel">
-          <div class="factory-panel-title">🔬 Condition Upgrade</div>
-          <p style="font-size:.76rem;color:var(--dim);font-style:italic;margin-bottom:10px">Upgrade a card's condition grade. Costs Balantix per step.</p>
-          <div id="upgradePanel"></div>
-        </div>
-        <div class="salvage-panel">
-          <div class="factory-panel-title">♻️ Salvage Station</div>
-          <p style="font-size:.76rem;color:var(--dim);font-style:italic;margin-bottom:10px">Convert any card into Balantix. Value based on rarity, condition, and foil type.</p>
-          <select class="salvage-select" id="salvageSelect" onchange="updateSalvagePreview()">
-            <option value="">— Select a card to salvage —</option>
-          </select>
-          <div class="salvage-preview" id="salvagePreview">
-            <div style="color:var(--dim);font-family:Arial,sans-serif;font-size:.72rem;letter-spacing:.1em;width:100%;text-align:center">Select a card above</div>
-          </div>
-          <button class="craft-btn" style="width:100%;padding:9px" id="salvageConfirmBtn" onclick="confirmSalvage()" disabled>Confirm Salvage</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="tab-content" id="tab-market">
-      <div class="sec-hdr"><div class="sec-title">The Dusk Market</div><div class="sec-sub">Card prices fluctuate with the wind — buy low, sell high</div></div>
-      <div class="market-ticker" id="marketTicker"><div class="ticker-inner" id="tickerInner"></div></div>
-      <div class="market-grid" id="marketGrid"></div>
-      <div class="market-news">
-        <div class="market-news-title">📰 Market News</div>
-        <div id="newsContainer"></div>
-      </div>
-    </div>
-
-    <div class="tab-content" id="tab-shop">
-      <div class="sec-hdr"><div class="sec-title">Balantix Shop</div><div class="sec-sub">Buy Balantix and boosts</div></div>
-      <div class="shop-sec-title">🌅 Balantix Packs</div>
-      <div class="shop-grid" id="shopGrid"></div>
-      <hr class="sdiv">
-      <div class="shop-sec-title">⚗️ Boosts</div>
-      <div class="shop-grid" id="boostGrid"></div>
-    </div>
-  </div>
+<div class="header">
+<div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+<div class="title-eyebrow">✦ An Endless Gacha Experience ✦</div>
+<div class="game-title">NIGHTFALL RNG</div>
+<div class="title-rule">
+<div class="title-rule-line"></div>
+<span style="color:var(--h2);font-size:.66rem;opacity:.68">◆</span>
+<div class="title-rule-line r"></div>
 </div>
-
-
+<div class="game-subtitle">where the horizon holds secrets</div>
+</div>
+</div>
+<div style="text-align:center;padding:4px 0">
+<div class="w-pill" id="wPill">
+<div class="w-dot" id="wDot"></div>
+<span id="wLabel">Detecting weather…</span>
+</div>
+</div>
+<div class="curr-bar">
+<div class="curr-item"><span class="curr-icon">🌅</span><div><div class="curr-lbl">Balantix</div><div class="curr-val" id="balDisplay">250</div></div></div>
+<div class="curr-item"><span class="curr-icon">🃏</span><div><div class="curr-lbl">Cards</div><div class="curr-val" id="cardDisplay">0</div></div></div>
+<div class="curr-item"><span class="curr-icon">🔥</span><div><div class="curr-lbl">Streak</div><div class="curr-val" id="streakDisplay">0</div></div></div>
+<div class="curr-item"><span class="curr-icon">📜</span><div><div class="curr-lbl">Draws</div><div class="curr-val" id="drawsDisplay">0</div></div></div>
+</div>
+<div class="tabs">
+<button class="tab-btn" id="tab-btn-sets" onclick="switchTab('sets')">Sets</button>
+<button class="tab-btn" id="tab-btn-collection" onclick="switchTab('collection')">Collection</button>
+<button class="tab-btn" id="tab-btn-factory" onclick="switchTab('factory')">Factory</button>
+<button class="tab-btn" id="tab-btn-market" onclick="switchTab('market')">Market</button>
+<button class="tab-btn" id="tab-btn-shop" onclick="switchTab('shop')">Shop</button>
+</div>
+<div class="main-panel">
+<div class="tab-content active" id="tab-sets">
+<div class="sec-hdr"><div class="sec-title">Card Sets</div><div class="sec-sub">Each set has its own exclusive card pool</div></div>
+<div style="display:flex;justify-content:center;margin-bottom:18px">
+<div style="background:rgba(9,5,20,.88);border:1px solid rgba(255,150,55,.28);border-radius:14px;padding:16px 22px;text-align:center;max-width:400px;width:100%">
+<div style="font-family:'Palatino Linotype','Palatino','Book Antiqua',Palatino,serif;font-size:.78rem;color:var(--h2);letter-spacing:.12em;margin-bottom:6px">🌅 Daily Reward</div>
+<div style="font-size:.76rem;color:var(--dim);font-style:italic;margin-bottom:10px">Every 24 hours: a free 5-card pack from a random set + 🌅100 Balantix</div>
+<div id="dailyCountdown" style="font-family:Arial,sans-serif;font-size:.66rem;color:var(--dim);margin-bottom:10px">Checking...</div>
+<button class="btn-primary" disabled="" id="dailyRewardBtn" onclick="claimDailyReward()" style="font-size:.66rem;padding:9px 22px">✦ Claim Daily Reward ✦</button>
+</div>
+</div>
+<div class="sets-grid" id="setsGrid"></div>
+<!-- Hidden elements referenced by JS -->
+<div id="histSection" style="display:none">
+<div class="hist-label">Recent Draws</div>
+<div class="hist-strip" id="histStrip"></div>
+</div>
+<div style="display:none">
+<span id="pityCount">0 / 60</span>
+<div id="pityFill"></div>
+<span id="sGodly">0</span><span id="sCel">0</span><span id="sMyt">0</span>
+<span id="sLeg">0</span><span id="sFoil">0</span><span id="sGem">0</span><span id="sSal">0</span>
+</div>
+</div>
+<div class="tab-content" id="tab-collection">
+<div class="sec-hdr"><div class="sec-title">Your Collection</div><div class="sec-sub" id="invSub">The cards the night has gifted you</div></div>
+<div class="inv-header">
+<div class="filter-row">
+<button class="f-btn active" data-r="all" onclick="setFilter('all')">All</button>
+<button class="f-btn" data-r="godly" onclick="setFilter('godly')">Godly</button>
+<button class="f-btn" data-r="celestial" onclick="setFilter('celestial')">Celestial</button>
+<button class="f-btn" data-r="mythical" onclick="setFilter('mythical')">Mythical</button>
+<button class="f-btn" data-r="legendary" onclick="setFilter('legendary')">Legendary</button>
+<button class="f-btn" data-r="ultra-rare" onclick="setFilter('ultra-rare')">Ultra Rare</button>
+<button class="f-btn" data-r="rare" onclick="setFilter('rare')">Rare</button>
+<button class="f-btn" data-r="uncommon" onclick="setFilter('uncommon')">Uncommon</button>
+<button class="f-btn" data-r="common" onclick="setFilter('common')">Common</button>
+</div>
+<button class="sell-dupes-btn" id="sellDupesBtn" onclick="sellAllDupes()">
+          ⚔️ Sell Dupes
+          <span id="dupeCnt" style="background:rgba(255,107,53,.28);padding:2px 6px;border-radius:8px;font-size:.56rem;color:var(--h3)">0</span>
+<span id="dupeVal" style="color:var(--gold);font-size:.7rem"></span>
+</button>
+</div>
+<div class="inv-grid" id="invGrid"></div>
+</div>
+<div class="tab-content" id="tab-factory">
+<div class="sec-hdr"><div class="sec-title">The Card Factory</div><div class="sec-sub">Craft, upgrade, and refine your cards</div></div>
+<div class="factory-layout">
+<div class="factory-panel">
+<div class="factory-panel-title">⚙️ Craft Recipes</div>
+<div class="recipe-list" id="recipeList"></div>
+</div>
+<div class="factory-panel">
+<div class="factory-panel-title">🔬 Condition Upgrade</div>
+<p style="font-size:.76rem;color:var(--dim);font-style:italic;margin-bottom:10px">Upgrade a card's condition grade. Costs Balantix per step.</p>
+<div id="upgradePanel"></div>
+</div>
+<div class="salvage-panel">
+<div class="factory-panel-title">♻️ Salvage Station</div>
+<p style="font-size:.76rem;color:var(--dim);font-style:italic;margin-bottom:10px">Convert any card into Balantix. Value based on rarity, condition, and foil type.</p>
+<select class="salvage-select" id="salvageSelect" onchange="updateSalvagePreview()">
+<option value="">— Select a card to salvage —</option>
+</select>
+<div class="salvage-preview" id="salvagePreview">
+<div style="color:var(--dim);font-family:Arial,sans-serif;font-size:.72rem;letter-spacing:.1em;width:100%;text-align:center">Select a card above</div>
+</div>
+<button class="craft-btn" disabled="" id="salvageConfirmBtn" onclick="confirmSalvage()" style="width:100%;padding:9px">Confirm Salvage</button>
+</div>
+</div>
+</div>
+<div class="tab-content" id="tab-market">
+<div class="sec-hdr"><div class="sec-title">The Dusk Market</div><div class="sec-sub">Card prices fluctuate with the wind — buy low, sell high</div></div>
+<div class="market-ticker" id="marketTicker"><div class="ticker-inner" id="tickerInner"></div></div>
+<div class="market-grid" id="marketGrid"></div>
+<div class="market-news">
+<div class="market-news-title">📰 Market News</div>
+<div id="newsContainer"></div>
+</div>
+</div>
+<div class="tab-content" id="tab-shop">
+<div class="sec-hdr"><div class="sec-title">Balantix Shop</div><div class="sec-sub">Buy Balantix and boosts</div></div>
+<div class="shop-sec-title">🌅 Balantix Packs</div>
+<div class="shop-grid" id="shopGrid"></div>
+<hr class="sdiv"/>
+<div class="shop-sec-title">⚗️ Boosts</div>
+<div class="shop-grid" id="boostGrid"></div>
+</div>
+</div>
+</div>
 <script>
 
 var RARITIES = ['common','uncommon','rare','ultra-rare','legendary','mythical','celestial','godly'];
@@ -1518,6 +1504,6 @@ setInterval(function(){ checkDailyReward(); }, 60000);
 console.log('\u2756 Nightfall RNG Loaded \u2756');
 
 </script>
-  <script src="assets/js/game-rewards.js"></script>
+<script src="assets/js/game-rewards.js"></script>
 </body>
 </html>

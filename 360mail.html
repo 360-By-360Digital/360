@@ -2,369 +2,348 @@
       360 Mail — v3.0.3
 ========================== -->
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
-  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-89NN1P6CEV');</script>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>360 — Mail</title>
-  <link rel="manifest" href="/manifest.json"/>
-  <meta name="theme-color" content="#3b82f6"/>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png"/>
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/assets/css/main.css"/>
-  <link rel="stylesheet" href="/assets/css/wide.css"/>
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css"/>
-  <link rel="stylesheet" href="/assets/css/responsive.css"/>
-  <link rel="stylesheet" href="/assets/css/mail.css"/>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
-</head>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-89NN1P6CEV');</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+<title>360 — Mail</title>
+<link href="/manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/apple-touch-icon.png" rel="apple-touch-icon"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/mail.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<meta content="360  Mail — part of the 360 web platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 — Mail" property="og:title"/><meta content="360  Mail — part of the 360 web platform." property="og:description"/><meta content="https://360-search.com/apps/360mail.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 — Mail" name="twitter:title"/><meta content="360  Mail — part of the 360 web platform." name="twitter:description"/><link href="https://360-search.com/apps/360mail.html" rel="canonical"/></head>
 <body>
-
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
-
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <div class="logo-mark"></div>
-      <button id="settingsBtn">⚙</button>
-    </div>
-    <nav class="nav-list">
-      <div class="nav-item" data-href="/">Home</div>
-      <div class="nav-item" data-href="/ai">AI</div>
-      <div class="nav-item" data-href="/weather">Weather</div>
-      <div class="nav-item" data-href="/translator">Translator</div>
-      <div class="nav-item" data-href="/stocks">Stocks</div>
-      <div class="nav-item" data-href="/url-shortener">URL Shortener</div>
-      <div class="nav-item" data-href="/chat">Chat</div>
-      <div class="nav-item" data-href="/news">News</div>
-      <div class="nav-item" data-href="/apps">Apps</div>
-      <div class="nav-item" data-href="/games">Games</div>
-      <div class="nav-item active" data-href="/360mail">360Mail</div>
-    </nav>
-    <div class="sidebar-footer"><span id="sidebar-ver">Loading...</span></div>
-  </aside>
-
-  <div class="overlay" id="overlay"></div>
-
-  <div class="settings-panel" id="settingsPanel">
-    <h3>Appearance</h3>
-    <div class="settings-label">Theme</div>
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-    </div>
-    <div class="settings-label" style="margin-top:20px;">Mode</div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:14px;">Dark mode</span>
-      <input type="checkbox" id="darkToggle"/>
-    </label>
-    <h3 style="margin-top:20px;">Cursor</h3>
-    <div class="settings-label">Style</div>
-    <div class="cursor-options">
-      <div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
-      <div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
-      <div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
-      <div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
-      <div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
-      <div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
-    </div>
-    <div class="cursor-color-row">
-      <label>Cursor color</label>
-      <input type="color" id="cursorColorPicker" value="#3b82f6"/>
-      <button id="cursorColorReset">Reset</button>
-    </div>
-    <div class="temp-unit-box" style="margin-top:20px;">
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<div class="logo-mark"></div>
+<button id="settingsBtn">⚙</button>
+</div>
+<nav class="nav-list">
+<div class="nav-item" data-href="/">Home</div>
+<div class="nav-item" data-href="/ai">AI</div>
+<div class="nav-item" data-href="/weather">Weather</div>
+<div class="nav-item" data-href="/translator">Translator</div>
+<div class="nav-item" data-href="/stocks">Stocks</div>
+<div class="nav-item" data-href="/url-shortener">URL Shortener</div>
+<div class="nav-item" data-href="/chat">Chat</div>
+<div class="nav-item" data-href="/news">News</div>
+<div class="nav-item" data-href="/apps">Apps</div>
+<div class="nav-item" data-href="/games">Games</div>
+<div class="nav-item active" data-href="/360mail">360Mail</div>
+</nav>
+<div class="sidebar-footer"><span id="sidebar-ver">Loading...</span></div>
+</aside>
+<div class="overlay" id="overlay"></div>
+<div class="settings-panel" id="settingsPanel">
+<h3>Appearance</h3>
+<div class="settings-label">Theme</div>
+<div class="theme-swatches">
+<div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+<div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+<div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+<div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+</div>
+<div class="settings-label" style="margin-top:20px;">Mode</div>
+<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+<span style="font-size:14px;">Dark mode</span>
+<input id="darkToggle" type="checkbox"/>
+</label>
+<h3 style="margin-top:20px;">Cursor</h3>
+<div class="settings-label">Style</div>
+<div class="cursor-options">
+<div class="cursor-option active" data-cursor="default"><div class="cursor-preview preview-default"></div>Default</div>
+<div class="cursor-option" data-cursor="dot"><div class="cursor-preview preview-dot"></div>Dot</div>
+<div class="cursor-option" data-cursor="ring"><div class="cursor-preview preview-ring"></div>Ring</div>
+<div class="cursor-option" data-cursor="crosshair"><div class="cursor-preview preview-crosshair"></div>Crosshair</div>
+<div class="cursor-option" data-cursor="blob"><div class="cursor-preview preview-blob"></div>Blob</div>
+<div class="cursor-option" data-cursor="system"><div class="cursor-preview preview-system"></div>System</div>
+</div>
+<div class="cursor-color-row">
+<label>Cursor color</label>
+<input id="cursorColorPicker" type="color" value="#3b82f6"/>
+<button id="cursorColorReset">Reset</button>
+</div>
+<div class="temp-unit-box" style="margin-top:20px;">
       Temp Unit: <span id="tempUnitLabel">°C</span>
-      <button id="tempUnitBtn">Switch</button>
-    </div>
-    <div class="settings-box" style="margin-top:20px;">
-      <div class="settings-label">Background Image</div>
-      <input type="file" id="bgUpload" accept="image/*" class="settings-input"/>
-      <input type="text" id="bgUrlInput" placeholder="Paste image URL…" class="settings-input"/>
-      <button id="bgUrlBtn" class="settings-btn">Apply URL</button>
-      <button id="bgResetBtn" class="settings-btn">Reset</button>
-    </div>
-    <h3 style="margin-top:25px;">Legal</h3>
-    <a href="/privacypolicy" class="legal-link">🔒 Privacy Policy</a>
-    <a href="/tos" class="legal-link">📜 Terms of Service</a>
-    <h3 style="margin-top:25px;">About</h3>
-    <details class="about-dropdown">
-      <summary>ℹ️ What is 360?</summary>
-      <p>360 is a next-generation search engine and digital workspace. Built by 360 Digital, Co.</p>
-    </details>
-  </div>
-
-  <div class="auth-top-right">
-    <button id="signInBtn" class="auth-btn">Sign In</button>
-    <button id="signUpBtn" class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-
-  <button id="installBtn" class="install-banner" style="display:none;">Install 360</button>
-
-  <!-- ── GATE ── -->
-  <div class="mail-gate" id="mailGate" style="display:none;">
-    <div class="mail-gate-icon">✉️</div>
-    <div class="mail-gate-title">360Mail</div>
-    <div class="mail-gate-sub">Sign in to access your @360-search.com inbox.</div>
-    <button class="mail-gate-btn" onclick="location.href='/account?signin&from=/360mail'">Sign In</button>
-  </div>
-
-  <!-- ── MAIN APP ── -->
-  <div class="mail-root" id="mailApp" style="display:none;">
-
-    <!-- Left sidebar -->
-    <div class="mail-left" id="mailLeft">
-      <button class="mail-compose-btn" id="composeBtn"><span>✏</span><span>Compose</span></button>
-
-      <div class="folder-label">Mailbox</div>
-      <div class="folder-item active" data-folder="inbox" data-builtin="1">
-        <span class="fi-icon">📩</span><span class="fi-name">Inbox</span>
-        <button class="folder-reload-btn" title="Reload">↻</button>
-        <span class="folder-badge" id="inboxBadge" style="display:none;"></span>
-      </div>
-      <div class="folder-item" data-folder="sent" data-builtin="1">
-        <span class="fi-icon">📨</span><span class="fi-name">Sent</span>
-        <button class="folder-reload-btn" title="Reload">↻</button>
-      </div>
-      <div class="folder-item" data-folder="starred" data-builtin="1">
-        <span class="fi-icon">⭐</span><span class="fi-name">Starred</span>
-        <button class="folder-reload-btn" title="Reload">↻</button>
-      </div>
-      <div class="folder-item" data-folder="scheduled" data-builtin="1">
-        <span class="fi-icon">⏰</span><span class="fi-name">Scheduled</span>
-        <button class="folder-reload-btn" title="Reload">↻</button>
-        <span class="folder-badge" id="scheduledBadge" style="display:none;"></span>
-      </div>
-
-      <div class="folder-label" id="customFolderLabel" style="display:none;">
+<button id="tempUnitBtn">Switch</button>
+</div>
+<div class="settings-box" style="margin-top:20px;">
+<div class="settings-label">Background Image</div>
+<input accept="image/*" class="settings-input" id="bgUpload" type="file"/>
+<input class="settings-input" id="bgUrlInput" placeholder="Paste image URL…" type="text"/>
+<button class="settings-btn" id="bgUrlBtn">Apply URL</button>
+<button class="settings-btn" id="bgResetBtn">Reset</button>
+</div>
+<h3 style="margin-top:25px;">Legal</h3>
+<a class="legal-link" href="/privacypolicy">🔒 Privacy Policy</a>
+<a class="legal-link" href="/tos">📜 Terms of Service</a>
+<h3 style="margin-top:25px;">About</h3>
+<details class="about-dropdown">
+<summary>ℹ️ What is 360?</summary>
+<p>360 is a next-generation search engine and digital workspace. Built by 360 Digital, Co.</p>
+</details>
+</div>
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<button class="install-banner" id="installBtn" style="display:none;">Install 360</button>
+<!-- ── GATE ── -->
+<div class="mail-gate" id="mailGate" style="display:none;">
+<div class="mail-gate-icon">✉️</div>
+<div class="mail-gate-title">360Mail</div>
+<div class="mail-gate-sub">Sign in to access your @360-search.com inbox.</div>
+<button class="mail-gate-btn" onclick="location.href='/account?signin&amp;from=/360mail'">Sign In</button>
+</div>
+<!-- ── MAIN APP ── -->
+<div class="mail-root" id="mailApp" style="display:none;">
+<!-- Left sidebar -->
+<div class="mail-left" id="mailLeft">
+<button class="mail-compose-btn" id="composeBtn"><span>✏</span><span>Compose</span></button>
+<div class="folder-label">Mailbox</div>
+<div class="folder-item active" data-builtin="1" data-folder="inbox">
+<span class="fi-icon">📩</span><span class="fi-name">Inbox</span>
+<button class="folder-reload-btn" title="Reload">↻</button>
+<span class="folder-badge" id="inboxBadge" style="display:none;"></span>
+</div>
+<div class="folder-item" data-builtin="1" data-folder="sent">
+<span class="fi-icon">📨</span><span class="fi-name">Sent</span>
+<button class="folder-reload-btn" title="Reload">↻</button>
+</div>
+<div class="folder-item" data-builtin="1" data-folder="starred">
+<span class="fi-icon">⭐</span><span class="fi-name">Starred</span>
+<button class="folder-reload-btn" title="Reload">↻</button>
+</div>
+<div class="folder-item" data-builtin="1" data-folder="scheduled">
+<span class="fi-icon">⏰</span><span class="fi-name">Scheduled</span>
+<button class="folder-reload-btn" title="Reload">↻</button>
+<span class="folder-badge" id="scheduledBadge" style="display:none;"></span>
+</div>
+<div class="folder-label" id="customFolderLabel" style="display:none;">
         Categories
         <button class="folder-add-btn" id="addCategoryBtn" title="Add category">＋</button>
-      </div>
-      <div class="folder-label" id="customFolderLabelShow" style="display:none;">
-        <!-- shown when categories exist, has the + button -->
-      </div>
-      <!-- custom category items injected here -->
-      <div id="customFolderList"></div>
-
-      <!-- Always-visible + button below built-in folders when no categories yet -->
-      <div style="padding:4px 8px 0;">
-        <button class="folder-item" id="addCategoryBtnAlt" style="width:calc(100% - 0px);justify-content:center;gap:6px;background:none;border:1px dashed var(--glass-border-strong);color:var(--mut);font-size:12px;margin:4px 0;">
-          <span>＋</span><span class="fi-name" style="flex:unset;">New Category</span>
-        </button>
-      </div>
-
-      <div class="mail-address-pill" id="myAddressPill">Loading…</div>
-    </div>
-
-    <!-- Middle: list -->
-    <div class="mail-list-panel" id="mailListPanel">
-      <div class="mail-list-header">
-        <div class="mail-list-title" id="listTitle">Inbox</div>
-        <div class="mail-list-count" id="listCount">0</div>
-        <button class="mail-list-reload" id="listReloadBtn" title="Reload">↻</button>
-      </div>
-      <div class="mail-search-bar">
-        <input type="text" id="mailSearch" placeholder="Search mail…"/>
-      </div>
-      <div class="mail-bulk-bar" id="bulkBar">
-        <span id="bulkCount">0 selected</span>
-        <button id="bulkSelectAllBtn">Select all</button>
-        <button id="bulkClearBtn">Clear</button>
-        <button id="bulkDeleteBtn" class="mail-bulk-delete">Delete</button>
-      </div>
-      <div class="mail-list-scroll" id="mailListScroll">
-        <div id="mailSkeletons">
-          <div class="mail-skeleton"><div class="sk-line" style="width:60%"></div><div class="sk-line" style="width:85%"></div><div class="sk-line" style="width:45%"></div></div>
-          <div class="mail-skeleton"><div class="sk-line" style="width:55%"></div><div class="sk-line" style="width:78%"></div><div class="sk-line" style="width:50%"></div></div>
-          <div class="mail-skeleton"><div class="sk-line" style="width:70%"></div><div class="sk-line" style="width:88%"></div><div class="sk-line" style="width:40%"></div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right: reading pane -->
-    <div class="mail-read-pane" id="mailReadPane">
-      <div class="mail-no-select" id="noMailSelected">
-        <div class="mail-no-select-icon">✉️</div>
-        <div class="mail-no-select-text">Select a message to read</div>
-      </div>
-      <div id="mailReadContent" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-        <div class="mail-read-header">
-          <div class="mrh-subject" id="rdSubject"></div>
-          <div class="mrh-meta">
-            <div class="mrh-from" id="rdFrom"></div>
-            <div class="mrh-addr" id="rdAddr"></div>
-            <div class="mrh-time" id="rdTime"></div>
-          </div>
-          <div class="mrh-badges" id="rdBadges"></div>
-        </div>
-        <div class="mail-read-actions">
-          <button class="mra-btn" id="rdReply">↩ Reply</button>
-          <button class="mra-btn" id="rdForward">→ Forward</button>
-          <button class="mra-btn" id="rdStar">☆ Star</button>
-          <button class="mra-btn danger" id="rdCancelSchedule" style="display:none;">⏹ Cancel send</button>
-          <button class="mra-btn danger" id="rdDelete">🗑 Delete</button>
-          <button class="mra-btn" id="rdBack" style="display:none;">← Back</button>
-        </div>
-        <div class="mail-read-body" id="rdBody"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── COMPOSE MODAL ── -->
-  <div class="compose-modal" id="composeModal">
-    <div class="compose-box">
-      <div class="compose-header">
-        <span class="compose-title">✏ New Message</span>
-        <button class="compose-close" id="composeClose">✕</button>
-      </div>
-      <div class="compose-fields">
-        <div class="compose-field"><label>To</label><input type="email" id="cTo" placeholder="recipient@example.com"/></div>
-        <div class="compose-field"><label>Subject</label><input type="text" id="cSubject" placeholder="Subject"/></div>
-      </div>
-      <div class="compose-toolbar">
-        <button class="fmt-btn" data-cmd="bold" title="Bold"><b>B</b></button>
-        <button class="fmt-btn" data-cmd="italic" title="Italic"><i>I</i></button>
-        <button class="fmt-btn" data-cmd="underline" title="Underline"><u>U</u></button>
-        <button class="fmt-btn" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
-        <span class="fmt-sep"></span>
-        <select class="fmt-select" id="cFontSize" title="Font size">
-          <option value="2">Small</option>
-          <option value="3" selected>Normal</option>
-          <option value="5">Large</option>
-          <option value="7">Huge</option>
-        </select>
-        <span class="fmt-sep"></span>
-        <button class="fmt-btn" data-cmd="insertUnorderedList" title="Bullet list">≡</button>
-        <button class="fmt-btn" data-cmd="insertOrderedList" title="Numbered list">①</button>
-        <button class="fmt-btn" data-cmd="createLink" title="Insert link">🔗</button>
-        <button class="fmt-btn fmt-btn-html" id="cHtmlToggle" title="Edit raw HTML source">&lt;/&gt; HTML</button>
-      </div>
-      <div class="compose-body-wrap">
-        <div class="compose-editor" id="cEditor" contenteditable="true" data-placeholder="Write your message…"></div>
-        <textarea class="compose-html-source" id="cHtmlSource" spellcheck="false" placeholder="<p>Write raw HTML here…</p>"></textarea>
-      </div>
-      <div class="compose-attach-row">
-        <button class="c-attach-btn" id="cAttachBtn">📎 Attach files</button>
-        <input type="file" id="cAttachInput" multiple style="display:none;"/>
-        <div id="cAttachList" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
-      </div>
-      <div class="compose-options">
-        <div class="compose-opt-row">
-          <div class="compose-opt-text">
-            <div class="compose-opt-label">⏳ Email expiration</div>
-            <div class="compose-opt-sub">Automatically delete this email after a set date</div>
-            <div class="compose-opt-input" id="cExpireInputWrap">
-              <input type="datetime-local" id="cExpireAt"/>
-            </div>
-          </div>
-          <label class="opt-switch"><input type="checkbox" id="cExpireToggle"/><span class="slider"></span></label>
-        </div>
-        <div class="compose-opt-row">
-          <div class="compose-opt-text">
-            <div class="compose-opt-label">🔥 Self-destruct after reading</div>
-            <div class="compose-opt-sub">Deleted from the recipient's inbox once opened</div>
-          </div>
-          <label class="opt-switch"><input type="checkbox" id="cSelfDestructToggle"/><span class="slider"></span></label>
-        </div>
-        <div class="compose-opt-row" id="cScheduleRow" style="display:none;border-bottom:none;">
-          <div class="compose-opt-text">
-            <div class="compose-opt-input show">
-              <input type="datetime-local" id="cScheduleAt"/>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="compose-footer">
-        <button class="compose-send-btn" id="cSendBtn"><span>✈</span> Send</button>
-        <button class="compose-schedule-btn" id="cScheduleBtn"><span>⏰</span> Schedule</button>
-        <span class="compose-status" id="cStatus"></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── DELETE CONFIRM ── -->
-  <div class="modal-overlay" id="confirmOverlay">
-    <div class="modal-box" style="text-align:center;">
-      <div class="modal-title" style="text-align:center;">Delete message?</div>
-      <div class="modal-sub">This will permanently remove the message.</div>
-      <div class="modal-actions" style="justify-content:center;">
-        <button class="modal-cancel" id="confirmCancel">Cancel</button>
-        <button class="modal-confirm danger" id="confirmDelete">Delete</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── NEW CATEGORY MODAL ── -->
-  <div class="modal-overlay" id="catModal">
-    <div class="modal-box">
-      <div class="modal-title">New Category</div>
-      <div class="cat-form-row">
-        <label>Name</label>
-        <input type="text" id="catName" placeholder="e.g. GitHub, Work, Family"/>
-      </div>
-      <div class="cat-form-row">
-        <label>Color</label>
-        <input type="color" id="catColor" value="#6366f1"/>
-      </div>
-      <div style="font-size:12px;color:var(--mut);margin-bottom:6px;">Sender rules — messages from these addresses are copied to this category:</div>
-      <div class="rule-list" id="ruleList"></div>
-      <div class="rule-add-row">
-        <input type="email" id="ruleInput" placeholder="sender@example.com"/>
-        <button id="ruleAddBtn">＋ Add</button>
-      </div>
-      <div class="modal-actions">
-        <button class="modal-cancel" id="catModalCancel">Cancel</button>
-        <button class="modal-confirm" id="catModalSave">Create</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── EDIT CATEGORY MODAL ── -->
-  <div class="modal-overlay" id="catEditModal">
-    <div class="modal-box">
-      <div class="modal-title">Edit Category</div>
-      <div class="cat-form-row">
-        <label>Name</label>
-        <input type="text" id="catEditName"/>
-      </div>
-      <div class="cat-form-row">
-        <label>Color</label>
-        <input type="color" id="catEditColor"/>
-      </div>
-      <div style="font-size:12px;color:var(--mut);margin-bottom:6px;">Sender rules:</div>
-      <div class="rule-list" id="editRuleList"></div>
-      <div class="rule-add-row">
-        <input type="email" id="editRuleInput" placeholder="sender@example.com"/>
-        <button id="editRuleAddBtn">＋ Add</button>
-      </div>
-      <div class="modal-actions">
-        <button class="modal-cancel" id="catEditCancel">Cancel</button>
-        <button class="modal-confirm danger" id="catEditDelete" style="margin-right:auto;">Delete</button>
-        <button class="modal-confirm" id="catEditSave">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-
-  <script src="/assets/js/mail.js"></script>
+</div>
+<div class="folder-label" id="customFolderLabelShow" style="display:none;">
+<!-- shown when categories exist, has the + button -->
+</div>
+<!-- custom category items injected here -->
+<div id="customFolderList"></div>
+<!-- Always-visible + button below built-in folders when no categories yet -->
+<div style="padding:4px 8px 0;">
+<button class="folder-item" id="addCategoryBtnAlt" style="width:calc(100% - 0px);justify-content:center;gap:6px;background:none;border:1px dashed var(--glass-border-strong);color:var(--mut);font-size:12px;margin:4px 0;">
+<span>＋</span><span class="fi-name" style="flex:unset;">New Category</span>
+</button>
+</div>
+<div class="mail-address-pill" id="myAddressPill">Loading…</div>
+</div>
+<!-- Middle: list -->
+<div class="mail-list-panel" id="mailListPanel">
+<div class="mail-list-header">
+<div class="mail-list-title" id="listTitle">Inbox</div>
+<div class="mail-list-count" id="listCount">0</div>
+<button class="mail-list-reload" id="listReloadBtn" title="Reload">↻</button>
+</div>
+<div class="mail-search-bar">
+<input id="mailSearch" placeholder="Search mail…" type="text"/>
+</div>
+<div class="mail-bulk-bar" id="bulkBar">
+<span id="bulkCount">0 selected</span>
+<button id="bulkSelectAllBtn">Select all</button>
+<button id="bulkClearBtn">Clear</button>
+<button class="mail-bulk-delete" id="bulkDeleteBtn">Delete</button>
+</div>
+<div class="mail-list-scroll" id="mailListScroll">
+<div id="mailSkeletons">
+<div class="mail-skeleton"><div class="sk-line" style="width:60%"></div><div class="sk-line" style="width:85%"></div><div class="sk-line" style="width:45%"></div></div>
+<div class="mail-skeleton"><div class="sk-line" style="width:55%"></div><div class="sk-line" style="width:78%"></div><div class="sk-line" style="width:50%"></div></div>
+<div class="mail-skeleton"><div class="sk-line" style="width:70%"></div><div class="sk-line" style="width:88%"></div><div class="sk-line" style="width:40%"></div></div>
+</div>
+</div>
+</div>
+<!-- Right: reading pane -->
+<div class="mail-read-pane" id="mailReadPane">
+<div class="mail-no-select" id="noMailSelected">
+<div class="mail-no-select-icon">✉️</div>
+<div class="mail-no-select-text">Select a message to read</div>
+</div>
+<div id="mailReadContent" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+<div class="mail-read-header">
+<div class="mrh-subject" id="rdSubject"></div>
+<div class="mrh-meta">
+<div class="mrh-from" id="rdFrom"></div>
+<div class="mrh-addr" id="rdAddr"></div>
+<div class="mrh-time" id="rdTime"></div>
+</div>
+<div class="mrh-badges" id="rdBadges"></div>
+</div>
+<div class="mail-read-actions">
+<button class="mra-btn" id="rdReply">↩ Reply</button>
+<button class="mra-btn" id="rdForward">→ Forward</button>
+<button class="mra-btn" id="rdStar">☆ Star</button>
+<button class="mra-btn danger" id="rdCancelSchedule" style="display:none;">⏹ Cancel send</button>
+<button class="mra-btn danger" id="rdDelete">🗑 Delete</button>
+<button class="mra-btn" id="rdBack" style="display:none;">← Back</button>
+</div>
+<div class="mail-read-body" id="rdBody"></div>
+</div>
+</div>
+</div>
+<!-- ── COMPOSE MODAL ── -->
+<div class="compose-modal" id="composeModal">
+<div class="compose-box">
+<div class="compose-header">
+<span class="compose-title">✏ New Message</span>
+<button class="compose-close" id="composeClose">✕</button>
+</div>
+<div class="compose-fields">
+<div class="compose-field"><label>To</label><input id="cTo" placeholder="recipient@example.com" type="email"/></div>
+<div class="compose-field"><label>Subject</label><input id="cSubject" placeholder="Subject" type="text"/></div>
+</div>
+<div class="compose-toolbar">
+<button class="fmt-btn" data-cmd="bold" title="Bold"><b>B</b></button>
+<button class="fmt-btn" data-cmd="italic" title="Italic"><i>I</i></button>
+<button class="fmt-btn" data-cmd="underline" title="Underline"><u>U</u></button>
+<button class="fmt-btn" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+<span class="fmt-sep"></span>
+<select class="fmt-select" id="cFontSize" title="Font size">
+<option value="2">Small</option>
+<option selected="" value="3">Normal</option>
+<option value="5">Large</option>
+<option value="7">Huge</option>
+</select>
+<span class="fmt-sep"></span>
+<button class="fmt-btn" data-cmd="insertUnorderedList" title="Bullet list">≡</button>
+<button class="fmt-btn" data-cmd="insertOrderedList" title="Numbered list">①</button>
+<button class="fmt-btn" data-cmd="createLink" title="Insert link">🔗</button>
+<button class="fmt-btn fmt-btn-html" id="cHtmlToggle" title="Edit raw HTML source">&lt;/&gt; HTML</button>
+</div>
+<div class="compose-body-wrap">
+<div class="compose-editor" contenteditable="true" data-placeholder="Write your message…" id="cEditor"></div>
+<textarea class="compose-html-source" id="cHtmlSource" placeholder="&lt;p&gt;Write raw HTML here…&lt;/p&gt;" spellcheck="false"></textarea>
+</div>
+<div class="compose-attach-row">
+<button class="c-attach-btn" id="cAttachBtn">📎 Attach files</button>
+<input id="cAttachInput" multiple="" style="display:none;" type="file"/>
+<div id="cAttachList" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+</div>
+<div class="compose-options">
+<div class="compose-opt-row">
+<div class="compose-opt-text">
+<div class="compose-opt-label">⏳ Email expiration</div>
+<div class="compose-opt-sub">Automatically delete this email after a set date</div>
+<div class="compose-opt-input" id="cExpireInputWrap">
+<input id="cExpireAt" type="datetime-local"/>
+</div>
+</div>
+<label class="opt-switch"><input id="cExpireToggle" type="checkbox"/><span class="slider"></span></label>
+</div>
+<div class="compose-opt-row">
+<div class="compose-opt-text">
+<div class="compose-opt-label">🔥 Self-destruct after reading</div>
+<div class="compose-opt-sub">Deleted from the recipient's inbox once opened</div>
+</div>
+<label class="opt-switch"><input id="cSelfDestructToggle" type="checkbox"/><span class="slider"></span></label>
+</div>
+<div class="compose-opt-row" id="cScheduleRow" style="display:none;border-bottom:none;">
+<div class="compose-opt-text">
+<div class="compose-opt-input show">
+<input id="cScheduleAt" type="datetime-local"/>
+</div>
+</div>
+</div>
+</div>
+<div class="compose-footer">
+<button class="compose-send-btn" id="cSendBtn"><span>✈</span> Send</button>
+<button class="compose-schedule-btn" id="cScheduleBtn"><span>⏰</span> Schedule</button>
+<span class="compose-status" id="cStatus"></span>
+</div>
+</div>
+</div>
+<!-- ── DELETE CONFIRM ── -->
+<div class="modal-overlay" id="confirmOverlay">
+<div class="modal-box" style="text-align:center;">
+<div class="modal-title" style="text-align:center;">Delete message?</div>
+<div class="modal-sub">This will permanently remove the message.</div>
+<div class="modal-actions" style="justify-content:center;">
+<button class="modal-cancel" id="confirmCancel">Cancel</button>
+<button class="modal-confirm danger" id="confirmDelete">Delete</button>
+</div>
+</div>
+</div>
+<!-- ── NEW CATEGORY MODAL ── -->
+<div class="modal-overlay" id="catModal">
+<div class="modal-box">
+<div class="modal-title">New Category</div>
+<div class="cat-form-row">
+<label>Name</label>
+<input id="catName" placeholder="e.g. GitHub, Work, Family" type="text"/>
+</div>
+<div class="cat-form-row">
+<label>Color</label>
+<input id="catColor" type="color" value="#6366f1"/>
+</div>
+<div style="font-size:12px;color:var(--mut);margin-bottom:6px;">Sender rules — messages from these addresses are copied to this category:</div>
+<div class="rule-list" id="ruleList"></div>
+<div class="rule-add-row">
+<input id="ruleInput" placeholder="sender@example.com" type="email"/>
+<button id="ruleAddBtn">＋ Add</button>
+</div>
+<div class="modal-actions">
+<button class="modal-cancel" id="catModalCancel">Cancel</button>
+<button class="modal-confirm" id="catModalSave">Create</button>
+</div>
+</div>
+</div>
+<!-- ── EDIT CATEGORY MODAL ── -->
+<div class="modal-overlay" id="catEditModal">
+<div class="modal-box">
+<div class="modal-title">Edit Category</div>
+<div class="cat-form-row">
+<label>Name</label>
+<input id="catEditName" type="text"/>
+</div>
+<div class="cat-form-row">
+<label>Color</label>
+<input id="catEditColor" type="color"/>
+</div>
+<div style="font-size:12px;color:var(--mut);margin-bottom:6px;">Sender rules:</div>
+<div class="rule-list" id="editRuleList"></div>
+<div class="rule-add-row">
+<input id="editRuleInput" placeholder="sender@example.com" type="email"/>
+<button id="editRuleAddBtn">＋ Add</button>
+</div>
+<div class="modal-actions">
+<button class="modal-cancel" id="catEditCancel">Cancel</button>
+<button class="modal-confirm danger" id="catEditDelete" style="margin-right:auto;">Delete</button>
+<button class="modal-confirm" id="catEditSave">Save</button>
+</div>
+</div>
+</div>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script src="/assets/js/mail.js"></script>
 </body>
 </html>

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>360Chess</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
+<meta charset="utf-8"/>
+<title>360Chess</title>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<style>
     html, body {
       margin: 0;
       padding: 0;
@@ -240,61 +241,53 @@
       }
     }
   </style>
-</head>
+<meta content="360Chess — part of the 360 web platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360Chess" property="og:title"/><meta content="360Chess — part of the 360 web platform." property="og:description"/><meta content="https://360-search.com/chess.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360Chess" name="twitter:title"/><meta content="360Chess — part of the 360 web platform." name="twitter:description"/><link href="https://360-search.com/chess.html" rel="canonical"/></head>
 <body>
-  <div class="shell">
-    <div class="topbar">
-      <div class="top-left">
-        <div class="logo"></div>
-        <div>360Chess</div>
-      </div>
-      <div class="top-right">
-        <span id="user-label">Connecting…</span>
-        <button class="btn" id="copy-link-btn">Copy game link</button>
-      </div>
-    </div>
-
-    <div class="main">
-      <div class="board-wrap">
-        <div id="board" class="board"></div>
-      </div>
-
-      <div class="side-panel">
-        <div class="player-card">
-          <div>White: <span id="white-name">You</span></div>
-          <div class="clock" id="white-clock">10:00</div>
-        </div>
-        <div class="player-card">
-          <div>Black: <span id="black-name">Opponent</span></div>
-          <div class="clock" id="black-clock">10:00</div>
-        </div>
-
-        <div class="mode-buttons">
-          <button class="btn" id="new-ai-game">New vs AI</button>
-          <button class="btn" id="new-friend-game">New vs Friend</button>
-        </div>
-
-        <div class="status" id="status">Choose a mode to start.</div>
-
-        <div class="moves" id="moves"></div>
-
-        <div class="chat">
-          <div class="chat-log" id="chat-log"></div>
-          <div class="chat-input-row">
-            <input id="chat-input" placeholder="Say something…" />
-            <button id="chat-send">Send</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- chess.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/chess.min.js"></script>
-  <!-- supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <script>
+<div class="shell">
+<div class="topbar">
+<div class="top-left">
+<div class="logo"></div>
+<div>360Chess</div>
+</div>
+<div class="top-right">
+<span id="user-label">Connecting…</span>
+<button class="btn" id="copy-link-btn">Copy game link</button>
+</div>
+</div>
+<div class="main">
+<div class="board-wrap">
+<div class="board" id="board"></div>
+</div>
+<div class="side-panel">
+<div class="player-card">
+<div>White: <span id="white-name">You</span></div>
+<div class="clock" id="white-clock">10:00</div>
+</div>
+<div class="player-card">
+<div>Black: <span id="black-name">Opponent</span></div>
+<div class="clock" id="black-clock">10:00</div>
+</div>
+<div class="mode-buttons">
+<button class="btn" id="new-ai-game">New vs AI</button>
+<button class="btn" id="new-friend-game">New vs Friend</button>
+</div>
+<div class="status" id="status">Choose a mode to start.</div>
+<div class="moves" id="moves"></div>
+<div class="chat">
+<div class="chat-log" id="chat-log"></div>
+<div class="chat-input-row">
+<input id="chat-input" placeholder="Say something…"/>
+<button id="chat-send">Send</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- chess.js -->
+<script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/chess.min.js"></script>
+<!-- supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
     // 🔧 CONFIG — replace with your Supabase project
     const SUPABASE_URL = "https://wiswfpfsjiowtrdyqpxy.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc3dmcGZzamlvd3RyZHlxcHh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzg4OTcsImV4cCI6MjA4MzkxNDg5N30.z_4FtM2c8UwgrRlafPYjolQuod4IoHQats95XHio1zM";

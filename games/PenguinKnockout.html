@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Penguin Knockout</title>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Penguin Knockout</title>
+<style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -109,42 +110,39 @@
     #rbtn:hover { background: rgba(74, 184, 232, 0.32); transform: scale(1.04); }
     #rbtn:active { transform: scale(0.97); }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta content="Play Penguin Knockout on 360. Explore this free browser game and discover more games on 360." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="Penguin Knockout" property="og:title"/><meta content="Play Penguin Knockout on 360. Explore this free browser game and discover more games on 360." property="og:description"/><meta content="https://360-search.com/games/PenguinKnockout.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="Penguin Knockout" name="twitter:title"/><meta content="Play Penguin Knockout on 360. Explore this free browser game and discover more games on 360." name="twitter:description"/><link href="https://360-search.com/games/PenguinKnockout.html" rel="canonical"/></head>
 <body>
-
 <div id="hud">
-  <div style="display:flex;gap:12px;align-items:center">
-    <div class="hs">Score<b id="sv">0</b></div>
-    <div class="hs">Round<b id="rv">1</b></div>
-    <div class="hs">Lives<b id="lv">&#9829;&#9829;&#9829;</b></div>
-  </div>
-  <div id="pmsg">Aim the arrow, set power, click!</div>
-  <div id="powerwrap">
-    <div id="powerrow">
-      <span>Power</span>
-      <input type="range" id="powerslider" min="1" max="10" value="5" step="1">
-      <span id="powerlabel">5</span>
-    </div>
-    <div id="powerbar-vis"></div>
-  </div>
-  <div id="icewrap">
-    <div class="bar-label">Ice remaining</div>
-    <div class="bw"><div class="bf" id="icebar" style="background:#4ab8e8;width:100%"></div></div>
-  </div>
+<div style="display:flex;gap:12px;align-items:center">
+<div class="hs">Score<b id="sv">0</b></div>
+<div class="hs">Round<b id="rv">1</b></div>
+<div class="hs">Lives<b id="lv">♥♥♥</b></div>
 </div>
-
+<div id="pmsg">Aim the arrow, set power, click!</div>
+<div id="powerwrap">
+<div id="powerrow">
+<span>Power</span>
+<input id="powerslider" max="10" min="1" step="1" type="range" value="5"/>
+<span id="powerlabel">5</span>
+</div>
+<div id="powerbar-vis"></div>
+</div>
+<div id="icewrap">
+<div class="bar-label">Ice remaining</div>
+<div class="bw"><div class="bf" id="icebar" style="background:#4ab8e8;width:100%"></div></div>
+</div>
+</div>
 <div id="canvas-wrap">
-  <canvas id="c" width="640" height="560"></canvas>
-  <div id="overlay">
-    <div id="gameover-box">
-      <h2 id="go-title">Game Over!</h2>
-      <p id="go-stats">Score: 0 | Round: 1</p>
-      <button id="rbtn" onclick="init()">Play Again</button>
-    </div>
-  </div>
+<canvas height="560" id="c" width="640"></canvas>
+<div id="overlay">
+<div id="gameover-box">
+<h2 id="go-title">Game Over!</h2>
+<p id="go-stats">Score: 0 | Round: 1</p>
+<button id="rbtn" onclick="init()">Play Again</button>
 </div>
-
+</div>
+</div>
 <script>
 var CV = document.getElementById('c');
 var ctx = CV.getContext('2d');
@@ -742,6 +740,6 @@ function loop() {
 init();
 loop();
 </script>
-  <script src="assets/js/game-rewards.js"></script>
+<script src="assets/js/game-rewards.js"></script>
 </body>
 </html>

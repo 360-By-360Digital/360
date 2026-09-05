@@ -1,142 +1,118 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>360Fish</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="assets/css/360fish.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-
+<meta charset="utf-8"/>
+<title>360Fish</title>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="assets/css/360fish.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta content="Play 360Fish on 360. Explore this free browser game and discover more games on 360." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360Fish" property="og:title"/><meta content="Play 360Fish on 360. Explore this free browser game and discover more games on 360." property="og:description"/><meta content="https://360-search.com/games/360Fish.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360Fish" name="twitter:title"/><meta content="Play 360Fish on 360. Explore this free browser game and discover more games on 360." name="twitter:description"/><link href="https://360-search.com/games/360Fish.html" rel="canonical"/></head>
 <body>
-  <div id="topbar">
-    <div class="left">
-      <div id="logo"></div>
-      <span id="game-title">360Fish</span>
-    </div>
-    <div class="right">
-      <span id="day-counter">Day 1</span>
-      <span id="distance-counter">0m</span>
-      <span id="biome-label">coastal shallows</span>
-    </div>
-  </div>
-
-  <div id="game-shell">
-    <div id="game-world">
-
-      <!-- sky -->
-      <div id="sky-layer-1" class="sky-layer"></div>
-      <div id="sky-layer-2" class="sky-layer"></div>
-      <div id="sky-layer-3" class="sky-layer"></div>
-
-      <div id="sun"></div>
-      <div id="moon"></div>
-
-      <div id="cloud-layer-1" class="cloud-layer"></div>
-      <div id="cloud-layer-2" class="cloud-layer"></div>
-      <div id="cloud-layer-3" class="cloud-layer"></div>
-
-      <!-- weather -->
-      <div id="rain-layer"></div>
-      <div id="fog-layer"></div>
-      <div id="storm-flash"></div>
-
-      <!-- water -->
-      <canvas id="water-back"></canvas>
-      <canvas id="water-mid"></canvas>
-      <canvas id="water-front"></canvas>
-
-      <!-- particles -->
-      <canvas id="particle-layer"></canvas>
-
-      <!-- boat -->
-      <div id="boat">
-        <div id="boat-hull"></div>
-        <div id="boat-cabin"></div>
-        <div id="boat-window"></div>
-        <div id="boat-engine"></div>
-        <div id="boat-net"></div>
-        <div id="boat-sonar"></div>
-      </div>
-
-      <!-- fishing -->
-      <canvas id="line-layer"></canvas>
-      <div id="bobber"></div>
-      <div id="splash"></div>
-      <div id="loot-popup"></div>
-
-      <!-- rare events -->
-      <div id="event-banner"></div>
-      <div id="leviathan-shadow"></div>
-      <div id="whale-surface"></div>
-      <div id="ghost-ship"></div>
-
-    </div>
-  </div>
-
-  <!-- HUD -->
-  <div id="hud">
-
-    <div class="hud-card" id="resources-card">
-      <div class="hud-title">resources</div>
-      <div class="res-row"><span>food</span><span id="res-food">0</span></div>
-      <div class="res-row"><span>wood</span><span id="res-wood">0</span></div>
-      <div class="res-row"><span>metal</span><span id="res-metal">0</span></div>
-      <div class="res-row"><span>fuel</span><span id="res-fuel">0</span></div>
-      <div class="res-row"><span>cloth</span><span id="res-cloth">0</span></div>
-      <div class="res-row"><span>rope</span><span id="res-rope">0</span></div>
-      <div class="res-row"><span>artifacts</span><span id="res-artifacts">0</span></div>
-    </div>
-
-    <div class="hud-card" id="upgrades-card">
-      <div class="hud-title">upgrades</div>
-
-      <div class="upgrade-row">
-        <span>hull lv.<span id="up-hull-lv">1</span></span>
-        <button class="upgrade-btn" data-up="hull">upgrade</button>
-      </div>
-
-      <div class="upgrade-row">
-        <span>engine lv.<span id="up-engine-lv">1</span></span>
-        <button class="upgrade-btn" data-up="engine">upgrade</button>
-      </div>
-
-      <div class="upgrade-row">
-        <span>storage lv.<span id="up-storage-lv">1</span></span>
-        <button class="upgrade-btn" data-up="storage">upgrade</button>
-      </div>
-
-      <div class="upgrade-row">
-        <span>rod lv.<span id="up-rod-lv">1</span></span>
-        <button class="upgrade-btn" data-up="rod">upgrade</button>
-      </div>
-
-      <div class="upgrade-row">
-        <span>sonar lv.<span id="up-sonar-lv">0</span></span>
-        <button class="upgrade-btn" data-up="sonar">install</button>
-      </div>
-
-      <div class="upgrade-row">
-        <span>auto‑reel</span>
-        <button class="upgrade-btn" data-up="autoreel">install</button>
-      </div>
-    </div>
-
-    <div class="hud-card" id="inventory-card">
-      <div class="hud-title">inventory</div>
-      <div id="inventory-grid"></div>
-    </div>
-
-    <div class="hud-card" id="status-card">
-      <div class="hud-title">status</div>
-      <div id="status-text">click and hold to cast…</div>
-      <div id="tension-bar"><div id="tension-fill"></div></div>
-      <div id="depth-meter">depth: 0m</div>
-    </div>
-
-  </div>
-
-  <script src="assets/js/360fish.js"></script>
-  <script src="assets/js/game-rewards.js"></script>
+<div id="topbar">
+<div class="left">
+<div id="logo"></div>
+<span id="game-title">360Fish</span>
+</div>
+<div class="right">
+<span id="day-counter">Day 1</span>
+<span id="distance-counter">0m</span>
+<span id="biome-label">coastal shallows</span>
+</div>
+</div>
+<div id="game-shell">
+<div id="game-world">
+<!-- sky -->
+<div class="sky-layer" id="sky-layer-1"></div>
+<div class="sky-layer" id="sky-layer-2"></div>
+<div class="sky-layer" id="sky-layer-3"></div>
+<div id="sun"></div>
+<div id="moon"></div>
+<div class="cloud-layer" id="cloud-layer-1"></div>
+<div class="cloud-layer" id="cloud-layer-2"></div>
+<div class="cloud-layer" id="cloud-layer-3"></div>
+<!-- weather -->
+<div id="rain-layer"></div>
+<div id="fog-layer"></div>
+<div id="storm-flash"></div>
+<!-- water -->
+<canvas id="water-back"></canvas>
+<canvas id="water-mid"></canvas>
+<canvas id="water-front"></canvas>
+<!-- particles -->
+<canvas id="particle-layer"></canvas>
+<!-- boat -->
+<div id="boat">
+<div id="boat-hull"></div>
+<div id="boat-cabin"></div>
+<div id="boat-window"></div>
+<div id="boat-engine"></div>
+<div id="boat-net"></div>
+<div id="boat-sonar"></div>
+</div>
+<!-- fishing -->
+<canvas id="line-layer"></canvas>
+<div id="bobber"></div>
+<div id="splash"></div>
+<div id="loot-popup"></div>
+<!-- rare events -->
+<div id="event-banner"></div>
+<div id="leviathan-shadow"></div>
+<div id="whale-surface"></div>
+<div id="ghost-ship"></div>
+</div>
+</div>
+<!-- HUD -->
+<div id="hud">
+<div class="hud-card" id="resources-card">
+<div class="hud-title">resources</div>
+<div class="res-row"><span>food</span><span id="res-food">0</span></div>
+<div class="res-row"><span>wood</span><span id="res-wood">0</span></div>
+<div class="res-row"><span>metal</span><span id="res-metal">0</span></div>
+<div class="res-row"><span>fuel</span><span id="res-fuel">0</span></div>
+<div class="res-row"><span>cloth</span><span id="res-cloth">0</span></div>
+<div class="res-row"><span>rope</span><span id="res-rope">0</span></div>
+<div class="res-row"><span>artifacts</span><span id="res-artifacts">0</span></div>
+</div>
+<div class="hud-card" id="upgrades-card">
+<div class="hud-title">upgrades</div>
+<div class="upgrade-row">
+<span>hull lv.<span id="up-hull-lv">1</span></span>
+<button class="upgrade-btn" data-up="hull">upgrade</button>
+</div>
+<div class="upgrade-row">
+<span>engine lv.<span id="up-engine-lv">1</span></span>
+<button class="upgrade-btn" data-up="engine">upgrade</button>
+</div>
+<div class="upgrade-row">
+<span>storage lv.<span id="up-storage-lv">1</span></span>
+<button class="upgrade-btn" data-up="storage">upgrade</button>
+</div>
+<div class="upgrade-row">
+<span>rod lv.<span id="up-rod-lv">1</span></span>
+<button class="upgrade-btn" data-up="rod">upgrade</button>
+</div>
+<div class="upgrade-row">
+<span>sonar lv.<span id="up-sonar-lv">0</span></span>
+<button class="upgrade-btn" data-up="sonar">install</button>
+</div>
+<div class="upgrade-row">
+<span>auto‑reel</span>
+<button class="upgrade-btn" data-up="autoreel">install</button>
+</div>
+</div>
+<div class="hud-card" id="inventory-card">
+<div class="hud-title">inventory</div>
+<div id="inventory-grid"></div>
+</div>
+<div class="hud-card" id="status-card">
+<div class="hud-title">status</div>
+<div id="status-text">click and hold to cast…</div>
+<div id="tension-bar"><div id="tension-fill"></div></div>
+<div id="depth-meter">depth: 0m</div>
+</div>
+</div>
+<script src="assets/js/360fish.js"></script>
+<script src="assets/js/game-rewards.js"></script>
 </body>
 </html>

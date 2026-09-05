@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+
+<html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8"/>
 <title>OG STARBLAST – Neon CRT Edition</title>
 <style>
   * { box-sizing:border-box; }
@@ -172,57 +173,48 @@
     background:#300;
   }
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta content="Play You Have Fallen on 360. Explore this free browser game and discover more games on 360." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="OG STARBLAST – Neon CRT Edition" property="og:title"/><meta content="Play You Have Fallen on 360. Explore this free browser game and discover more games on 360." property="og:description"/><meta content="https://360-search.com/games/StarBlasted.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="OG STARBLAST – Neon CRT Edition" name="twitter:title"/><meta content="Play You Have Fallen on 360. Explore this free browser game and discover more games on 360." name="twitter:description"/><link href="https://360-search.com/games/StarBlasted.html" rel="canonical"/></head>
 <body>
-
 <canvas id="game"></canvas>
-
 <div id="hud">
-  <div>HP: <span id="hp">100</span></div>
-  <div>Wave: <span id="wave">1</span></div>
-  <div>Level: <span id="level">1</span></div>
-  <div>Class: <span id="className">Spread</span></div>
+<div>HP: <span id="hp">100</span></div>
+<div>Wave: <span id="wave">1</span></div>
+<div>Level: <span id="level">1</span></div>
+<div>Class: <span id="className">Spread</span></div>
 </div>
-
 <div id="xpBarContainer"><div id="xpBarFill"></div></div>
 <div id="xpLabel">XP 0 / 100</div>
-
 <div id="controls">
-  <div><b>Controls</b></div>
-  <div>WASD: Move</div>
-  <div>Mouse: Aim</div>
-  <div>Space: Shoot</div>
-  <div>I: Inventory</div>
+<div><b>Controls</b></div>
+<div>WASD: Move</div>
+<div>Mouse: Aim</div>
+<div>Space: Shoot</div>
+<div>I: Inventory</div>
 </div>
-
-<div id="upgradeUI" class="ui-panel" style="display:none;">
-  <h2>Choose an Upgrade</h2>
-  <p>Stack the same upgrade three times in a row to trigger a reshuffle. Upgrades persist across all classes.</p>
-  <div id="upgradeOptions"></div>
+<div class="ui-panel" id="upgradeUI" style="display:none;">
+<h2>Choose an Upgrade</h2>
+<p>Stack the same upgrade three times in a row to trigger a reshuffle. Upgrades persist across all classes.</p>
+<div id="upgradeOptions"></div>
 </div>
-
-<div id="classUI" class="ui-panel" style="display:none;">
-  <h2>Class Unlock</h2>
-  <p>Every few waves you can unlock a new class.</p>
-  <div id="classOptions"></div>
+<div class="ui-panel" id="classUI" style="display:none;">
+<h2>Class Unlock</h2>
+<p>Every few waves you can unlock a new class.</p>
+<div id="classOptions"></div>
 </div>
-
-<div id="inventoryUI" class="ui-panel" style="display:none;">
-  <h2>Inventory – Classes</h2>
-  <p>Select which unlocked class you want to use.</p>
-  <div id="inventoryClasses"></div>
-  <button class="button" id="closeInventory"><span class="title">Close</span></button>
+<div class="ui-panel" id="inventoryUI" style="display:none;">
+<h2>Inventory – Classes</h2>
+<p>Select which unlocked class you want to use.</p>
+<div id="inventoryClasses"></div>
+<button class="button" id="closeInventory"><span class="title">Close</span></button>
 </div>
-
 <div id="deathUI">
-  <h1>You Have Fallen</h1>
-  <p>You died with honour attempting to defend your cosmos from the other‑worldly invaders.<br><br>
-  Your sacrifice echoes across the stars, a reminder that even in defeat, courage shines brightest.<br>
+<h1>You Have Fallen</h1>
+<p>You died with honour attempting to defend your cosmos from the other‑worldly invaders.<br/><br/>
+  Your sacrifice echoes across the stars, a reminder that even in defeat, courage shines brightest.<br/>
   The void remembers your stand. Will you rise again?</p>
-  <button id="respawnBtn">Respawn</button>
+<button id="respawnBtn">Respawn</button>
 </div>
-
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -1111,6 +1103,6 @@ function loop(now){
 resetGame();
 requestAnimationFrame(loop);
 </script>
-  <script src="assets/js/game-rewards.js"></script>
+<script src="assets/js/game-rewards.js"></script>
 </body>
 </html>

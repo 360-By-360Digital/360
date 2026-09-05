@@ -1,225 +1,203 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
-  <script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-89NN1P6CEV"></script>
+<script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-89NN1P6CEV');
   </script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>360 — Meet</title>
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-
-  <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/wide.css" />
-  <link rel="stylesheet" href="/assets/css/gallium.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
-  <link rel="stylesheet" href="/assets/css/cursor.css" />
-  <link rel="stylesheet" href="/assets/css/meet.css" />
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>360 — Meet</title>
+<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
+<link href="/apple-touch-icon.png" rel="apple-touch-icon"/>
+<link href="manifest.json" rel="manifest"/>
+<meta content="#3b82f6" name="theme-color"/>
+<link href="/assets/css/main.css" rel="stylesheet"/>
+<link href="/assets/css/wide.css" rel="stylesheet"/>
+<link href="/assets/css/gallium.css" rel="stylesheet"/>
+<link href="/assets/css/responsive.css" rel="stylesheet"/>
+<link href="/assets/css/cursor.css" rel="stylesheet"/>
+<link href="/assets/css/meet.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta content="360  Meet is part of 360 Digital. Explore its features and use it online through the 360 platform." name="description"/><meta content="index, follow" name="robots"/><meta content="website" property="og:type"/><meta content="360 — Meet" property="og:title"/><meta content="360  Meet is part of 360 Digital. Explore its features and use it online through the 360 platform." property="og:description"/><meta content="https://360-search.com/apps/360Meet.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="360 — Meet" name="twitter:title"/><meta content="360  Meet is part of 360 Digital. Explore its features and use it online through the 360 platform." name="twitter:description"/><link href="https://360-search.com/apps/360Meet.html" rel="canonical"/></head>
 <body>
-
-  <div class="cursor-dot"></div>
-  <div class="cursor-trail"></div>
-  <div class="cursor-crosshair"></div>
-  <div class="cursor-blob"></div>
-
-  <div class="auth-top-right">
-    <button id="signInBtn"  class="auth-btn">Sign In</button>
-    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
-    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
-  </div>
-  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
-
-  <aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
-
-  <div class="overlay" id="overlay"></div>
-
-  <div class="settings-panel" id="settingsPanel">
-    <h3>Appearance</h3>
-    <div class="settings-label">Theme</div>
-    <div class="theme-swatches">
-      <div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
-      <div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
-    </div>
-    <div class="settings-label" style="margin-top:20px;">Mode</div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:14px;">Dark mode</span>
-      <input type="checkbox" id="darkToggle" />
-    </label>
-    <h3 style="margin-top:25px;">Legal</h3>
-    <a href="/privacypolicy" class="legal-link">Privacy Policy</a>
-    <a href="/tos" class="legal-link">Terms of Service</a>
-  </div>
-
-  <div id="auth-popup" class="auth-popup hidden">
-    <div class="auth-box">
-      <h2>Account</h2>
-      <input id="auth-email" type="email" placeholder="Email" />
-      <input id="auth-password" type="password" placeholder="Password" />
-      <button id="auth-login-btn">Log In</button>
-      <button id="auth-signup-btn">Sign Up</button>
-      <p id="auth-error" class="auth-error"></p>
-      <button id="auth-close-btn" class="close-btn">Close</button>
-    </div>
-  </div>
-
-  <!-- ══ MEET PAGE ══ -->
-  <div class="meet-wrap">
-
-    <!-- Sign-in gate (shown when the user is not authenticated) -->
-    <div class="meet-card meet-gate" id="meet-gate" style="display:none;"></div>
-
-    <!-- Action lobby: New video call / New voice chat / Join meeting -->
-    <div id="meet-action-select" style="display:none;"></div>
-
-    <!-- Prepare room: camera/mic check, name (read-only), passcode -->
-    <div id="meet-prepare-screen" style="display:none;"></div>
-
-  </div>
-
-  <!-- Zoom-style call chamber -->
-  <div class="meet-call-room" id="meet-call-room">
-    <div class="meet-call-topbar">
-      <div class="meet-call-meta">
-        <button class="meet-call-room-code" id="meet-invite-btn" title="Copy invite link">
-          <span id="meet-lock-icon" style="display:none;">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </span>
-          <span id="meet-call-room-code-label">—</span>
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        </button>
-        <div class="meet-call-timer" id="meet-call-timer">0:00</div>
-      </div>
-      <div class="meet-participant-count">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <span id="meet-participant-count-label">1</span>
-      </div>
-    </div>
-
-    <div class="meet-stage">
-      <div class="meet-stage-main" id="meet-stage-main"></div>
-      <div class="meet-stage-side" id="meet-stage-side"></div>
-
-      <!-- In-call chat drawer -->
-      <div class="meet-chat-panel" id="meet-chat-panel">
-        <div class="meet-chat-header">
-          <span>In-call chat</span>
-          <button class="meet-chat-close-btn" id="meet-chat-close-btn">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-        <div class="meet-chat-messages" id="meet-chat-messages"></div>
-        <div class="meet-chat-input-row">
-          <input class="meet-input" id="meet-chat-input" placeholder="Message everyone" maxlength="500" />
-          <button class="meet-chat-send-btn" id="meet-chat-send-btn" title="Send">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="meet-controls-bar">
-      <div class="meet-controls-group meet-controls-left">
-        <div class="meet-host-controls" id="meet-host-controls" style="display:none;">
-          <button class="meet-host-action-btn" id="meet-mute-all-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2"/><path d="M19 10v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-            <span class="meet-host-action-label">Mute all</span>
-          </button>
-          <button class="meet-host-action-btn" id="meet-cameras-off-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="M9.5 5H14a2 2 0 0 1 2 2v4.5"/><polygon points="23 7 16 12 23 17 23 7"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-            <span class="meet-host-action-label">Cameras off</span>
-          </button>
-        </div>
-        <button class="meet-ctrl-btn" id="meet-mic-btn" title="Mute microphone"></button>
-        <button class="meet-ctrl-btn" id="meet-cam-btn" title="Turn off camera"></button>
-        <button class="meet-ctrl-btn" id="meet-screen-btn" title="Share screen">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        </button>
-        <button class="meet-ctrl-btn" id="meet-chat-btn" title="Chat">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-          <span class="meet-chat-badge" id="meet-chat-badge" style="display:none;"></span>
-        </button>
-      </div>
-      <div class="meet-controls-group meet-controls-right">
-        <button class="meet-ctrl-btn leave" id="meet-leave-btn" title="Leave meeting">
-          <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" stroke="none"><path d="M12 9c-2.3 0-4.5.36-6.6 1.03a1.5 1.5 0 0 0-1 1.6l.34 2.5a1.5 1.5 0 0 0 1.2 1.27c1.1.2 2.2.36 3.06.36.66 0 1.2-.44 1.37-1.06l.3-1.1a1 1 0 0 1 1.1-.73c.66.1 1.34.13 2.23.13.9 0 1.57-.03 2.23-.13a1 1 0 0 1 1.1.73l.3 1.1c.17.62.71 1.06 1.37 1.06.87 0 1.96-.16 3.06-.36a1.5 1.5 0 0 0 1.2-1.27l.34-2.5a1.5 1.5 0 0 0-1-1.6A20.6 20.6 0 0 0 12 9z"/></svg>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Leave confirmation popup -->
-  <div class="meet-modal-overlay" id="meet-leave-confirm-modal">
-    <div class="meet-modal-card">
-      <div class="meet-modal-title">Leave the meeting?</div>
-      <p class="meet-modal-text">You can rejoin later with the same meeting code.</p>
-      <div class="meet-modal-actions">
-        <button class="meet-btn secondary" id="meet-leave-cancel-btn">Cancel</button>
-        <button class="meet-btn danger" id="meet-leave-confirm-btn">Leave meeting</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Screen-share permission popup (shown to the host only) -->
-  <div class="meet-modal-overlay" id="meet-screen-modal">
-    <div class="meet-modal-card">
-      <div class="meet-modal-title"><span id="meet-screen-modal-name"></span> wants to share their screen</div>
-      <p class="meet-modal-text">Everyone in the meeting will see their screen if you allow this.</p>
-      <p class="meet-modal-text" id="meet-screen-modal-note" style="display:none;"></p>
-      <div class="meet-modal-actions">
-        <button class="meet-btn secondary" id="meet-screen-deny-btn">Deny</button>
-        <button class="meet-btn" id="meet-screen-allow-btn">Allow</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Shown to the HOST when they try to share while someone else already is -->
-  <div class="meet-modal-overlay" id="meet-takeover-modal">
-    <div class="meet-modal-card">
-      <div class="meet-modal-title"><span id="meet-takeover-modal-name"></span> is currently sharing their screen</div>
-      <p class="meet-modal-text">You can ask them to stop, or take over immediately.</p>
-      <div class="meet-modal-actions three">
-        <button class="meet-btn" id="meet-takeover-ask-btn">Ask them to stop</button>
-        <button class="meet-btn danger" id="meet-takeover-force-btn">Force takeover</button>
-        <button class="meet-btn secondary" id="meet-takeover-cancel-btn">Cancel</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Shown to the current sharer when the host politely asks them to stop -->
-  <div class="meet-modal-overlay" id="meet-ask-stop-modal">
-    <div class="meet-modal-card">
-      <div class="meet-modal-title">The host asked you to stop sharing</div>
-      <p class="meet-modal-text">You can keep sharing if you're not finished yet.</p>
-      <div class="meet-modal-actions">
-        <button class="meet-btn secondary" id="meet-ask-stop-keep-btn">Keep sharing</button>
-        <button class="meet-btn danger" id="meet-ask-stop-confirm-btn">Stop sharing</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/auth-fix.js"></script>
-  <script src="/assets/js/wide.js"></script>
-  <script src="/assets/js/gallium.js"></script>
-  <script src="/assets/js/cookie.js"></script>
-  <script src="/assets/js/cursor.js"></script>
-  <script src="/assets/js/meet.js?v=11"></script>
-
-  <script>
+<div class="cursor-dot"></div>
+<div class="cursor-trail"></div>
+<div class="cursor-crosshair"></div>
+<div class="cursor-blob"></div>
+<div class="auth-top-right">
+<button class="auth-btn" id="signInBtn">Sign In</button>
+<button class="auth-btn" id="signUpBtn">Sign Up</button>
+<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+</div>
+<button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+<aside class="sidebar" id="sidebar"><span id="sidebar-slot"></span></aside>
+<div class="overlay" id="overlay"></div>
+<div class="settings-panel" id="settingsPanel">
+<h3>Appearance</h3>
+<div class="settings-label">Theme</div>
+<div class="theme-swatches">
+<div class="theme-option"><div class="swatch" data-theme="ocean"></div><span>Ocean</span></div>
+<div class="theme-option"><div class="swatch" data-theme="midnight"></div><span>Midnight</span></div>
+<div class="theme-option"><div class="swatch" data-theme="sunset"></div><span>Sunset</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mint"></div><span>Mint</span></div>
+<div class="theme-option"><div class="swatch" data-theme="neon"></div><span>Neon</span></div>
+<div class="theme-option"><div class="swatch" data-theme="mono"></div><span>Mono</span></div>
+</div>
+<div class="settings-label" style="margin-top:20px;">Mode</div>
+<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+<span style="font-size:14px;">Dark mode</span>
+<input id="darkToggle" type="checkbox"/>
+</label>
+<h3 style="margin-top:25px;">Legal</h3>
+<a class="legal-link" href="/privacypolicy">Privacy Policy</a>
+<a class="legal-link" href="/tos">Terms of Service</a>
+</div>
+<div class="auth-popup hidden" id="auth-popup">
+<div class="auth-box">
+<h2>Account</h2>
+<input id="auth-email" placeholder="Email" type="email"/>
+<input id="auth-password" placeholder="Password" type="password"/>
+<button id="auth-login-btn">Log In</button>
+<button id="auth-signup-btn">Sign Up</button>
+<p class="auth-error" id="auth-error"></p>
+<button class="close-btn" id="auth-close-btn">Close</button>
+</div>
+</div>
+<!-- ══ MEET PAGE ══ -->
+<div class="meet-wrap">
+<!-- Sign-in gate (shown when the user is not authenticated) -->
+<div class="meet-card meet-gate" id="meet-gate" style="display:none;"></div>
+<!-- Action lobby: New video call / New voice chat / Join meeting -->
+<div id="meet-action-select" style="display:none;"></div>
+<!-- Prepare room: camera/mic check, name (read-only), passcode -->
+<div id="meet-prepare-screen" style="display:none;"></div>
+</div>
+<!-- Zoom-style call chamber -->
+<div class="meet-call-room" id="meet-call-room">
+<div class="meet-call-topbar">
+<div class="meet-call-meta">
+<button class="meet-call-room-code" id="meet-invite-btn" title="Copy invite link">
+<span id="meet-lock-icon" style="display:none;">
+<svg fill="none" height="12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="12"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+</span>
+<span id="meet-call-room-code-label">—</span>
+<svg fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><rect height="13" rx="2" ry="2" width="13" x="9" y="9"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+</button>
+<div class="meet-call-timer" id="meet-call-timer">0:00</div>
+</div>
+<div class="meet-participant-count">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+<span id="meet-participant-count-label">1</span>
+</div>
+</div>
+<div class="meet-stage">
+<div class="meet-stage-main" id="meet-stage-main"></div>
+<div class="meet-stage-side" id="meet-stage-side"></div>
+<!-- In-call chat drawer -->
+<div class="meet-chat-panel" id="meet-chat-panel">
+<div class="meet-chat-header">
+<span>In-call chat</span>
+<button class="meet-chat-close-btn" id="meet-chat-close-btn">
+<svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="16"><line x1="18" x2="6" y1="6" y2="18"></line><line x1="6" x2="18" y1="6" y2="18"></line></svg>
+</button>
+</div>
+<div class="meet-chat-messages" id="meet-chat-messages"></div>
+<div class="meet-chat-input-row">
+<input class="meet-input" id="meet-chat-input" maxlength="500" placeholder="Message everyone"/>
+<button class="meet-chat-send-btn" id="meet-chat-send-btn" title="Send">
+<svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="16"><line x1="22" x2="11" y1="2" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+</button>
+</div>
+</div>
+</div>
+<div class="meet-controls-bar">
+<div class="meet-controls-group meet-controls-left">
+<div class="meet-host-controls" id="meet-host-controls" style="display:none;">
+<button class="meet-host-action-btn" id="meet-mute-all-btn">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="14"><line x1="1" x2="23" y1="1" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2"></path><path d="M19 10v2a7 7 0 0 1-.11 1.23"></path><line x1="12" x2="12" y1="19" y2="23"></line><line x1="8" x2="16" y1="23" y2="23"></line></svg>
+<span class="meet-host-action-label">Mute all</span>
+</button>
+<button class="meet-host-action-btn" id="meet-cameras-off-btn">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="14"><path d="M16 16v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"></path><path d="M9.5 5H14a2 2 0 0 1 2 2v4.5"></path><polygon points="23 7 16 12 23 17 23 7"></polygon><line x1="1" x2="23" y1="1" y2="23"></line></svg>
+<span class="meet-host-action-label">Cameras off</span>
+</button>
+</div>
+<button class="meet-ctrl-btn" id="meet-mic-btn" title="Mute microphone"></button>
+<button class="meet-ctrl-btn" id="meet-cam-btn" title="Turn off camera"></button>
+<button class="meet-ctrl-btn" id="meet-screen-btn" title="Share screen">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><rect height="14" rx="2" ry="2" width="20" x="2" y="3"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg>
+</button>
+<button class="meet-ctrl-btn" id="meet-chat-btn" title="Chat">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+<span class="meet-chat-badge" id="meet-chat-badge" style="display:none;"></span>
+</button>
+</div>
+<div class="meet-controls-group meet-controls-right">
+<button class="meet-ctrl-btn leave" id="meet-leave-btn" title="Leave meeting">
+<svg fill="currentColor" height="19" stroke="none" viewbox="0 0 24 24" width="19"><path d="M12 9c-2.3 0-4.5.36-6.6 1.03a1.5 1.5 0 0 0-1 1.6l.34 2.5a1.5 1.5 0 0 0 1.2 1.27c1.1.2 2.2.36 3.06.36.66 0 1.2-.44 1.37-1.06l.3-1.1a1 1 0 0 1 1.1-.73c.66.1 1.34.13 2.23.13.9 0 1.57-.03 2.23-.13a1 1 0 0 1 1.1.73l.3 1.1c.17.62.71 1.06 1.37 1.06.87 0 1.96-.16 3.06-.36a1.5 1.5 0 0 0 1.2-1.27l.34-2.5a1.5 1.5 0 0 0-1-1.6A20.6 20.6 0 0 0 12 9z"></path></svg>
+</button>
+</div>
+</div>
+</div>
+<!-- Leave confirmation popup -->
+<div class="meet-modal-overlay" id="meet-leave-confirm-modal">
+<div class="meet-modal-card">
+<div class="meet-modal-title">Leave the meeting?</div>
+<p class="meet-modal-text">You can rejoin later with the same meeting code.</p>
+<div class="meet-modal-actions">
+<button class="meet-btn secondary" id="meet-leave-cancel-btn">Cancel</button>
+<button class="meet-btn danger" id="meet-leave-confirm-btn">Leave meeting</button>
+</div>
+</div>
+</div>
+<!-- Screen-share permission popup (shown to the host only) -->
+<div class="meet-modal-overlay" id="meet-screen-modal">
+<div class="meet-modal-card">
+<div class="meet-modal-title"><span id="meet-screen-modal-name"></span> wants to share their screen</div>
+<p class="meet-modal-text">Everyone in the meeting will see their screen if you allow this.</p>
+<p class="meet-modal-text" id="meet-screen-modal-note" style="display:none;"></p>
+<div class="meet-modal-actions">
+<button class="meet-btn secondary" id="meet-screen-deny-btn">Deny</button>
+<button class="meet-btn" id="meet-screen-allow-btn">Allow</button>
+</div>
+</div>
+</div>
+<!-- Shown to the HOST when they try to share while someone else already is -->
+<div class="meet-modal-overlay" id="meet-takeover-modal">
+<div class="meet-modal-card">
+<div class="meet-modal-title"><span id="meet-takeover-modal-name"></span> is currently sharing their screen</div>
+<p class="meet-modal-text">You can ask them to stop, or take over immediately.</p>
+<div class="meet-modal-actions three">
+<button class="meet-btn" id="meet-takeover-ask-btn">Ask them to stop</button>
+<button class="meet-btn danger" id="meet-takeover-force-btn">Force takeover</button>
+<button class="meet-btn secondary" id="meet-takeover-cancel-btn">Cancel</button>
+</div>
+</div>
+</div>
+<!-- Shown to the current sharer when the host politely asks them to stop -->
+<div class="meet-modal-overlay" id="meet-ask-stop-modal">
+<div class="meet-modal-card">
+<div class="meet-modal-title">The host asked you to stop sharing</div>
+<p class="meet-modal-text">You can keep sharing if you're not finished yet.</p>
+<div class="meet-modal-actions">
+<button class="meet-btn secondary" id="meet-ask-stop-keep-btn">Keep sharing</button>
+<button class="meet-btn danger" id="meet-ask-stop-confirm-btn">Stop sharing</button>
+</div>
+</div>
+</div>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth-fix.js"></script>
+<script src="/assets/js/wide.js"></script>
+<script src="/assets/js/gallium.js"></script>
+<script src="/assets/js/cookie.js"></script>
+<script src="/assets/js/cursor.js"></script>
+<script src="/assets/js/meet.js?v=11"></script>
+<script>
     (function () {
       document.getElementById('meet-invite-btn').onclick = () => Meet.copyInviteLink();
       document.getElementById('meet-mic-btn').onclick = () => Meet.toggleMic();
