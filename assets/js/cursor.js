@@ -37,15 +37,33 @@
       if (crosshair) { crosshair.style.left = mx + "px"; crosshair.style.top = my + "px"; }
     });
 
-    /* Lagging elements — trail + blob */
+    /* Lagging elements — trail + blob.
+       Only runs when one of those styles is active; pauses automatically
+       once the element has caught up so it doesn't burn a frame budget
+       doing nothing during AI streaming or heavy rendering. */
+    let rafId = null;
+    let trailActive = false;
+
     function animateTrail() {
-      tx += (mx - tx) * 0.18;
-      ty += (my - ty) * 0.18;
+      const dx = mx - tx;
+      const dy = my - ty;
+      tx += dx * 0.18;
+      ty += dy * 0.18;
       if (trail) { trail.style.left = tx + "px"; trail.style.top = ty + "px"; }
       if (blob)  { blob.style.left  = tx + "px"; blob.style.top  = ty + "px"; }
-      requestAnimationFrame(animateTrail);
+      // Stop looping once position has converged — restarts on next mousemove
+      if (Math.abs(dx) > 0.3 || Math.abs(dy) > 0.3) {
+        rafId = requestAnimationFrame(animateTrail);
+      } else {
+        rafId = null;
+      }
     }
-    animateTrail();
+
+    function startTrail() {
+      if (trailActive && rafId === null) rafId = requestAnimationFrame(animateTrail);
+    }
+
+    document.addEventListener("mousemove", startTrail);
 
     /* Load + apply saved style */
     const savedStyle = localStorage.getItem("360_cursor_style") || "default";
@@ -105,6 +123,9 @@
     document.querySelectorAll(".cursor-option").forEach(opt => {
       opt.classList.toggle("active", opt.dataset.cursor === style);
     });
+    // trail + blob are the only styles that need the rAF loop
+    trailActive = style === "ring" || style === "blob" || style === "default";
+    if (!trailActive && rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
   }
 
   function applyColor(hex) {
