@@ -1648,3 +1648,35 @@ body:not(.dark) .ai-input-area {
 }
 
 .mcp-auth-save-btn:hover { opacity: .88; }
+
+
+/* ── MCP OAuth waiting state ──────────────────────────────────────── */
+
+.mcp-oauth-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 0 4px;
+  text-align: center;
+}
+
+.mcp-oauth-waiting p {
+  font-size: 13px;
+  opacity: .68;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.mcp-oauth-spinner {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 3px solid rgba(109,124,255,.15);
+  border-top-color: var(--ai-accent);
+  animation: mcpSpin .75s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes mcpSpin {
+  to { transform: rotate(360deg); }
+}
