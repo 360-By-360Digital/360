@@ -360,6 +360,7 @@
     const workDetail = inner.querySelector(".ai-work-detail");
 
     let expanded = true;
+    if (thinkingContent) thinkingContent.style.display = "block";
     on(inner.querySelector(".ai-thinking-toggle"), "click", () => {
       expanded = !expanded;
       thinkingContent.style.display = expanded ? "block" : "none";
