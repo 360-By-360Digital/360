@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connecting to Supabase — 360</title>
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/wide.css" />
+  <link rel="stylesheet" href="/assets/css/gallium.css" />
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .wrap {
+      max-width: 400px;
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      animation: fadeUp .4s cubic-bezier(.22,.68,0,1.1);
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(20px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .sb-icon {
+      width: 56px; height: 56px;
+      background: rgba(62,207,142,.1);
+      border: 1px solid rgba(62,207,142,.25);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 3px solid rgba(62,207,142,.2);
+      border-top-color: #3ECF8E;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--txt);
+      margin: 0;
+    }
+    body.dark .status-title { color: var(--txtd); }
+    .status-sub {
+      font-size: 13.5px;
+      color: var(--mut);
+      line-height: 1.6;
+      margin: 0;
+    }
+    body.dark .status-sub { color: var(--mutd); }
+    .status-sub.error { color: #ef4444; }
+    .close-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 28px;
+      border-radius: 999px;
+      background: linear-gradient(120deg, var(--a), var(--a2));
+      color: #050816;
+      font-weight: 700;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      transition: opacity .2s;
+      display: none;
+    }
+    .close-btn:hover { opacity: .87; }
+    .check {
+      width: 56px; height: 56px;
+      background: rgba(34,197,94,.12);
+      border: 1px solid rgba(34,197,94,.3);
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .check svg { display: block; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="sb-icon" id="icon-loading">
+      <div class="spinner"></div>
+    </div>
+    <div class="check" id="icon-done">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div>
+      <p class="status-title" id="status-title">Connecting Supabase…</p>
+      <p class="status-sub"  id="status-sub">Exchanging authorization code for access token.</p>
+    </div>
+    <button class="close-btn" id="close-btn" onclick="window.close()">Close this window</button>
+  </div>
+
+  <script src="/assets/js/wide.js"></script>
+  <script src="/assets/js/gallium.js"></script>
+  <script>
+  (() => {
+    const EXCHANGE_URL = "https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/mcp-oauth";
+    const REDIRECT_URI = "https://360-search.com/mcp-callback";
+
+    const titleEl  = document.getElementById("status-title");
+    const subEl    = document.getElementById("status-sub");
+    const closeBtn = document.getElementById("close-btn");
+    const iconLoad = document.getElementById("icon-loading");
+    const iconDone = document.getElementById("icon-done");
+
+    function setError(msg) {
+      titleEl.textContent = "Connection failed";
+      subEl.textContent   = msg;
+      subEl.classList.add("error");
+      iconLoad.style.display = "none";
+      closeBtn.style.display = "inline-flex";
+      /* notify opener so it can show the error too */
+      if (window.opener) {
+        window.opener.postMessage({
+          type: "mcp-oauth-done",
+          state: getParam("state"),
+          error: msg,
+        }, location.origin);
+      }
+    }
+
+    function setDone(data) {
+      titleEl.textContent = "Supabase connected!";
+      subEl.textContent   = "You can close this window — 360 AI is ready.";
+      iconLoad.style.display = "none";
+      iconDone.style.display = "flex";
+      closeBtn.style.display = "inline-flex";
+      /* auto-close after 1.8 s */
+      setTimeout(() => { try { window.close(); } catch(_) {} }, 1800);
+    }
+
+    function getParam(key) {
+      return new URLSearchParams(location.search).get(key);
+    }
+
+    async function run() {
+      const code  = getParam("code");
+      const state = getParam("state");
+      const err   = getParam("error");
+
+      if (err) {
+        setError(getParam("error_description") || err);
+        return;
+      }
+
+      if (!code || !state) {
+        setError("Missing authorization code. Please try again.");
+        return;
+      }
+
+      /* retrieve verifier stored by mcp.js before the redirect */
+      const verifier = sessionStorage.getItem("mcp_pkce_" + state);
+      if (!verifier) {
+        setError("PKCE verifier not found. The session may have expired — please try again.");
+        return;
+      }
+      sessionStorage.removeItem("mcp_pkce_" + state);
+
+      let tokenData;
+      try {
+        const res = await fetch(EXCHANGE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, code_verifier: verifier, redirect_uri: REDIRECT_URI }),
+        });
+        tokenData = await res.json();
+        if (!res.ok) throw new Error(tokenData?.error || "Token exchange failed");
+      } catch (e) {
+        setError(e.message || "Token exchange failed. Please try again.");
+        return;
+      }
+
+      /* send token back to the opener (mcp.js) */
+      if (window.opener) {
+        window.opener.postMessage({
+          type:          "mcp-oauth-done",
+          state,
+          access_token:  tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          expires_in:    tokenData.expires_in,
+        }, location.origin);
+      }
+
+      setDone(tokenData);
+    }
+
+    run();
+  })();
+  </script>
+</body>
+</html>
