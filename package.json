@@ -45,10 +45,10 @@
       "category": "Network"
     },
     "mac": {
-      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
-      "icon": "electron/icons/icon.icns",
-      "category": "public.app-category.productivity"
-    },
+  "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+  "icon": "icon-512.png",
+  "category": "public.app-category.productivity"
+},
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
