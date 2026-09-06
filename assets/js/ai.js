@@ -661,7 +661,11 @@
           if (workDetail) workDetail.textContent = "Processing context and reasoning…";
           thinkingBuf += delta;
           if (thinkingBox) thinkingBox.style.display = "block";
-          if (thinkingContent) thinkingContent.textContent = thinkingBuf;
+          if (thinkingContent) {
+            thinkingContent.style.display = "block";
+            thinkingContent.textContent = thinkingBuf;
+            thinkingContent.scrollTop = thinkingContent.scrollHeight;
+          }
           scrollBottom();
         },
         onTool(name, status) {
