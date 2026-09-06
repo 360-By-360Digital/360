@@ -1,414 +1,154 @@
-/* ============================================================
-   360 — GALLIUM.CSS  (performance pass, calm down everyone)
-   "360 Gallium" — deep Liquid Glass mode.
-
-   v2 changes, based on real-world feedback:
-   - The v1 ambient layer animated `filter` (hue-rotate) every
-     frame and ran an SVG feDisplacementMap over the whole
-     viewport. Animating `filter` forces a repaint every frame
-     (it is NOT compositor-only like `transform`/`opacity`), and
-     doing that under a 70px blur across the entire page was the
-     main source of the reported lag. Both are gone. The ambient
-     layer is now static filter + transform-only animation.
-   - v1 gave every repeating card (result-card, game-card, etc.)
-     the same 34px/4-function blur PLUS a blended, cursor-tracked
-     ::after layer. With a list of 20+ cards on screen (search
-     results, games grid, news grid) that's 20+ stacked
-     backdrop-filter layers plus 20+ blend-mode layers — this is
-     the classic "many overlapping backdrop-filters" jank trap.
-     Repeating cards now get a single cheap 2-function blur and
-     no pseudo-layer. The expensive "hero" treatment (deep blur,
-     rim gleam that tracks the cursor) is reserved for the
-     handful of one-off chrome elements (sidebar-level surfaces,
-     logo pill, auth box, modals, popups) where there's only ever
-     0-1 on screen at a time.
-   - v1 tracked the cursor globally via `document.documentElement`
-     custom properties updated on every pointermove — that
-     invalidates style for every element referencing --glx/--gly
-     across the WHOLE page on every frame. gallium.js now only
-     attaches per-element listeners to the small hero set and
-     writes the property on that element only.
-   - v1 only styled the shared component classes (.result-card,
-     .sidebar, etc.), so any page whose cards use their own class
-     names (news-card, notes-card, docs-card, vids-card, rp-card,
-     extra-card, etc.) got no visible effect at all. Those are
-     now included explicitly below.
-
-   Toggled via body.gallium-mode class.
-   ============================================================ */
-
-/* ── GALLIUM VARIABLES ── */
+/* 360 Gallium — Liquid Glass visual layer.
+   It is deliberately paint-only: no layout properties change as the mode is
+   enabled, so grids and fixed chrome retain their exact geometry. */
 body.gallium-mode {
-  /* "hero" chrome — sidebar, logo, auth box, modals: 0-1 on screen */
-  --gal-blur-hero:    blur(26px) saturate(180%);
-  /* everyday repeating surfaces — cards, chips, inputs: can be many */
-  --gal-blur:         blur(12px) saturate(150%);
-
-  --gal-glass:        rgba(255, 255, 255, 0.08);
-  --gal-glass-mid:    rgba(255, 255, 255, 0.16);
-  --gal-glass-high:   rgba(255, 255, 255, 0.28);
-  --gal-rim-hi:       rgba(255, 255, 255, 0.90);
-  --gal-border:       rgba(255, 255, 255, 0.32);
-  --gal-border-sm:    rgba(255, 255, 255, 0.16);
-  --gal-shadow:       0 20px 48px rgba(0, 0, 0, 0.22);
-  --gal-shadow-sm:    0 8px 22px rgba(0, 0, 0, 0.13);
-  --gal-inset-top:    inset 0 1.5px 0 var(--gal-rim-hi);
-  --gal-inset-sm:     inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  --gal-radius:       24px;
-  --gal-radius-sm:    16px;
-  --gal-radius-xs:    12px;
-  --gal-gleam:        rgba(255, 255, 255, 0.5);
-  --glx: 50%;
-  --gly: 25%;
-}
-
-body.gallium-mode.dark {
-  --gal-glass:        rgba(8, 12, 26, 0.34);
-  --gal-glass-mid:    rgba(8, 12, 26, 0.50);
-  --gal-glass-high:   rgba(8, 12, 26, 0.68);
-  --gal-rim-hi:       rgba(255, 255, 255, 0.26);
-  --gal-border:       rgba(255, 255, 255, 0.14);
-  --gal-border-sm:    rgba(255, 255, 255, 0.08);
-  --gal-shadow:       0 24px 56px rgba(0, 0, 0, 0.55);
-  --gal-inset-top:    inset 0 1.5px 0 rgba(255, 255, 255, 0.16);
-  --gal-inset-sm:     inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --gal-gleam:        rgba(160, 190, 255, 0.28);
-}
-
-/* ── VISIBLE FEEDBACK ON EVERY PAGE ──
-   A very cheap, always-present tint on body itself so pages with
-   little themeable chrome (404, minimal utility pages) still
-   visibly show Gallium is on — this is a plain background-color
-   layer, not a filter, so it costs effectively nothing. */
-body.gallium-mode {
+  --gal-glass: rgba(255, 255, 255, .38);
+  --gal-glass-strong: rgba(255, 255, 255, .58);
+  --gal-stroke: rgba(255, 255, 255, .62);
+  --gal-stroke-soft: rgba(55, 74, 112, .15);
+  --gal-text: #172036;
+  --gal-shadow: 0 18px 42px rgba(39, 60, 105, .16), inset 0 1px rgba(255,255,255,.78);
+  --gal-shadow-raised: 0 24px 44px rgba(47, 76, 136, .22), inset 0 1px rgba(255,255,255,.88);
+  --gal-accent: var(--a, #007aff);
+  color: var(--gal-text);
+  background-color: #dce7f7 !important;
   background-image:
-    linear-gradient(180deg, rgba(120, 150, 255, 0.05), transparent 30%);
+    radial-gradient(ellipse 70% 52% at -8% -12%, rgba(255,255,255,.95), transparent 64%),
+    radial-gradient(ellipse 53% 42% at 108% 8%, rgba(157,195,255,.65), transparent 65%),
+    radial-gradient(ellipse 54% 45% at 54% 110%, rgba(186,159,255,.33), transparent 67%),
+    linear-gradient(145deg, #edf5ff, #dce7f7 50%, #e9e5fc);
   background-attachment: fixed;
 }
 
-/* ── AMBIENT BACKDROP ──
-   Static filter (computed once), transform-only animation
-   (compositor-friendly — does not repaint). This is the fix for
-   the "unbearable lag": v1 animated `filter` every frame, which
-   forces a full repaint of a 70px-blurred, viewport-sized layer
-   on every tick. That animation is gone; only translate/scale
-   run now, which the GPU compositor handles for free. */
+body.gallium-mode.dark {
+  --gal-glass: rgba(22, 30, 52, .52);
+  --gal-glass-strong: rgba(20, 28, 49, .72);
+  --gal-stroke: rgba(213, 226, 255, .25);
+  --gal-stroke-soft: rgba(220, 232, 255, .13);
+  --gal-text: #f5f8ff;
+  --gal-shadow: 0 18px 42px rgba(0, 6, 23, .34), inset 0 1px rgba(255,255,255,.17);
+  --gal-shadow-raised: 0 24px 44px rgba(0, 4, 19, .48), inset 0 1px rgba(255,255,255,.25);
+  background-color: #0b1020 !important;
+  background-image:
+    radial-gradient(ellipse 54% 52% at 0% 0%, rgba(87,120,255,.28), transparent 67%),
+    radial-gradient(ellipse 52% 45% at 105% 12%, rgba(58,214,219,.18), transparent 66%),
+    radial-gradient(ellipse 48% 45% at 50% 112%, rgba(146,95,255,.18), transparent 66%),
+    linear-gradient(145deg, #111a34, #090e1c 56%, #15102a);
+}
+
+/* A single fixed glow replaces page-wide animated filters. */
 body.gallium-mode::before {
-  content: "";
-  position: fixed;
-  inset: -10%;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 55% 45% at 18% 22%, rgba(255, 255, 255, 0.14) 0%, transparent 62%),
-    radial-gradient(ellipse 50% 60% at 85% 78%, rgba(180, 210, 255, 0.12) 0%, transparent 65%),
-    radial-gradient(ellipse 40% 38% at 52% 48%, rgba(255, 255, 255, 0.06) 0%, transparent 70%);
-  filter: blur(48px) saturate(160%);
-  animation: galliumDrift 36s ease-in-out infinite alternate;
-  transform: translateZ(0);
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(120deg, rgba(255,255,255,.2), transparent 31%, rgba(255,255,255,.08) 70%, transparent);
 }
 
-body.gallium-mode.dark::before {
-  background:
-    radial-gradient(ellipse 55% 45% at 18% 22%, rgba(120, 150, 255, 0.14) 0%, transparent 62%),
-    radial-gradient(ellipse 50% 60% at 85% 78%, rgba(80, 220, 220, 0.10) 0%, transparent 65%),
-    radial-gradient(ellipse 40% 38% at 52% 48%, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
-}
-
-@keyframes galliumDrift {
-  0%   { transform: scale(1)    translate(0, 0); }
-  50%  { transform: scale(1.05) translate(1%, -1%); }
-  100% { transform: scale(1.02) translate(-0.5%, 0.5%); }
-}
-
-/* ── HERO CHROME (0–1 instances per page) ──
-   Sidebar-level panels: deep blur + rim highlight. No pseudo
-   overlay here (too large an area for a blended layer to be
-   cheap), just the blur + shadow. */
-body.gallium-mode .sidebar,
-body.gallium-mode .settings-panel,
-body.gallium-mode .chat-left,
-body.gallium-mode .chat-header,
-body.gallium-mode .search-bar-strip {
-  background: var(--gal-glass-high) !important;
-  backdrop-filter: var(--gal-blur-hero) !important;
-  -webkit-backdrop-filter: var(--gal-blur-hero) !important;
-  box-shadow: var(--gal-shadow), var(--gal-inset-top) !important;
-}
-
-body.gallium-mode .sidebar        { border-right: 1px solid var(--gal-border) !important; }
-body.gallium-mode .settings-panel { border-left:  1px solid var(--gal-border) !important; }
-body.gallium-mode .chat-left      { border-right: 1px solid var(--gal-border) !important; }
-body.gallium-mode .chat-header,
-body.gallium-mode .search-bar-strip { border-bottom: 1px solid var(--gal-border) !important; }
-
-/* ── HERO CHROME WITH CURSOR GLEAM (singleton elements only) ──
-   Logo pill, auth box, modal, profile popup: there is only ever
-   one of these visible at a time, so a blended cursor-tracked
-   highlight is cheap here even though it would be expensive on
-   a 20-card grid. gallium.js adds the .gallium-gleam class only
-   to elements it has attached a listener to. */
-body.gallium-mode .logo-main,
-body.gallium-mode .auth-box,
-body.gallium-mode .modal-box,
-body.gallium-mode #profile-popup {
-  position: relative !important;
-  overflow: hidden !important;
-  background: var(--gal-glass-high) !important;
-  backdrop-filter: var(--gal-blur-hero) !important;
-  -webkit-backdrop-filter: var(--gal-blur-hero) !important;
-  border: 1px solid var(--gal-border) !important;
-  box-shadow: var(--gal-shadow), var(--gal-inset-top) !important;
-}
-
-body.gallium-mode .logo-main   { border-radius: 26px !important; }
-body.gallium-mode .auth-box    { border-radius: var(--gal-radius) !important; }
-body.gallium-mode .modal-box   { border-radius: var(--gal-radius) !important; }
-body.gallium-mode #profile-popup { border-radius: var(--gal-radius-sm) !important; }
-
-body.gallium-mode .logo-main.gallium-gleam::after,
-body.gallium-mode .auth-box.gallium-gleam::after,
-body.gallium-mode .modal-box.gallium-gleam::after,
-body.gallium-mode #profile-popup.gallium-gleam::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(circle 260px at var(--glx) var(--gly),
-    var(--gal-gleam) 0%, transparent 60%);
-  mix-blend-mode: overlay;
-}
-
-/* ── REPEATING CARDS (can be many per page) ──
-   One cheap 2-function blur, plain border + single shadow. No
-   pseudo overlay, no per-card JS tracking — this is the part
-   that scales to 20+ instances without stacking GPU cost. */
-body.gallium-mode .result-card,
-body.gallium-mode .game-card,
-body.gallium-mode .stat-card,
-body.gallium-mode .ai-bubble.assistant,
-body.gallium-mode #quoteCard,
-body.gallium-mode #weatherContent,
-body.gallium-mode #ai-output,
-body.gallium-mode #shortResult,
-body.gallium-mode .translator-box,
-body.gallium-mode .infobox,
-body.gallium-mode .knowledge-panel,
-body.gallium-mode .paa-section,
-body.gallium-mode .news-card,
-body.gallium-mode .notes-card,
-body.gallium-mode .docs-card,
-body.gallium-mode .vids-card,
-body.gallium-mode .rp-card,
-body.gallium-mode .extra-card {
-  background: var(--gal-glass-mid) !important;
-  backdrop-filter: var(--gal-blur) !important;
-  -webkit-backdrop-filter: var(--gal-blur) !important;
-  border: 1px solid var(--gal-border) !important;
-  border-radius: var(--gal-radius) !important;
-  box-shadow: var(--gal-shadow-sm), var(--gal-inset-top) !important;
-  contain: layout style paint;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease !important;
-}
-
-body.gallium-mode .result-card:hover,
-body.gallium-mode .game-card:hover,
-body.gallium-mode .news-card:hover,
-body.gallium-mode .notes-card:hover,
-body.gallium-mode .docs-card:hover,
-body.gallium-mode .vids-card:hover,
-body.gallium-mode .rp-card:hover,
-body.gallium-mode .extra-card:hover {
-  background: var(--gal-glass-high) !important;
-  border-color: var(--a) !important;
-  transform: translateY(-2px) !important;
-}
-
-/* ── INPUTS ── */
-body.gallium-mode input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
-body.gallium-mode textarea,
-body.gallium-mode select {
-  background: var(--gal-glass) !important;
-  backdrop-filter: var(--gal-blur) !important;
-  -webkit-backdrop-filter: var(--gal-blur) !important;
-  border: 1.5px solid var(--gal-border-sm) !important;
-  border-radius: var(--gal-radius-xs) !important;
-  box-shadow: var(--gal-inset-sm) !important;
-}
-
-body.gallium-mode input:focus,
-body.gallium-mode textarea:focus {
-  border-color: var(--a) !important;
-  box-shadow: var(--gal-inset-sm), 0 0 0 3px rgba(59, 130, 246, 0.20) !important;
-}
-
-/* ── PILL SEARCH BAR / CHAT INPUT ── */
-body.gallium-mode #search-form,
-body.gallium-mode .custom-search-form,
-body.gallium-mode #strip-search-form,
-body.gallium-mode #chat-input-row {
-  background: var(--gal-glass-mid) !important;
-  backdrop-filter: var(--gal-blur-hero) !important;
-  -webkit-backdrop-filter: var(--gal-blur-hero) !important;
-  border: 1.5px solid var(--gal-border) !important;
-  box-shadow: var(--gal-shadow-sm), var(--gal-inset-top) !important;
-}
-
-/* ── CLOCK & WEATHER CHIPS ── */
-body.gallium-mode .clock-pill,
-body.gallium-mode .weather-chip {
-  background: var(--gal-glass-mid) !important;
-  backdrop-filter: var(--gal-blur) !important;
-  -webkit-backdrop-filter: var(--gal-blur) !important;
-  border: 1px solid var(--gal-border) !important;
-  box-shadow: var(--gal-shadow-sm) !important;
-}
-
-/* ── PAGINATION / PILL BUTTONS — sheen sweep on hover ──
-   Only animates on :hover (not continuously), and only the
-   transform of a small pseudo-element, so cost stays negligible
-   even with many buttons on screen. */
-body.gallium-mode .page-btn,
-body.gallium-mode .pill-btn {
-  position: relative !important;
-  overflow: hidden !important;
-  background: var(--gal-glass-mid) !important;
-  backdrop-filter: var(--gal-blur) !important;
-  -webkit-backdrop-filter: var(--gal-blur) !important;
-  border: 1px solid var(--gal-border) !important;
-}
-
-body.gallium-mode .page-btn::after,
-body.gallium-mode .pill-btn::after {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -60%;
-  width: 40%;
-  height: 200%;
-  background: linear-gradient(115deg, transparent, rgba(255,255,255,0.5), transparent);
-  transform: skewX(-18deg) translateX(-40%);
-  transition: transform 0.5s ease;
-  pointer-events: none;
-}
-
-body.gallium-mode .page-btn:hover::after,
-body.gallium-mode .pill-btn:hover::after {
-  transform: skewX(-18deg) translateX(260%);
-}
-
-body.gallium-mode .page-btn:hover,
-body.gallium-mode .pill-btn:hover {
-  background: var(--gal-glass-high) !important;
-  border-color: var(--a) !important;
-}
-
-/* ── CHAT MESSAGES ── */
-body.gallium-mode .chat-message:hover {
-  background: var(--gal-glass) !important;
-  border-color: var(--gal-border-sm) !important;
-}
-
-body.gallium-mode .msg-actions {
-  background: var(--gal-glass-high) !important;
-  backdrop-filter: var(--gal-blur) !important;
-  -webkit-backdrop-filter: var(--gal-blur) !important;
-  border: 1px solid var(--gal-border) !important;
-}
-
-body.gallium-mode .reaction-pill {
-  background: var(--gal-glass) !important;
-  border: 1px solid var(--gal-border-sm) !important;
-}
-
-/* ── OVERLAY ── */
-body.gallium-mode .overlay.active {
-  background: rgba(0, 0, 0, 0.34) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
-}
-
-/* ── SUGGESTIONS DROPDOWN ── */
-body.gallium-mode #suggestions-dropdown {
-  background: var(--gal-glass-high) !important;
-  backdrop-filter: var(--gal-blur-hero) !important;
-  -webkit-backdrop-filter: var(--gal-blur-hero) !important;
-  border: 1px solid var(--gal-border) !important;
-  box-shadow: var(--gal-shadow), var(--gal-inset-top) !important;
-  border-radius: var(--gal-radius-sm) !important;
-}
-
-/* ── EMOJI PICKER ── */
+/* Shared surfaces. outline and inset shadows never affect measured dimensions. */
+body.gallium-mode .sidebar, body.gallium-mode .settings-panel,
+body.gallium-mode .chat-left, body.gallium-mode .chat-header,
+body.gallium-mode .search-bar-strip, body.gallium-mode .st-topbar,
+body.gallium-mode .st-sidebar, body.gallium-mode .st-card,
+body.gallium-mode .result-card, body.gallium-mode .game-card,
+body.gallium-mode .stat-card, body.gallium-mode .news-card,
+body.gallium-mode .notes-card, body.gallium-mode .docs-card,
+body.gallium-mode .vids-card, body.gallium-mode .rp-card,
+body.gallium-mode .extra-card, body.gallium-mode .infobox,
+body.gallium-mode .knowledge-panel, body.gallium-mode .paa-section,
+body.gallium-mode .translator-box, body.gallium-mode .ai-bubble.assistant,
+body.gallium-mode #quoteCard, body.gallium-mode #weatherContent,
+body.gallium-mode #ai-output, body.gallium-mode #shortResult,
+body.gallium-mode .auth-box, body.gallium-mode .modal-box,
+body.gallium-mode #profile-popup, body.gallium-mode #suggestions-dropdown,
 body.gallium-mode .emoji-picker {
-  background: var(--gal-glass-high) !important;
-  backdrop-filter: var(--gal-blur-hero) !important;
-  -webkit-backdrop-filter: var(--gal-blur-hero) !important;
-  border: 1px solid var(--gal-border) !important;
-  box-shadow: var(--gal-shadow), var(--gal-inset-top) !important;
+  background-color: var(--gal-glass) !important;
+  outline: 1px solid var(--gal-stroke-soft);
+  box-shadow: var(--gal-shadow) !important;
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
 }
 
-/* ── LIGHTBOX ── */
-body.gallium-mode #lightbox,
-body.gallium-mode #img-lightbox {
-  background: rgba(0, 0, 0, 0.82) !important;
-  backdrop-filter: blur(18px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
+body.gallium-mode .sidebar, body.gallium-mode .settings-panel,
+body.gallium-mode .chat-left, body.gallium-mode .chat-header,
+body.gallium-mode .search-bar-strip, body.gallium-mode .st-topbar,
+body.gallium-mode .st-sidebar, body.gallium-mode .auth-box,
+body.gallium-mode .modal-box, body.gallium-mode #profile-popup,
+body.gallium-mode #suggestions-dropdown, body.gallium-mode .emoji-picker {
+  background-color: var(--gal-glass-strong) !important;
 }
 
-/* ── "POUR" RIPPLE — plays once when Gallium is switched on ── */
-@keyframes galliumPour {
-  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
-  40%  { opacity: 1; }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.6); }
+/* Only singleton hero surfaces receive pointer-led refraction.  The local
+   custom properties are updated by gallium.js, avoiding page-wide style work. */
+body.gallium-mode .logo-main.gallium-gleam, body.gallium-mode .auth-box.gallium-gleam,
+body.gallium-mode .modal-box.gallium-gleam, body.gallium-mode #profile-popup.gallium-gleam {
+  position: relative; overflow: hidden;
+}
+body.gallium-mode .logo-main.gallium-gleam::after, body.gallium-mode .auth-box.gallium-gleam::after,
+body.gallium-mode .modal-box.gallium-gleam::after, body.gallium-mode #profile-popup.gallium-gleam::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle 180px at var(--glx, 50%) var(--gly, 50%), rgba(255,255,255,.36), transparent 64%);
 }
 
-.gallium-ripple {
-  position: fixed;
-  z-index: 99998;
-  pointer-events: none;
-  width: 60px; height: 60px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(160,190,255,0.20) 45%, transparent 72%);
-  animation: galliumPour 0.85s ease forwards;
+/* Hover changes only composited properties; cards preserve their footprint. */
+body.gallium-mode .result-card, body.gallium-mode .game-card,
+body.gallium-mode .news-card, body.gallium-mode .notes-card,
+body.gallium-mode .docs-card, body.gallium-mode .vids-card,
+body.gallium-mode .rp-card, body.gallium-mode .extra-card, body.gallium-mode .st-card {
+  transition: transform 180ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms ease, background-color 180ms ease;
+  will-change: transform;
+}
+@media (hover: hover) {
+  body.gallium-mode .result-card:hover, body.gallium-mode .game-card:hover,
+  body.gallium-mode .news-card:hover, body.gallium-mode .notes-card:hover,
+  body.gallium-mode .docs-card:hover, body.gallium-mode .vids-card:hover,
+  body.gallium-mode .rp-card:hover, body.gallium-mode .extra-card:hover,
+  body.gallium-mode .st-card:hover {
+    background-color: var(--gal-glass-strong) !important;
+    box-shadow: var(--gal-shadow-raised) !important;
+    transform: translate3d(0, -2px, 0);
+  }
 }
 
-/* ── TOGGLE SWITCH (injected, non-settings pages) ── */
-.gallium-toggle-track {
-  width: 40px;
-  height: 23px;
-  background: rgba(148, 163, 184, 0.3);
-  border-radius: 999px;
-  position: relative;
-  flex-shrink: 0;
-  transition: background 0.24s;
-  border: none;
-  outline: none;
+/* Controls use a narrow blur, keeping dense forms responsive. */
+body.gallium-mode input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
+body.gallium-mode textarea, body.gallium-mode select,
+body.gallium-mode #search-form, body.gallium-mode .custom-search-form,
+body.gallium-mode #strip-search-form, body.gallium-mode #chat-input-row,
+body.gallium-mode .clock-pill, body.gallium-mode .weather-chip,
+body.gallium-mode .page-btn, body.gallium-mode .pill-btn,
+body.gallium-mode .reaction-pill, body.gallium-mode .msg-actions {
+  background-color: var(--gal-glass) !important;
+  outline: 1px solid var(--gal-stroke-soft);
+  box-shadow: inset 0 1px rgba(255,255,255,.52) !important;
+  backdrop-filter: blur(10px) saturate(135%);
+  -webkit-backdrop-filter: blur(10px) saturate(135%);
+  transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
-
-.gallium-toggle-track::before {
-  content: "";
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 17px;
-  height: 17px;
-  background: linear-gradient(160deg, #fff, #cfe0ff);
-  border-radius: 50%;
-  transition: transform 0.24s;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+body.gallium-mode input:focus, body.gallium-mode textarea:focus, body.gallium-mode select:focus {
+  outline: 2px solid color-mix(in srgb, var(--gal-accent) 60%, transparent);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--gal-accent) 18%, transparent), inset 0 1px rgba(255,255,255,.65) !important;
 }
-
-.gallium-toggle-track.on {
-  background: linear-gradient(135deg, var(--a, #3b82f6), #8b5cf6);
+@media (hover: hover) {
+  body.gallium-mode .page-btn:hover, body.gallium-mode .pill-btn:hover,
+  body.gallium-mode .reaction-pill:hover { background-color: var(--gal-glass-strong) !important; transform: translate3d(0,-1px,0); }
 }
+body.gallium-mode button:active, body.gallium-mode [role="button"]:active,
+body.gallium-mode .page-btn:active, body.gallium-mode .pill-btn:active { transform: scale(.97); }
 
-.gallium-toggle-track.on::before {
-  transform: translateX(17px);
+/* The controls are explicit visual feedback without changing their boxes. */
+body.gallium-mode .st-toggle, body.gallium-mode .gallium-toggle-track {
+  background: rgba(99, 115, 145, .35); outline: 1px solid var(--gal-stroke); box-shadow: inset 0 1px rgba(255,255,255,.4);
 }
+body.gallium-mode .st-toggle.on, body.gallium-mode .gallium-toggle-track.on {
+  background: linear-gradient(135deg, #0a84ff, #5e5ce6); box-shadow: 0 3px 9px rgba(10,132,255,.36), inset 0 1px rgba(255,255,255,.45);
+}
+body.gallium-mode .st-toggle::before, body.gallium-mode .gallium-toggle-track::before { box-shadow: 0 2px 5px rgba(11,22,46,.28); }
 
-/* Respect reduced-motion: kill the drift/sweep animations entirely. */
+body.gallium-mode .overlay.active { background: rgba(10, 18, 38, .3) !important; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+body.gallium-mode #lightbox, body.gallium-mode #img-lightbox { background: rgba(5, 10, 24, .78) !important; }
+
+@keyframes galliumPour { from { opacity: .8; transform: translate(-50%,-50%) scale(.2); } to { opacity: 0; transform: translate(-50%,-50%) scale(2.5); } }
+.gallium-ripple { position: fixed; z-index: 99998; pointer-events: none; width: 76px; height: 76px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.72), rgba(97,163,255,.3) 46%, transparent 70%); animation: galliumPour 560ms ease-out forwards; }
+
 @media (prefers-reduced-motion: reduce) {
-  body.gallium-mode::before { animation: none !important; }
-  body.gallium-mode .page-btn::after,
-  body.gallium-mode .pill-btn::after { transition: none !important; }
+  body.gallium-mode *, body.gallium-mode *::before, body.gallium-mode *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
 }
