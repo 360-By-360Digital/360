@@ -1,13 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebCell - RTC + Cell Communicator</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>360 — WebCell</title>
+  <meta name="theme-color" content="#3b82f6" />
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/wide.css" />
+  <link rel="stylesheet" href="/assets/css/gallium.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+  <link rel="stylesheet" href="/assets/css/cursor.css" />
+  <link rel="stylesheet" href="/assets/css/webcell.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+  <div class="cursor-dot"></div><div class="cursor-trail"></div><div class="cursor-crosshair"></div><div class="cursor-blob"></div>
 
-    <h1 style="text-align:center; color:blue;">WebCell</h1>
+  <div class="auth-top-right">
+    <button class="auth-btn" id="signInBtn">Sign In</button>
+    <button class="auth-btn" id="signUpBtn">Sign Up</button>
+    <button class="auth-btn" id="signOutBtn" style="display:none">Sign Out</button>
+  </div>
+  <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav-list">
+      <div class="nav-item" data-href="/">Home</div>
+      <div class="nav-item" data-href="/ai">AI</div>
+      <div class="nav-item active">WebCell</div>
+      <div class="nav-item" data-href="/chat">Chat</div>
+      <div class="nav-item" data-href="/apps">Apps</div>
+    </nav>
+  </aside>
+  <div class="overlay" id="overlay"></div>
 
+  <main class="webcell-shell">
+    <section class="webcell-hero">
+      <div>
+        <div class="eyebrow">360 / COMMUNICATION</div>
+        <h1>Web<span>Cell</span></h1>
+        <p>Private browser-to-browser calling. No phone number required.</p>
+      </div>
+      <div class="cell-status"><i></i><span id="statusText">Ready</span></div>
+    </section>
+
+    <section class="cell-grid">
+      <div class="cell-card dial-card">
+        <div class="card-label">CALL SOMEONE</div>
+        <div class="dial-row">
+          <span class="at">@</span>
+          <input id="peerId" autocomplete="off" spellcheck="false" placeholder="WebCell ID" maxlength="40" />
+          <button id="callBtn" class="primary-btn" type="button" aria-label="Start call">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92Z"/></svg>
+          </button>
+        </div>
+        <div class="hint">Calls stay on the web using WebRTC audio.</div>
+      </div>
+
+      <div class="cell-card identity-card">
+        <div class="card-label">YOUR WEBCELL</div>
+        <div class="identity-id" id="myId">Not signed in</div>
+        <div class="identity-name" id="myName">Sign in to create your WebCell identity.</div>
+        <button class="secondary-btn" id="copyIdBtn" type="button">Copy ID</button>
+      </div>
+
+      <div class="cell-card contacts-card">
+        <div class="card-heading"><div><div class="card-label">CONTACTS</div><h2>Your people</h2></div><button id="addContactBtn" class="icon-btn" type="button">+</button></div>
+        <div id="contactsList" class="contacts-list"><div class="empty">No contacts yet.</div></div>
+      </div>
+
+      <div class="cell-card recent-card">
+        <div class="card-label">RECENT CALLS</div>
+        <div id="recentList" class="recent-list"><div class="empty">No calls yet.</div></div>
+      </div>
+    </section>
+  </main>
+
+  <section class="call-overlay" id="callOverlay" aria-hidden="true">
+    <div class="call-panel">
+      <div class="call-orb" id="callOrb"><span></span></div>
+      <div class="call-state" id="callState">Calling</div>
+      <div class="call-peer" id="callPeer">@—</div>
+      <div class="call-timer" id="callTimer">0:00</div>
+      <div class="call-actions">
+        <button class="round-btn" id="muteBtn" type="button" title="Mute microphone"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v5M8 23h8"/></svg></button>
+        <button class="round-btn hangup" id="hangupBtn" type="button" title="End call"><svg viewBox="0 0 24 24"><path d="M4.9 15.1a14.8 14.8 0 0 1 14.2 0"/><path d="M2 12.5a17.9 17.9 0 0 1 20 0"/></svg></button>
+        <button class="round-btn" id="speakerBtn" type="button" title="Speaker"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>
+      </div>
+    </div>
+  </section>
+
+  <audio id="remoteAudio" autoplay playsinline></audio>
+  <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/webcell.js"></script>
 </body>
 </html>
