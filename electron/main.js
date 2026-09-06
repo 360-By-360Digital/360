@@ -5,6 +5,7 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
+    title: "360",
     icon: path.join(__dirname, "icon.ico"),
     webPreferences: {
       nodeIntegration: false,
@@ -12,10 +13,11 @@ function createWindow() {
     }
   });
 
-  // Remove Electron's default menu bar because it's UGLY
+  // Remove Electron's default menu bar
   Menu.setApplicationMenu(null);
 
-  win.loadFile(path.join(__dirname, "index.html"));
+  // Load the 360 website
+  win.loadURL("https://360-search.com");
 }
 
 app.whenReady().then(() => {
