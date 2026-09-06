@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>404 — Page Not Found</title>
-  <link rel="icon" href="/404favicon.ico" type="image/x-icon">
+  
   <link rel="stylesheet" href="/assets/css/main.css" />
   <link rel="stylesheet" href="/assets/css/wide.css" />
   <link rel="stylesheet" href="/assets/css/gallium.css" />
@@ -157,6 +157,7 @@
     }
     .nav-suggest-btn svg { flex-shrink: 0; }
   </style>
+<link rel="icon" href="/404favicon.ico" type="image/x-icon">
 </head>
 <body>
   <div class="cursor-dot"></div>
@@ -195,31 +196,159 @@
   <script src="/assets/js/cursor.js"></script>
   <script>
     (() => {
-      const nicknacks = [
+      // Tiny 404 easter eggs: intentionally different on each visit.
+      const path = (location.pathname || "/").toLowerCase();
+      const generalNicknacks = [
         "well this is ironic",
-        "404-search.com",
         "uh... wrong turn",
-        "nothing to see here",
         "I swear it was here",
-        "the internet misplaced it"
+        "nothing to see here",
+        "the internet misplaced it",
+        "this is awkward",
+        "whoops",
+        "welp, here we are",
+        "I have no comment",
+        "you saw nothing",
+        "keep walking",
+        "how did we get here",
+        "I have several questions",
+        "I have zero answers",
+        "the page has escaped",
+        "the page took the day off",
+        "the page is on vacation",
+        "the server knows something",
+        "the server refuses to elaborate",
+        "I asked the server. It hung up.",
+        "maybe it's on the other internet",
+        "I don't trust this link",
+        "this link has bad vibes",
+        "wrong hallway",
+        "wrong door",
+        "wrong timeline",
+        "the webpage dimension is closed",
+        "please remain calm",
+        "everything is probably fine",
+        "everything is absolutely not fine",
+        "I think we're lost",
+        "we're both lost",
+        "I need a map",
+        "did you check under the couch?",
+        "maybe the page is hiding",
+        "the URL betrayed us",
+        "who moved the page?",
+        "WHO MOVED THE PAGE",
+        "I was promised a webpage",
+        "that was certainly a URL",
+        "10/10 URL. 0/10 page.",
+        "bold choice of URL",
+        "excellent typo",
+        "was that intentional?",
+        "I respect the confidence",
+        "the URL is doing its best",
+        "future me can handle this",
+        "future me is going to hate this",
+        "loading... spiritually",
+        "estimated wait time: yes",
+        "please hold",
+        "your page is important to us",
+        "ERROR: vibes not found",
+        "ERROR: common sense not found",
+        "the internet did a little oopsie",
+        "someone unplugged the webpage",
+        "the page has left the building",
+        "congratulations?",
+        "achievement unlocked: absolutely nothing",
+        "+0 results",
+        "search harder",
+        "you almost had it",
+        "close enough",
+        "not even close",
+        "nice try",
+        "I was looking for that too",
+        "I came here expecting a webpage",
+        "and yet, here we are",
+        "well... that's new",
+        "that's probably fine",
+        "that's probably not fine",
+        "who gave me access to production",
+        "someone revoke my permissions",
+        "it worked yesterday",
+        "works on my machine",
+        "I have made a terrible mistake",
+        "please send help",
+        "I need an adult",
+        "I am the adult",
+        "don't worry, I know what I'm doing",
+        "I absolutely do not know what I'm doing",
+        "may the URL be with you",
+        "404 but make it fashion",
+        "this page has been promoted to missing",
+        "the answer is no",
+        "the answer was almost yes"
       ];
-      const bubble = document.getElementById("error-nicknack");
-      if (bubble) {
-        let hash = 0;
-        for (const ch of location.pathname) hash = ((hash << 5) - hash + ch.charCodeAt(0)) | 0;
-        bubble.textContent = nicknacks[Math.abs(hash) % nicknacks.length];
-      }
 
-      // Ask the AI-backed navigate-suggest edge function whether the
-      // broken path the user landed on looks like a typo/shorthand for
-      // a real 360 destination (menu item, app, or game). If so, show
-      // a one-click button to jump straight there.
+      const searchNicknacks = [
+        "I swear this was on the search bar",
+        "the search bar went missing too",
+        "I searched everywhere",
+        "searching...",
+        "still searching...",
+        "search harder",
+        "I searched for the page. The page searched back.",
+        "the search engine has entered witness protection",
+        "the search bar knows where it went",
+        "search.exe has stopped searching",
+        "I was promised search results",
+        "this search took a wrong turn",
+        "please speed I need this - I'm... kinda lost......."
+      ];
+
+      const chatNicknacks = [
+        "the chat went quiet",
+        "nobody's here",
+        "awkward silence...",
+        "I think the chat wandered off"
+      ];
+
+      const aiNicknacks = [
+        "the AI said it knew where this was",
+        "I asked the AI. It wasn't helpful.",
+        "even the AI couldn't find it",
+        "the AI is thinking about it"
+      ];
+
+      const docsNicknacks = [
+        "I checked the docs. They're not helping.",
+        "the documentation doesn't mention this",
+        "RTFM did not work this time",
+        "the docs went missing too"
+      ];
+
+      const rareNicknacks = [
+        "this is Zaki's fault",
+        "MINGZE WHAT DID YOU DO",
+        "who deployed this?",
+        "someone definitely tested this"
+      ];
+
+      const pool = path.includes("search") ? searchNicknacks
+        : path.includes("/chat") ? chatNicknacks
+        : path.includes("/ai") ? aiNicknacks
+        : path.includes("/docs") ? docsNicknacks
+        : generalNicknacks;
+
+      // Rare developer easter eggs; most visits get ordinary nonsense.
+      const choices = Math.random() < 0.025 ? rareNicknacks : pool;
+      const bubble = document.getElementById("error-nicknack");
+      if (bubble) bubble.textContent = choices[Math.floor(Math.random() * choices.length)];
+
+      // Ask the existing AI-backed navigate-suggest edge function whether the
+      // broken path looks like a typo/shorthand for a real 360 destination.
       const NAV_SUGGEST_URL = "https://wiswfpfsjiowtrdyqpxy.supabase.co/functions/v1/navigate-suggest-groq";
       const container = document.getElementById("nav-suggest");
       if (!container) return;
 
       const attemptedPath = location.pathname || "/";
-      // Nothing useful to suggest for the root itself.
       if (attemptedPath === "/" || attemptedPath === "") return;
 
       fetch(NAV_SUGGEST_URL, {
@@ -245,9 +374,7 @@
           container.innerHTML = "";
           container.appendChild(btn);
         })
-        .catch(() => {
-          // Silent fail — the default "Back to 360" button is still there.
-        });
+        .catch(() => {});
 
       function escapeNavHtml(s) {
         return String(s || "")
