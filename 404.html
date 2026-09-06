@@ -1,16 +1,15 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>404 — Page Not Found</title>
-<link href="/favicon-32x32.png" rel="icon" type="image/png"/>
-<link href="/assets/css/main.css" rel="stylesheet"/>
-<link href="/assets/css/wide.css" rel="stylesheet"/>
-<link href="/assets/css/gallium.css" rel="stylesheet"/>
-<link href="/assets/css/cursor.css" rel="stylesheet"/>
-<style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 — Page Not Found</title>
+  <link rel="icon" href="/404favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/wide.css" />
+  <link rel="stylesheet" href="/assets/css/gallium.css" />
+  <link rel="stylesheet" href="/assets/css/cursor.css" />
+  <style>
     body {
       min-height: 100vh;
       display: flex;
@@ -27,6 +26,13 @@
       from { opacity:0; transform:translateY(30px); }
       to   { opacity:1; transform:translateY(0); }
     }
+    .error-hero {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 12px;
+    }
     .code {
       font-size: 96px;
       font-weight: 900;
@@ -37,6 +43,63 @@
       line-height: 1;
       margin-bottom: 12px;
     }
+    .error-character {
+      position: relative;
+      width: 118px;
+      height: 104px;
+      flex: 0 0 118px;
+    }
+    .stick-figure {
+      position: absolute;
+      right: 4px;
+      bottom: 2px;
+      width: 54px;
+      height: 78px;
+      color: var(--txt);
+      animation: figureFloat 3.5s ease-in-out infinite;
+    }
+    body.dark .stick-figure { color: var(--txtd); }
+    .stick-figure circle { fill: none; stroke: currentColor; stroke-width: 3; }
+    .stick-figure path, .stick-figure line { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
+    .speech-bubble {
+      position: absolute;
+      left: 0;
+      top: 0;
+      max-width: 105px;
+      padding: 8px 11px;
+      border: 1px solid color-mix(in srgb, var(--a) 45%, transparent);
+      border-radius: 13px;
+      background: color-mix(in srgb, var(--bg, white) 78%, transparent);
+      backdrop-filter: blur(10px);
+      color: var(--txt);
+      font-size: 11px;
+      line-height: 1.25;
+      font-weight: 700;
+      box-shadow: 0 8px 25px rgba(0,0,0,.08);
+    }
+    body.dark .speech-bubble { color: var(--txtd); }
+    .speech-bubble::after {
+      content: "";
+      position: absolute;
+      right: 18px;
+      bottom: -7px;
+      width: 12px;
+      height: 12px;
+      background: inherit;
+      border-right: 1px solid color-mix(in srgb, var(--a) 45%, transparent);
+      border-bottom: 1px solid color-mix(in srgb, var(--a) 45%, transparent);
+      transform: rotate(45deg);
+    }
+    @keyframes figureFloat {
+      0%,100% { transform: translateY(0) rotate(-1deg); }
+      50% { transform: translateY(-4px) rotate(1deg); }
+    }
+    @media (max-width: 560px) {
+      .error-hero { gap: 6px; }
+      .error-character { transform: scale(.82); transform-origin: left center; margin-right: -20px; }
+      .code { font-size: 78px; }
+    }
+
     .msg {
       font-size: 20px;
       font-weight: 700;
@@ -94,29 +157,59 @@
     }
     .nav-suggest-btn svg { flex-shrink: 0; }
   </style>
-<meta content="404  Page Not Found — part of the 360 web platform." name="description"/><meta content="noindex, nofollow" name="robots"/><meta content="website" property="og:type"/><meta content="404 — Page Not Found" property="og:title"/><meta content="404  Page Not Found — part of the 360 web platform." property="og:description"/><meta content="https://360-search.com/404.html" property="og:url"/><meta content="360" property="og:site_name"/><meta content="summary" name="twitter:card"/><meta content="404 — Page Not Found" name="twitter:title"/><meta content="404  Page Not Found — part of the 360 web platform." name="twitter:description"/><link href="https://360-search.com/404.html" rel="canonical"/></head>
+</head>
 <body>
-<div class="cursor-dot"></div>
-<div class="cursor-trail"></div>
-<div class="auth-top-right">
-<button class="auth-btn" id="signInBtn">Sign In</button>
-<button class="auth-btn" id="signUpBtn">Sign Up</button>
-<button class="auth-btn" id="signOutBtn" style="display:none;">Sign Out</button>
-</div>
-<div class="wrap">
-<div class="code">404</div>
-<div class="msg">Page not found</div>
-<p class="sub">Looks like this page doesn't exist — or maybe it moved.<br/>Head back to 360 and keep searching.</p>
-<div class="nav-suggest" id="nav-suggest"></div>
-<a class="home-btn" href="/">← Back to 360</a>
-</div>
-<script src="/assets/js/main.js"></script>
-<script src="/assets/js/auth-fix.js"></script>
-<script src="/assets/js/wide.js"></script>
-<script src="/assets/js/gallium.js"></script>
-<script src="/assets/js/cursor.js"></script>
-<script>
+  <div class="cursor-dot"></div>
+  <div class="cursor-trail"></div>
+
+  <div class="auth-top-right">
+    <button id="signInBtn"  class="auth-btn">Sign In</button>
+    <button id="signUpBtn"  class="auth-btn">Sign Up</button>
+    <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+  </div>
+  <div class="wrap">
+    <div class="error-hero">
+      <div class="code">404</div>
+      <div class="error-character" aria-hidden="true">
+        <div class="speech-bubble" id="error-nicknack">well this is ironic</div>
+        <svg class="stick-figure" viewBox="0 0 60 86" role="img">
+          <circle cx="30" cy="13" r="9"></circle>
+          <path d="M30 22v27"></path>
+          <path d="M30 30 15 39"></path>
+          <path d="M30 30 45 36"></path>
+          <path d="M30 49 18 70"></path>
+          <path d="M30 49 43 70"></path>
+        </svg>
+      </div>
+    </div>
+    <div class="msg">Page not found</div>
+    <p class="sub">Looks like this page doesn't exist — or maybe it moved.<br>Head back to 360 and keep searching.</p>
+    <div class="nav-suggest" id="nav-suggest"></div>
+    <a class="home-btn" href="/">← Back to 360</a>
+  </div>
+
+  <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/auth-fix.js"></script>
+  <script src="/assets/js/wide.js"></script>
+  <script src="/assets/js/gallium.js"></script>
+  <script src="/assets/js/cursor.js"></script>
+  <script>
     (() => {
+      const nicknacks = [
+        "well this is ironic",
+        "404-search.com",
+        "uh... wrong turn",
+        "nothing to see here",
+        "I swear it was here",
+        "the internet misplaced it"
+      ];
+      const bubble = document.getElementById("error-nicknack");
+      if (bubble) {
+        let hash = 0;
+        for (const ch of location.pathname) hash = ((hash << 5) - hash + ch.charCodeAt(0)) | 0;
+        bubble.textContent = nicknacks[Math.abs(hash) % nicknacks.length];
+      }
+
       // Ask the AI-backed navigate-suggest edge function whether the
       // broken path the user landed on looks like a typo/shorthand for
       // a real 360 destination (menu item, app, or game). If so, show
