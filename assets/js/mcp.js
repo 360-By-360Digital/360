@@ -43,7 +43,6 @@
         { name: "search_repos", desc: "Search GitHub repositories" },
         { name: "get_file",     desc: "Read a file from a repo" },
       ],
-      comingSoon: true,
     },
   ];
 
@@ -298,6 +297,55 @@
     overlay.querySelector("#mcp-err-close").addEventListener("click", () => overlay.remove());
   }
 
+  /* ── PAT form (GitHub) ──────────────────────────────────────────── */
+
+  function startPAT(connector) {
+    const overlay = document.createElement("div");
+    overlay.className = "mcp-auth-overlay";
+
+    overlay.innerHTML = `
+      <div class="mcp-auth-modal">
+        <div class="mcp-auth-modal-head">
+          <span class="mcp-auth-modal-icon" style="color:${escHtml(connector.color)}">${connector.icon}</span>
+          <div class="mcp-auth-modal-title">Connect ${escHtml(connector.name)}</div>
+        </div>
+        <ol class="mcp-auth-steps">
+          <li>Go to <a href="https://github.com/settings/tokens/new?description=360+AI&scopes=repo,read:user" target="_blank" rel="noopener">GitHub → Settings → Tokens ↗</a> and create a token.</li>
+          <li>Paste it below.</li>
+        </ol>
+        <div class="mcp-auth-fields">
+          <label class="mcp-auth-field-label">Personal access token
+            <input class="mcp-auth-field-input" type="password" placeholder="ghp_…" id="mcp-gh-token" />
+          </label>
+        </div>
+        <div class="mcp-auth-modal-actions">
+          <button class="mcp-auth-cancel-btn" id="mcp-pat-cancel">Cancel</button>
+          <button class="mcp-auth-save-btn" id="mcp-pat-save">Connect GitHub</button>
+        </div>
+      </div>`;
+
+    mcpPanel.appendChild(overlay);
+
+    const input = overlay.querySelector("#mcp-gh-token");
+    setTimeout(() => input && input.focus(), 60);
+
+    overlay.querySelector("#mcp-pat-cancel").addEventListener("click", () => overlay.remove());
+    overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
+
+    const save = () => {
+      const val = input.value.trim();
+      if (!val) { input.style.borderColor = "rgba(239,68,68,.6)"; setTimeout(() => input.style.borderColor = "", 1200); return; }
+      overlay.remove();
+      setConnectorCreds(connector.id, { access_token: val });
+      syncWindowCreds();
+      refreshContextBar();
+      renderCards();
+    };
+
+    overlay.querySelector("#mcp-pat-save").addEventListener("click", save);
+    input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); save(); } });
+  }
+
   /* ── card rendering ─────────────────────────────────────────────── */
 
   function renderCards() {
@@ -383,7 +431,10 @@
         renderCards();
       });
     } else {
-      btn.addEventListener("click", () => startOAuth(connector));
+      btn.addEventListener("click", () => {
+        if (connector.id === "github") startPAT(connector);
+        else startOAuth(connector);
+      });
     }
 
     return wrap;
