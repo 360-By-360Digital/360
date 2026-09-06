@@ -331,7 +331,52 @@
         "someone definitely tested this"
       ];
 
-      const pool = path.includes("search") ? searchNicknacks
+      // If someone intentionally puts a curse word / crude word directly in
+      // the path, let the stickman react to the URL instead of treating it
+      // like an ordinary typo. Keep this playful rather than explicit.
+      const urlChaosNicknacks = [
+        "what the hell are you trying to do 😭🙏",
+        "bro... what did you type 😭",
+        "WHY IS THAT IN THE URL 😭🙏",
+        "you really put THAT in the search bar?",
+        "I am not paid enough for this URL",
+        "okay, who taught you URLs",
+        "the URL is fighting back",
+        "please reconsider your life choices 😭",
+        "I have questions. So many questions.",
+        "that is certainly one way to use a URL",
+        "sir, this is a search engine",
+        "ma'am, this is a 404 page",
+        "what possessed you to type that",
+        "I looked at the URL and immediately regretted it",
+        "the stickman would like an explanation",
+        "you cannot just put that in the URL 😭🙏",
+        "the server saw that and sighed",
+        "I am going to pretend I didn't see that",
+        "interesting choice of words...",
+        "the URL has been reported to absolutely nobody",
+        "we need to have a conversation about that URL",
+        "that was certainly a keyword",
+        "I don't even know what to say",
+        "the page is gone. your dignity might be too.",
+        "please speed I need this - I'm... kinda lost......."
+      ];
+
+      // Deliberately broad, non-explicit profanity/crudeness check. We only
+      // inspect the path, never query strings, so normal search text is left
+      // alone. Boundary matching avoids triggering on innocent words such as
+      // "classic" just because they contain a few letters from a curse.
+      const decodedPath = decodeURIComponent(path);
+      const pathWords = decodedPath.split(/[^a-z0-9]+/i).filter(Boolean);
+      const crudeWords = new Set([
+        "butt", "crap", "damn", "hell", "shit", "fuck", "fucking",
+        "fucked", "ass", "asshole", "bitch", "bastard", "piss", "bullshit",
+        "wtf", "stfu", "lmfao"
+      ]);
+      const hasCrudeKeyword = pathWords.some(word => crudeWords.has(word));
+
+      const pool = hasCrudeKeyword ? urlChaosNicknacks
+        : path.includes("search") ? searchNicknacks
         : path.includes("/chat") ? chatNicknacks
         : path.includes("/ai") ? aiNicknacks
         : path.includes("/docs") ? docsNicknacks
