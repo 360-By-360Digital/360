@@ -39,7 +39,7 @@
 
   const STORAGE_KEY = "360_gallium_mode";
   const GLEAM_SELECTOR = ".logo-main, .auth-box, .modal-box, #profile-popup";
-  const GLEAM_THROTTLE_MS = 40; /* ~25fps — plenty smooth for a slow-moving highlight */
+  const GLEAM_THROTTLE_MS = 32; /* local ~30fps feedback; never a document-wide update */
 
   /* ── Read persisted state ── */
   let galliumOn = localStorage.getItem(STORAGE_KEY) === "true";
@@ -68,6 +68,8 @@
     } else {
       detachGleamListeners();
     }
+    document.documentElement.dataset.gallium = on ? "on" : "off";
+    document.dispatchEvent(new CustomEvent("galliumchange", { detail: { enabled: on } }));
   }
 
   applyState(galliumOn);
@@ -125,7 +127,7 @@
     row.id = "galliumToggleRow";
     row.style.cssText = "margin-top:10px;";
     row.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer;" id="galliumToggleClickTarget">
+      <button type="button" aria-pressed="${galliumOn}" style="display:flex;width:100%;align-items:center;justify-content:space-between;gap:14px;cursor:pointer;background:none;border:0;padding:0;text-align:left;color:inherit;" id="galliumToggleClickTarget">
         <div>
           <div style="font-size:13px;font-weight:600;color:var(--txt);">Enable 360 Gallium</div>
           <div style="font-size:11px;color:var(--mut);margin-top:2px;">
@@ -133,7 +135,7 @@
           </div>
         </div>
         <div class="gallium-toggle-track${galliumOn ? " on" : ""}" id="galliumTrack"></div>
-      </div>`;
+      </button>`;
 
     const headings = panel.querySelectorAll("h3");
     const lastH3   = headings.length ? headings[headings.length - 1] : null;
@@ -149,7 +151,7 @@
   }
 
   /* ── Toggle handler ── */
-  function toggle() {
+  function toggle(event) {
     galliumOn = !galliumOn;
     localStorage.setItem(STORAGE_KEY, galliumOn);
     applyState(galliumOn);
@@ -160,22 +162,29 @@
       window.WideMode.disable();
     }
 
+    syncControls();
+    if (galliumOn) pourRipple(event);
+  }
+
+  function syncControls() {
     const track = document.getElementById("galliumTrack");
     if (track) track.classList.toggle("on", galliumOn);
-
+    const compactToggle = document.getElementById("galliumToggleClickTarget");
+    if (compactToggle) compactToggle.setAttribute("aria-pressed", String(galliumOn));
     const settingsTrack = document.getElementById("settingsGalliumToggle");
-    if (settingsTrack) settingsTrack.classList.toggle("on", galliumOn);
-
-    if (galliumOn) pourRipple();
+    if (settingsTrack) {
+      settingsTrack.classList.toggle("on", galliumOn);
+      settingsTrack.setAttribute("aria-pressed", String(galliumOn));
+    }
   }
 
   /* ── "Pour" ripple when activating — a single 0.85s one-shot
      animation, not continuous, so it costs nothing at rest ── */
-  function pourRipple() {
+  function pourRipple(origin) {
     const el = document.createElement("div");
     el.className = "gallium-ripple";
-    el.style.left = "50%";
-    el.style.top  = "40%";
+    el.style.left = origin && Number.isFinite(origin.clientX) ? origin.clientX + "px" : "50%";
+    el.style.top  = origin && Number.isFinite(origin.clientY) ? origin.clientY + "px" : "40%";
     document.body.appendChild(el);
     el.addEventListener("animationend", () => el.remove(), { once: true });
   }
@@ -216,10 +225,8 @@
     const existingToggle = document.getElementById("settingsGalliumToggle");
     if (existingToggle) {
       existingToggle.classList.toggle("on", galliumOn);
-      existingToggle.addEventListener("click", function() {
-        toggle();
-        this.classList.toggle("on", galliumOn);
-      });
+      existingToggle.setAttribute("aria-pressed", String(galliumOn));
+      existingToggle.addEventListener("click", toggle);
       return;
     }
 
@@ -246,10 +253,7 @@
     else if (bobCard) bobCard.after(card);
     else prefPanel.appendChild(card);
 
-    document.getElementById("settingsGalliumToggle")?.addEventListener("click", function() {
-      toggle();
-      this.classList.toggle("on", galliumOn);
-    });
+    document.getElementById("settingsGalliumToggle")?.addEventListener("click", toggle);
   });
 
 })();
