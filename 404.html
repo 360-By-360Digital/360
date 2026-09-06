@@ -331,51 +331,99 @@
         "someone definitely tested this"
       ];
 
-      // If someone intentionally puts a curse word / crude word directly in
-      // the path, let the stickman react to the URL instead of treating it
-      // like an ordinary typo. Keep this playful rather than explicit.
-      const urlChaosNicknacks = [
+      // URL chaos detector: normalize common separators, URL encoding, leetspeak,
+      // repeated letters, and small typos before checking crude keywords.
+      const decodedPath = (() => {
+        try { return decodeURIComponent(location.pathname || "/"); } catch (_) { return location.pathname || "/"; }
+      })();
+
+      const normalizeCrude = (s) => String(s || "")
+        .toLowerCase()
+        .replace(/0/g,"o").replace(/1/g,"i").replace(/2/g,"z")
+        .replace(/3/g,"e").replace(/4/g,"a").replace(/5/g,"s")
+        .replace(/6/g,"g").replace(/7/g,"t").replace(/8/g,"b")
+        .replace(/9/g,"g").replace(/@/g,"a")
+        .replace(/(.)\1+/g,"$1")
+        .replace(/[^a-z]/g,"");
+
+      const crudeWords = [
+        "ass","asses","asshole","bastard","bitch","bullshit","butt","crap",
+        "damn","dick","douche","douchebag","fuck","fucking","fucked",
+        "hell","jackass","lmfao","piss","shit","shitty","stfu","wtf"
+      ].map(normalizeCrude);
+
+      const crudeReactions = [
         "what the hell are you trying to do 😭🙏",
         "bro... what did you type 😭",
         "WHY IS THAT IN THE URL 😭🙏",
-        "you really put THAT in the search bar?",
+        "you really put THAT in the path?",
         "I am not paid enough for this URL",
         "okay, who taught you URLs",
         "the URL is fighting back",
-        "please reconsider your life choices 😭",
+        "please reconsider that URL 😭🙏",
         "I have questions. So many questions.",
         "that is certainly one way to use a URL",
         "sir, this is a search engine",
         "ma'am, this is a 404 page",
         "what possessed you to type that",
-        "I looked at the URL and immediately regretted it",
         "the stickman would like an explanation",
         "you cannot just put that in the URL 😭🙏",
         "the server saw that and sighed",
         "I am going to pretend I didn't see that",
         "interesting choice of words...",
-        "the URL has been reported to absolutely nobody",
         "we need to have a conversation about that URL",
-        "that was certainly a keyword",
         "I don't even know what to say",
-        "the page is gone. your dignity might be too.",
-        "please speed I need this - I'm... kinda lost......."
+        "respectfully... why",
+        "the webpage is judging you",
+        "that path is CRAZY 😭",
+        "bro typed that with confidence",
+        "the URL did not deserve this",
+        "please explain yourself",
+        "this is above my pay grade",
+        "we're gonna pretend that wasn't typed",
+        "the URL has seen enough",
+        "I was not trained for this situation",
+        "there are easier ways to get a 404",
+        "you successfully confused the website",
+        "this URL needs supervision",
+        "I need to speak to whoever typed this",
+        "I opened the path and immediately looked away",
+        "the stickman has concerns",
+        "you know the URL is public, right 😭",
+        "maybe choose a nicer word next time",
+        "I don't think that's what the search bar is for",
+        "I have forwarded this to absolutely nobody",
+        "the server would like to forget this",
+        "why would you even TRY that 😭🙏"
       ];
 
-      // Deliberately broad, non-explicit profanity/crudeness check. We only
-      // inspect the path, never query strings, so normal search text is left
-      // alone. Boundary matching avoids triggering on innocent words such as
-      // "classic" just because they contain a few letters from a curse.
-      const decodedPath = decodeURIComponent(path);
-      const pathWords = decodedPath.split(/[^a-z0-9]+/i).filter(Boolean);
-      const crudeWords = new Set([
-        "butt", "crap", "damn", "hell", "shit", "fuck", "fucking",
-        "fucked", "ass", "asshole", "bitch", "bastard", "piss", "bullshit",
-        "wtf", "stfu", "lmfao"
-      ]);
-      const hasCrudeKeyword = pathWords.some(word => crudeWords.has(word));
+      const tokens = decodedPath
+        .split(/[\/?#._\-\s+%=]+/)
+        .filter(Boolean);
 
-      const pool = hasCrudeKeyword ? urlChaosNicknacks
+      const normalizedTokens = tokens.map(normalizeCrude);
+      const compact = normalizedTokens.join("");
+
+      function distance(a,b) {
+        if (Math.abs(a.length-b.length)>2) return 99;
+        const row=Array.from({length:b.length+1},(_,i)=>i);
+        for(let i=1;i<=a.length;i++){
+          let prev=row[0]; row[0]=i;
+          for(let j=1;j<=b.length;j++){
+            const old=row[j];
+            row[j]=Math.min(row[j]+1,row[j-1]+1,prev+(a[i-1]===b[j-1]?0:1));
+            prev=old;
+          }
+        }
+        return row[b.length];
+      }
+
+      const hasCrudeKeyword = normalizedTokens.some(t =>
+        crudeWords.includes(t) ||
+        (t.length >= 4 && crudeWords.some(w => distance(t,w) <= (w.length >= 7 ? 2 : 1)))
+      ) || crudeWords.some(w => w.length >= 4 && compact.includes(w));
+
+      const pool = hasCrudeKeyword ? crudeReactions
         : path.includes("search") ? searchNicknacks
         : path.includes("/chat") ? chatNicknacks
         : path.includes("/ai") ? aiNicknacks
@@ -383,7 +431,7 @@
         : generalNicknacks;
 
       // Rare developer easter eggs; most visits get ordinary nonsense.
-      const choices = Math.random() < 0.025 ? rareNicknacks : pool;
+      const choices = Math.random() < 0.012 ? rareNicknacks : pool;
       const bubble = document.getElementById("error-nicknack");
       if (bubble) bubble.textContent = choices[Math.floor(Math.random() * choices.length)];
 
